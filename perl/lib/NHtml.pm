@@ -182,6 +182,7 @@ sub escape_js {
     $var =~ s/(["'])/\\$1/g; #"
     $var =~ s/\r/\\r/g;
     $var =~ s/\n/\\n/g;
+    $var =~ s/\\/\\\\/g;
     return $var;
 }
 
