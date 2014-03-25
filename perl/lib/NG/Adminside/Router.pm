@@ -43,6 +43,7 @@ sub __getRow {
         $row->{url} ||= $row->{module_id} if ($row->{module_id});
         $row->{url} ||= $row->{node_id} if ($row->{node_id}); 
     };
+    $row||={};
     return $row;
 };
 
