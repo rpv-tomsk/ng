@@ -831,7 +831,7 @@ sub check {
         foreach my $tmpfield (@{$fields}) {
             next unless $tmpfield->type() eq "id";
             
-            return $field->setError("При проверке уникальности не найдено значение ключевого поля \"{f}\"") if (is_empty($tmpfield->{VALUE}));
+            return $field->setError("При проверке уникальности {f} не найдено значение ключевого поля ".$tmpfield->{FIELD}) if (is_empty($tmpfield->{VALUE}));
             
             $keyWhere .=  $tmpfield->{FIELD}."<>? and";
             push @keyValues, $tmpfield->dbValue();
