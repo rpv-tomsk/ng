@@ -150,10 +150,10 @@ sub loadSubsite {
     if ($hasLanguages) {
         $fields .= ",ln.codes,ss.lang_id";
         $from   .= ",ng_lang ln";
-        $where  .= " and ln.id = ss.lang_id ";
+        $where  .= " and ln.id = ss.lang_id";
     };
     
-    $where .= "and ss.id = ?";
+    $where .= " and ss.id = ?";
     
     my $sth = $dbh->prepare("select $fields from $from where $where") or return $cms->error($DBI::errstr);
     $sth->execute($ssId) or return $cms->error($DBI::errstr);
@@ -308,6 +308,7 @@ sub getPageFields {
     
 	if ($obj->can('pageFields')) {
 		my $addon = $obj->pageFields();
+		return $app->defError($baseClass."->pageFields()","Не вернул списка полей") if $addon eq "0";
 		$pageFields .= ",".$addon if $addon;
 	};
 	return $pageFields;
