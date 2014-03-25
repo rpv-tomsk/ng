@@ -1252,10 +1252,12 @@ sub enablePage {
 	while (1) {
 		my $node = NG::Nodes->loadNode($pageId) or last;
 		my $v = $node->getNodeValue();
-		my $pNode = NG::Nodes->loadNode($v->{parent_id});
 		
-		return $cms->error("Parent node not found") unless $pNode;
-		last if $pNode->getNodeValue()->{disabled};
+        if ($v->{parent_id}) {
+            my $pNode = NG::Nodes->loadNode($v->{parent_id});
+            return $cms->error("Parent node not found") unless $pNode;
+            last if $pNode->getNodeValue()->{disabled};
+        };
 		
 		my $where = "";
 		my @params = ();
