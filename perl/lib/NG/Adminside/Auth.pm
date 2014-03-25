@@ -4,6 +4,7 @@ use strict;
 #TODO: log Events !
 
 use NGService;
+use NSecure;
 use POSIX qw(strftime);
 
 use constant COOKIENAME => "ng_session";
@@ -88,7 +89,7 @@ sub doObvyazka {
     my $self = shift;
     
     my $c = '<div id="history_left">';
-    $c.= '<strong>Администратор:</strong><a href="/admin-side/auth/editadmin/" onclick="win = window.open(this.href,"","width=500,height=200,top=100,left=100");return false;" target="_blank">';
+    $c.= '<strong>Администратор:</strong><a href="/admin-side/auth/editadmin/" onclick="win = window.open(this.href,\'\',\'width=500,height=220,top=100,left=100\');return false;" target="_blank">';
     $c.= $self->{_admin}->{fio};
     $c.= '</a></div>';
     
@@ -243,10 +244,10 @@ sub editAdmin {
     my $ref = $q->param("ref") || $q->url(-absolute=>1);
     my $is_ajax = $q->param("_ajax");
     
-    my $admin = $self->{_admin} or return $self->showError("Не авторизованы.");
+    my $admin = $self->{_admin} or return $cms->showError("Не авторизованы.");
     
     my $action = $q->url_param("action") || "";
-    my $form = $self->getObject("NG::Form",
+    my $form = $cms->getObject("NG::Form",
         FORM_URL  => $self->q()->url()."?action=editadmin",
         KEY_FIELD => "id",
         DB        => $self->db(),
@@ -288,14 +289,14 @@ sub editAdmin {
             $form->deletefield("password_repeat");
             $form->updateData();
             if ($is_ajax == 1) {
-                return $self->output("<script type='text/javascript'>parent.document.location='".$q->url()."?ok=1"."';</script>", -nocache=>1);
+                return $cms->exit("<script type='text/javascript'>parent.document.location='".$q->url()."?ok=1"."';</script>", -nocache=>1);
             }
             else {
-                return $self->redirect($q->url()."?ok=1");
+                return $cms->redirect($q->url()."?ok=1");
             };
         } else {
             if ($is_ajax) {
-                return $self->output(
+                return $cms->exit(
                     "<script type='text/javascript'>parent.document.getElementById('updated').innerHTML='';</script>"
                     .$form->ajax_showerrors(),
                     -nocache=>1,
@@ -303,25 +304,25 @@ sub editAdmin {
             };
         };
     } else {
-        $form->loadData() or return $self->error($form->getError());
+        $form->loadData() or return $cms->error($form->getError());
         $form->addfields([
             {FIELD=>'password', TYPE=>'password',NAME=>'Пароль',},
             {FIELD=>'password_repeat', TYPE=>'password',NAME=>'Подтвердите пароль', },
         ]);
     };
 
-    my $tmpl = $self->gettemplate("admin-side/common/universalform.tmpl");
+    my $tmpl = $cms->gettemplate("admin-side/common/universalform.tmpl");
     $form->print($tmpl);
     my $formhtml = $tmpl->output();
     
-    $tmpl = $self->gettemplate("admin-side/admin/adminedit.tmpl");
+    $tmpl = $cms->gettemplate("admin-side/admin/adminedit.tmpl");
     my $updated = 0;
     $updated = 1 if $q->param("ok") && $q->param("ok")==1;
     $tmpl->param(
         FORM=>$formhtml,
         UPDATED=> $updated,
     );
-    return $self->output($tmpl);
+    return $cms->output($tmpl);
 };
 
 
