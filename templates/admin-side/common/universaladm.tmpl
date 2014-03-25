@@ -54,7 +54,7 @@ function rs_activate(url,block) {
 			<div id="top_left">
 				<div id="top_right">
                     <div id="history_left">
-                        <TMPL_IF AS.CURRENT_USER><strong>Администратор:</strong> <a href="/admin-side/editadmin/" onclick="win = window.open(this.href,'','width=500,height=200,top=100,left=100');return false;" target="_blank"><TMPL_VAR AS.CURRENT_USER></a> </TMPL_IF AS.CURRENT_USER>
+                        <TMPL_IF AS.CURRENT_USER><strong>Администратор:</strong> <a href="/admin-side/auth/editadmin/" onclick="win = window.open(this.href,'','width=500,height=200,top=100,left=100');return false;" target="_blank"><TMPL_VAR AS.CURRENT_USER></a> </TMPL_IF AS.CURRENT_USER>
                     </div>
                     <!--
 					<a href="#" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('Image1','','/admin-side/img/img_top3_act.gif',1);">
@@ -63,7 +63,7 @@ function rs_activate(url,block) {
 					<img  src="/admin-side/img/img_top1_inact.gif" name="Image2" alt="" width="74" height="43" border="0"></a>
                     -->
 					<div style="float:left;">
-					<a href="/admin-side/logout/" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('Image3','','/admin-side/img/img_top2_act.gif',1);">
+					<a href="/admin-side/auth/logout/" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('Image3','','/admin-side/img/img_top2_act.gif',1);">
 					<img  src="/admin-side/img/img_top2_inact.gif" name="Image3" alt="" width="74" height="43" border="0"></a>
 					</div>
 				</div>

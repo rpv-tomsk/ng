@@ -11,8 +11,8 @@
 </head>
 <body style="background: #b6d7eb;">
 <div id="" style="padding-top: 5px;">
-		<form action="/admin-side/login/" method="post" style="left:-130px; top:0;">
-			<input type="hidden" name="is_ajax" value="1">
+		<form action="/admin-side/auth/" method="post" style="left:-130px; top:0;">
+			<input type="hidden" name="_ajax" value="1">
 			<INPUT TYPE="hidden" name="url" value="<TMPL_VAR URL>">	
 			<p><label>Логин:</label><input type="text" name="ng_login"  class="text"  value="<TMPL_VAR LOGIN ESCAPE=HTML>"></p>
 			<p><label>Пароль:</label><input type="password" name="ng_password" class="text"></p>
