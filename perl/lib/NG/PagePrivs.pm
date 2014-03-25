@@ -506,7 +506,7 @@ sub hasPageModulePrivilege { #ADMIN_ID GROUP_ID PAGE_ID MODULE_ID PRIVILEGE SUBS
     #    $self->_loadPagePrivilegesL1($adminId,$pageId,$groupId);
     #};
 
-    if ((!$ac || !$ac->{ACTIVE}) && exists $L1->{"group$groupId"}->{$pageId}->{$moduleId} && exists $L1->{"group$groupId"}->{$pageId}->{$moduleId}->{$privilege}) {
+    if ((!$ac || !defined $ac->{ACTIVE}) && exists $L1->{"group$groupId"}->{$pageId}->{$moduleId} && exists $L1->{"group$groupId"}->{$pageId}->{$moduleId}->{$privilege}) {
         $ac = $L1->{"group$groupId"}->{$pageId}->{$moduleId}->{$privilege}->{acting} || {};
 #print STDERR "TODO: ACCESS key is missing, replace to ACTIVE ".$a->{ACTIVE} unless exists $a->{ACCESS};
 #print STDERR "exists".(exists $a->{ACTIVE})?"1":"0";
