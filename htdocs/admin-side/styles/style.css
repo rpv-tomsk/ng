@@ -335,7 +335,7 @@ html:root #line_left {
 	padding-top:2px;
 	border-left: 1px solid #96c5ec;
 	padding-right: 1px;
-	width: 100%;
+	/*width: 100%;*/
 	overflow: hidden;
 }
 #menu_content_items {
@@ -736,7 +736,7 @@ img.img_bottom_info {
 	width: 100%;
 }
 #footer {
-	margin-top: -34px;
+	/*margin-top: -34px;*/
 	height: 34px;
 	clear: both;
 	background:url(/admin-side/img/footer-back.gif) repeat-x top;
@@ -858,7 +858,7 @@ textarea.info_textarea {
 }
 /*select в полях формы*/
 select.info_text {
-	background:#fffff;
+	background:#ffffff;
 	color:#0e75a3;
 	font-size:11px;
 	font-family: Verdana;
@@ -1151,7 +1151,7 @@ table.info_new_page td {
 
 /* Переопределения отрисовки дерева для middle_left_tree (дерево в левой части) */
 #middle_left_tree div.element_0 {
-	padding: 2 0 0px;
+	padding: 2px 0 0 0px;
 	width: auto;
 }
 
