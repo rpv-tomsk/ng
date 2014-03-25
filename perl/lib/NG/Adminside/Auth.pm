@@ -180,7 +180,7 @@ sub AuthenticateByLogin {
             
         my $sth = $dbh->prepare("select id,login,fio,last_online,sessionkey from ng_admins where login=? and password=?") or die $DBI::errstr;
         $sth->execute($login,$password) or die $DBI::errstr;
-        my $admin = $sth->fetchrow_hashref() or return;
+        my $admin = $sth->fetchrow_hashref() or last;
         $sth->finish();
     
         #if ($admin->{sessionkey}) {
