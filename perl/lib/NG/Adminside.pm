@@ -953,8 +953,8 @@ sub _run {
             $status = $mObj->adminModule($is_ajax);
             last;
         };
-	}
-	elsif ($subUrl eq "") {
+    }
+    elsif ($subUrl eq "") {
 =head
 		my $pageObj = $cms->getObject('NG::Module::MainAdm') or return $cms->error();
 		unless ($pageObj) {
@@ -963,7 +963,10 @@ sub _run {
 		$status = $pageObj->moduleAction($is_ajax);
 =cut
         $status = $cms->output();
-	};
+    }
+    else {
+        $status = $cms->error("Некорректная ссылка. Исправьте модуль.");
+    };
 
     my $rightBlock = "";
 	
