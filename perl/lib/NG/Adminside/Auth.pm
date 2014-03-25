@@ -131,7 +131,7 @@ sub showLoginForm {
         $url = $q->url(-full=>1, -query=>1);
     };
     
-    my $tmpl = $cms->gettemplate("admin-side/common/loginform.tmpl") || return $self->showError();
+    my $tmpl = $cms->gettemplate("admin-side/common/loginform.tmpl") || return $cms->error();
     #TODO: выверить эскейпинг 
     $tmpl->param(
         MESSAGE =>  $self->_statusText(),
@@ -151,7 +151,7 @@ sub showPopupLoginForm {
     my $q = $self->q();
     my $login = $q->param('ng_login') || "";
     
-    my $tmpl = $cms->gettemplate("admin-side/common/popuploginform.tmpl") || return $self->showError();
+    my $tmpl = $cms->gettemplate("admin-side/common/popuploginform.tmpl") || return $cms->error();
     $tmpl->param(
         MESSAGE=>$message,
         IS_AJAX=>1,
@@ -251,7 +251,7 @@ sub editAdmin {
     my $ref = $q->param("ref") || $q->url(-absolute=>1);
     my $is_ajax = $q->param("_ajax");
     
-    my $admin = $self->{_admin} or return $cms->showError("Не авторизованы.");
+    my $admin = $self->{_admin} or return $cms->exit("Не авторизованы.");
     
     my $action = $q->url_param("action") || "";
     my $form = $cms->getObject("NG::Form",
