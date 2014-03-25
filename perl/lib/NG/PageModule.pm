@@ -25,6 +25,10 @@ sub init {
 	$self;
 };
 
+##
+##   Отработка запросов к морде
+##
+
 sub run {
 	my $pageObj = shift;
     
@@ -42,6 +46,30 @@ sub run {
 
     return $cms->error("Модуль ".(ref $pageObj)." не содержит метода showPage") unless $pageObj->can("showPage");
     return $pageObj->showPage();
+};
+
+sub processPost {
+    my $self = shift;
+    
+    my $cms = $self->cms();
+    my $q = $cms->q();
+    my $dbh = $cms->db()->dbh();
+    
+    my $ctrl = $q->param("_controller") || "";
+    
+    my $mObj = undef;
+    if (!$ctrl) {
+        return $cms->error("Отправленный запрос не содержит значения параметра _controller") if $self->_isBaseClass();
+        $mObj = $self;
+    }
+    else {
+        $ctrl = uc($ctrl);
+        $mObj = $cms->getModuleByCode($ctrl) or return $cms->defError("processPost():","Запрошенный контроллер $ctrl не найден");
+    };
+    
+    return $cms->error("Модуль ".(ref $mObj)." не содержит метода processModulePost") unless $mObj->can("processModulePost");
+    #return $cms->error("Модуль ".$row->{module}." не содержит метода processModulePost") if $self->can("processModulePost") eq $mObj->can("processModulePost");
+    return $mObj->processModulePost();
 };
 
 sub showPage {
@@ -91,32 +119,6 @@ sub _isBaseClass {
     return 0 if $self->pageParam('module_id');
 	return 1;
 }
-
-sub adminPage { 
-	my $self = shift;
-	my $is_ajax = shift;
-	my $cms = $self->cms();
-	
-	my $mObj = undef;
-
-	if ($self->_isBaseClass()) {
-        return $cms->error("Предполагалось, что вызов adminPage будет после вызова getPageTabs") unless $self->{_selectedModule};
-        my $block = $self->{_selectedModule};
-        #return $self->runBlock($self->{_selectedModule}->{module},$is_ajax, {BASEURL=>$self->getBaseURL()});
-#warn "getObject for block ".$block->{module}.", ADMINBASEURL=".$block->{url};
-        my $blockObj = $cms->getObject($block->{module},{
-            ADMINBASEURL => $block->{url},
-			PAGEPARAMS   => $self->getPageRow(),
-			MODULEROW    => $block->{mrow},
-            #BLOCKID      => $self->{_selectedModule}->{block_id},
-        }) or return $cms->error();
-    
-        #Тут когда-то был метод adminBlock
-        return $cms->error("Модуль ".$self->{_selectedModule}->{module}." не содержит метода adminModule") unless $blockObj->can("adminModule");
-        return $blockObj->_adminModule("pagemodule",$is_ajax);
-	};
-    return $self->_adminModule("pagemodule",$is_ajax);
-};
 
 sub _getTemplateBlocks {
 	#TODO: Использовать getTemplateBlocks
@@ -222,6 +224,7 @@ sub getPageTabs {
 	}
 };
 
+# getPageModules() используется NG::PagePrivs при построении редактора привилегий
 sub getPageModules {
 	my $self = shift;
 	
@@ -261,28 +264,30 @@ sub getPageModules {
 	return \@result;
 };
 
-sub processPost {
-    my $self = shift;
+sub adminPage { 
+	my $self = shift;
+	my $is_ajax = shift;
+	my $cms = $self->cms();
+	
+	my $mObj = undef;
+
+	if ($self->_isBaseClass()) {
+        return $cms->error("Предполагалось, что вызов adminPage будет после вызова getPageTabs") unless $self->{_selectedModule};
+        my $block = $self->{_selectedModule};
+        #return $self->runBlock($self->{_selectedModule}->{module},$is_ajax, {BASEURL=>$self->getBaseURL()});
+#warn "getObject for block ".$block->{module}.", ADMINBASEURL=".$block->{url};
+        my $blockObj = $cms->getObject($block->{module},{
+            ADMINBASEURL => $block->{url},
+			PAGEPARAMS   => $self->getPageRow(),
+			MODULEROW    => $block->{mrow},
+            #BLOCKID      => $self->{_selectedModule}->{block_id},
+        }) or return $cms->error();
     
-    my $cms = $self->cms();
-    my $q = $cms->q();
-    my $dbh = $cms->db()->dbh();
-    
-    my $ctrl = $q->param("_controller") || "";
-    
-    my $mObj = undef;
-    if (!$ctrl) {
-        return $cms->error("Отправленный запрос не содержит значения параметра _controller") if $self->_isBaseClass();
-        $mObj = $self;
-    }
-    else {
-        $ctrl = uc($ctrl);
-        $mObj = $cms->getModuleByCode($ctrl) or return $cms->defError("processPost():","Запрошенный контроллер $ctrl не найден");
-    };
-    
-    return $cms->error("Модуль ".(ref $mObj)." не содержит метода processModulePost") unless $mObj->can("processModulePost");
-    #return $cms->error("Модуль ".$row->{module}." не содержит метода processModulePost") if $self->can("processModulePost") eq $mObj->can("processModulePost");
-    return $mObj->processModulePost();
+        #Тут когда-то был метод adminBlock
+        return $cms->error("Модуль ".$self->{_selectedModule}->{module}." не содержит метода adminModule") unless $blockObj->can("adminModule");
+        return $blockObj->_adminModule("pagemodule",$is_ajax);
+	};
+    return $self->_adminModule("pagemodule",$is_ajax);
 };
 
 ##
