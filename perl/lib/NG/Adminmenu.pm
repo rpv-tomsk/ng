@@ -689,9 +689,14 @@ sub processEvent {
 			};
 			my $afterNode = undef;
 			if ($node->{PREV_SIBLING_ID}) {
-#print STDERR "Found PREV_SIBLING_ID";
+#print STDERR "Found PREV_SIBLING_ID = ".$node->{PREV_SIBLING_ID};
 				$afterNode = NG::Nodes->loadNode(node_id=>$node->{PREV_SIBLING_ID});
 #print STDERR "Node by PREV_SIBLING_ID: ".$afterNode;
+                                unless ($afterNode && $afterNode->{_parent_id} == $parent->{_id}) {
+#print STDERR "Node by PREV_SIBLING_ID has another parent";
+                                        #последняя нода ветки в структуре имеет соответствие в дереве меню в другой ветке.
+                                        $afterNode = undef;
+                                };
 			};
 			if ($afterNode) {
 				$parent->DBaddChild($newMenuElem,{AFTER=>$afterNode});
