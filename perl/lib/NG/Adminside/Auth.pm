@@ -96,7 +96,7 @@ sub doObvyazka {
     $self->cms->pushRegion({CONTENT=>$c,REGION=>"HEAD1",WEIGHT=>-100});
 
     $c = '<div style="float:left;">';
-    $c.= '<a href="/admin-side/auth/logout/" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage("Image3","","/admin-side/img/img_top2_act.gif",1);">';
+    $c.= '<a href="/admin-side/auth/logout/" onMouseOut="MM_swapImgRestore();" onMouseOver="MM_swapImage(\'Image3\',\'\',\'/admin-side/img/img_top2_act.gif\',1);">';
     $c.= '<img  src="/admin-side/img/img_top2_inact.gif" name="Image3" alt="" width="74" height="43" border="0"></a>';
     $c.= '</div>';
     $self->cms->pushRegion({CONTENT=>$c,REGION=>"HEAD1",WEIGHT=>100});
