@@ -158,6 +158,9 @@ sub showPageBlock  {
         my $fa = $q->param('formaction') || $q->url_param('formaction') || "";
         
         if ($fa eq "update") {
+            if ($initialised) {
+                $form->loadData() or return $self->error($form->getError());
+            };
             $form->setFormValues();
             $self->afterSetFormValues($form) or return $self->cms()->error();
             $form->modeInsert() unless $initialised;

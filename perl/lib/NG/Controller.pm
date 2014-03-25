@@ -161,7 +161,7 @@ sub process {
         $method or return $cms->error("No METHOD configured");
         return $cms->error("Class ".$self->{_pclass}." has no method $method") unless ($pObj->can($method));
         
-        $self->doStep($method,$step->{PARAMS}) or return $cms->error();
+        $self->doStep($method,$step->{PARAMS}) or return $cms->error($self->{_error});
     };
     $self->{_stepParams} = undef;
     $pObj->afterProcess($dest) or return $cms->error($self->{_pclass}."->afterProcess() failed: ".$self->{_error});
