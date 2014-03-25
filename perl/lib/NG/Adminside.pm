@@ -486,16 +486,6 @@ sub _run {
         
         while (1) {
             unless ($subUrl) {
-=comment
-                #$status = $cms->output("TODO: исправить вывод страницы по умолчанию");
-                $pageObj = $cms->getObject('NG::Module::MainAdm',{BASEURL=>$baseUrl});
-                unless ($pageObj) {
-                    $error = $cms->getError();
-                    last;
-                };
-                $status = $pageObj->moduleAction($is_ajax);
-                last;
-=cut
                 return $cms->redirect("/admin-side/");
             };
             my $row = undef;
@@ -590,7 +580,6 @@ sub _run {
         $subsiteId = $row->{subsite_id};
         $menuNodeId = $row->{id};
         $mId = $row->{module_id};
-#warn Dumper($row);
         
         my $mRow = $cms->getModuleRow("id=?",$row->{module_id}) or return $cms->defError("getModuleByCode():","Запрошенный модуль c кодом ".$row->{module_id}." не найден");
         my $mObj = $cms->getObject($mRow->{module},{ADMINBASEURL=>$baseUrl, MODULEROW=>$mRow}) or return $cms->error();
@@ -615,14 +604,12 @@ sub _run {
         };
     }
     elsif ($subUrl eq "") {
-=head
-		my $pageObj = $cms->getObject('NG::Module::MainAdm') or return $cms->error();
+		my $pageObj = $cms->getObject('NG::Module::MainAdm');
 		unless ($pageObj) {
-			$error = $cms->getError();
+            $status = $cms->error();
+            last;
 		};
-		$status = $pageObj->moduleAction($is_ajax);
-=cut
-        $status = $cms->output();
+        $status = $pageObj->adminModule($is_ajax);
     }
     else {
         $status = $cms->error("Некорректная ссылка. Исправьте модуль.");

@@ -7,19 +7,17 @@ use NG::Nodes;
 use NG::Form;
 
 use vars qw(@ISA);
-
-sub AdminMode {
-    use NG::Module;
-    @ISA = qw(NG::Module);
-};
+use NG::Module;
+@ISA = qw(NG::Module);
 
 sub getModuleTabs {
 	return [];
 }
 
-sub moduleAction {
-	return NG::Module::M_OK;
-}
+sub adminModule {
+    my $self = shift;
+    return $self->cms->output("");
+};
 
 return 1;
 END{};
