@@ -512,6 +512,10 @@ sub setFormValue {
     $is_utf8++ if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest";
     
     my $value = ($is_utf8) ? _convert($q->param($field->{FIELD})) : $q->param($field->{FIELD});
+
+    if ($field->{ESCAPE} && $field->{ESCAPE} eq "HTML") {
+        $value = htmlspecialchars($value);
+    };
     
     if ($field->isFileField()) {
         return 1 if is_empty($value);
