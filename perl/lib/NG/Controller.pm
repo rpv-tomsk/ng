@@ -164,7 +164,7 @@ sub process {
         $self->doStep($method,$step->{PARAMS}) or return $cms->error();
     };
     $self->{_stepParams} = undef;
-    $pObj->afterProcess($dest) or return $cms->error($self->{_pclass}."->afterProcess() failed");
+    $pObj->afterProcess($dest) or return $cms->error($self->{_pclass}."->afterProcess() failed: ".$self->{_error});
     1;
 };
 
