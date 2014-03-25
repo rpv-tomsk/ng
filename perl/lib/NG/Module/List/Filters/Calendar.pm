@@ -16,6 +16,7 @@ sub init {
     $self->{_day}   = undef;
     $self->{_month} = undef;
     $self->{_year}  = undef;
+	$self->{_calendar} = undef;
     $self;
 };
 
@@ -46,6 +47,7 @@ sub beforeOutput {
     my $self = shift;
     my $pObj = $self->parent();
     my $config = $self->config();
+	my $cms = $pObj->cms();
 
     #Определяем дату на календаре
     my $current = Date::Simple->new;
@@ -78,9 +80,22 @@ sub beforeOutput {
         push @db_where, $field->{FIELD}."=?";
         push @db_params, $field->{VALUE};
     };
-    
     my $baseUrl = getURLWithParams($pObj->getBaseURL().$pObj->getSubURL(),$pObj->getOrderParam(),$pObj->getFKParam(),@params);
-    my $cal = $pObj->cms()->getCalendar({month=>$month,year=>$year,day=>$day});
+	my $cal = $cms->getObject("NG::Calendar",{month=>$month,year=>$year,day=>$day});
+    $cal->visual({ 
+        'CLASS1'      => '',
+        'CLASS2'      => '',
+        'CLASS3'      => '',
+        'CLASS4'      => '',
+        'CLASS4W'     => '',
+        'CLASS5'      => '',
+        'CLASS6'      => '',
+        'CLASS7'      => '',
+        'CLASS_ACTIVE'=> 'class=current_date',
+        'CLASS_NODAY' => '',
+        'IMBACK'      => '',
+        'IMFORW'      => '',
+    });
 	$cal->initdbparams(
     	db    => $pObj->db(),
     	table => $pObj->getListSQLTable(),
@@ -129,7 +144,26 @@ sub beforeOutput {
     };    
     $cal->{NEXT_URL} = getURLWithParams($baseUrl,"_month=".$next_month."&_year=".$next_year);
     $cal->{PREV_URL} = getURLWithParams($baseUrl,"_month=".$prev_month."&_year=".$prev_year);
-    $cal->{CURRENT_URL} = getURLWithParams($baseUrl,"_month=".$month."&_year=".$year); 
+    $cal->{CURRENT_URL} = getURLWithParams($baseUrl,"_month=".$month."&_year=".$year);
+	
+	my %calendar = (
+        ACTION => $cal->{ACTION},
+        HTML => $cal->calendar_month(),
+        MONTH_OPTIONS => $cal->get_month_options(),
+        YEAR_OPTIONS => $cal->get_year_options(),
+        CURRENT_MONTH => $cal->get_month_name($cal->month()),
+        CURRENT_YEAR => $cal->year(),
+        NEXT_URL => $cal->{NEXT_URL},  
+        PREV_URL => $cal->{PREV_URL},
+        CURRENT_URL => $cal->{CURRENT_URL},
+        FILTER_DESCRIPTION => $cal->{FILTER_DESCRIPTION},
+        CPARAMS => $cal->{CPARAMS}
+    );
+	my $template = $cms->gettemplate("admin-side/common/calendar.tmpl");
+    $template->param(
+        CALENDAR => \%calendar,
+    );
+	$cms->pushRegion({CONTENT=>'<div id="calendar_div">'.$template->output().'</div>', REGION=>"LEFT", WEIGHT=>-10});
 };
 
 sub getURLParams {

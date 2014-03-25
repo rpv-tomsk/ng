@@ -11,8 +11,6 @@ sub init {
     my %param = @_;
     $self->SUPER::init(@_);
     
-    $self->{_calendar} = undef;
-    
     $self->{_rightSelector} = [];
 	
     $self->{_linkBlocksPrivileges} = {};
@@ -21,30 +19,12 @@ sub init {
     $self->{_sitePAccessObj} = undef;
     $self->{_siteMAccessObj} = undef;
     $self->{_authObj} = undef;
+    
+    $self->{_regions} = {};    # LEFT RIGHT  HEAD1 HEAD2 [HEAD3]
    
     $self;
 };
 
-sub getCalendar {
-    my $self=shift;
-    return $self->{_calendar} if $self->{_calendar};
-    $self->{_calendar} = $self->getObject("NG::Calendar",@_);
-    $self->{_calendar}->visual({ 
-        'CLASS1'      => '',
-        'CLASS2'      => '',
-        'CLASS3'      => '',
-        'CLASS4'      => '',
-        'CLASS4W'     => '',
-        'CLASS5'      => '',
-        'CLASS6'      => '',
-        'CLASS7'      => '',
-        'CLASS_ACTIVE'=> 'class=current_date',
-        'CLASS_NODAY' => '',
-        'IMBACK'      => '',
-        'IMFORW'      => '',
-    });
-    return $self->{_calendar};
-};
 
 sub _makeLogEvent {
     my $self = shift;
@@ -55,36 +35,18 @@ sub _makeLogEvent {
     $self->processEvent($event);
 };
 
-sub _printCalendar {
-    my $self = shift;
-    my $template = shift;
-    my $cal = $self->getCalendar();
-    my %calendar = (
-        ACTION => $cal->{ACTION},
-        HTML => $cal->calendar_month(),
-        MONTH_OPTIONS => $cal->get_month_options(),
-        YEAR_OPTIONS => $cal->get_year_options(),
-        CURRENT_MONTH => $cal->get_month_name($cal->month()),
-        CURRENT_YEAR => $cal->year(),
-        NEXT_URL => $cal->{NEXT_URL},  
-        PREV_URL => $cal->{PREV_URL},
-        CURRENT_URL => $cal->{CURRENT_URL},
-        FILTER_DESCRIPTION => $cal->{FILTER_DESCRIPTION},
-        CPARAMS => $cal->{CPARAMS}
-    );      
-    $template->param(
-        CALENDAR => \%calendar,
-    );
-};
 
+=head TODO: Обновление календаря AJAX-ом не работает.
 sub getCalendarAjax {
     my $app = shift;
     my $template = $app->gettemplate("admin-side/common/calendar.tmpl");
     $app->_printCalendar($template);
     my $calendar_output = $template->output();
+    use NHtml;
     $calendar_output = escape_js $calendar_output;
     return qq(<script type="text/javascript">document.getElementById('calendar_div').innerHTML = '$calendar_output';</script>);
 };
+=cut
 
 sub getAdminId {
     my $self = shift;
@@ -102,12 +64,6 @@ sub _getAdmin {
     my $self = shift;
     return $self->{_authObj}->{_admin};
 };
-
-sub getCurrentUser {
-    my $self = shift;
-    return $self->{_authObj}->{_admin}->{fio};
-};
-
 
 # Методы трансляции проверок привилегий в соответствующий модуль
 
@@ -380,11 +336,6 @@ sub _getModulesTreeHTML {
     };
     return $@ if ($@);
 	my $template = $app->gettemplate('admin-side/common/content_tree.tmpl') || return $app->getError();
-	
-	
-	if ($app->{_calendar}) {
-	   $app->_printCalendar($template);
-	};
 	
 	$tree->printToDivTemplate($template,'ADMINMENU',$qId);
 	return $template->output();
@@ -690,12 +641,14 @@ sub _run {
 	}
     elsif ($status->is_output()) {
         if ($is_ajax) {
+=head TODO: Обновление календаря AJAX-ом не работает.  <SCRIPT> не исполняется
             # Обновление календаря
             if ($cms->{_calendar}) {
                 $rightBlock = $status->getOutput();
                 $rightBlock .= $cms->getCalendarAjax();
                 return $cms->output($rightBlock);
             };
+=cut
             #TODO: нужен код который будет перерисовывать вкладки (Табы)
             return $status; #Данные заберутся из $cms
         }
@@ -738,23 +691,41 @@ sub _run {
         SUBSITE_ID => $subsiteId,
     });
     
+    $cms->pushRegion({CONTENT=>$leftBlock,REGION=>"LEFT"});
+    $cms->pushRegion({CONTENT=>$rightBlock,REGION=>"RIGHT"});
+    
     my $template = $cms->gettemplate('admin-side/common/universaladm.tmpl') || return $cms->showError();
+    
+    my $rContent = {};
+    foreach my $r (keys %{$cms->{_regions}}) {
+        my $c = "";
+        foreach my $d (sort { $a->{WEIGHT} <=> $b->{WEIGHT}; } @{$cms->{_regions}->{$r}}) {
+            $c.= $d->{CONTENT};
+        };
+        $rContent->{$r} = $c;
+    };
+    
     my $customHead = "";
     $customHead = "admin-side/customhead.tmpl" if $cms->confParam('CMS.hasCustomHead',0);
     $template->param(
+        REGION => $rContent,
         AS => {
-            LEFT_BLOCK     => $leftBlock,
-            RIGHT_BLOCK    => $rightBlock,
             RIGHT_SELECTOR => $cms->{_rightSelector},
-            PAGE_ID        => $pageId,
-            #MODULE_ID      => $mId,
             TITLE          => $cms->confParam('CMS.SiteName','Cайт')." :: Администрирование",
-            CURRENT_USER   => $cms->getCurrentUser(),
             PAGEURLS       => \@pageurls,
             CUSTOMHEAD     => $customHead,
         },
     );
     return $cms->output($template,-nocache=>1);
+};
+
+sub pushRegion {  #REGION WEIGHT CONTENT
+    my $self = shift;
+    my $h = shift;
+    my $r = delete $h->{REGION};
+    $h->{WEIGHT}||=0;
+    $self->{_regions}->{$r}||=[];
+    push @{$self->{_regions}->{$r}}, $h;
 };
 
 sub setTabs {

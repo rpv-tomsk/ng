@@ -78,8 +78,27 @@ sub Authenticate {
         return $self->AuthenticateByLogin($is_ajax);
     };
     #Check if user authenticated
-    return $self->showLoginForm($is_ajax) if ($self->{_auth_status} != C_AUTH_OK); 
+    return $self->showLoginForm($is_ajax) if ($self->{_auth_status} != C_AUTH_OK);
+    $self->doObvyazka() unless $is_ajax;
     return NG::Application::M_CONTINUE;
+};
+
+
+sub doObvyazka {
+    my $self = shift;
+    
+    my $c = '<div id="history_left">';
+    $c.= '<strong>Администратор:</strong><a href="/admin-side/auth/editadmin/" onclick="win = window.open(this.href,"","width=500,height=200,top=100,left=100");return false;" target="_blank">';
+    $c.= $self->{_admin}->{fio};
+    $c.= '</a></div>';
+    
+    $self->cms->pushRegion({CONTENT=>$c,REGION=>"HEAD1",WEIGHT=>-100});
+
+    $c = '<div style="float:left;">';
+    $c.= '<a href="/admin-side/auth/logout/" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage("Image3","","/admin-side/img/img_top2_act.gif",1);">';
+    $c.= '<img  src="/admin-side/img/img_top2_inact.gif" name="Image3" alt="" width="74" height="43" border="0"></a>';
+    $c.= '</div>';
+    $self->cms->pushRegion({CONTENT=>$c,REGION=>"HEAD1",WEIGHT=>100});
 };
 
 sub showLoginForm {
