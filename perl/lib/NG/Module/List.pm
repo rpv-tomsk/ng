@@ -28,6 +28,7 @@ sub new {
     bless $self, $class;
     $self->init(@_);
     $self->config();
+    return $self->cms->error() if $self->cms->getError();
     $self->registerModuleActions();
     return $self; 
 };
@@ -786,11 +787,13 @@ sub processForm {
         };
     }
     elsif($self->{_options}->{INSERT_REDIRECTMODE} eq "url") {
-        $ref = $self->{_options}->{INSERT_REDIRECTURL};
-        while ($ref =~ /\{([^\}]+)\}/) {
-            my $value = $form->getParam($1);
-            $ref =~ s/(\{[^\}]+\})/$value/;
-        };
+        $ref = $self->{_options}->{INSERT_REDIRECTURLMASK};
+        
+        my $baseurl = $self->getBaseURL(); 
+        my $data = $form->getFormData();
+        
+        $ref =~ s@{baseurl}@$baseurl@;
+        $ref =~ s/\{(.+?)\}/$data->{$1}/gi;
     }
     else {
         $ref = uri_unescape($q->param('ref'));
