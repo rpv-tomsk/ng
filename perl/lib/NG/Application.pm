@@ -777,7 +777,7 @@ sub _session {
 	);
 	
 	unless ($session) {
-		$self->setError($NG::Session::errstr());
+		$self->setError($NG::Session::errstr);
 		return undef;
 	};
 	return $session;
