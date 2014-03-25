@@ -20,6 +20,8 @@ sub init {
         "pages/"   => {ROUTE=>"pages",   MENU=>"menu"},
         "modules/" => {ROUTE=>"modules", MENU=>"menu"},
     };
+    my $opts = shift;
+    $self->{topURL} = $opts->{BASEURL};
     $self->{_menuNodeId} = undef;
     $self;
 };
@@ -79,13 +81,19 @@ sub Route {
     my $q = $cms->q();
     my $url = $q->url(-absolute=>1);
     
-    my $baseUrl = "/admin-side/";
+    my $baseUrl = $self->{topURL};
     my $subUrl = "";
     if ($url =~ /$baseUrl([^\/\s]+)\//i) {
         $subUrl = $1."/";
     };
     
     my $map = $self->{map}->{$subUrl};
+    if ($map) {
+        $baseUrl = $baseUrl.$subUrl;
+    }
+    else {
+        $map = $self->{map}->{'__default__'} unless $map;
+    }
     return $cms->error("Некорректная ссылка. Исправьте модуль.") unless $map;
     my $r = $map->{ROUTE};
     return $cms->error("Некорректная карта в объекте ROUTER.  Отсутствует ROUTE. Исправьте модуль.") unless $r;
@@ -95,7 +103,6 @@ sub Route {
     return $cms->error("Некорректная карта в объекте ROUTER. Отсутствует MENU. Исправьте модуль.") unless $m;
     return $cms->error("ROUTER не содержит метода $r (MENU)") unless $self->can($m);
     
-    $baseUrl = $baseUrl.$subUrl;
     
     my ($ret,$route) = $self->$r($baseUrl);
     return $ret if $ret != NG::Application::M_CONTINUE;
@@ -114,7 +121,7 @@ sub pages {
     my $url = $q->url(-absolute=>1);
     my $subUrl = ($url=~ /^$baseUrl([^\/\s]+)\//) ? $1."/" : "";
     
-    return $cms->redirect("/admin-side/") unless ($subUrl);
+    return $cms->redirect($self->{topURL}) unless ($subUrl);
     
     my $row = undef;
     
@@ -144,7 +151,7 @@ sub modules {
     my $q = $cms->q();
     my $url = $q->url(-absolute=>1);
     my $subUrl = ($url=~ /^$baseUrl([^\s]+)\//) ? $1."/" : "";
-    return $cms->redirect("/admin-side/") unless ($subUrl);
+    return $cms->redirect($self->{topURL}) unless ($subUrl);
     
     my $row = undef;
     if ($subUrl =~ /^(\d+)\//) {
@@ -217,14 +224,14 @@ sub menu {
                 if ($value->{node_id}) {
                     my $u = $value->{url};
                     $u ||= $value->{node_id};
-                    $value->{url} = "/admin-side/pages/$u/";
+                    $value->{url} = $self->{topURL}."pages/$u/";
                     $value->{_HASACCESS} = 1 if $cms->hasPageAccess($value->{node_id},$value->{subsite_id});
                     $value->{HASACCESS} = 0 if $value->{disabled};
                 }
                 elsif ($value->{module_id}) {
                     my $u = $value->{url};
                     $u ||= $value->{module_id};
-                    $value->{url} = "/admin-side/modules/$u/";
+                    $value->{url} = $self->{topURL}."modules/$u/";
                     $value->{_HASACCESS} = 1 if ($cms->hasModulePrivilege(MODULE_ID=>$value->{module_id},PRIVILEGE=>'ACCESS'));
                 }
                 else {

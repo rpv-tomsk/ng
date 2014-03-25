@@ -26,6 +26,9 @@ sub new {
 
 sub init {
     my $self = shift;
+    my $opts = shift;
+    $self->{_topURL} = $opts->{BASEURL};
+    $self->{_topURL} =~ s/\/$//;
     $self->{_auth_status} = undef;
     $self->{_admin} = undef;
     $self;
@@ -68,8 +71,9 @@ sub Authenticate {
         $self->{_auth_status} = C_AUTH_OK;
         last;
     };
+    my $baseUrl = $self->{_topURL};
     my $url = $q->url(-absolute=>1);
-    if ( $url =~ /^\/admin-side\/auth\/([^\/\s]*\/)?/ ) {
+    if ( $url =~ /^$baseUrl\/auth\/([^\/\s]*\/)?/ ) {
         my $subUrl = $1;
         #Обрабатываем это сами.
         return $self->showPopupLoginForm("Сессия устарела") if $q->param('showpopup');
@@ -87,16 +91,16 @@ sub Authenticate {
 
 sub doObvyazka {
     my $self = shift;
-    
+    my $baseUrl = $self->{_topURL};
     my $c = '<div id="history_left">';
-    $c.= '<strong>Администратор:</strong><a href="/admin-side/auth/editadmin/" onclick="win = window.open(this.href,\'\',\'width=500,height=220,top=100,left=100\');return false;" target="_blank">';
+    $c.= '<strong>Администратор:</strong><a href="'.$baseUrl.'/auth/editadmin/" onclick="win = window.open(this.href,\'\',\'width=500,height=220,top=100,left=100\');return false;" target="_blank">';
     $c.= $self->{_admin}->{fio};
     $c.= '</a></div>';
     
     $self->cms->pushRegion({CONTENT=>$c,REGION=>"HEAD1",WEIGHT=>-100});
 
     $c = '<div style="float:left;">';
-    $c.= '<a href="/admin-side/auth/logout/" onMouseOut="MM_swapImgRestore();" onMouseOver="MM_swapImage(\'Image3\',\'\',\'/admin-side/img/img_top2_act.gif\',1);">';
+    $c.= '<a href="'.$baseUrl.'/auth/logout/" onMouseOut="MM_swapImgRestore();" onMouseOver="MM_swapImage(\'Image3\',\'\',\'/admin-side/img/img_top2_act.gif\',1);">';
     $c.= '<img  src="/admin-side/img/img_top2_inact.gif" name="Image3" alt="" width="74" height="43" border="0"></a>';
     $c.= '</div>';
     $self->cms->pushRegion({CONTENT=>$c,REGION=>"HEAD1",WEIGHT=>100});
@@ -108,12 +112,13 @@ sub showLoginForm {
     
     my $cms = $self->cms();
     my $q = $self->q();
+    my $baseUrl = $self->{_topURL};
     
     if ($is_ajax) {
         return $cms->output(
             "<script>"
             ."var win = window.parent?window.parent:window;"
-            ."win.open('/admin-side/auth/?showpopup=1','','height=200,width=400,top=200,left=200');"
+            ."win.open('$baseUrl/auth/?showpopup=1','','height=200,width=400,top=200,left=200');"
             ."</script>"
         );
     };
@@ -163,6 +168,7 @@ sub AuthenticateByLogin {
     my $q = $self->q();
     my $dbh = $self->dbh();
     my $cms = $self->cms();
+    my $baseUrl = $self->{_topURL};
     
     while (1) {
         last unless $q->request_method() eq "POST";
@@ -183,7 +189,7 @@ sub AuthenticateByLogin {
         $admin->{sessionkey} = generate_session_id();
         $admin->{last_online} = time();
         $dbh->do("update ng_admins set sessionkey=?,last_online=?,last_ip=? where id=?",undef,$admin->{sessionkey},$admin->{last_online},$q->remote_host(),$admin->{id}) or die $DBI::errstr;
-        $cms->addCookie(-name=>COOKIENAME,-value=>$admin->{sessionkey},-domain=>$q->virtual_host(),-path=>'/admin-side/');
+        $cms->addCookie(-name=>COOKIENAME,-value=>$admin->{sessionkey},-domain=>$q->virtual_host(),-path=>$baseUrl.'/');
         $self->{_auth_status} = C_AUTH_OK;
         #$self->_makeLogEvent($self,{operation=>"Вход в систему",module_name=>"Система"});
         $self->{_admin} = $admin;
@@ -192,7 +198,7 @@ sub AuthenticateByLogin {
             return $cms->output("<script type='text/javascript'>window.close();</script>",-nocache=>1);
         }
         else {
-            my $url = $q->param('url')?$q->param('url'):"/admin-side/";
+            my $url = $q->param('url')?$q->param('url'):$baseUrl."/";
             return $cms->redirect($url); ## TODO: redirect to url from form
         };
         last;  #Not Reachable
@@ -206,6 +212,7 @@ sub Logout {
     my $dbh = $cms->dbh();
     my $q = $cms->q();
     my $cookievalue = $q->cookie(-name=>COOKIENAME) || "";
+    my $baseUrl = $self->{_topURL};
     
     if ($cookievalue) {
         my $sth = $dbh->prepare("update ng_admins set sessionkey='' where sessionkey=?") or die $DBI::errstr;
@@ -218,10 +225,10 @@ sub Logout {
         -value=>"",
         -domain=>$q->virtual_host(),
         -expires=>'-1d',
-        -path=>'/admin-side/',
+        -path=>$baseUrl.'/',
     );
     #$self->_makeLogEvent($self,{operation=>"Выход из системы",module_name=>"Система"});
-    return $cms->redirect("/admin-side/");
+    return $cms->redirect($baseUrl."/");
 }
 
 

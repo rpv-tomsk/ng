@@ -18,6 +18,10 @@ sub init {
     $self->{_siteMAccessObj} = undef;
     $self->{_authObj} = undef;
     
+    $self->{_defaultRouterClass} = "NG::Adminside::Router";
+    $self->{_defaultAuthClass} = "NG::Adminside::Auth";
+    $self->{_baseURL} = "/admin-side/";
+    
     $self->{_regions} = {};    # LEFT RIGHT  HEAD1 HEAD2 [HEAD3]
    
     $self;
@@ -256,20 +260,14 @@ sub run {
     my $url = $q->url(-absolute=>1);
     my $is_ajax  = $q->param('_ajax') || $q->url_param('_ajax') || 0;
     $cms->openConfig() || return $cms->showError();
-
-	my $baseUrl = "/admin-side/";
-	my $subUrl = "";
-    if ($url =~ /$baseUrl([^\/\s]+)\//i) {
-        $subUrl = $1."/";
-    };
-
+    
     my $ret ; 
     while (1)   {
         #Получаем объект авторизации.
-        my $class = $cms->confParam("Admin-side.SiteAuthClass","NG::Adminside::Auth");
+        my $class = $cms->confParam("Admin-side.SiteAuthClass",$cms->{_defaultAuthClass});
         $ret = $cms->error("Отсутствует параметр Admin-side.SiteAuthClass") unless $class;
         
-        $self->{_authObj} = $cms->getObject($class);
+        $self->{_authObj} = $cms->getObject($class,{BASEURL=>$cms->{_baseURL}});
         unless ($self->{_authObj}) {
             $ret = $cms->defError("SiteAuthClass:", "Ошибка создания объекта класса");
             last;
@@ -277,7 +275,7 @@ sub run {
         $ret = $self->{_authObj}->Authenticate($is_ajax);
         $ret ||= $cms->defError("Authenticate","Ошибка авторизации");
         last if $ret ne NG::Application::M_CONTINUE;
-        $ret = $cms->_run($subUrl,$is_ajax);
+        $ret = $cms->_run($is_ajax);
         last;
     };
     return $cms->processResponse($ret);
@@ -285,7 +283,6 @@ sub run {
 
 sub _run {
     my $cms = shift;
-    my $subUrl = shift;
     my $is_ajax = shift;
     
     {   #Загружаем модуль "Доступ к страницам"
@@ -308,10 +305,10 @@ sub _run {
     };
     
     #Получаем объект router.
-    my $class = $cms->confParam("Admin-side.RouterClass","NG::Adminside::Router");
+    my $class = $cms->confParam("Admin-side.RouterClass",$cms->{_defaultRouterClass});
     return $cms->error("Отсутствует параметр Admin-side.RouterClass") unless $class;
     
-    my $router = $cms->getObject($class) or return $cms->defError("RouterClass:", "Ошибка создания объекта класса");
+    my $router = $cms->getObject($class,{BASEURL=>$cms->{_baseURL}}) or return $cms->defError("RouterClass:", "Ошибка создания объекта класса");
     
     my ($ret,$route) = $router->Route($is_ajax);
     return $ret if $ret != NG::Application::M_CONTINUE;
