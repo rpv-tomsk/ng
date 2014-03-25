@@ -324,6 +324,7 @@ sub getTuringImage {
 
 ## GD::SecurityImage functions replacement
 
+#QueryFontMetrics.
 use constant XPPEM        => 0; # character width 
 use constant YPPEM        => 1; # character height
 use constant ASCENDER     => 2; # ascender
@@ -331,11 +332,15 @@ use constant DESCENDER    => 3; # descender
 use constant WIDTH        => 4; # text width
 use constant HEIGHT       => 5; # text height
 use constant MAXADVANCE   => 6; # maximum horizontal advance
+                                # * bounds.x1
+                                # * bounds.y1
+                                # * bounds.x2
+                                # * bounds.y2
+                                # * origin.x
+                                # * origin.y
 # object
 use constant ANGLE        => -2;
 use constant CHAR         => -1;
-
-
 
 sub insert_textX {
     # Draw text using Image::Magick
@@ -343,12 +348,12 @@ sub insert_textX {
     my $method = shift; # not needed with Image::Magick (always use ttf)
     my $key    = $self->{_RANDOM_NUMBER_}; # random string
     my $info   = sub {
-        $self->{image}->QueryFontMetrics(
-           font      => $self->{font},
-           text      => shift,
-           pointsize => $self->{ptsize},
-           rotate    => shift,
-        )
+        my %p = ();
+        $p{font} = $self->{font};
+        $p{text} = shift;
+        $p{pointsize} = $self->{ptsize};
+        $p{rotate} = shift;
+        $self->{image}->QueryFontMetrics(%p);
     };
     my %same   = (
        font      => $self->{font},
@@ -361,33 +366,34 @@ sub insert_textX {
        #fill      => $self->cconvert( $self->{_COLOR_}{text} ),
     );
 
-        my $space = [$info->(' ',0), 0, ' ']; # get " " parameters
-        my @randomy;
-        my $sy    = $space->[ASCENDER] || 1;
-        push(@randomy,  $_, - $_) foreach $sy/2, $sy/4, $sy/8;
-        my @char;
-        foreach ( split //, $key ) {
-			my $ra = $self->random_angle;
-           push @char, [$info->($_,$ra), $ra, $_];
-        }
-        my $total = 0;
-           $total += $_->[WIDTH] foreach @char;
-           
-        my $barw = ($self->{width}-$total)/(scalar(@char)+1);
-        $barw=0 if ($barw<0);
-        my $x = abs($char[0]->[WIDTH]);
-           
-        foreach my $magick (@char) {
-            $total -= $magick->[WIDTH] * 2;
-            $self->{image}->Annotate(
-               text   => $magick->[CHAR],
-               x      =>  $x, #($self->{width}  - $total - $magick->[WIDTH]   ) / 2,
-               y      => (($self->{height}          + $magick->[ASCENDER]) / 2) + $randomy[int rand @randomy],
-               rotate => $magick->[ANGLE],
-               %same,
-            );
-            $x += $magick->[WIDTH] + $barw;
-        }
+    my @char;
+    foreach ( split //, $key ) {
+        my $ra = $self->random_angle || 0;
+        push @char, [$info->($_,$ra), $ra, $_];
+    }
+    my $total = 0;
+       $total += abs($_->[WIDTH]) foreach @char;
+    
+    my $barw = ($self->{width}-$total)/(scalar(@char)+1);
+    $barw=0 if ($barw<0);
+        
+    my $x = $barw;
+    
+    my @randomy; #  Variants of shift by height, in fractions of free space
+    push(@randomy, $_, -$_) foreach 2,3,4,6,8;
+    
+    foreach my $magick (@char) {
+        $total -= $magick->[WIDTH] * 2;
+        my $rr = int rand @randomy;
+        $self->{image}->Annotate(
+           text   => $magick->[CHAR],
+           x      =>  $x, #($self->{width}  - $total - $magick->[WIDTH]   ) / 2,
+           y      => (($self->{height} + $magick->[ASCENDER]) / 2) + ($self->{height} - $magick->[ASCENDER])/$randomy[$rr] - 2,
+           rotate => $magick->[ANGLE],
+           %same,
+        );
+        $x += $magick->[WIDTH] + $barw;
+    };
     return;
 }
 
