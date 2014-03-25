@@ -46,6 +46,7 @@ PRINTLAYOUT = "templates/public/layout.tmpl"              #возвращенного модулем
 [Admin-side]
 SiteStructModule = "MODULECODE" ("")     # од модул€ работы со структурой сайта
 SiteAccessModule = "MODULECODE" ("")     # од модул€ проверки привилегий
+SiteAuthClass = NG::Adminside::Auth
 
 [NG::Field_types]
 type_class = "Site::Field::Type"

@@ -1,24 +1,10 @@
 package NG::Adminside;
 use strict;
 
-use Data::Dumper;
-
 use NG::Application;
-use NHtml;
-use NSecure;
-use NGService;
-use POSIX;
+
 use vars qw(@ISA);
 @ISA = qw(NG::Application);
-
-use constant C_AUTH_NOCOOKIE => 0;
-use constant C_AUTH_OK       => 1;
-use constant C_AUTH_EXPIRES  => 2;
-use constant C_AUTH_WRONGLOGIN=>4;
-use constant C_AUTH_WRONGIP  => 8;
-use constant C_SESSION_EXPIRES => 3600;
-use constant C_SESSION_UPDATE  => 60;
-use constant COOKIENAME => "ng_session";
 
 sub init {
     my $self = shift;
@@ -27,8 +13,6 @@ sub init {
     
     $self->{_calendar} = undef;
     
-    $self->{_admin} = undef;
-	$self->{_auth_status} = undef;
     $self->{_rightSelector} = [];
 	
     $self->{_linkBlocksPrivileges} = {};
@@ -36,6 +20,7 @@ sub init {
     $self->{_siteStructObj} = undef;
     $self->{_sitePAccessObj} = undef;
     $self->{_siteMAccessObj} = undef;
+    $self->{_authObj} = undef;
    
     $self;
 };
@@ -101,270 +86,28 @@ sub getCalendarAjax {
     return qq(<script type="text/javascript">document.getElementById('calendar_div').innerHTML = '$calendar_output';</script>);
 };
 
-#### Authorization code
-sub Authenticate {
-	my $self = shift;
-	my $q = $self->q();
-	my $dbh = $self->db()->dbh();
-	my $cookievalue = $q->cookie(-name=>COOKIENAME) || "";
-	
-	my $sth = undef;
-	my $admin = undef;
-	$self->{_auth_status} = C_AUTH_NOCOOKIE;
-	if ($cookievalue) {
-		$sth = $dbh->prepare("select id,login,fio,last_online,last_ip,sessionkey,level,group_id from ng_admins where sessionkey=?") or die $DBI::errstr;
-		$sth->execute($cookievalue) or die $DBI::errstr;
-		$admin = $sth->fetchrow_hashref();
-		$sth->finish();
-		if (!defined $admin) {
-			$self->{_auth_status} = C_AUTH_NOCOOKIE;
-			return 1;
-		};
-		if ($admin->{last_ip} ne $q->remote_host()) {
-			$self->{_auth_status} = C_AUTH_WRONGIP;
-			return 1;
-		}
-		my $time = time();
-		if ($time-$admin->{last_online} > C_SESSION_EXPIRES) {
-		    $self->{_auth_status} = C_AUTH_EXPIRES;
-		    return 1;
-		};
-		if ($time-$admin->{last_online} > C_SESSION_UPDATE) {
-		    $dbh->do("update ng_admins set last_online=? where id = ?",undef,$time,$admin->{id});
-		};
-		$self->{_admin} = $admin;
-        $self->{_auth_status} = C_AUTH_OK;
-		return 1;
-	};
-	return 1;
-};
-
-sub getAuthStatus{
-    my $self = shift;
-	die "Authenticate() call missing. Can`t continue." if (!defined $self->{_auth_status});
-    return $self->{_auth_status};
-};
-
-sub getAuthStatusText {
-	my $self = shift;
-	my $status = $self->getAuthStatus();
-	return "Вы авторизованы." if ($status == C_AUTH_OK);
-	return "Сессия устарела." if ($status == C_AUTH_EXPIRES);
-	return "" if ($status == C_AUTH_NOCOOKIE)||($status == C_AUTH_WRONGIP);
-	return "Имя пользователя или пароль неверны." if ($status == C_AUTH_WRONGLOGIN);
-};
-
-sub _getAdmin { # собственно возвращает информацию об админе, полученную из базы
-    my $self=shift;
-    return $self->{'_admin'};
-};
-
 sub getAdminId {
     my $self = shift;
-    die "getAdminId(): variable '_admin' not initialised" unless exists $self->{_admin};
-    return $self->{_admin}->{id};
+    die "getAdminId(): variable '_authObj' not initialised" unless exists $self->{_authObj};
+    return $self->{_authObj}->getAdminId();
 };
 
-sub AuthenticateByLogin {
+sub getAdminGId {
     my $self = shift;
-    my $q = $self->q();
-    my $dbh = $self->{_db}->dbh();
-    my $login    = $q->param('ng_login') || "";
-    my $password = $q->param('ng_password') || "";
-	my $is_ajax  = $q->param('is_ajax') || $q->url_param('is_ajax') || 0;
-    my $sth = undef;
-    my $admin = undef;
-	$self->{_auth_status} = C_AUTH_WRONGLOGIN;
-    if ($login && $password) {
-        $sth = $dbh->prepare("select id,login,fio,last_online,sessionkey from ng_admins where login=? and password=?") or die $DBI::errstr;
-        $sth->execute($login,$password) or die $DBI::errstr;
-        $admin = $sth->fetchrow_hashref();
-        $sth->finish();
-        if ($admin) {
-            $self->{_admin} = $admin;
-            if ($admin->{sessionkey}) {
-                $self->_makeLogEvent($self,{operation=>"Выход из системы",log_time=>strftime("%d.%m.%Y %T",localtime($admin->{last_online})),module_name=>"Система"});
-            };
-            $admin->{sessionkey} = generate_session_id();
-            $admin->{last_online} = time();
-            $dbh->do("update ng_admins set sessionkey=?,last_online=?,last_ip=? where id=?",undef,$admin->{sessionkey},$admin->{last_online},$q->remote_host(),$admin->{id}) or die $DBI::errstr;
-            $self->addCookie(-name=>COOKIENAME,-value=>$admin->{sessionkey},-domain=>$q->virtual_host(),-path=>'/admin-side/');
-            
-			$self->{_auth_status} = C_AUTH_OK;
-			$self->_makeLogEvent($self,{operation=>"Вход в систему",module_name=>"Система"});
-        };
-    };
-
-	if ($self->{_auth_status} == C_AUTH_OK) {
-		if ($is_ajax) {
-			return $self->output("<script type='text/javascript'>window.close();</script>",-nocache=>1);
-		}
-		else {
-		    my $url = $q->param('url')?$q->param('url'):"/admin-side/";
-		    return $self->redirect($url); ## TODO: redirect to url from form
-		};
-	};
-	my $message = $self->getAuthStatusText();
-	if ($is_ajax) {
-		return $self->showPopupLoginForm($message);
-	}
-	else {
-		return $self->showLoginForm($message,$q->param('url'));
-	};
-    return 0;
+    return $self->{_authObj}->{_admin}->{group_id};
 };
 
-sub Logout {
-	my $self = shift;
-	my $q = $self->q();
-	my $dbh = $self->{_db}->dbh();
-	my $cookievalue = $q->cookie(-name=>COOKIENAME) || "";
-	
-	if ($cookievalue) {
-		my $sth = $dbh->prepare("update ng_admins set sessionkey='' where sessionkey=?") or die $DBI::errstr;
-		$sth->execute($cookievalue) or die $DBI::errstr;
-		$sth->finish();
-	};
-
-	$self->addCookie(
-		-name=>COOKIENAME,
-		-value=>"",
-		-domain=>$q->virtual_host(),
-		-expires=>'-1d',
-		-path=>'/admin-side/',
-	);
-	$self->_makeLogEvent($self,{operation=>"Выход из системы",module_name=>"Система"});
-	return $self->redirect("/admin-side/");
-}
-
-sub editAdmin {
-	my $self = shift;
-	my $q = $self->q();
-	my $dbh = $self->db()->dbh();
-	
-	my $ref = $q->param("ref") || $q->url(-absolute=>1);
-	my $is_ajax = $q->param("_ajax");
-	
-	my $admin = $self->_getAdmin() or return $self->showError("Не авторизованы.");
-	
-    my $action = $q->url_param("action") || "";
-    my $form = $self->getObject("NG::Form",
-        FORM_URL  => $self->q()->url()."?action=editadmin",
-        KEY_FIELD => "id",
-        DB        => $self->db(),
-        TABLE     => "ng_admins",
-        DOCROOT   => $self->{_docroot},
-        CGIObject => $q,
-        REF       => $ref,
-    );
-
-	$form->setTitle('Данные администратора '.$admin->{fio}." (".$admin->{login}.")");
-
-    if ($admin->{level} == 0) {
-        $form->addfields([
-            {FIELD=>"id",NAME=>"id",TYPE=>"id",VALUE=>$admin->{id}},
-            {FIELD=>"fio",NAME=>"ФИО",TYPE=>"text",IS_NOTNULL=>1},
-        ]);
-    } else {
-        $form->addfields(
-            {FIELD=>"id",NAME=>"",TYPE=>"id",VALUE=>$admin->{id}},
-        );			
-    };
-		
-    if ($action eq "editadmin") {
-        $form->addfields([
-            {FIELD=>'password', TYPE=>'password',NAME=>'Пароль', },
-            {FIELD=>'password_repeat', TYPE=>'password',NAME=>'Подтвердите пароль', },
-        ]);
-        $form->setFormValues();
-        $form->StandartCheck();
-        
-        if (is_empty($form->getParam("password")) && is_empty($form->getParam("password_repeat"))) {
-            $form->deletefield("password");
-        }
-        else {
-            $form->pusherror("password","Введенные пароли не совпадают") if ($form->getParam("password") ne $form->getParam("password_repeat"));
-        }
-        
-        if (!$form->has_err_msgs()) {
-            $form->deletefield("password_repeat");
-            $form->updateData();
-            if ($is_ajax == 1) {
-                return $self->output("<script type='text/javascript'>parent.document.location='".$q->url()."?ok=1"."';</script>", -nocache=>1);
-            }
-            else {
-                return $self->redirect($q->url()."?ok=1");
-            };				
-        } else {
-            if ($is_ajax) {
-                return $self->output(
-                    "<script type='text/javascript'>parent.document.getElementById('updated').innerHTML='';</script>"
-                    .$form->ajax_showerrors(),
-                    -nocache=>1,
-                );
-            };
-        };
-    } else {
-        $form->loadData() or return $self->error($form->getError());
-        $form->addfields([
-            {FIELD=>'password', TYPE=>'password',NAME=>'Пароль',},
-            {FIELD=>'password_repeat', TYPE=>'password',NAME=>'Подтвердите пароль', },
-        ]);			
-    };
-
-    my $tmpl = $self->gettemplate("admin-side/common/universalform.tmpl");
-    $form->print($tmpl);
-    my $formhtml = $tmpl->output();
-    
-    $tmpl = $self->gettemplate("admin-side/admin/adminedit.tmpl");
-    my $updated = 0;
-    $updated = 1 if $q->param("ok") && $q->param("ok")==1;
-    $tmpl->param(
-        FORM=>$formhtml,
-        UPDATED=> $updated,
-    );
-    return $self->output($tmpl);
-};
-
-
-sub showLoginForm {
+sub _getAdmin {
+    #Используется в NG::Admins
     my $self = shift;
-    my $q = $self->q();
-    my $login = $q->param('ng_login') || "";
-    my $message = shift || "";
-	my $url = shift || "";
-    my $tmpl = $self->gettemplate("admin-side/common/loginform.tmpl") || return $self->showError();
-    $tmpl->param(
-		MESSAGE=>$message,
-		IS_AJAX=>0,
-		URL=>$url,
-		LOGIN=>$login,
-        TITLE=> $self->confParam('CMS.SiteName','Сайт')." :: Авторизация",
-	);
-    return $self->output($tmpl,-nocache=>1);
+    return $self->{_authObj}->{_admin};
 };
 
-sub showPopupLoginForm {
+sub getCurrentUser {
     my $self = shift;
-    my $message = shift || "";
-    
-    my $q = $self->q();
-    my $login = $q->param('ng_login') || "";
-    
-    my $tmpl = $self->gettemplate("admin-side/common/popuploginform.tmpl") || return $self->showError();
-    $tmpl->param(
-		MESSAGE=>$message,
-		IS_AJAX=>1,
-		LOGIN=>$login,
-        TITLE=> $self->confParam('CMS.SiteName','Сайт')." :: Авторизация",
-	);
-    return $self->output($tmpl,-nocache=>1);
+    return $self->{_authObj}->{_admin}->{fio};
 };
 
-#### /Authorization code 
-#
-# Код проверки привилегий
-#
 
 # Методы трансляции проверок привилегий в соответствующий модуль
 
@@ -375,7 +118,7 @@ sub hasPageModulePrivilege { #PAGE_ID MODULE_ID PRIVILEGE SUBSITE_ID
    
     my %att = (@_); 
     $att{ADMIN_ID} = $cms->getAdminId();
-    $att{GROUP_ID} = $cms->{_admin}->{group_id};
+    $att{GROUP_ID} = $cms->getAdminGId();
     return $cms->{_sitePAccessObj}->hasPageModulePrivilege(%att);
 };
 
@@ -386,7 +129,7 @@ sub hasLinkModulePrivilege { #LINK_ID MODULE_ID PRIVILEGE SUBSITE_ID
    
     my %att = (@_); 
     $att{ADMIN_ID} = $cms->getAdminId();
-    $att{GROUP_ID} = $cms->{_admin}->{group_id};
+    $att{GROUP_ID} = $cms->getAdminGId();
     return $cms->{_sitePAccessObj}->hasLinkModulePrivilege(%att);
 };
 
@@ -397,7 +140,7 @@ sub hasModulePrivilege { #MODULE_ID PRIVILEGE
     
     my %att = (@_);
     $att{ADMIN_ID} = $cms->getAdminId();
-    $att{GROUP_ID} = $cms->{_admin}->{group_id};
+    $att{GROUP_ID} = $cms->getAdminGId();
     return $cms->{_siteMAccessObj}->hasModulePrivilege(%att);
 };
 
@@ -539,7 +282,7 @@ sub _getModulesTreeHTML {
     my $qId = $param->{NODE_ID};
     
     my $adminId   = $app->getAdminId();
-    my $groupId   = $app->{_admin}->{group_id};
+    my $groupId   = $app->getAdminGId();
     
     
     $app->{_sitePAccessObj}->loadAdminPrivileges(ADMIN_ID=>$adminId, GROUP_ID=>$groupId) if ($app->{_sitePAccessObj});
@@ -716,7 +459,8 @@ sub _getRowByModuleURL {
 };
 
 sub run {
-	my $cms = shift;
+	my $self = shift;
+    my $cms = $self;
 	my $q = $cms->q();
     my $url = $q->url(-absolute=>1);
     my $is_ajax  = $q->param('_ajax') || $q->url_param('_ajax') || 0;
@@ -727,58 +471,23 @@ sub run {
     if ($url =~ /$baseUrl([^\/\s]+)\//i) {
         $subUrl = $1."/";
     };
-    
-    
-    # Перенесено сюда ибо отлагиниваться можно только если ты авторизованый пользователь иначе можно разлогинить любого администратора
-    # Косяк хоть и не страшен
-    # И вторая причина ибо мне нужен админ в обработки события выхода из админки	
-    
-    $cms->Authenticate() or return $cms->showError();
-    
-    my $ret = undef;
-    
-	if ($subUrl eq "loginform/") {
-        $ret = $cms->showPopupLoginForm("Сессия устарела");
-	}
-    elsif ($subUrl eq "login/") {
-        $ret = $cms->AuthenticateByLogin();
-	}
-    elsif ($subUrl eq "logout/") {
-        $ret = $cms->Logout();
-=head
-    }
-    elsif ($url eq $baseUrl."actions/switchsubsite/") {
-        $ret = $cms->switchSubsite();
-=cut
-    };
-    return $cms->processResponse($ret) if defined $ret;
-    
 
-    #Check if user authenticated
-    my $status = $cms->getAuthStatus();
-    if ($status != C_AUTH_OK) {
-        if ($is_ajax) {
-            my $v = qq (
-                <script>
-                var win = window.parent?window.parent:window;
-                win.open('/admin-side/loginform/?is_ajax=1','','height=200,width=400,top=200,left=200');
-                </script>
-            );
-            $ret = $cms->output($v);
-        }
-        else {
-            my $message = $cms->getAuthStatusText();
-            #TODO: выверить эскейпинг 
-            $ret = $cms->showLoginForm($message,$q->url(-full=>1, -query=>1 ));
+    my $ret ; 
+    while (1)   {
+        #Получаем объект авторизации.
+        my $class = $cms->confParam("Admin-side.SiteAuthClass","NG::Adminside::Auth");
+        $ret = $cms->error("Отсутствует параметр Admin-side.SiteAuthClass") unless $class;
+        
+        $self->{_authObj} = $cms->getObject($class);
+        unless ($self->{_authObj}) {
+            $ret = $cms->defError("SiteAuthClass:", "Ошибка создания объекта класса");
+            last;
         };
-        return $cms->processResponse($ret);
-    };
-
-	if ($subUrl eq "editadmin/") {
-    	$ret = $cms->editAdmin();
-    }
-    else {
+        $ret = $self->{_authObj}->Authenticate($is_ajax);
+        $ret ||= $cms->defError("Authenticate","Ошибка авторизации");
+        last if $ret ne NG::Application::M_CONTINUE;
         $ret = $cms->_run($subUrl,$is_ajax);
+        last;
     };
     return $cms->processResponse($ret);
 };
@@ -1040,7 +749,7 @@ sub _run {
             PAGE_ID        => $pageId,
             #MODULE_ID      => $mId,
             TITLE          => $cms->confParam('CMS.SiteName','Cайт')." :: Администрирование",
-            CURRENT_USER   => $cms->{_admin}->{fio},
+            CURRENT_USER   => $cms->getCurrentUser(),
             PAGEURLS       => \@pageurls,
             CUSTOMHEAD     => $customHead,
         },
