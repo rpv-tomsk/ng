@@ -322,6 +322,7 @@ sub findPageRowByURL {
     
 	#Загружаем свойства страницы
     my $fields = $cms->getPageFields();
+    return $cms->error() if $fields eq "0"; ##cms->error
     my $sql = "select $fields from ng_sitestruct where url = ? and disabled=0";
     my @params;
     push @params,$url;
@@ -430,6 +431,7 @@ sub getPageRowById {
 	my $pageId = shift || return $cms->error("getPageRowById(): Отсутствует параметр pageId");
 
 	my $pageFields = $cms->getPageFields();
+    return $cms->error() if $pageFields eq "0"; ##cms->error
 	
     my $dbh = $cms->db()->dbh();
     
@@ -508,7 +510,7 @@ sub getPageActiveBlock {
     my $ab = $pageObj->getActiveBlock();    # BLOCK + LAYOUT + PRIO + DISABLE_NEIGHBOURS + DISABLE_BLOCKPARAMS
 #NG::Profiler::saveTimestamp("getP_AB-getAB","buildPage");
     
-    return $cms->notFound unless defined $ab; #TODO: выводить 404 через запрос блока или лайоута в конфиге
+    return $cms->notFound unless defined $ab;
     return $cms->defError("getActiveBlock()","неизвестная ошибка") if $ab eq 0;
     return $ab if ref $ab && UNIVERSAL::isa($ab,'NG::BlockContent');
     return $cms->error("getActiveBlock() модуля ".(ref $pageObj)." вернул некорректное значение (не HASHREF)") unless ref $ab eq "HASH";
@@ -775,7 +777,7 @@ sub _session {
 	);
 	
 	unless ($session) {
-		$self->setError(NG::Session::errstr());
+		$self->setError($NG::Session::errstr());
 		return undef;
 	};
 	return $session;

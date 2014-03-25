@@ -394,7 +394,7 @@ sub _run {
                 last;
             };
             unless ($tabs && ref $tabs eq "ARRAY") {
-                $status = $cms->error("Модуль ".ref($mObj)." вернул некорректное значение в getModuleTabs()") ;
+                $status = $cms->error((ref $mObj)."::getModuleTabs(): не вернул списка вкладок") ;
                 last;
             };
             push @urls, {URL=> "/admin-side/modules/".$cms->{_siteMAccessObj}->moduleParam('id')."/$mId/", NAME=>"Права"}   if $cms->{_siteMAccessObj} && $cms->hasModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_siteMAccessObj}->moduleParam('id'));

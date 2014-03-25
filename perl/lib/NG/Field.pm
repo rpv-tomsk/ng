@@ -1225,7 +1225,7 @@ sub getJSSetValue {
     my $fd = $field->{FIELD};
     my $value = escape_js $field->{VALUE};
     my $key_value = $field->parent()->getComposedKeyValue();
-    $value ||= "";
+    $value = "" unless defined $value;
     return "parent.document.getElementById('$fd$key_value').value='$value';\n";
 };
 

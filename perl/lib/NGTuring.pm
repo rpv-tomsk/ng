@@ -113,6 +113,7 @@ sub init {
 	else {
 		eval "use GD::SecurityImage use_magick => 1";
 	};
+    return $self->cms()->error($@) if $@;
     return $self;
 };
 

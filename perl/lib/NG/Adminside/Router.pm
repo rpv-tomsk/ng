@@ -14,11 +14,11 @@ sub new {
 
 sub init {
     my $self = shift;
-    
+    #__default__
     $self->{map} = {
-        ""         => {ROUTE=>"default", MENU=>"menu"},
-        "pages/"   => {ROUTE=>"pages",   MENU=>"menu"},
-        "modules/" => {ROUTE=>"modules", MENU=>"menu"},
+        '' => {ROUTE=>"default", MENU=>"menu"},
+        'pages/'      => {ROUTE=>"pages",   MENU=>"menu"},
+        'modules/'    => {ROUTE=>"modules", MENU=>"menu"},
     };
     my $opts = shift;
     $self->{topURL} = $opts->{BASEURL};
@@ -93,8 +93,8 @@ sub Route {
         $baseUrl = $baseUrl.$subUrl;
     }
     else {
-        $map = $self->{map}->{'__default__'} unless $map;
-    }
+        $map = $self->{map}->{'__default__'};
+    };
     return $cms->error("Некорректная ссылка. Исправьте модуль.") unless $map;
     my $r = $map->{ROUTE};
     return $cms->error("Некорректная карта в объекте ROUTER.  Отсутствует ROUTE. Исправьте модуль.") unless $r;

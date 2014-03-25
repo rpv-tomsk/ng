@@ -42,7 +42,7 @@ sub registerPlugin {
         };
     }
     else {
-        %CACHE = ();
+        %CACHE = (); #Need to do full clean due to existence of cached values for $instance.
         $class = $object;
     };
     
