@@ -516,6 +516,10 @@ sub adminModule {
 	return shift->_adminModule("module",@_);
 };
 
+sub adminPageModule {
+	return shift->_adminModule("pagemodule",@_);
+};
+
 sub getBlockContent {
     my $self = shift;
     my $action = shift;

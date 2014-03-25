@@ -95,7 +95,7 @@ sub showPage {
     $layout = $cms->confParam("CMS.".$layoutConf,undef) if !defined $layout;
 
 	return $cms->buildPage($pageObj,$layout);
-}
+};
 
 =comment isActive
 sub isActive {
@@ -155,21 +155,40 @@ sub getPageTabs {
 	
 	my $baseUrl = $self->getAdminBaseURL();
 	if ($self->_isBaseClass()) {
+        #Страница сделана на основе шаблона.
         my $blocks = $self->_getTemplateBlocks() or return $cms->error();
         
-		#my $subUrl = $self->getAdminSubURL();
-		#if ($subUrl eq "" && scalar @{$self->{_editableBlocks}}) {
-		#	(@{$self->{_editableBlocks}}[0])->{SELECTED} = 1;
-		#};
 		my @tabs = ();
         my $blockId = $self->_getBlockId();
         my $foundEBlock = 0;
+        
+        $self->{_selectedModule} = undef;
+        
+        my $getObj = sub {
+            my $block = shift;
+            
+            my $mRow = {};
+            $mRow->{id}     = $block->{module_id};
+            $mRow->{code}   = $block->{module_code};
+            $mRow->{module} = $block->{module};
+            $mRow->{base}   = $block->{module_base};
+            $mRow->{params} = $block->{module_params};
+            $mRow->{name}   = $block->{module_name};
+            
+            return $cms->getObject($block->{module}, {
+                ADMINBASEURL => $baseUrl."block".$block->{block_id}."/",
+                PAGEPARAMS   => $self->getPageRow(),
+                MODULEROW    => $mRow,
+            });
+        };
+        
 		foreach my $eblock (@{$blocks}) {
             next unless $eblock->{editable};
             $foundEBlock = 1;
             
             next unless $cms->hasPageModulePrivilege(MODULE_ID=>$eblock->{module_id}, PRIVILEGE=>"ACCESS",PAGE_ID=>$self->pageParam('id'),SUBSITE_ID=>$self->pageParam('subsite_id'));
             
+            #Локально созданный таб
 			my $tab = {
 				HEADER   => $eblock->{name},
                 URL       => $baseUrl."block".$eblock->{block_id}."/",
@@ -177,49 +196,52 @@ sub getPageTabs {
 				#SELECTED => $eblock->{SELECTED},
 				#NOT_INITIALISED => $eblock->{NOT_INITIALISED},
 			};
-            
+            #Проверяем активность таба, выбираем активный блок
             $blockId ||= $eblock->{block_id};
-            ##
             if ($blockId eq $eblock->{block_id}) {
                 $tab->{SELECTED} = 1;
                 return $cms->error("NG::PageModule: Обнаружена ошибка - два активных модуля") if $self->{_selectedModule};
-                $self->{_selectedModule} = $eblock;
             };
-			push @tabs, $tab;
+            
+            my $mObj = undef;
+            #Формируем объект, если нужны его табы или это его таб
+            if ($eblock->{editable} == 2 || $tab->{SELECTED}) {
+                $mObj = &$getObj($eblock) or return $cms->error();
+                
+                $self->{_selectedModule} = $mObj if $tab->{SELECTED};
+                
+                my $mTabs = $mObj->getModuleTabs();
+                if (defined $mTabs) {
+                    returm $mTabs if $mTabs eq "0"; #cms error
+                    return $cms->error((ref $mObj)."::getModuleTabs(): не вернул списка вкладок") unless ($mTabs && ref $mTabs eq "ARRAY");
+                    foreach (@$mTabs) {
+                        $_->{SELECTED} = 0 unless $tab->{SELECTED}; #гасим вложенные табы
+                        push @tabs, $_;
+                    };
+                    $tab = undef; #Больше не нужен
+                };
+            };
+			push @tabs, $tab if $tab;
 		};
         
         unless ($self->{_selectedModule}) {
             while(1) {
                 my $code = $cms->confParam("CMS.SiteStructModule","") or last;
-                my $mRow = $cms->getModuleRow("code=?",$code) or return $cms->defError("getModuleByCode():","Запрошенный модуль $code не найден");
                 last unless $cms->hasPageStructAccess($self->pageParam('id'),$self->pageParam('subsite_id'));
-                my $b = $self->{_selectedModule} = {};
-                $b->{mrow} = $mRow;
-                $b->{module} = $mRow->{module};
-                $b->{url} = $baseUrl;
+                
+                $self->{_selectedModule} = $cms->getModuleByCode($code, {
+                    ADMINBASEURL => $baseUrl,
+                    PAGEPARAMS   => $self->getPageRow(),
+                }) or return $cms->error();
                 return [{HEADER=>"Структура",URL=>"/",SELECTED=>1}];
             };
             return $cms->error("Отсутствуют привилегии редактирования элементов страницы") if $foundEBlock;
             return $cms->error("Редактируемые блоки отсутствуют");
         };
-        
-        my $mRow = {};
-        $mRow->{id}     = $self->{_selectedModule}->{module_id};
-        $mRow->{code}   = $self->{_selectedModule}->{module_code};
-        $mRow->{module} = $self->{_selectedModule}->{module};
-        $mRow->{base}   = $self->{_selectedModule}->{module_base};
-        $mRow->{params} = $self->{_selectedModule}->{module_params};
-        $mRow->{name}   = $self->{_selectedModule}->{module_name};
-        $self->{_selectedModule}->{mrow} = $mRow;
-        
-        #unless ($self->{_selectedModule}) { #TODO: легкий костыль.
-        #    $self->{_selectedModule}= @{$blocks}[0];
-        #    $tabs[0]->{SELECTED} = 1 if scalar @tabs;
-        #};
-        $self->{_selectedModule}->{url} = $baseUrl."block".$self->{_selectedModule}->{block_id}."/";
 		return \@tabs;
 	}
 	else {
+        #Страница сделана на основе модуля. Забираем вкладки из него.
         return $self->getModuleTabs();
 	}
 };
@@ -273,21 +295,10 @@ sub adminPage {
 
 	if ($self->_isBaseClass()) {
         return $cms->error("Предполагалось, что вызов adminPage будет после вызова getPageTabs") unless $self->{_selectedModule};
-        my $block = $self->{_selectedModule};
-        #return $self->runBlock($self->{_selectedModule}->{module},$is_ajax, {BASEURL=>$self->getBaseURL()});
-#warn "getObject for block ".$block->{module}.", ADMINBASEURL=".$block->{url};
-        my $blockObj = $cms->getObject($block->{module},{
-            ADMINBASEURL => $block->{url},
-			PAGEPARAMS   => $self->getPageRow(),
-			MODULEROW    => $block->{mrow},
-            #BLOCKID      => $self->{_selectedModule}->{block_id},
-        }) or return $cms->error();
-    
-        #Тут когда-то был метод adminBlock
-        return $cms->error("Модуль ".$self->{_selectedModule}->{module}." не содержит метода adminModule") unless $blockObj->can("adminModule");
-        return $blockObj->_adminModule("pagemodule",$is_ajax);
+        return $cms->error("Модуль ".(ref $self->{_selectedModule})." не содержит метода adminPageModule") unless $self->{_selectedModule}->can("adminPageModule");
+        return $self->{_selectedModule}->adminPageModule($is_ajax);
 	};
-    return $self->_adminModule("pagemodule",$is_ajax);
+    return $self->adminPageModule($is_ajax);
 };
 
 ##
