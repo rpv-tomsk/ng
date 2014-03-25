@@ -1,0 +1,135 @@
+
+
+$dsForums = new Site::Forum::Forums;
+    #forums : id,name, last_theme_id, themes_cnt
+
+$dsThemes   = new Site::Forum::Themes;
+    #forum_themes : id,forum_id,name,create_date,update_date,read_count,user_id,user_name,messages_cnt,is_close,last_message_id
+
+$dsMessages = new Site::Forum::Messages;
+    # таблица : поля
+
+
+$dsForums->has_many($dsThemes);               # Устанавливает связь подчинения. Суть связи описывается в подчиненном ДС.
+$dsThemes->has_many(Site::Forum::Messages);   # Так тоже можно. Наверное.
+
+$dsThemes->has_parent(
+    $dsForums,
+    [
+    
+    # БАЗОВАЯ СВЯЗЬ 
+
+    {references=>{forum_id=>"id" [, "REFERENCES_FIELD" => "PARENT_FIELD" ]  }, ... что-то еще, типа OPTION => VALUE  },
+                                          # Тип связи: внешний ключ, код связи: references, значение - хэш связанных полей
+                                          # Используется при вставке строк в подчиненный ДС (проверка наличия родителя, опционально отключаемо)
+                                          # При обновлении/удалении строк в ДС-родителе (удаление каскадом/блокировка удаления !!! Нужны опции)
+                                          
+    # СЧЕТЧИКИ
+
+    {count=>"themes_cnt", ... что-то еще, типа OPTION => VALUE  },
+                                          # Тип связи: вспомогательная, обновление счетчика подчиненных записей в родителе.
+                                          # код связи: count, значение - имя поля, в котором будет производиться +1 / -1 при
+                                          # вставке/обновлении/удалении подчиненных записей.
+                                          # Данная связь требует наличия связи типа references с родительским ДС
+                                          
+    # "ПОСЛЕДНЯЯ ОБНОВЛЕННАЯ СТРОКА"
+    
+    {last_created=>{id=>"last_theme_id" [, KEY_FIELD => PAREND_FIELD ] }, ... что-то еще, типа OPTION => VALUE  },
+                                          # Тип связи: вспомогательная, обновление значения в поле ссылки ДС-родителя на
+                                          # последнюю СОЗДАННУЮ подчиненную запись в ДС.
+                                          # код связи: last_created, значение - хэш связанных полей (что чему присвоить).
+                                          # Данная связь требует наличия связи типа references с родительским ДС
+                                          
+    {last_updated=>{id=>"last_theme_id" [, KEY_FIELD => PAREND_FIELD ] }, ignore_update=> ['read_count'], ... что-то еще, типа OPTION => VALUE  },
+                                          # Тип связи: вспомогательная, обновление значения в поле ссылки ДС-родителя на
+                                          # последнюю ОБНОВЛЕННУЮ подчиненную запись в ДС.
+                                          # код связи: last_updated, значение - хэш связанных полей (что чему присвоить).
+                                          # Данная связь требует наличия связи типа references с родительским ДС
+                                          # Ключ ignore_update со значением ARRAYREF полей, обновление которых следует игнорировать.
+                                          # При обновлении нескольких полей ДС, одно из которых входит в ignore_update, связь тем не менее
+                                          # будет обновлена, поскольку не все поля ДС будут входиь в ignore_update
+                                          
+    # ШТАМПЫ ВРЕМЕНИ
+
+    {last_updated_ts=>'update_date' [, KEY_FIELD => PAREND_FIELD ] }, ignore_update=> ['read_count'], ... что-то еще, типа OPTION => VALUE  },
+                                          # Тип связи: вспомогательная, обновление значения /времени/ последнего ОБНОВЛЕНИЯ подчиненного ДС в ДС-родителе.
+                                          # код связи: last_updated_ts, значение - имя поля ДС-родителя, которое следует обновить.
+                                          # Данная связь требует наличия связи типа references с родительским ДС
+                                          # Ключ ignore_update со значением ARRAYREF полей, обновление которых следует игнорировать.
+                                          # При обновлении нескольких полей ДС, одно из которых входит в ignore_update, связь тем не менее
+                                          # будет обновлена, поскольку не все поля ДС будут входиь в ignore_update
+
+    {last_inserted_ts=>'update_date' [, KEY_FIELD => PAREND_FIELD ] },  ... что-то еще, типа OPTION => VALUE  },
+                                          # Тип связи: вспомогательная, обновление в ДС-родителе значения /времени/ последнего ДОБАВЛЕНИЯ строки в подчиненный ДС.
+                                          # код связи: last_inserted_ts, значение - имя поля ДС-родителя, которое следует обновить.
+                                          # Данная связь требует наличия связи типа references с родительским ДС
+
+    ]
+
+    .... ДРУГИЕ ТИПЫ СВЯЗИ. ПРЕДЛАГАЙТЕ.
+
+)
+
+
+
+
+
+
+
+==============
+  Справочник сокращений :-)
+
+# FIELDVALUEHASH = {FIELD=>VALUE, ....}  # Хэш "поле-значение"
+
+# WHEREHASH
+    {where=>{field=>value,field2=>value}}
+    {wheresql=>"a=? or b=?", whereparams=>['A','B']}
+
+#ORDERHASH  
+    {order=>[{field=>'asc'},{otherfield=>'desc'}]}
+    {order=>{field=>'asc'}}
+    
+    возможно достаточно будет задавать без "order=>" :
+    [{field=>'asc'},{otherfield=>'desc'}]
+    {field=>'asc'}
+
+#PAGEPARAMS
+    {page=>$PAGE,onpage=>10, onlist=>20 ??? , }
+
+
+# Получение данных
+#  - одна запись
+$row = $ds->selectRow($FIELDVALUEHASH_KEY) or return ....$cms->error($ds->error());
+
+???? $selectRow чтобы возвращал $rowObject ???
+
+#  - список записей
+$recordsObject = $ds->selectPage({page=>1, other_dblist_options => values :-) })
+
+$data = $recordsObject->data(); # Данные
+$size = $recordsObject->size(); # Число записей, подпадающих под WHERE
+; метод получения числа записей в выборке ???
+$pages= $recordsObject->pages(); # Листалка ??? !!! Как получить число страниц ???
+
+
+#Для формирования ссылки "назад".
+$pageNum  = $ds->findPage($KEYFIELDVALUEHASH, $PAGEOPTIONSHASH, $WHEREHASH ) #Что-то такое, надо обсудить! ???
+
+# "типовые операции"
+$ds->insert($FIELDVALUEHASH)
+
+$ds->update($FIELDVALUEHASH, $FIELDVALUEHASH_KEYS)  # Хэш значений + Хэш ключей
+$ds->update($FIELDVALUEHASH)                        # Если второго хэша не нашлось.
+                                                    # Типовой use-case, обновляем одну строку по Primary Key,
+                                                    # определяем ключевые поля по конфигу
+
+$ds->delete($FIELDVALUEHASH); # Надеемся, что ключи описаны верно  :-)
+
+# "нетиповые операции", пример:
+
+NG::Sitestruct::DS->new()->findPageRowByURL({url=>"/some/long/url/", subsite_id=>10}); #Поиск с учетом возможного наличия кэша и т п
+NG::Sitestruct::DS->new()->disablePage({id=>100});  #Ну оно будет умное и выключит всю ветку
+
+
+#### Источник вдохновения: http://search.cpan.org/~abraxxa/DBIx-Class-0.08127/lib/DBIx/Class.pm (поиск по словам insert/update в частности)
+
