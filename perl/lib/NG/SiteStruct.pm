@@ -306,7 +306,7 @@ sub showAddForm {
 	
 	$form->addfields([
 		{
-			NAME=>"Варианты добавления страниц",
+			NAME=>"Варианты новой страницы",
 			FIELD=>"variantId",
 			TYPE=>"select",
 			IS_NOTNULL=>1,
@@ -323,7 +323,7 @@ sub showAddForm {
 		},
 	]);
     delete $variant->{ID}; # Добавление поля типа select завершено.
-	
+    
 	$form->addfields({
 		NAME => "Флажок",
 		FIELD => "haslinkedpages",
@@ -348,6 +348,8 @@ sub showAddForm {
 		return $cms->output($tmpl);
 	};
 	
+    NGPlugins->invokeWhileTrue('NG::SiteStruct','afterVariant',$self,$pageObj,$form) or return $cms->error();
+    
 	# Показываем вторую часть формы
 	my $variantSelectField = $form->_getfieldhash('variantId');
 	$variantSelectField->{HIDE_CLOSE_BTN} = 1;
@@ -650,6 +652,8 @@ $canAddLinkedSubnode = 1;
 			VARIANT => $variant,
 			NODES   => \@newNodes,
 		});
+        
+        NGPlugins->invoke('NG::SiteStruct','afterAllNodesAdded',$self,{VARIANT=>$variant, NODES=>\@newNodes, FORM=>$form}) or return $cms->error();
 		
 		#TODO: делать перенаправление на страницу "текущего" подсайта
 		#my $newPage = $newSubpages->{$self->getSubsiteId()};
