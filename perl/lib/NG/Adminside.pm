@@ -341,12 +341,11 @@ sub _run {
             };
             $tabs = $pageObj->getPageTabs();
 			unless ($tabs) {
-                my $e = $cms->getError((ref $pageObj)."::getPageTabs(): не вернул списка вкладок");
-                $status = $cms->error($e);
+                $status = $cms->defError((ref $pageObj)."::getPageTabs():"," метод не вернул списка вкладок");
 				last;
 			};
 			if (ref $tabs ne "ARRAY") {
-				$status = $cms->error("¬ызов getPageTabs() модул€ ".(ref $pageObj)." вернул некорректное значение (не массив).");
+				$status = $cms->error((ref $pageObj)."::getPageTabs() вернул некорректное значение (не массив).");
 				last;
 			};
 			if ( scalar @$tabs == 0 ){
@@ -390,11 +389,11 @@ sub _run {
             };
             $tabs = $mObj->getModuleTabs();
             if ($tabs eq "0") {
-                $status = $cms->error();
+                $status = $cms->defError((ref $mObj)."::getModuleTabs():"," метод не вернул списка вкладок");
                 last;
             };
             unless ($tabs && ref $tabs eq "ARRAY") {
-                $status = $cms->error((ref $mObj)."::getModuleTabs(): не вернул списка вкладок") ;
+                $status = $cms->error((ref $mObj)."::getModuleTabs(): метод вернул некорректное значение (не массив)");
                 last;
             };
             push @urls, {URL=> "/admin-side/modules/".$cms->{_siteMAccessObj}->moduleParam('id')."/$mId/", NAME=>"ѕрава"}   if $cms->{_siteMAccessObj} && $cms->hasModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_siteMAccessObj}->moduleParam('id'));

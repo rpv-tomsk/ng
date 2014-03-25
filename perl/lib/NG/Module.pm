@@ -294,16 +294,14 @@ sub getModuleTabs {
     my $cms = $self->cms();
     
     my $mtabs = $self->moduleTabs();
+    return $cms->defError((ref $self)."->moduleTabs():") if defined $mtabs && $mtabs eq "0";
     unless ($mtabs && ref $mtabs eq "ARRAY") {
-        my $e = $cms->getError("Вызов метода moduleTabs() класса ".(ref $self)." не вернул массива значений");
+        my $e = $cms->getError("Вызов ".(ref $self)."->moduleTabs() не вернул массива значений");
         return $cms->error($e);
     };
     
     my $baseUrl = $self->getAdminBaseURL();
     my $suburl = $self->getAdminSubURL() || "/";
-    #if (ref $mtabs ne "ARRAY") {
-    #    return $cms->error("Основной модуль страницы-модуля не содержит вкладок. (HINT: блок можно делать readonly)");
-    #}
 
     my @tabs = ();
     my $pActiveTab = {url=>"",tab=>undef};
