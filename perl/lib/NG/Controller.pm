@@ -193,7 +193,12 @@ sub getField {
     my $self = shift;
     my $fName = shift;
     return undef unless $self->{_form};
-    return $self->{_form}->getField($fName);
+    my $f = $self->{_form}->getField($fName);
+    unless ($f) {
+        $self->error("Field '$fName' not found");
+        return undef;
+    }
+    return $f;
 };
 
 sub getCurrentField {
