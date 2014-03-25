@@ -994,17 +994,6 @@ sub _run {
             $rightBlock = $status->getOutput();
         };
 	}
-=comment
-    elsif ($status == NG::Module::M_FULLREDIRECT) {
-		my $redirectUrl = $pageObj->getRedirectUrl() || $url;
-		if ($is_ajax == 1) {
-			#TODO: $app->set_header_nocache();
-			return $app->output("<script type='text/javascript'>parent.document.location='".$redirectUrl."';</script>");
-		} else {
-			return $app->redirect($redirectUrl);
-		};
-	}
-=cut
     elsif ($status->is_redirect()) {
 		return $status unless $is_ajax;
         my $redirectUrl = $status->getRedirectUrl() || $url;

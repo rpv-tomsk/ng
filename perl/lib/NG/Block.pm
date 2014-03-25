@@ -396,7 +396,7 @@ sub fullredirect {
 
 	my $cms = $self->cms();	
 	if ($is_ajax == 1) {
-		return $cms->output("<script type='text/javascript'>parent.document.location='".$url."';</script>",-nocache=>1);
+		return $cms->exit("<script type='text/javascript'>parent.document.location='".$url."';</script>",-nocache=>1);
 	} else {
 		return $cms->redirect($url);
 	};
