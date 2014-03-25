@@ -18,10 +18,10 @@
 
 #Параметры блоков:  - Запрашиваются явно через $cms->confParam("BLOCK_$blockCode.$param")
 [BLOCK_%BLOCKCODE%]
-LAYOUT_%LANG% = "templates/public/layout.tmpl"            #Путь к шаблону layout
+LAYOUT_L%LANG% = "templates/public/layout.tmpl"           #Путь к шаблону layout
 LAYOUT_S%SUBSITEID% = "templates/public/layout.tmpl"      #параметры приведены
 LAYOUT = "templates/public/layout.tmpl"                   #в порядке приоритета
-PRINTLAYOUT_%LANG% = "templates/public/layout.tmpl"       #проверки. Перекрывают
+PRINTLAYOUT_L%LANG% = "templates/public/layout.tmpl"      #проверки. Перекрывают
 PRINTLAYOUT_S%SUBSITEID% = "templates/public/layout.tmpl" #значение, возвращаемое
 PRINTLAYOUT = "templates/public/layout.tmpl"              #модулем
 
@@ -35,10 +35,10 @@ hasLanguages = [0|1] (0)
 SiteName    = "Имя сайта" ("Сайт")
 DefaultPageClass = "Site::PageModule" ("NG::PageModule")
 
-LAYOUT_%LANG% = "templates/public/layout.tmpl"            #Путь к шаблону layout
+LAYOUT_L%LANG% = "templates/public/layout.tmpl"           #Путь к шаблону layout
 LAYOUT_S%SUBSITEID% = "templates/public/layout.tmpl"      #параметры приведены
 LAYOUT = "templates/public/layout.tmpl"                   #в порядке приоритета
-PRINTLAYOUT_%LANG% = "templates/public/layout.tmpl"       #проверки. Используются
+PRINTLAYOUT_L%LANG% = "templates/public/layout.tmpl"      #проверки. Используются
 PRINTLAYOUT_S%SUBSITEID% = "templates/public/layout.tmpl" #при отсутствии значения,
 PRINTLAYOUT = "templates/public/layout.tmpl"              #возвращенного модулем
 
