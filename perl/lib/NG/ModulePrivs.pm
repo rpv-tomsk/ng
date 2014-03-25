@@ -89,10 +89,7 @@ sub loadAdminPrivileges {
 };
 
 sub modulePrivileges {
-    my $self = shift;
-    return [
-        {PRIVILEGE=>"MODIFY", NAME=>"Назначение прав"},
-    ];
+    return [];
 };
 
 sub hasModulePrivilege {
