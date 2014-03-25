@@ -148,7 +148,7 @@ sub process {
     return $cms->error("OPTIONS is not HASHREF") if $self->{_options} && ref $self->{_options} ne "HASH";
     return $cms->error("No STEPS or OPTIONS.METHOD") unless $self->{_steps} || ($self->{_options} && $self->{_options}->{METHOD});
     
-    $pObj->setValue($value) or return $cms->error($self->{_pclass}."->setValue() failed");
+    $pObj->setValue($value) or return $cms->error($self->{_pclass}."->setValue() failed:".$self->{_error});
     
     unless ($self->{_steps}) {
         $self->_fillStepsFromConfig() or return $cms->error();
