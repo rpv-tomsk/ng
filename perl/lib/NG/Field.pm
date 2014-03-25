@@ -135,6 +135,7 @@ sub init {
     $hash->{INVALID_NUMBER}="Значение не является числом";
     $hash->{INVALID_CIDR} = "Адрес или сеть указаны некорректно";
     $hash->{OUT_OF_RANGE} = "Значение находится вне допустимых пределов";
+    $hash->{REGEXP_FORBIDDEN} = "Значение содержит недопустимые элементы";
     $hash->{VALUE_TOO_LONG}="Введенный текст слишком длинный ({size} символов при ограничении {limit})";
     
     $hash->{MISSING_FILE}            = "Не выбран файл";
@@ -903,6 +904,14 @@ sub check {
     }; 
     if ($type eq "cidr" && $value && !is_valid_cidr($value)) {
         return $field->setErrorByCode("INVALID_CIDR");
+    };
+    if ($value && $field->{OPTIONS}->{REGEXP}) {
+        my $re = $field->{OPTIONS}->{REGEXP};
+        return $field->setError("Некорректное значение опции REGEXP") unless ref $re eq "Regexp";
+        if ($value !~ $re ) {
+            return $field->setError($field->{OPTIONS}->{REGEXP_MESSAGE});
+            return $field->setErrorByCode("REGEXP_FORBIDDEN");
+        };
     };
     if ($value && exists $field->{LENGTH} && $type =~ /^((?:rtf|text)(?:file)?|textarea)?$/ && length($value) > $field->{LENGTH}) {
         return $field->setErrorByCode("VALUE_TOO_LONG", {size=>length($value),limit=>$field->{LENGTH}});
