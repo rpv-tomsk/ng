@@ -146,6 +146,8 @@ sub moduleParam {
 };
 
 sub pluginParam {
+    #Метод вредный. Параметры плагина/модуля передаются параметром
+    #вызова getBlockKeys()/getBlockContent(), и должны бы использоваться оттуда
 	my $self = shift;
 	my $param = shift or cluck("pluginParam(): no key specified");
     $self->{_pluginparams}||=$self->_parseParams($self->{_pParamsRaw});
@@ -234,6 +236,8 @@ sub getStash { # $mObj->getStash($key)
     return $m->{$key};
 };
 
+#API работы с модулем из админки
+
 #TODO: переименовать...
 sub getAdminBaseURL { my $self=shift; return $self->{_adminBaseURL} || ""; };
 #sub setBaseURL { my $self = shift; $self->{_baseURL}  = shift; }
@@ -284,6 +288,7 @@ sub moduleTabs {
 };
 
 sub getModuleTabs {
+    #Возвращает список вкладок модуля, с проверкой привилегий и выбором текущей вкладки
     my $self = shift;
     
     my $cms = $self->cms();
@@ -520,6 +525,8 @@ sub adminPageModule {
 	return shift->_adminModule("pagemodule",@_);
 };
 
+# API ОБРАБОТКИ ЗАПРОСА С МОРДЫ
+
 sub getBlockContent {
     my $self = shift;
     my $action = shift;
@@ -541,6 +548,8 @@ sub processModulePost {
     my $self = shift;
     return $self->cms()->error("Модуль ".ref($self)." не содержит метода processModulePost");
 };
+
+# ПРИВИЛЕГИИ В АДМИНКЕ
 
 sub hasModulePrivilege {
 	my $self = shift;
