@@ -1315,7 +1315,7 @@ sub collapseBranch {
 
     my $cleanFunction = sub {
         my $_tree = shift;
-        my $t = 0;
+        my $t = $_tree->{_has_childs};
         foreach my $child ($_tree->getAllChildren()) {
             $t = 1;
             #next if $path && $path->{$child->{_level}} eq $child->{_id};
@@ -1330,28 +1330,25 @@ sub collapseBranch {
         sub {
             my $_tree = shift;
             
-            #Чистим чайлдов всех нод, кроме элемента пути, которые находятся на максимальном уровне.
-            #if ($opts->{MAXLEVELS} && $_tree->{_level} == $rootlevel + $opts->{MAXLEVELS} && !($path->{$_tree->{_level}} && $_tree->{_id} == $path->{$_tree->{_level}}) ) {
-            #    &$cleanFunction($_tree);
-            #}
-            
-            #Чистим чайлдов всех нод, ко
-            if (($opts->{MAXLEVELS} && $_tree->{_level} >= $rootlevel + $opts->{MAXLEVELS}) || ($opts->{KEY} && $_tree->getNodeValue()->{$opts->{KEY}}) ) {
-                while (1) {
-                    my $t = $_tree;
-                    while ($t) {
-                        last unless $path;
-                        last if exists $path->{$t->{_level}};
-                        $t = $t->getParent();
-                        #last if $t eq $tree;
-                        last if $t eq Tree::Simple->ROOT;
-                    };
-                    last if $path && $t eq Tree::Simple->ROOT;
-                    last if $path && $path->{$t->{_level}} eq $t->{_id};
-                    &$cleanFunction($t);
+            while (1) {
+                #Ноду надо схлопнуть, поскольку её childs ниже требуемого MAXLEVELS уровня
+                #или у неё выставлено значение KEY
+                unless (($opts->{MAXLEVELS} && $_tree->{_level} >= $rootlevel + $opts->{MAXLEVELS}) || ($opts->{KEY} && $_tree->getNodeValue()->{$opts->{KEY}})) {
                     last;
-                }
-            }
+                };
+                my $t = $_tree->getParent();
+                #Если у родителя удалили детей в cleanFunction,
+                #то эти дети всё еще попадут в этот вызов, ибо они уже в traverse()
+                #Но у них уже не будет родителя....
+                last if $t eq Tree::Simple->ROOT;
+                
+                #Ноду не надо схлопывать, поскольку она лежит на элементе пути.
+                last if $path && $path->{$_tree->{_level}} eq $_tree->{_id};
+                
+                #Схлопываем.
+                &$cleanFunction($_tree);
+                last;
+            };
         }
     );
 
