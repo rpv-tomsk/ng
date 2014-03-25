@@ -366,14 +366,23 @@ sub _run {
 			last;
 		}
 	}
-    elsif ($route->{MODULEID}) {
-        my $mId  = $route->{MODULEID};
+    elsif ($route->{MODULEID} || $route->{MODULECODE}) {
+        my $mRow = undef;
+        my $mId = undef;
+        if ($route->{MODULEID}) {
+            $mId  = $route->{MODULEID};
+            $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("«апрошенный модуль c кодом ($mId) не найден");
+        }
+        elsif ($route->{MODULECODE}) {
+            $mRow = $cms->getModuleRow("code=?",$route->{MODULECODE}) or return $cms->error("«апрошенный модуль c кодом (".$route->{MODULECODE}.") не найден");
+            $mId = $mRow->{id};
+        };
+        
         my $opts = $route->{OPTS} || {};
 
         #return $cms->error("ƒоступ к запрошенному подсайту запрещен") unless $cms->_checkSubsiteAccess($row->{subsite_id});
         return $cms->error("ќтсутствует доступ к запрошенному модулю") unless $cms->hasModulePrivilege(MODULE_ID=>$mId ,PRIVILEGE=>"ACCESS");
         
-        my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("«апрошенный модуль c кодом ($mId) не найден");
         $opts->{MODULEROW} = $mRow;
         my $mObj = $cms->getObject($mRow->{module},$opts) or return $cms->error();
         
