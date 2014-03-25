@@ -74,27 +74,54 @@ sub processPost {
 
 sub showPage {
 	my $pageObj = shift;
-	
 	my $cms = $pageObj->cms();
-	
+	return $cms->buildPage($pageObj);
+}
+
+sub getLayout {
+    my $pageObj = shift;
+    my $aBlock  = shift; #Active Block. #TODO: значение должно быть хешем, возвращенным из $pageObj->getActiveBlock();
+
+    my $cms = $pageObj->cms();
+
     #Параметры поиска LAYOUT для вывода контента
     my $layoutConf = "LAYOUT";
     $layoutConf = "PRINTLAYOUT" if $cms->isPrint();
+    
     my $langId = $pageObj->getPageLangId();
     my $subsiteId = $pageObj->getSubsiteId();
 	
-    my $layout = undef;     #Шаблон вывода
+    my $layout = undef;
+    if ($aBlock) {
+        #NB: CODE is MODULECODE_ACTION
+        #1. Считываем параметр layout блока для языка "BLOCK_{CODE}.LAYOUT_{LANG}|BLOCK_{CODE}.PRINTLAYOUT_{LANG}"
+        $layout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf."_L".$langId,undef) if $langId;
+        return $layout if defined $layout;
+        #1.1 Считываем параметр layout блока для подсайта "BLOCK_{CODE}.LAYOUT_S{ID}|BLOCK_{CODE}.PRINTLAYOUT_S{ID}" 
+        $layout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf."_S".$subsiteId,undef) if $subsiteId;
+        return $layout if defined $layout;
+        #2. Считываем параметр "BLOCK_{CODE}.LAYOUT|BLOCK_{CODE}.PRINTLAYOUT"
+        $layout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf,undef);
+        return $layout if defined $layout;
+        #3. Берем параметр layout из параметров блока
+        $layout = $aBlock->{$layoutConf} if exists $aBlock->{$layoutConf};
+        return $layout if defined $layout;
+    };
     #4. Берем параметр $pageRow->{template|printtemplate}
-    $layout = $pageObj->{_pageRow}->{template} if $pageObj->{_pageRow} && !defined $layout && !$cms->isPrint();
-    $layout = $pageObj->{_pageRow}->{print_template} if $pageObj->{_pageRow} && !defined $layout && $cms->isPrint();
+    $layout = $pageObj->{_pageRow}->{template} if $pageObj->{_pageRow} && !$cms->isPrint();
+    return $layout if defined $layout;
+    $layout = $pageObj->{_pageRow}->{print_template} if $pageObj->{_pageRow} && $cms->isPrint();
+    return $layout if defined $layout;
     #5. Считываем параметр ЦМС "CMS.LAYOUT_{LANG}|CMS.PRINTLAYOUT_{LANG}"
-    $layout = $cms->confParam("CMS.".$layoutConf."_L".$langId,undef) if $langId && !defined $layout;
+    $layout = $cms->confParam("CMS.".$layoutConf."_L".$langId,undef) if $langId;
+    return $layout if defined $layout;
     #5. Считываем параметр ЦМС "CMS.LAYOUT_S{SUBSITEID}|CMS.PRINTLAYOUT_S{SUBSITEID}"
-    $layout = $cms->confParam("CMS.".$layoutConf."_S".$subsiteId,undef) if $subsiteId && !defined $layout;
+    $layout = $cms->confParam("CMS.".$layoutConf."_S".$subsiteId,undef) if $subsiteId;
+    return $layout if defined $layout;
     #6. Считываем параметр ЦМС "CMS.LAYOUT|CMS.PRINTLAYOUT"
-    $layout = $cms->confParam("CMS.".$layoutConf,undef) if !defined $layout;
-
-	return $cms->buildPage($pageObj,$layout);
+    $layout = $cms->confParam("CMS.".$layoutConf,undef);
+    #return $layout if defined $layout;
+    return $layout;
 };
 
 =comment isActive

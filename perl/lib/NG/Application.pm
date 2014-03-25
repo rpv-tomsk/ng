@@ -520,6 +520,7 @@ sub getPageActiveBlock {
     my $mName = $pageObj->getModuleCode() or return $cms->error();
     
     my $aBlock = {};
+    #TODO: сделать возврат блока тем же самым хешем, т.е. сквозное прохождение результата getActiveBlock() в следующие вызовы, убрать _новый_ хеш $aBlock={};
     $aBlock->{CODE} = $mName."_".$ab->{BLOCK};
     $aBlock->{ACTION} = $ab->{ACTION} || $ab->{BLOCK}; ## Backward compatability
     $aBlock->{LAYOUT} = $ab->{LAYOUT};
@@ -540,24 +541,18 @@ sub buildPage {
 #NG::Profiler::saveTimestamp("getP_AB","buildPage");
     return $aBlock if defined $aBlock && ($aBlock eq "0" || (ref $aBlock && UNIVERSAL::isa($aBlock,'NG::BlockContent')));
     
-    if ($aBlock) {
-        my $abLayout = undef;
-        
+    if ($layout) {
+        #Do nothing, high priority
+    }
+    elsif ($pageObj->can("getLayout")) {
+        my $abLayout = $pageObj->getLayout($aBlock);
+        return $abLayout if $abLayout eq "0" || (ref $abLayout && UNIVERSAL::isa($abLayout,'NG::BlockContent'));
+        $layout = $abLayout;
+    }
+    elsif ($aBlock) {
         my $layoutConf = "LAYOUT";
         $layoutConf = "PRINTLAYOUT" if $cms->isPrint();
-        my $langId = $pageObj->getPageLangId();
-        my $subsiteId = $pageObj->getSubsiteId();
-        
-        #1. Считываем параметр layout блока для языка "BLOCK_{CODE}.LAYOUT_{LANG}|BLOCK_{CODE}.PRINTLAYOUT_{LANG}"
-        $abLayout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf."_L".$langId,undef) if $langId && !defined $abLayout;
-        #1.1 Считываем параметр layout блока для подсайта "BLOCK_{CODE}.LAYOUT_S{ID}|BLOCK_{CODE}.PRINTLAYOUT_S{ID}" 
-        $abLayout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf."_S".$subsiteId,undef) if $subsiteId && !defined $abLayout;
-        #2. Считываем параметр "BLOCK_{CODE}.LAYOUT|BLOCK_{CODE}.PRINTLAYOUT"
-        $abLayout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf,undef) if !defined $abLayout;
-        #3. Берем параметр layout из параметров блока
-        $abLayout = $aBlock->{$layoutConf} if exists $aBlock->{$layoutConf} && !defined $abLayout;
-        
-        $layout = $abLayout if defined $abLayout;
+        $layout = $aBlock->{$layoutConf} if defined $aBlock->{$layoutConf};
     };
     
     unless ($layout || $aBlock) {
