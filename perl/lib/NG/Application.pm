@@ -12,10 +12,6 @@ $NG::Application::VERSION = 0.5;
 
 use constant M_ERROR    => 0;  # крайне не рекомендуется менять эту критично важную константу
 use constant M_OK       => 1;
-use constant M_REDIRECT => 2;
-use constant M_404      => 3;
-use constant M_EXIT     => 4;
-use constant M_CONTINUE  => 5;
 
 sub new {
     my $class = shift;
