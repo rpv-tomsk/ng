@@ -231,9 +231,9 @@ sub updateFTSIndex {
 	$data->{D} ||= "";
     undef $data->{DATE} unless $data->{DATE};
 
-	my $sql = "update ng_ftsindex set text=?,header=?,date=?,category=?,link_id=?,lang_id=?,page_id=?,subsite_id=?,suffix=?,fs=setweight(to_tsvector(?,?),'A') || setweight(to_tsvector(?,?),'B') || setweight(to_tsvector(?,?),'C') || setweight(to_tsvector(?,?),'D') where id = ?";
+	my $sql = "update ng_ftsindex set text=?,header=?,date=?,category=?,link_id=?,lang_id=?,page_id=?,subsite_id=?,suffix=?,fs=setweight(to_tsvector(?,?),'A') || setweight(to_tsvector(?,?),'B') || setweight(to_tsvector(?,?),'C') || setweight(to_tsvector(?,?),'D'), module=? where id = ?";
 	my $sth = $self->dbh()->prepare_cached($sql);
-	my $res = $sth->execute($data->{TEXT},$data->{HEADER},$data->{DATE},$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$self->{_search_config},$data->{A},$self->{_search_config},$data->{B},$self->{_search_config},$data->{C},$self->{_search_config},$data->{D},$index->{ID});
+	my $res = $sth->execute($data->{TEXT},$data->{HEADER},$data->{DATE},$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$self->{_search_config},$data->{A},$self->{_search_config},$data->{B},$self->{_search_config},$data->{C},$self->{_search_config},$data->{D},$index->{OWNER},$index->{ID});
 	unless ($res) {
 		$self->{_errstr} = "NG::DBI::Postgres::updateFTSIndex(): Ошибка запроса: ".$DBI::errstr;
         $sth->finish();

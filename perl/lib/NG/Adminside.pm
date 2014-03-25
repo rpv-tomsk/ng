@@ -23,6 +23,7 @@ sub init {
     $self->{_baseURL} = "/admin-side/";
     
     $self->{_regions} = {};    # LEFT RIGHT  HEAD1 HEAD2 [HEAD3]
+    $self->{_tabs} = undef;
    
     $self;
 };
@@ -471,6 +472,9 @@ sub _run {
     
     my $customHead = "";
     $customHead = "admin-side/customhead.tmpl" if $cms->confParam('CMS.hasCustomHead',0);
+    
+    $tabs = $cms->{_tabs} if $cms->{_tabs};
+    
     $template->param(
         REGION => $rContent,
         AS => {
@@ -481,6 +485,11 @@ sub _run {
         },
     );
     return $cms->output($template,-nocache=>1);
+};
+
+sub setTabs {
+    my $self = shift;
+    my $self->{_tabs} = shift;
 };
 
 sub pushRegion {  #REGION WEIGHT CONTENT
