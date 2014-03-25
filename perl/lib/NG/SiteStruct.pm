@@ -282,7 +282,7 @@ sub showAddForm {
 	my $variant = undef;
 	if (!$variants) {
 		# TODO: getPageAddVariants errors output
-		return $cms->error("getPageAddVariants(): some error");
+		return $cms->defError("showAddForm():","getPageAddVariants(): unknown error");
 	}
 	elsif (ref($variants) eq "ARRAY") {
 		return $self->error("Метод ".ref($pageObj)."::getPageAddVariants(): возвратил пустой список вариантов добавления страницы") if (scalar @{$variants} == 0);

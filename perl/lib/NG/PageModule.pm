@@ -432,8 +432,8 @@ sub getPageAddVariants {
     #проверки корректности данных (корректности денормализации)
     #ќдин шаблон должен иметь соответствие только с одним link_id в ng_tmpllink,
     #и значение link_id должно совпадать с ng_templates.link_id
-    my $sth = $dbh->prepare("select t.id,t.name, t.link_id as t_link_id, l.link_id from ng_templates t left join ng_tmpllink l on t.id = l.template_id where t.group_id=?") or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
-    $sth->execute($pageRow->{subptmplgid}) or return $self->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
+    my $sth = $dbh->prepare("select t.id,t.name,t.modulecode, t.link_id as t_link_id, l.link_id from ng_templates t left join ng_tmpllink l on t.id = l.template_id where t.group_id=?") or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
+    $sth->execute($pageRow->{subptmplgid}) or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
 	
     my $ttl = {}; # $ttl->{$template_id} = $link_id  -- ’еш дл€ проверки
     
@@ -506,7 +506,8 @@ sub processNewSubpages {
 				ng_tmpllink.template_id as template_id,
 				ng_templates.name as template_name,
 				ng_templates.subptmplgid,
-				ng_templates.print_template
+				ng_templates.print_template,
+				ng_templates.modulecode
 			from
 				ng_tmpllink,ng_templates
 			where
@@ -531,23 +532,25 @@ sub processNewSubpages {
         my $page = $newSubpages->{$subsiteId};
 	
 		$page->{ACTIVE} = 1;
+		my $template = undef;
 		if (exists $linkedTemplates->{$subsiteId}) {
-			my $template = $linkedTemplates->{$subsiteId};
-			$page->{ATTRIB}->{VARIANT_NAME} = $template->{template_name};
-			$page->{PAGEROW}->{template}   = $template->{template};
-			$page->{PAGEROW}->{print_template} = $template->{print_template};
-			$page->{PAGEROW}->{subptmplgid} = $template->{subptmplgid};
+			$template = $linkedTemplates->{$subsiteId};
 		}
 		elsif ($singleTemplate) {
-			my $template = $singleTemplate;
-			$page->{ATTRIB}->{VARIANT_NAME} = $template->{template_name};
-			$page->{PAGEROW}->{template} = $template->{template};
-			$page->{PAGEROW}->{print_template} = $template->{print_template};
-			$page->{PAGEROW}->{subptmplgid} = $template->{subptmplgid};
+			$template = $singleTemplate;
 		}
 		else {
 			$page->{ACTIVE} = 0;
 			$page->{MESSAGE} ||= "ќтсутствует шаблон дл€ добавл€емой страницы";
+		};
+		$page->{ATTRIB}->{VARIANT_NAME} = $template->{template_name};
+		$page->{PAGEROW}->{template} = $template->{template};
+		$page->{PAGEROW}->{print_template} = $template->{print_template};
+		$page->{PAGEROW}->{subptmplgid} = $template->{subptmplgid};
+		
+		if ($template->{modulecode}) {
+		    my $mRow = $cms->getModuleRow("code=?",$template->{modulecode}) or return $cms->defError("processNewSubpages():","«апрошенный модуль ".$template->{modulecode}." не найден");
+		    $page->{PAGEROW}->{module_id} = $mRow->{id};
 		};
 	};
 	return 1; #TODO: change this ?
