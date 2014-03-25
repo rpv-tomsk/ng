@@ -118,6 +118,9 @@ sub _loadFilterByValues {
 	my $config = $self->config();
 	
 	my $field = $config->{FIELD};
+    
+    my $default  = $config->{DEFAULT};
+    my $defaultF = undef; 
 	
 	my $pos = 1;
     foreach (@{$config->{VALUES}}) {
@@ -150,7 +153,14 @@ sub _loadFilterByValues {
             $filter->{SELECTED} = 1;
             $self->{_activeElement} = $filter;
         };
+        if (($default && $cvalue && $cvalue eq $default) || ($_->{DEFAULT})) {
+            $defaultF = $filter;
+        };
         push @{$self->{_elements}},$filter;
+    };
+    if (!$self->{_activeElement} && $defaultF) {
+        $self->{_activeElement} = $defaultF;
+        $self->{_activeElement}->{SELECTED} = 1;
     };
     return 1;
 };
@@ -165,6 +175,9 @@ sub _loadFilterBySQL {
 	my $idF   = $config->{SQL}->{ID_FIELD} || "id";
     my $nameF = $config->{SQL}->{NAME_FIELD} || "name";
     my $query = $config->{SQL}->{QUERY};
+    
+    my $default  = $config->{DEFAULT};
+    my $defaultF = undef; 
     
     if (!defined $query) {
         my $table = $config->{SQL}->{TABLE} || return $self->error('В конфигурации фильтра необходимо указать либо SQL.TABLE либо SQL.QUERY для получения значений фильтра.');
@@ -199,10 +212,16 @@ sub _loadFilterBySQL {
             $filter->{SELECTED} = 1;
             $self->{_activeElement} = $filter;
         };
-        
+        if ($default && $id eq $default) {
+            $defaultF = $filter;
+        };
         push @{$self->{_elements}},$filter;
     };
     $sth->finish();
+    if (!$self->{_activeElement} && $defaultF) {
+        $self->{_activeElement} = $defaultF;
+        $self->{_activeElement}->{SELECTED} = 1;
+    };
     return 1;
 };
 
@@ -213,6 +232,9 @@ sub _loadFilterByLField {
 	
 	my $fieldName = $config->{LINKEDFIELD};
 	my $lfield = $self->parent()->getField($fieldName) || return $self->error("Линкованное поле фильтра ($fieldName) не найдено.");
+
+    my $default  = $config->{DEFAULT};
+    my $defaultF = undef; 
 
 	if ($lfield->{TYPE} eq "fkselect" || $lfield->{TYPE} eq "select" || $lfield->{TYPE} eq "radiobutton") {
         #TODO: в будущем возможно имеет смысл переделать на isa("NG::Field::Select") ?
@@ -228,7 +250,6 @@ sub _loadFilterByLField {
 #        my $pmask = $fObj->options('PRIVILEGEMASK');
         foreach my $o (@{$so}) {
             my $id = $o->{ID};
-#print STDERR $id;
             return $self->error('Отсутствует код записи в массиве значений SELECT_OPTIONS поля $fieldName') if (!is_valid_id($id) && $id != 0);
 =head
             if ($pmask) {
@@ -247,7 +268,14 @@ sub _loadFilterByLField {
                 $filter->{SELECTED} = 1;
                 $self->{_activeElement} = $filter;
             };
+            if ($default && $id eq $default) {
+                $defaultF = $filter;
+            };
             push @{$self->{_elements}},$filter;
+        };
+        if (!$self->{_activeElement} && $defaultF) {
+            $self->{_activeElement} = $defaultF;
+            $self->{_activeElement}->{SELECTED} = 1;
         };
 	}
 	else {
