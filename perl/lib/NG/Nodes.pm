@@ -1050,7 +1050,7 @@ $f.=" IS_SLCTD";
 				$f.=" CH_CLSD";
             };
 			
-#$row->{name}.=$f;
+$row->{NODEDEBUG}.=$f;
 			
 			push @elements, {
 				NODE_START => 1,

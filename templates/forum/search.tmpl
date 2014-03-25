@@ -1,0 +1,60 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+        <div class="search-result-container">
+          <h2 class="search-header"><TMPL_VAR .RES.TEXT_SEARCH_HEADER></h2>
+          <div class="search-form">
+            <form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="post">
+              <table><tbody><tr>
+                <td class="search-form-input-text">
+                  <div>
+                    <input type="hidden" name="post_action" value="dosearch">
+                    <input type="text" name="search" value=""/>
+                  </div>
+                </td>
+                <td class="search-form-submit-button">
+                  <div>
+                    <button type="submit" value="<TMPL_VAR .RES.TEXT_SEARCH_BUTTON>">
+                      <span><TMPL_VAR .RES.TEXT_SEARCH_BUTTON></span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <div class="search-form-submit-additional">
+                    <label><input type="checkbox" name="search_only_in_theme"><TMPL_VAR .RES.TEXT_SEARCH_ONLY_IN_THEME></label>
+                    <label><input type="checkbox" name="search_all_words"><TMPL_VAR .RES.TEXT_SEARCH_ALLWORDS></label>
+                    <select name="search_in_day">
+                      <TMPL_LOOP DAYS>  
+                      <option <TMPL_IF CURRENT>selected="selected"</TMPL_IF> value="<TMPL_VAR ID>">&nbsp;<TMPL_VAR NAME>&nbsp;</option>
+                      </TMPL_LOOP>
+                    </select>
+                  </div>
+                  <div class="search-form-submit-additional">
+                  <fieldset class="slideToggle">
+                    <legend><TMPL_VAR .RES.TEXT_SEARCH_SELECTFORUM>:</legend>
+                    <div style="min-height: 5px;">
+                      <p class="select">
+                <select multiple="multiple" size="10" name="forums">
+                    <option value="all">&nbsp;<TMPL_VAR .RES.TEXT_SEARCH_ALL_FORUMS>&nbsp;</option>
+                    <TMPL_LOOP FORUMS_SECTIONS>
+                        <TMPL_IF SHOW>
+                        <option value="s_<TMPL_VAR ID>">&nbsp;<TMPL_VAR NAME>&nbsp;</option>
+                        <TMPL_LOOP FORUMS>
+                            <TMPL_IF SHOW><option value="f_<TMPL_VAR ID>">&nbsp;&nbsp;&nbsp;&nbsp;<TMPL_VAR NAME>&nbsp;</option></TMPL_IF>
+                        </TMPL_LOOP>
+                        </TMPL_IF>
+                    </TMPL_LOOP>
+                </select>
+                </p>
+                    </div>
+                    </fieldset>
+                  </div>
+                </td>
+                <td></td>
+              </tr>
+              </tbody></table>
+            </form>
+          </div>
+        </div>
+

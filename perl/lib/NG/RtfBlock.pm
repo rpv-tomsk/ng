@@ -18,6 +18,9 @@ use NGService;
     hassubpages - наличие подстраниц
     rtffilemask - маска имени файла с контентом
     rtfdir      - путь сохранения файлов с контентом, относительно siteRoot
+    blockClass  - класс администрирования блока
+    layout      - лайаут вывода
+    template    - шаблон вывода
 =cut
 
 sub init {
@@ -28,7 +31,8 @@ sub init {
 	$self->{_imgtable} = $self->moduleParam('imgtable');
     $self->{_imgtable} = "ng_rtfpblock_images" unless defined $self->{_imgtable};
 	$self->{_hassubpages} = $self->moduleParam('hassubpages') || 0;
-	$self->{_blockClass} = "NG::RtfBlock::Block";
+	$self->{_blockClass} = $self->moduleParam('blockClass');
+	$self->{_blockClass} ||= "NG::RtfBlock::Block";
     
     $self->{_rtffilemask} = $self->moduleParam('rtffilemask');
     unless (defined $self->{_rtffilemask}) {
@@ -51,34 +55,78 @@ sub init {
 
 sub getActiveBlock {
 	my $self = shift;
+    my $block = { BLOCK => 'CONTENT' };
+    my $layout = $self->moduleParam('layout');
+    $block->{LAYOUT} = $layout if $layout;
+    return $block;
+};
 
-	return {
-		BLOCK => "CONTENT",
-	};
+sub getBlockKeys {
+    my ($self, $action) = (shift,shift);
+   
+    my $cms = $self->cms();
+    return $cms->error("NG::RtfBlock: invalid getBlockKeys action $action") if $action ne "CONTENT";
+   
+    my $opts = $self->opts();
+   
+    my $req = {};
+    $req->{pageId}  = $self->getPageId();
+    $req->{subpage} = $opts->{subpage} || 1;
+    
+    return {REQUEST=>$req};
 };
 
 sub getBlockContent{
-	my $self = shift;
-    my $action = shift;
+	my ($self,$action,$keys) = (shift,shift,shift);
 
 	my $cms = $self->cms();
+    my $opts = $self->opts();
+    
+    my ($pageId, $subPage);
+    
+    if ($keys && $keys->{REQUEST}) {
+        $pageId  = $keys->{REQUEST}->{pageId}; 
+        $subPage = $keys->{REQUEST}->{subpage};
+    }
+    else {
+        $pageId  = $self->getPageId();
+        $subPage = $opts->{subpage} || 1;
+    };  
     
     if ($action eq "CONTENT") {
-     	my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=?",undef,$self->getPageId());
+     	my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=? and subpage=?",undef,$pageId,$subPage);
         return $cms->error("Content file name not found in ".(ref $self)."::getBlockContent") unless($file);
         $file = $cms->getSiteRoot().$self->{_rtfdir}.$file if $file;
         #$v = value
         #$e = error text
         my ($v,$e) = loadValueFromFile($file);
         return $cms->error($e) if($e);
+        my $template = $self->moduleParam('template');
+        if ($template) {
+            my $tmpl = $cms->gettemplate($template) or return $cms->error();
+            $tmpl->param(
+                PAGE    => $self->getPageRow(),
+                CONTENT => $v,
+            );
+            return $cms->output($tmpl);
+        };
         return $cms->output($v);
-    }
+    };
 	return $cms->error("NG::RtfBlock: invalid getBlockContent action $action");
 };
 
-sub getAdminBlock {
-	my $self = shift;
-	return $self->{_blockClass};
+sub moduleTabs {
+    return [
+        {HEADER=>"Содержимое страницы", URL=>"/"},
+    ];
+};
+
+
+sub moduleBlocks {
+    my $self = shift;
+    return [
+        {URL=>"/", BLOCK=>$self->{_blockClass},TYPE=>"moduleBlock"},
+    ];
 };
 
 sub modulePrivileges {
@@ -99,6 +147,9 @@ BEGIN {
 
 sub config  {
     my $self = shift;
+
+    my $opts = $self->opts();
+    my $subp = $opts->{subpage} || 1;
 	
 	my $mObj = $self->{_moduleObj};
 	
@@ -110,7 +161,10 @@ sub config  {
 
 	if ($mObj->{_hassubpages}) {
 		$self->fields({FIELD=>'subpage',  TYPE=>'subpage', NAME=>'Части страницы:'});
-	};
+	}
+    else {
+        $self->fields({FIELD=>'subpage',  TYPE=>'filter',VALUE=>$subp});
+    }
 	
 	$self->fields(
         {FIELD=>'textfile', TYPE=>'rtffile', NAME=>'Текст',
@@ -123,6 +177,7 @@ sub config  {
         	}
         },
     );
+    #TODO: add searchConfig
 };
 
 

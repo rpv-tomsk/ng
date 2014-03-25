@@ -1,0 +1,31 @@
+<TMPL_INCLUDE "panel.tmpl">
+<form action="" method="post">
+  <input type="hidden" name="id" value="<TMPL_VAR GROUP.ID>">
+    <h1><TMPL_VAR .RES.TEXT_CHANGE_GROUP_PRIVS> <a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_USERGROUPS>"></a></h1>
+    <h2><TMPL_VAR .RES.TEXT_CHANGE_GROUP_PRIVS_GROUP>: <TMPL_VAR GROUP.NAME></h2>
+    <table class="changeprivs-table" style="">
+      <thead>
+        <tr>
+          <td><TMPL_VAR .RES.TEXT_CHANGER_GROUPS_PRIVS_FORUM_NAME></td>
+          <td><p><TMPL_VAR .RES.TEXT_ACCESS_PRIV_NAME></p></td>
+          <td><p><TMPL_VAR .RES.TEXT_WRITE_PRIV_NAME></p></td>
+          <td><p><TMPL_VAR .RES.TEXT_MODERATE_PRIV_NAME></p></td>
+        </tr>
+      </thead>
+      <tfoot>
+        <tr>
+          <td colspan="4"><button class="button" type="submit"><TMPL_VAR .RES.TEXT_SETPRIVILEGES></button></td>
+        </tr>
+      </tfoot>
+      <tbody>
+    <TMPL_LOOP PRIVILEGES>
+        <tr>
+          <td style="width: 100%;"><p><TMPL_VAR NAME></p></td>
+          <td><label><input id="access<TMPL_VAR ID>" <TMPL_IF PRIVS.ACCESS>checked</TMPL_IF> type="checkbox" name="access" value="<TMPL_VAR ID>"></label></td>
+          <td><label><input id="write<TMPL_VAR ID>" <TMPL_IF PRIVS.WRITE>checked</TMPL_IF> type="checkbox" name="write" value="<TMPL_VAR ID>"></label></td>
+          <td><label><input id="moderate<TMPL_VAR ID>" <TMPL_IF PRIVS.MODERATE>checked</TMPL_IF> type="checkbox" name="moderate" value="<TMPL_VAR ID>"></label></td>
+        </tr>
+    </TMPL_LOOP>
+      </tbody>
+    </table>
+</form>

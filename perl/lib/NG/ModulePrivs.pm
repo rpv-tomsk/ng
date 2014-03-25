@@ -193,13 +193,11 @@ sub showModulesList {
 
         my $opts = {};
         $opts->{MODULEROW} = $mRow;
-        my $mObj = $cms->getObject($mRow->{module},$opts) or return $cms->error();
-        
+        my $mObj = $cms->getObject($mRow->{module},$opts) or return $cms->error("Can't create module ".$mRow->{module});
         my $mp = $mObj->modulePrivileges();
         next unless defined $mp;
         return $cms->defError("showModulesList():","Вызов modulePrivileges() модуля ".(ref $mObj)." вернул некорректное значение") unless $mp && ref $mp eq "ARRAY";
 
-        
         my $m = {};
         $m->{ID} = $mRow->{id};
         $m->{NAME} = $mRow->{name};
@@ -208,7 +206,6 @@ sub showModulesList {
         push @modules, $m;
     };
     $sth->finish();
-    
     $self->opentemplate("admin-side/common/mprivileges/list.tmpl");
     $self->tmpl()->param(
         BASEURL => $self->getBaseURL(),

@@ -9,16 +9,27 @@ use vars qw(@ISA);
 
 sub get_id {
 	my $self = shift;
-	my $name = shift;
+	my $table = shift;
+	my $field = shift;
+
+        if (!defined $field && $table =~ /(.*)\.(.*)/) {
+            $table = $1;
+            $field = $2;
+        };
+                                    
+        if ($field && $field ne "id") {
+            $table.= ".".$field;
+        };
+	
 	my $sth = $self->dbh->prepare("SELECT table_name,last_id FROM ng_sequence where table_name = ?") or return $self->error($DBI::errstr);
-	$sth->execute($name) or return $self->error($DBI::errstr); 
+	$sth->execute($table) or return $self->error($DBI::errstr); 
 	my $row = $sth->fetchrow_hashref();
 	$sth->finish();
 	if (defined $row->{last_id}) {
-		$self->dbh->do("UPDATE ng_sequence SET last_id=last_id+1 where table_name = ?",undef,$name) or return $self->error($DBI::errstr);
+		$self->dbh->do("UPDATE ng_sequence SET last_id=last_id+1 where table_name = ?",undef,$table) or return $self->error($DBI::errstr);
 		return $row->{last_id}+1;
 	} else {
-		$self->dbh->do("INSERT into ng_sequence (table_name,last_id) values (?,1)",undef,$name) or return $self->error($DBI::errstr);
+		$self->dbh->do("INSERT into ng_sequence (table_name,last_id) values (?,1)",undef,$table) or return $self->error($DBI::errstr);
 		return 1;
 	}
 };

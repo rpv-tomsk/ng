@@ -1,0 +1,20 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<p><TMPL_VAR .RES.TEXT_RECOVERYPWD_INSTRUCTION></p>
+
+<TMPL_IF ERRORS.ALL_EMPTY>
+    <p class="forum-error"><TMPL_VAR .RES.ERROR_RECOVERYPWD_ALL_EMPTY></p>
+</TMPL_IF>
+
+<TMPL_IF ERRORS.NORESULT>
+    <p class="forum-error"><TMPL_VAR .RES.ERROR_RECOVERYPWD_NORESULT></p>
+</TMPL_IF>
+
+<form class="answer-box" action="?action=recoverypwd" method="post">
+    <p><TMPL_VAR .RES.TEXT_RECOVERYPWD_LOGIN></p>
+    <input type="text" name="login" class="text">
+    <p><TMPL_VAR .RES.TEXT_RECOVERYPWD_EMAIL></p>
+    <input type="text" name="email" class="text"> 
+    
+    <button><TMPL_VAR .RES.TEXT_RECOVERYPWD></button>   
+</form>

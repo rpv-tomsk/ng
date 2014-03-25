@@ -1,0 +1,129 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR FORUM.NAME>
+<a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_THEMES>"></a>
+<TMPL_UNLESS IS_SUBSCRIBE>
+    <a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=subscribetheme&theme_id=<TMPL_VAR THEME.ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="forum-subscribe-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_THEME_SUBSCRIBE ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_THEME_SUBSCRIBE></a>
+<TMPL_ELSE>
+    <a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=unsubscribetheme&theme_id=<TMPL_VAR THEME.ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="forum-unsubscribe-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_THEME_UNSUBSCRIBE ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_THEME_UNSUBSCRIBE></a>
+</TMPL_UNLESS>
+</h1>
+<h2 style="clear:both;"><TMPL_VAR THEME.NAME>
+<TMPL_IF THEME.HAS_MODERATE_ACTION>
+<TMPL_IF THEME.CAN_CLOSE>
+<TMPL_IF THEME.IS_CLOSE>
+<a href="?action=opentheme&theme_id=<TMPL_VAR THEME.ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="forum-open-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_OPEN_THEME ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_OPEN_THEME></a>
+<TMPL_ELSE>
+<a href="?action=closetheme&theme_id=<TMPL_VAR THEME.ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="forum-close-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_CLOSE_THEME ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_CLOSE_THEME></a>
+</TMPL_IF>
+</TMPL_IF>
+<TMPL_IF THEME.CAN_EDIT>
+<a href="?action=edittheme&id=<TMPL_VAR THEME.ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="forum-edit-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_EDIT_THEME ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_EDIT_THEME></a>
+<a href="?action=movetheme&id=<TMPL_VAR THEME.ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="forum-move-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_MOVE_THEME ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_MOVE_THEME></a>
+</TMPL_IF>
+<TMPL_IF THEME.CAN_DELETE>
+<a href="?action=deletetheme&theme_id=<TMPL_VAR THEME.ID>" onclick="return confirm('<TMPL_VAR .RES.TEXT_FORUM_DELETETHEME_CONFIRMATION>');" class="forum-delete-theme-icon png_bg" title="<TMPL_VAR .RES.TEXT_DELETE_THEME ESCAPE=HTML>"><TMPL_VAR .RES.TEXT_DELETE_THEME></a>
+</TMPL_IF>
+</TMPL_IF>
+</h2>
+
+<TMPL_IF POLL>
+<div class="vote-poll-container">
+  <TMPL_IF CAN_VOTE>
+  <form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="POST">
+  <input type="hidden" name="post_action" value="vote">
+  <input type="hidden" name="theme_id" value="<TMPL_VAR THEME.ID>">
+  <input type="hidden" name="ref" value="<TMPL_VAR .FORUMOBJ.CURRENT_REFERER>">
+  </TMPL_IF>
+  <h3><TMPL_VAR POLL.NAME> ( <span style="font-weight: normal; font-size: 0.875em; text-transform: none; ">Проголосовало: <TMPL_VAR POLL.VOTE_CNT> </span>)</h3>
+    <ul class="vote-poll-list">
+    <TMPL_LOOP POLL.VARIANTS>
+      <li class="clearfix">
+        <div class="vote-poll-list-answer">
+        <TMPL_IF CAN_VOTE>
+          <input type="<TMPL_IF MULTICHOICE>checkbox<TMPL_ELSE>radio</TMPL_IF>" name="variants" value="<TMPL_VAR ID>">
+        </TMPL_IF>
+          <label<TMPL_IF CAN_VOTE> for="<TMPL_VAR .FORUMOBJ.CURRENT_REFERER>"</TMPL_IF>><TMPL_VAR NAME></label>
+        </div>
+        <div class="vote-poll-list-result">
+          <div class="vote-poll-list-result-text"><TMPL_VAR PERCENT>% <span>(<TMPL_VAR VOTE_CNT>)</span></div>
+          <div class="vote-poll-list-result-percent-container">
+            <div class="vote-poll-list-result-percent" style="width: <TMPL_VAR SHOW_PERCENT>%;">&nbsp;</div>
+          </div>
+        </div>
+      </li>
+    </TMPL_LOOP>
+    </ul>
+    <TMPL_IF CAN_VOTE>
+    <button type="submit"><TMPL_VAR .RES.TEXT_POLL_VOTE></button>
+    </TMPL_IF>
+  </form>
+</div>
+</TMPL_IF>
+<ul class="forum-topic">
+<TMPL_LOOP MESSAGES>
+<li id="message<TMPL_VAR ID>">
+    <div class="topic-inner-bg clearfix">
+    <div class="topic-message-count"># <TMPL_VAR ID></div>
+    <TMPL_IF HAS_MODERATE_ACTION>
+      <div class="forum-topic-message-edit-delete-container">
+        <TMPL_IF CAN_EDIT>
+          <a href="?action=editmessage&id=<TMPL_VAR ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" class="icon-edit"><TMPL_VAR .RES.TEXT_EDIT_MESSAGE></a>
+        </TMPL_IF>
+        <TMPL_IF CAN_DELETE>
+          <a href="?action=deletemessage&id=<TMPL_VAR ID>&<TMPL_VAR FORUMOBJ.REFPARAM>" onclick="return confirm('<TMPL_VAR .RES.TEXT_FORUM_DELETEMESSAGE_CONFIRMATION>');" class="icon-delete"><TMPL_VAR .RES.TEXT_DELETE_MESSAGE></a>
+        </TMPL_IF>
+      </div>
+    </TMPL_IF>
+    </div>
+    <div class="forum-topic-container">
+        <div class="forum-topic-content-box">
+            <div class="forum-topic-content">
+                <p class="topic-date"><strong>#&nbsp;<TMPL_VAR HEADER> </strong><TMPL_VAR CREATE_DATE></p>
+
+                <p class="topic-message"><TMPL_VAR MESSAGE></p>
+                <TMPL_IF FILES>
+                <TMPL_LOOP FILES>
+                <div class="docs-list">
+                  <a title="<TMPL_VAR .RES.TEXT_DOWNLOAD>" class="file-icon file-icon-<TMPL_VAR EXT>" href="<TMPL_VAR FILE>">&nbsp;</a>
+                  <a class="" href="<TMPL_VAR FILE>" title="<TMPL_VAR FILENAME>"><TMPL_VAR FILENAME></a>
+                  <span>(<TMPL_VAR .RES.TEXT_FILE_SIZE>: <TMPL_VAR SIZE_TEXT>)</span>
+                  <TMPL_IF CAN_EDIT>
+                    <a href="?action=deletefile&id=<TMPL_VAR ID>&ref=<TMPL_VAR ESCAPE_CURRENT_URL>" onclick="return confirm('<TMPL_VAR .RES.TEXT_DELETEFILE_CONFIRM ESCAPE=JS>');" class="file-icon-delete"><TMPL_VAR .RES.TEXT_EDITMESSAGE_DELETEFILE></a>
+                  </TMPL_IF>
+                </div>
+                </TMPL_LOOP>
+                </TMPL_IF>
+
+                <TMPL_IF SIGNATURE><p class="author-signature"><TMPL_VAR SIGNATURE></p></TMPL_IF>
+            </div> <!--! end of .forum-topic-content-->
+        </div> <!--! end of .forum-topic-content-box-->
+        <div class="forum-topic-author-content">
+            <TMPL_IF AUTHOR_USER_ID>
+                <img src="<TMPL_IF AVATAR><TMPL_VAR AVATAR><TMPL_ELSE><TMPL_VAR GRAVATAR></TMPL_IF>" alt="avatar">
+                <a href="<TMPL_IF AUTHOR_USER_ID>?action=showuserinfo&user_id=<TMPL_VAR AUTHOR_USER_ID><TMPL_ELSE>#message<TMPL_VAR ID></TMPL_IF>" class="author-name"><TMPL_VAR AUTHOR></a>
+                <p><TMPL_VAR .RES.USER_MESSAGES_CNT>: <TMPL_VAR MESSAGES_CNT></p>
+                <p><TMPL_VAR .RES.USER_STATUS>: <TMPL_VAR STATUS></p>
+            <TMPL_ELSE>
+                <img src="/img/no-avatar.jpg" alt="avatar">
+                <p><TMPL_VAR AUTHOR></p>
+            </TMPL_IF>
+        </div> <!--! end of .forum-topic-author-content -->
+    </div> <!--! end of .forum-topic-container-->
+    <div class="forum-topic-message-controls">
+        <TMPL_IF .FORUMOBJ.USER.IS_MODERATE><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=ipban&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>&message_id=<TMPL_VAR ID>"><TMPL_VAR .RES.BAN_TO_IP></a></TMPL_IF>
+        <TMPL_IF .FORUMOBJ.USER.IS_MODERATE><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=forumban&user_id=<TMPL_VAR AUTHOR_USER_ID>&&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><TMPL_VAR .RES.BAN_TO_FORUM></a></TMPL_IF>
+        <TMPL_IF .FORUMOBJ.USER.IS_MODERATE><TMPL_IF AUTHOR_USER_ID><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=editusersignature&user_id=<TMPL_VAR AUTHOR_USER_ID>&&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><TMPL_VAR .RES.EDITUSERSIGNATURE></a></TMPL_IF></TMPL_IF>
+        <TMPL_IF HAS_MODERATE_ACTION><TMPL_IF AUTHOR_USER_ID><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=userban&section_id=<TMPL_VAR .SECTION.ID>&user_id=<TMPL_VAR AUTHOR_USER_ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><TMPL_VAR .RES.BAN_TO_USER></a></TMPL_IF></TMPL_IF>
+        <TMPL_IF .FORUMOBJ.USER.ID><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=complaintomessage&message_id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><TMPL_VAR .RES.COMPLAIN_TO_MESSAGE></a></TMPL_IF>
+        <TMPL_IF .FORUMOBJ.USER.ID><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=themetoemail&theme_id=<TMPL_VAR THEME.ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><TMPL_VAR .RES.THEMETOEMAIL></a></TMPL_IF>
+        <a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=printtheme&theme_id=<TMPL_VAR THEME.ID>&print=1" target="_blank"><TMPL_VAR .RES.PRINTTHEME></a>
+    </div>
+
+</li>
+</TMPL_LOOP>
+</ul>
+<TMPL_INCLUDE "pagination.tmpl">
+<TMPL_IF CAN_ADD_MESSAGE>
+<TMPL_INCLUDE "forum_message_add.tmpl">
+</TMPL_IF CAN_ADD>

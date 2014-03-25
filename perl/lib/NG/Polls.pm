@@ -3,6 +3,7 @@ use strict;
 use NG::PageModule;
 use Date::Simple;
 use NSecure;
+use NGService;
 our @ISA = qw(NG::PageModule);
 
 sub moduleTabs
@@ -46,9 +47,9 @@ sub block_ONMAIN
 	my $dbh = $self->dbh();
 	my $db = $self->db();
 
-	my $current_db_date = $db->date_to_db(current_date());
+    my $random_function = $db->isa('NG::DBI::Mysql')? 'rand' : 'random';
 
-	my ($poll_id) = $dbh->selectrow_array("select id from polls where rotate=1 and ((sdate<=? and edate>=?) or sdate<=?) order by start_date desc, id desc limit 1",undef,$current_db_date,$current_db_date,$current_db_date);
+	my ($poll_id) = $dbh->selectrow_array("select id from polls where rotate=1 and ((start_date<=now() and end_date>=now()) or start_date<=now()) order by ".$random_function."() limit 1",undef);
 	my $poll = undef;
 	$poll = $self->_loadPoll($poll_id) if (is_valid_id($poll_id));
 	my $template = $self->gettemplate("public/polls/onmain.tmpl") or return $cms->error();
@@ -68,8 +69,8 @@ sub _loadPoll
 	my $db = $self->db();
 	my $q = $self->q();
 	
-	my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.multichoice,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id",{Slice=>{}},$id);
-	my $poll = {};
+	my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.multichoice,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id order by a.id",{Slice=>{}},$id);
+	my $poll = undef;
 	if (defined $answers and ref $answers eq 'ARRAY' && scalar @$answers)
 	{
 		$poll = {
@@ -110,7 +111,7 @@ sub _loadPoll
 		{
 			my $sth = $self->db()->dbh()->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
 			$sth->execute($q->remote_host(),$poll->{id}) or undef;
-			my ($count) = $sth->fetchrow();
+			my ($count,) = $sth->fetchrow();
 			$sth->finish();
 			if($count>0) 
 			{
@@ -141,7 +142,7 @@ sub _vote
 	
 	my $errors = {};
 	my $ret = 1;
-	
+
 	unless ($poll->{active})
 	{
 		$ret = 0;
@@ -160,7 +161,7 @@ sub _vote
 		$errors->{same_ip} = 1;		
 	};
 	
-	if (scalar @answers)
+	if (!scalar keys %$errors && scalar @answers)
 	{
 		my $sth_insert = $self->db()->dbh()->prepare("update polls_answers set vote_cnt=vote_cnt+1 where id=? and polls_id=?") ;
 		foreach (@answers)
@@ -200,6 +201,7 @@ our @ISA = qw(NG::Module::List);
 sub config  {
     my $self = shift;
     $self->{_table} = "polls";
+    $self->{_pageBlockMode} = 1;
     
     my $m = $self->getModuleObj();
     my $fields = $m->fields();
@@ -244,7 +246,7 @@ sub config  {
 		TYPE  =>"select",
 		VALUES=> [
             {NAME=>"Все опросы", WHERE=>""},
-			{NAME=>"Ротируемые", WHERE=>"rotate='1'"},
+			{NAME=>"Ротируемые", WHERE=>"rotate=1"},
 		]
 	);
     
@@ -255,7 +257,7 @@ sub config  {
 	$self->register_action('addanswer',"showOrUpdateAnswers");
     $self->register_action('deleteanswer',"deleteAnswer");
     $self->order({FIELD=>"start_date",DEFAULT=>1,DEFAULTBY=>"DESC",ORDER_ASC=>"start_date asc,id desc",ORDER_DESC=>"start_date desc,id desc"});
-    $m->config($self);
+    $m->config($self) if ($m->can('config'));
 };
 
 sub beforeDelete {
@@ -285,13 +287,10 @@ sub deleteAnswer {
 
     my $ref    = $q->param('ref') || ""; #TODO: заменить на функцию
 	my $answer_id = $q->param('answer_id') || 0;
-# 	die "answer_id".$answer_id;
 	return $self->error('Не указан код варианта ответа') unless is_valid_id($answer_id);
     
 	my $poll_id = $q->param('poll_id') || 0;
-# 	die "poll_id".$poll_id;
 	return $self->error('Не указан код вопроса') unless is_valid_id($poll_id);
-#     die "Confirmation".$confirmation;
 	if ($confirmation) {
 		
 		$dbh->do("update polls set vote_cnt=(vote_cnt - (select vote_cnt from polls_answers where id = ? and polls_id = ?)) where id=? and (multichoice = 0)",undef,$answer_id,$poll_id,$poll_id) or return $self->error("Ошибка удаления варианта ответа: ".$DBI::errstr);

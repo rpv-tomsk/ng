@@ -1,0 +1,19 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1><TMPL_VAR .RES.MAILERTOGROUP></h1>
+<TMPL_IF GROUPS>
+<form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="post" class="answer-box">
+    <input type="hidden" name="action" value="mailertogroup">    
+    <p><TMPL_VAR .RES.MAILERTOGROUP_MESSAGE></p>
+    <textarea name="message"<TMPL_IF ERROR.EMPTY_MESSAGE> class="error"</TMPL_IF>><TMPL_VAR MESSAGE ESCAPE="HTML"></textarea>
+    <TMPL_IF ERROR.EMPTY_MESSAGE><p class="input-error" style="text-align: center;"><small><TMPL_VAR .RES.MAILERTOGROUP_ERROR_EMPTY_MESSAGE></small></p></TMPL_IF>
+    <TMPL_LOOP GROUPS>
+        <p><label><input type="checkbox" name="group_id" value="<TMPL_VAR ID>" <TMPL_IF CHECKED>checked</TMPL_IF>> <TMPL_VAR NAME><label></p>
+    </TMPL_LOOP>
+    <TMPL_IF ERROR.NOGROUPS><p class="input-error" style="text-align: center;"><small><TMPL_VAR .RES.MAILERTOGROUP_ERROR_NOGROUPS></small></p></TMPL_IF>
+    <button class="button"><TMPL_VAR .RES.MAILERTOGROUP_BUTTON></button>
+</form>
+<TMPL_ELSE>
+    <p>
+     <TMPL_VAR .RES.MAILERTOGROUP_NOGROUP>
+    </p>
+</TMPL_IF>

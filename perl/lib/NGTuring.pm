@@ -1,7 +1,6 @@
 package NGTuring;
 
 use strict;
-use GD::SecurityImage use_magick => 1;
 use NG::Module;
 
 use vars qw(@ISA);
@@ -87,10 +86,9 @@ sub init {
 	$self->{_config} = \%tmpConf2;
 	$self->config();
 		
-	
 	foreach my $param (qw(width height lines ptsize bgcolor scramble font)) {
 		my $v = $self->confParam($self->{_config}->{configSection}.".".$param);
-		next unless $v;
+		next unless defined $v;
 		next if exists $gdConf{$param} && exists $self->{_gdConfig}->{$param} && $gdConf{$param} ne $self->{_gdConfig}->{$param};
 		$self->{_gdConfig}->{$param} = $v;
 	};
@@ -106,9 +104,15 @@ sub init {
 	$self->{_gdConfig}->{rndmax} ||= $self->{_config}->{length};
     
     $self->{_sname} = $self->confParam($self->{_config}->{configSection}.".Session");
-    unless ($self->{_sname}) {
-        die "NGTuring::getSession(): Parameter ".$self->{_config}->{configSection}.".Session is not configured";
-    };
+	$self->{_sname} or return $self->cms->error("NGTuring::getSession(): Parameter ".$self->{_config}->{configSection}.".Session is not configured");
+	
+	$self->{_useGD} = $self->confParam($self->{_config}->{configSection}.".UseGD",0);
+	if ($self->{_useGD}) {
+		eval "use GD::SecurityImage use_gd => 1;";
+	}
+	else {
+		eval "use GD::SecurityImage use_magick => 1";
+	};
     return $self;
 };
 
@@ -131,7 +135,7 @@ sub _getTS {
     
     my $sparam = {};
     #самоочистка для надежных хранилищ сессий
-    $self->{_session} = $self->cms()->$meth($self->{_sname},$sid,$sparam) or die $self->{_error};  ##TODO: fix
+    $self->{_session} = $self->cms()->$meth($self->{_sname},$sid,$sparam) or die $self->cms()->getError();
     $self->{_session}->expire() || $self->{_session}->expire($self->{_config}->{expire});
     
     #CGI::Session->new will silently drop old session if it expires and generate new one
@@ -252,24 +256,23 @@ sub getTuringImage {
             
             my $ims = $q->http("If-Modified-Since");
             if ($ims && $ims eq $ftime) {
-                print $q->header(-status=>304);
                 $session->flush();
-                return 1;
+                return $self->cms()->exit("",-status=>304);
             };
             $headers{"-Last-modified"} = $ftime;
             
             binmode STDOUT;
-            print $q->header(%headers);
             
             open (FH, "<".$cacheDir.$fname);
             my $buf;
+            my $image_data = undef;
             while (read(FH,$buf,512)) {
-                print $buf;
+                $image_data.=$buf;
             };
             close(FH);
             
             $session->flush();
-            return 1;
+            return $self->cms()->exit($image_data,\%headers);
         }
         else {
             warn "File not found or not readable in turing images cache: ".$fname if $fname;
@@ -279,9 +282,21 @@ sub getTuringImage {
 
 	my $numbers = $self->random();
 	
-    my $proc = *GD::SecurityImage::Magick::insert_text;
-	*GD::SecurityImage::Magick::insert_text =  \&insert_textX;
+	no warnings 'redefine';
+	local *GD::SecurityImage::Magick::insert_text =  \&insert_textX unless $self->{_useGD};
 	my $image = GD::SecurityImage->new( %{$self->{_gdConfig}});
+    
+    unless ($self->{_useGD}) {
+        my $bgc = $self->{_gdConfig}->{bgcolor};
+        if (ref $bgc || $bgc ne "transparent"){
+            my $bg = $image->cconvert( $bgc );
+            
+            $image->{image}  = Image::Magick->new;
+            $image->{image}->Set(  size=> "$image->{width}x$image->{height}" );
+            $image->{image}->Read( 'xc:' . $bg );
+            $image->{image}->Set(  background => $bg );
+        };
+    };
 
 	$image->random($numbers);
     $image->create(ttf => 'default', $self->{_config}->{fontColor}, $self->{_config}->{lineColor});
@@ -299,13 +314,11 @@ sub getTuringImage {
         $headers{"-Last-modified"} = POSIX::strftime('%a, %d %b %Y %T GMT', gmtime((stat $cacheDir.$fname)[9]));
     };
 
-	*GD::SecurityImage::Magick::insert_text =  $proc;
 	$session->param('number', $image->random_str); ## new value
 	$session->flush();
     
 	binmode STDOUT;
-	print $q->header(%headers);
-	print $image_data;
+	return $self->cms()->exit($image_data,\%headers);
 };
 
 ## GD::SecurityImage functions replacement

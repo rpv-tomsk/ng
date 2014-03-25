@@ -1,0 +1,45 @@
+<TMPL_INCLUDE "panel.tmpl">
+<form action="<TMPL_VAR FORUMOBJ.CURRENT_URL>" method="post" class="answer-box">
+  <div class="form-element">
+    <table>
+    <tbody>
+      <tr>
+        <td style="padding-right: 40%;">
+          <div><label for="1"><TMPL_VAR .RES.TEXT_REG_EMAIL></label></div>
+          <div class="input-wrap"><input type="text" id="1" name="email" value="<TMPL_VAR CGI.EMAIL ESCAPE=HTML>"></div>
+          <TMPL_IF ERRORS.EMPTY_EMAIL><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_EMPTY_EMAIL></small></TMPL_IF>
+          <TMPL_IF ERRORS.NOT_VALID_EMAIL><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_NOT_VALID_EMAIL></small></TMPL_IF>
+          <TMPL_IF ERRORS.NOT_UNIQUE_EMAIL><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_NOT_UNIQUE_EMAIL></small></TMPL_IF>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-right: 40%;">
+          <div><label for="2"><TMPL_VAR .RES.TEXT_REG_LOGIN></label></div>
+          <div class="input-wrap"><input type="text" id="2" name="login"  value="<TMPL_VAR CGI.LOGIN ESCAPE=HTML>"></div>
+          <TMPL_IF ERRORS.EMPTY_LOGIN><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_EMPTY_LOGIN></small></TMPL_IF>
+          <TMPL_IF ERRORS.NOT_UNIQUE_LOGIN><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_NOT_UNIQUE_LOGIN></small></TMPL_IF>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div><label for="3"><TMPL_VAR .RES.TEXT_REG_PASSWORD></label></div>
+          <div class="input-wrap"><input type="password" id="3" name="password"></div>
+          <TMPL_IF ERRORS.EMPTY_PASSWORD><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_EMPTY_PASSWORD></small></TMPL_IF>
+          <TMPL_IF ERRORS.NOT_EQUALE_PASSWORD><small class="error-box"><TMPL_VAR .RES.TEXT_REG_ERROR_NOT_EQUALE_PASSWORD></small></TMPL_IF>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div><label for="4"><TMPL_VAR .RES.TEXT_REG_RETYPE_PASSWORD></label></div>
+          <div class="input-wrap"><input type="password" id="4" name="retype_password"></div>
+        </td>
+      </tr>
+    </tbody>
+    </table>
+  </div>
+  
+  <div class="form-submit">
+    <button type="submit"><TMPL_VAR .RES.TEXT_REG></button>
+    <span class="note-text"><TMPL_VAR .RES.TEXT_REG_ALL_FIELDS_REQUERED></span>
+  </div>
+</form>

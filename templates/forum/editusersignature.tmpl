@@ -1,0 +1,13 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1>
+<TMPL_VAR .RES.EDITUSERSIGNATURE>
+<a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK>"></a>
+</h1>
+<form class="answer-box" action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="post">
+    <input type="hidden" name="action" value="editusersignature">
+    <input type="hidden" name="user_id" value="<TMPL_VAR USER_ID>">
+    <input type="hidden" name="ref" value="<TMPL_VAR .FORUMOBJ.REFERER>">
+    <p><TMPL_VAR .RES.EDITUSERSIGNATURE_SIGNATURE></p>
+    <textarea name="signature"><TMPL_VAR SIGNATURE ESCAPE=HTML></textarea>
+    <button class="button" type="submit"><TMPL_VAR .RES.EDITUSERSIGNATURE_BUTTON></button>
+</form>

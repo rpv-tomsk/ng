@@ -1,0 +1,107 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1><TMPL_VAR .RES.TEXT_SET_USER_GROUPS> <a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_USERSLIST>"></a></h1>
+
+<form action="" method="POST" id="user-groups-forum">
+<input type="hidden" name="user_id" value="<TMPL_VAR USER_ID>">
+<input type="hidden" name="ref" value="<TMPL_VAR .FORUMOBJ.CURRENT_URL>">
+<TMPL_IF GROUPS>
+<div class="user-groups-container clearfix">
+  <div class="user-group-item">
+    <p><TMPL_VAR .RES.TEXT_USER_GROUPS></p>
+    <select name="group" size="10" multiple="multiple" id="select1">
+      <TMPL_LOOP GROUPS>
+      <TMPL_IF CHECKED>  
+      <option value="<TMPL_VAR ID>">
+        <TMPL_IF DEFAULT>
+          <TMPL_VAR .RES.TEXT_DEFAULT_GROUP_NAME>
+        <TMPL_ELSIF ANONYMOUS>
+          <TMPL_VAR .RES.TEXT_ANONYMOUS_GROUP_NAME>
+        <TMPL_ELSE>
+          <TMPL_VAR NAME>
+        </TMPL_IF>      
+      </option>
+      </TMPL_IF>
+      </TMPL_LOOP>
+    </select>
+  </div>
+
+  <div class="user-group-item-separator-container">
+    <div class="user-group-item-separator">
+      <a href="#" class="user-group-item-add" from="select2" to="select1"><span><TMPL_VAR .RES.TEXT_ADD_GROUP></span></a>
+    </div>
+    <div class="user-group-item-separator">
+      <a href="#" class="user-group-item-remove"  from="select1" to="select2"><span> <TMPL_VAR .RES.TEXT_ADD_DELETE></span></a>
+    </div>
+  </div>
+
+  <div class="user-group-item user-group-item-right">
+    <p><TMPL_VAR .RES.TEXT_AVALAIBLE_GROUPS></p>
+    <select name="gg" id="select2" size="10" multiple="multiple" class="user-group-remove-container">
+      <TMPL_LOOP GROUPS>
+      <TMPL_UNLESS CHECKED>  
+      <option value="<TMPL_VAR ID>">
+        <TMPL_IF DEFAULT>
+          <TMPL_VAR .RES.TEXT_DEFAULT_GROUP_NAME>
+        <TMPL_ELSIF ANONYMOUS>
+          <TMPL_VAR .RES.TEXT_ANONYMOUS_GROUP_NAME>
+        <TMPL_ELSE>
+          <TMPL_VAR NAME>
+        </TMPL_IF>      
+      </option>
+      </TMPL_UNLESS>
+      </TMPL_LOOP>
+    </select>
+  </div>
+</div>
+
+<div class="user-groups-container-no-js">
+  <div class="user-group-item" style="float: none;">
+    <p><TMPL_VAR .RES.TEXT_USER_GROUPS_LIST></p>
+  </div>
+    <TMPL_LOOP GROUPS>
+    <div class="user-groups-container-no-js-item">
+      <label>
+        <input type="checkbox" value="<TMPL_VAR ID>" <TMPL_IF CHECKED>checked</TMPL_IF> name="group">
+        <TMPL_IF DEFAULT>
+          <TMPL_VAR .RES.TEXT_DEFAULT_GROUP_NAME>
+        <TMPL_ELSIF ANONYMOUS>
+          <TMPL_VAR .RES.TEXT_ANONYMOUS_GROUP_NAME>
+        <TMPL_ELSE>
+          <TMPL_VAR NAME>
+        </TMPL_IF>
+      </label>
+    </div>
+    </TMPL_LOOP>
+</div>
+<TMPL_ELSE>
+  <div class="text-container">
+    <p><TMPL_VAR .RES.TEXT_NOGROUPS></p>
+  </div>
+</div>
+</TMPL_IF>
+
+<button type="submit"><TMPL_VAR .RES.TEXT_SAVE></button>
+
+</form>
+
+<script type="text/javascript">
+$(document).ready(function() {
+
+    $("#user-groups-forum").submit(function() {
+        $('select[name="group"] option').attr("selected", "selected");
+    });
+
+    $('div.user-groups-container-no-js').remove();
+    $("a.user-group-item-add, a.user-group-item-remove").click(function (e) {
+        e.preventDefault();
+        var from_id = $(this).attr('from');
+        var to_id = $(this).attr('to');
+        $("#"+from_id+" option:selected").each(function () {
+            var el = $(this);
+            $("#"+to_id).append("<option value=\""+el.val()+"\">"+el.text()+"</option>");
+            el.remove();
+        });
+    });
+
+});
+</script>

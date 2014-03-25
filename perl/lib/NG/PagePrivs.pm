@@ -302,7 +302,7 @@ where  $where2 and p1.local=1";
                     $checkPrivs->{$from}->{$row->{page_id}}->{$row->{module_id}} ||= {};
                     my $p = $checkPrivs->{$from}->{$row->{page_id}}->{$row->{module_id}}->{$row->{privilege}} ||= {};
                     
-                    die "_loadPagePrivilegesL1(): table has two or more value rows for page ".$row->{page_id}." module ".$row->{module_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$level});
+#                     die "_loadPagePrivilegesL1(): table has two or more value rows for page ".$row->{page_id}." module ".$row->{module_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$level});
                     
                     $p->{$level} = {
                         LEVEL  => $level,
@@ -322,7 +322,7 @@ where  $where2 and p1.local=1";
                     $checkPrivs->{$from}->{$row->{page_id}}->{$row->{module_id}} ||= {};
                     my $p = $checkPrivs->{$from}->{$row->{page_id}}->{$row->{module_id}}->{$row->{privilege}} ||= {};
                     
-                    die "_loadPagePrivilegesL1(): table has two or more value rows for page ".$row->{page_id}." module ".$row->{module_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$level});
+#                     die "_loadPagePrivilegesL1(): table has two or more value rows for page ".$row->{page_id}." module ".$row->{module_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$level});
                     
                     $p->{$level} = {
                         LEVEL  => $level,
@@ -366,7 +366,7 @@ where  $where2 and p1.local=1";
         $checkPrivs->{$from}->{$row->{page_id}}->{$row->{module_id}} ||= {};
         my $p = $checkPrivs->{$from}->{$row->{page_id}}->{$row->{module_id}}->{$row->{privilege}} ||= {};
 
-        die "_loadPagePrivilegesL1(): table has two or more value rows for page ".$row->{page_id}." module ".$row->{module_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$level});
+#         die "_loadPagePrivilegesL1(): table has two or more value rows for page ".$row->{page_id}." module ".$row->{module_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$level});
 
         $p->{$level} = {
             LEVEL  => $level,
@@ -613,7 +613,7 @@ where  (p1.admin_id = ? or p1.group_id = ?)";
         $pagePrivs->{$row->{link_id}}->{$row->{lang_id}}->{$row->{block_id}}->{$row->{privilege}}->{$level} ||= {};
 
         my $p = $pagePrivs->{$row->{link_id}}->{$row->{lang_id}}->{$row->{block_id}}->{$row->{privilege}}->{$level};
-        die "hasLinkBlockPrivilege(): table has two or more value rows for page ".$row->{page_id}." block ".$row->{block_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$from});
+#         die "hasLinkBlockPrivilege(): table has two or more value rows for page ".$row->{page_id}." block ".$row->{block_id}." privilege ".$row->{privilege}." level ".$level." from ".$from if (exists $p->{$from});
         $p->{$from} = $active;
     };
     $sth->finish();
@@ -1425,8 +1425,7 @@ sub showLocalPrivilegesTab {
             push @params, $pageId;
             push @params, $moduleId;
             push @params, $priv;
-            
-            
+
             my $sth = $dbh->prepare_cached("select active from ng_page_privs WHERE $where") or return $cms->error($DBI::errstr);
             $sth->execute(@params) or return $cms->error($DBI::errstr);
             my $oldRow = $sth->fetchrow_hashref();
@@ -1540,7 +1539,6 @@ sub showLocalPrivilegesTab {
 				$hash->{storageName} = $a->{STORAGENAME};
 			};
 		};
-		use NHtml;
 		my $json = create_json($hash);
 		return $cms->exit($json);
     };

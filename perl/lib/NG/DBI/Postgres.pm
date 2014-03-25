@@ -8,15 +8,28 @@ $NG::DBI::Postgres::VERSION = 0.4;
 use vars qw(@ISA);
 @ISA = qw(NG::DBI);
 
+sub init {
+    my $self = shift;
+    $self->SUPER::init(@_);
+    #Я честно говоря точно не помню, почему я так сделал :-) //Self-documented code begin.
+    #select f.id,f.page_id,f.module,ngs.module_id from ng_ftsindex f,ng_sitestruct ngs where f.page_id = ngs.id order by page_id
+    #Мы можем получить модуль из индекса, но не можем получить его из ng_sitestruct в том случае, если страница собрана на основе блоков шаблона.
+    #Т.е. тогда на одну страницу из ng_sitestruct может быть несколько записей в поисковом индексе.
+    $self->{_search_hasModule} = 0;
+    $self;
+}
+
 sub get_id {
 	my $self = shift;
 	my $table = shift || die "No table in get_id";
+	my $field = shift;
 	
-	my $field = "id";
-	if ($table =~ /(.*)\.(.*)/) {
+	if (!defined $field && $table =~ /(.*)\.(.*)/) {
 	  $table = $1;
 	  $field = $2;
-	}
+	};
+	
+	$field ||= "id";
 	
 	my $sth = $self->dbh->prepare("select nextval(\'".$table."_".$field."_seq\');") or return $self->error($DBI::errstr);
 	$sth->execute() or return $self->error($DBI::errstr);
@@ -174,9 +187,19 @@ sub insertFTSIndex {
 	$data->{B} ||= "";
 	$data->{C} ||= "";
 	$data->{D} ||= "";
+    
+    my $fields = "id,text,header,date,category,link_id,lang_id,page_id,subsite_id,suffix,fs";
+    my $placeh = "?,?,?,?,?,?,?,?,?,?,setweight(to_tsvector(?,?),'A') || setweight(to_tsvector(?,?),'B') || setweight(to_tsvector(?,?),'C') || setweight(to_tsvector(?,?),'D')";
+    my @params = ($id,$data->{TEXT},$data->{HEADER},$data->{DATE},$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$self->{_search_config},$data->{A},$self->{_search_config},$data->{B},$self->{_search_config},$data->{C},$self->{_search_config},$data->{D});
+    
+    if ($self->{_search_hasModule}) {
+        $fields .= ",module";
+        $placeh .= ",?";
+        push @params, $index->{OWNER};
+    };
 
-	my $sth = $self->dbh()->prepare_cached("insert into ng_ftsindex (id,text,header,date,category,link_id,lang_id,page_id,subsite_id,suffix,fs) values (?,?,?,?,?,?,?,?,?,?,setweight(to_tsvector(?,?),'A') || setweight(to_tsvector(?,?),'B') || setweight(to_tsvector(?,?),'C') || setweight(to_tsvector(?,?),'D'))");
-	my $res = $sth->execute($id,$data->{TEXT},$data->{HEADER},$data->{DATE},$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$self->{_search_config},$data->{A},$self->{_search_config},$data->{B},$self->{_search_config},$data->{C},$self->{_search_config},$data->{D});
+	my $sth = $self->dbh()->prepare_cached("insert into ng_ftsindex ($fields) values ($placeh)");
+	my $res = $sth->execute(@params);
 	unless ($res) {
 		$self->{_errstr} = "NG::DBI::Postgres::insertFTSIndex(): Ошибка запроса: ".$DBI::errstr;
 		return 0;

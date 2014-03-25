@@ -189,6 +189,7 @@ sub AuthenticateByLogin {
             $admin->{last_online} = time();
             $dbh->do("update ng_admins set sessionkey=?,last_online=?,last_ip=? where id=?",undef,$admin->{sessionkey},$admin->{last_online},$q->remote_host(),$admin->{id}) or die $DBI::errstr;
             $self->addCookie(-name=>COOKIENAME,-value=>$admin->{sessionkey},-domain=>$q->virtual_host(),-path=>'/admin-side/');
+            
 			$self->{_auth_status} = C_AUTH_OK;
 			$self->_makeLogEvent($self,{operation=>"Вход в систему",module_name=>"Система"});
         };
@@ -635,89 +636,6 @@ sub _getModulesTreeHTML {
         }) if $sNode;
     };
     return $@ if ($@);
-
-
-#    my $selNode = undef;
-=head
-	$tree->traverse(
-		sub {
-			my $_tree = shift;
-			my $value = $_tree->getNodeValue();
-            
-            ##TODO: $value->{HASACCESS} = ($hasGlobalSubsiteAccess || exists $pagePrivs->{$value->{id}} || exists $linkPrivs->{$value->{link_id}})?1:0;
-            
-
-			$value->{URL} = "";
-			
-			my $allowed = exists $mp->{$value->{id}} && exists $mp->{$value->{id}}->{ACCESS};
-			
-			if ($allowed) {
-                my $subUrl = $value->{suburl};
-                $subUrl .= "/" if $subUrl && ($subUrl !~ /\/$/);
-
-                if (($qModuleId eq $value->{id}) || ($moduleUrl eq $value->{moduleurl}."/" && $url =~ /^$baseUrl$moduleUrl$subUrl/ && (!$selNode || length($value->{suburl}) >= length($selNode->getNodeValue()->{suburl})))) {
-                    $selNode = $_tree;
-                };
-				
-				if ($value->{module}) {
-					$value->{'URL'} = "/admin-side"."/modules/".$value->{'moduleurl'}.(is_empty($value->{'suburl'})?"/":"/".$value->{'suburl'}."/");
-				};
-				
-				my $node = $_tree;
-				while (1) {
-					my $v = $node->getNodeValue();
-					$v->{ALLOWED} = 1;
-					last if $node->isRoot();
-					$node = $node->getParent();
-				};
-			};
-
-            $value->{HASACCESS} = 0;
-
-            if ($value->{node_id}) {
-                my $u = $value->{url};
-                $u ||= $value->{node_id};
-                $value->{url} = "/admin-side/pages/$u/";
-                $value->{HASACCESS} = 1 if ($app->hasPageModulePrivilege(PAGE_ID=>$value->{node_id},SUBSITE_ID=>$value->{subsite_id},MODULE_ID=>$accessModuleId,PRIVILEGE=>'ACCESS'));
-            }
-            elsif ($value->{module_id}) {
-                my $u = $value->{url};
-                $u ||= $value->{module_id};
-                $value->{url} = "/admin-side/modules/$u/";
-                $value->{HASACCESS} = 1 if ($app->hasModulePrivilege(MODULE_ID=>$value->{module_id},PRIVILEGE=>'ACCESS'));
-            }
-            else {
-                $value->{url} = '';
-            };
-            #$value->{INACTIVE} = 1;
-			#$value->{HASACCESS} = 0;
-		}
-	);
-=cut
-=head
-    my $moduleId = 0;
-    if ($selNode) {
-        $selNode->getNodeValue()->{SELECTED}  = 1;
-        $moduleId = $selNode->getNodeValue()->{id};
-    };
-    
-	my @a = ($tree);
-	while (scalar (@a)) {
-		my $e = shift @a;
-		my $prevChild = undef;
-		foreach my $c ($e->getAllChildren()) {
-			if ($c->getNodeValue()->{ALLOWED}) {
-				$prevChild->{_next_sibling_order} = $c->{_order} if $prevChild;
-				$prevChild = $c;
-				$c->{_next_sibling_order} = undef;
-				push @a,$c;
-			}
-			else {
-				$e->removeChild($c);
-			}
-		}
-	};
-=cut
 	my $template = $app->gettemplate('admin-side/common/content_tree.tmpl') || return $app->getError();
 	
 	
@@ -756,7 +674,6 @@ sub __getRow {
     my $where = shift;
     
     my $dbh = $app->db()->dbh();
-
     my $sql = "select id,node_id,module_id,url,subsite_id from ng_admin_menu where $where";
     my $sth = $dbh->prepare($sql) or die $DBI::errstr;
     $sth->execute(@_) or die $DBI::errstr;
@@ -801,10 +718,8 @@ sub _getRowByModuleURL {
 sub run {
 	my $cms = shift;
 	my $q = $cms->q();
-
     my $url = $q->url(-absolute=>1);
     my $is_ajax  = $q->param('_ajax') || $q->url_param('_ajax') || 0;
-
     $cms->openConfig() || return $cms->showError();
 
 	my $baseUrl = "/admin-side/";
@@ -1123,7 +1038,8 @@ sub _run {
     });
     
     my $template = $cms->gettemplate('admin-side/common/universaladm.tmpl') || return $cms->showError();
-    
+    my $customHead = "";
+    $customHead = "admin-side/customhead.tmpl" if $cms->confParam('CMS.hasCustomHead',0);
     $template->param(
         AS => {
             LEFT_BLOCK     => $leftBlock,
@@ -1134,6 +1050,7 @@ sub _run {
             TITLE          => $cms->confParam('CMS.SiteName','Cайт')." :: Администрирование",
             CURRENT_USER   => $cms->{_admin}->{fio},
             PAGEURLS       => \@pageurls,
+            CUSTOMHEAD     => $customHead,
         },
     );
     return $cms->output($template,-nocache=>1);

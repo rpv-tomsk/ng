@@ -139,6 +139,10 @@ sub getSubURL {
 
 sub opts {
     my $self = shift;
+	if (scalar(@_) == 1) {
+		my $v = shift;
+		return $self->{_opts}->{$v};
+	};
     return $self->{_opts};
 };
 

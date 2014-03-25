@@ -2,39 +2,12 @@ package NG::Bootstrap;
 
 use strict;
 
-#sub BEGIN {
-#    my ($dir, $orig_dir);
-#    require File::Spec;
-#    if (!($dir = $ENV{MT_HOME})) {
-#        if ($0 =~ m!(.*([/\\]))!) {
-#            $orig_dir = $dir = $1;
-#            my $slash = $2;
-#            $dir =~ s!(?:[/\\]|^)(?:plugins[/\\].*|tools[/\\])$!$slash!;
-#            $dir = '' if ($dir =~ m!^\.?[\\/]$!);
-#        } elsif ($] >= 5.006) {
-#            # MT_DIR/lib/MT/Bootstrap.pm -> MT_DIR/lib/MT -> MT_DIR/lib -> MT_DIR
-#            require File::Basename;
-#            $dir = File::Basename::dirname(File::Basename::dirname(
-#                File::Basename::dirname(File::Spec->rel2abs(__FILE__))));
-#        }
-#        unless ($dir) {
-#            $orig_dir = $dir = $ENV{PWD} || '.';
-#            $dir =~ s!(?:[/\\]|^)(?:plugins[/\\].*|tools[/\\]?)$!!;
-#        }
-#        $ENV{MT_HOME} = $dir;
-#    }
-#    unshift @INC, File::Spec->catdir($dir, 'extlib');
-#    unshift @INC, File::Spec->catdir($orig_dir, 'lib')
-#        if $orig_dir && ($orig_dir ne $dir);
-#}
-
 sub error {
     my $msg = shift;
     print "Content-Type: text/plain; charset=windows-1251;\n\n";
     print $msg;
     exit;
-    
-}
+};
 
 sub importX {
     my $pkg = shift;
@@ -44,16 +17,18 @@ sub importX {
     
     my $cgi;
     my $db = undef;
-   
+    
+    $class||= "NG::Application" if $param{PageModule};
+    
     error "No Application specified" if (!defined $class);  #TODO: make message 
     eval "require $class; 1;" or error $@;                  #TODO: -//-
-    if ($dbclass) { eval "require $dbclass; 1;" or error $@; #TODO: make message
+    if ($dbclass) {
+        eval "require $dbclass; 1;" or error $@;            #TODO: make message
         $db = $dbclass->new();
         $db->connect() or error $db->errstr();
-  		$db->init();
     };
 	
-	if (exists $param{DEBUG}) {
+	if (exists $param{Debug}) {
 		eval "use CGI::Carp qw(fatalsToBrowser)";
 	};
 	
@@ -120,7 +95,6 @@ sub FastCGI {
     while (my $cgi = new CGI::Fast) {
         if ($db) {
       	  $db->connect() or error $db->errstr();
-      	  $db->init();
         };
         my $app = $class->new( %param, CGIObject => $cgi, DBObject=>$db,AuthClass=>$authclass ); #   or die $class->errstr;
     #    #local $SIG{__WARN__} = sub { $app->trace($_[0]) };

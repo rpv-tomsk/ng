@@ -63,7 +63,7 @@ sub _getForm {
     
     my $form = NG::Form->new(
         #FORM_URL    => $self->q()->url()."?action=update",
-        FORM_URL    => $self->getBaseURL()."?action=formaction",
+        FORM_URL    => $self->getBaseURL()."?action=formaction&random=".rand(),
         CGIObject   => $self->q(),
         DB          => $self->db(),
         TABLE       => $self->{_table},
@@ -179,9 +179,21 @@ sub showPageBlock  {
                 };
             };
             
-            my $ref = $q->param('ref');
+           
             
             if ($initialised) {
+            
+                my $ref = $q->param('ref');
+                my ($u, $p) = split /\?/, $ref;
+                my @params = ();
+                foreach my $pair (split /&/, $p) {
+                    my ($n, $v) = split /=/, $pair;
+                    next if ($n eq 'rand');
+                    push @params, $n.'='.$v;
+                };
+                push @params, 'rand='.int(rand(1000));
+                $ref = $u.'?'.join('&', @params);            
+            
                 $self->beforeUpdate($form) or return $self->showError();
                 $form->updateData() or return $self->error($form->getError());
                 $self->afterUpdate($form) or return $self->showError();
@@ -954,7 +966,7 @@ sub getBlockIndex {
                         else {
                             $v = $self->_indexGetFieldValue($fieldObjs->{$fn},$row);
                             unless ($v) {
-                                my $e = $self->getError();
+                                my $e = $self->error();
                                 return $self->showError("_getIndexes(): Ошибка получения значения поля $fn для класса $class: $e") if $e;
                             };
                             $rowFieldValues->{$fn} = $v;
@@ -995,8 +1007,6 @@ sub getBlockIndex {
         };
     };
     $sth->finish();
-use Data::Dumper;
-print STDERR Dumper($index);
     return $index;
 };
 

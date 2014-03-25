@@ -9,7 +9,7 @@ sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->init(@_);    
+    $self->init(@_) or return undef;
     #$self->config();
     return $self; 
 };
@@ -17,11 +17,14 @@ sub new {
 sub init {
 	my $self = shift;
     my $opts = shift || {};
-    $self->{_adminBaseURL} = $opts->{ADMINBASEURL};
-    $self->{_pageRow}      = $opts->{PAGEPARAMS};
-	$self->{_moduleRow}    = $opts->{MODULEROW};
-	$self->{_params} = undef;
-	$self;
+    $self->{_pParamsRaw}   = delete $opts->{PLUGINPARAMS};
+    $self->{_adminBaseURL} = delete $opts->{ADMINBASEURL};
+    $self->{_pageRow}      = delete $opts->{PAGEPARAMS};
+    $self->{_moduleRow}    = delete $opts->{MODULEROW};
+    $self->{_opts}   = $opts;
+    $self->{_params} = undef;   #For params from ng_module.params
+    $self->{_pluginparams} = undef;   #For params from ng_block.params
+    $self;
 };
 
 # Использующие pageRow методы сдублированы в NG::Block
@@ -120,6 +123,11 @@ sub pageParam {
     return $self->{_pageRow}->{$param};
 };
 
+sub opts {
+    my $self = shift;
+    return $self->{_opts};
+}; 
+
 # Параметры модуля, из ng_modules
 
 sub getBaseURL {
@@ -132,60 +140,84 @@ sub moduleParam {
 	my $param = shift or cluck("moduleParam(): no key specified");
 	$self->{_moduleRow} or cluck ref($self)."::_moduleRow() not initialised";
 	return $self->{_moduleRow}->{$param} if exists $self->{_moduleRow}->{$param};
-	$self->_initModuleParams() unless $self->{_params};
+	$self->{_params}||=$self->_parseParams($self->{_moduleRow}->{params});
 	return $self->{_params}->{$param} if exists $self->{_params}->{$param};
 	return undef;
 };
 
-sub getModuleCode {
+sub pluginParam {
 	my $self = shift;
-	#TODO: добавить поддержку Site::Module->getModuleCode для возможности делать Site::Module->get/setStash()
-	
-	return $self->{_moduleRow}->{code} if $self->{_moduleRow} && exists $self->{_moduleRow}->{code};
-	my $cms = $self->cms();
-	my $hash = $cms->modulesHash({REF=>(ref $self)});
-	
-	my $code = undef;
-	foreach my $key (keys %$hash) {
-		if ($hash->{$key}->{MODULE} eq ref $self) {
-			return $cms->error("getModuleCode(): Модуль ".ref($self)." соответствует нескольким кодам - $key и $code") if defined $code;
-			$code = $key;
-		};
-	};
-	return $cms->error("getModuleCode(): Не могу найти CODE модуля ".ref($self)) unless defined $code;
-	return $code;
+	my $param = shift or cluck("pluginParam(): no key specified");
+    $self->{_pluginparams}||=$self->_parseParams($self->{_pParamsRaw});
+    return $self->{_pluginparams}->{$param} if exists $self->{_pluginparams}->{$param};
+	return undef;
 };
 
-sub _initModuleParams {
+sub getModuleCode {
+    my $self = shift;
+    
+    if (ref $self) {
+        return $self->{_moduleRow}->{code} if $self->{_moduleRow} && exists $self->{_moduleRow}->{code};
+        $self = ref $self;
+    };
+    
+    my $cms = $self->cms();
+    my $hash = $cms->modulesHash({REF=>$self});
+    return $cms->defError("getModuleCode():","modulesHash() не вернул значения для REF $self") unless $hash;
+    return $cms->error("getModuleCode(): возвращенное modulesHash() значение не HASHREF") if ref $hash ne "HASH";
+    
+    my $code = undef;
+    foreach my $key (keys %$hash) {
+        next if $hash->{$key}->{MODULE} ne $self;
+        return $cms->error("getModuleCode(): Модуль $self соответствует нескольким кодам - $key и $code") if defined $code;
+        $code = $key;
+    };
+    return $cms->error("getModuleCode(): Не могу найти CODE модуля $self") unless $code;
+    return $code;
+};
+
+sub getSelfInstance() {
+    my $self = shift;
+    my $cms = $self->cms();
+    my $code = $self->getModuleCode() or return $cms->error();
+    return $cms->getModuleInstance($code);
+};
+
+sub _parseParams {
 	my $self = shift;
     #my $t = 'f1:v1,  f2: 2, f3: \'asdasdasd, \' asd\', f4 : "asdasdasdas, \\"asd"';
-    my $t = $self->{_moduleRow}->{params};
+    my $t = shift;
     return {} unless $t;
-    $self->{_params} = {};
+    my $h = {};
     while ($t =~ /\s*([^\:\,]+?)\s*\:\s* (?: [\"\'] ( (?<=[\"]) .* (?=(?<![\\])[\"]) | (?<=[\']) .* (?=(?<![\\])[\']) ) [\"\'] | ([^\,]+)  ) /gx) {
         my $v;
         $v = $2 if $2;
         $v = $3 if $3;
-        $self->{_params}->{$1} = $v;
+        $h->{$1} = $v;
     };
-    return $self->{_params};
+    return $h;
 };
 
 
 sub setStash { # $mObj->setStash($key,$value)
     my $self = shift;
-    my $key  = shift or die "NG::Module->setStash(): No KEY";
     
     my $c = $self->getModuleCode() or die "NG::Module->setStash(): Can`t get ModuleCode";
     my $m = ($NG::Application::cms->{_mstash}->{$c} ||= {});
     
-    unless (scalar @_) {
-        delete $m->{$key};
+    die "NG::Module->setStash(): No KEY" if (scalar @_ == 0);
+    if (scalar @_ == 1) {
+        delete $m->{$_[0]};
         return undef;
     };
-    warn "NG::Module->setStash(): key $key already has value" if exists $m->{$key};
-    my $value = shift;
-    $m->{$key} = $value;
+    die "NG::Module->setStash(): Incorrect parameters count" if (scalar @_ % 2);
+    my ($key,$value);
+    while (@_) {
+        ($key,$value) = (shift,shift);
+        warn "NG::Module->setStash(): key $key already has value" if exists $m->{$key};
+        $m->{$key} = $value;
+    };
+    $value;
 };
 
 sub getStash { # $mObj->getStash($key)
@@ -218,30 +250,30 @@ sub getAdminSubURL {
 
 # runBlock и runModule - не совсем интуитивно понятно.
 sub runBlock {
-	my $self = shift;
-	my $module = shift;
-	my $is_ajax = shift;
+    my $self = shift;
+    my $classDef = shift;
+    my $is_ajax = shift;
     my $opts    = shift || {};
     
     my $cms = $self->cms();
     $opts->{MODULEOBJ} =  $self;
-    my $bObj = $cms->getObject($module,$opts) or return $cms->error();
+    my $bObj = $cms->getObject($classDef,$opts) or return $cms->error();
 
-    return $cms->error("Модуль $module не содержит метода pageBlockAction") unless $bObj->can("pageBlockAction");
+    return $cms->error("Модуль ".$classDef->{CLASS}." не содержит метода pageBlockAction") unless $bObj->can("pageBlockAction");
 	return $bObj->pageBlockAction($is_ajax);
 };
 
 sub runModule {
-	my $self = shift;
-	my $module = shift;
-	my $is_ajax = shift;
+    my $self = shift;
+    my $classDef = shift;
+    my $is_ajax = shift;
     my $opts    = shift || {};
 
     my $cms = $self->cms();
     $opts->{MODULEOBJ} =  $self;
-    my $bObj = $cms->getObject($module,$opts) or return $cms->error();
+    my $bObj = $cms->getObject($classDef,$opts) or return $cms->error();
 
-    return $cms->error("Модуль $module не содержит метода blockAction") unless $bObj->can("blockAction");
+    return $cms->error("Модуль ".$classDef->{CLASS}." не содержит метода blockAction") unless $bObj->can("blockAction");
 	return $bObj->blockAction($is_ajax);
 };
 
@@ -399,7 +431,7 @@ sub _adminModule {
     
     my $hasModuleAccess = 0;
     if (exists $submodule->{PAGEPRIVILEGE}) {
-        $hasModuleAccess = $self->hasPageModulePrivilege($submodule->{PRIVILEGE});
+        $hasModuleAccess = $self->hasPageModulePrivilege($submodule->{PAGEPRIVILEGE});
     }
     elsif (exists $submodule->{PRIVILEGE}) {
         $hasModuleAccess = $self->hasModulePrivilege($submodule->{PRIVILEGE});
@@ -462,14 +494,18 @@ sub _adminModule {
     
     $moduleType ||= "moduleBlock" if $type eq "module";
     $moduleType ||= "pageBlock" if $type eq "pagemodule";
-
+    
+    my $classDef = {CLASS=>$submodule->{BLOCK}};
+    $classDef->{USE}= $submodule->{USE} if exists $submodule->{USE};
+    
     if ($moduleType eq "pageBlock" || $moduleType eq "pageModule") {
         #pageBlockAction
-        return $self->runBlock($submodule->{BLOCK},$is_ajax,$opts);
+        return $self->runBlock($classDef,$is_ajax,$opts);
     }
     elsif ($moduleType eq 'moduleBlock') {
         #blockAction
-        return $self->runModule($submodule->{BLOCK},$is_ajax,$opts);
+        return $self->runModule($classDef,$is_ajax,$opts);
+        #return $self->runModule($submodule->{BLOCK},$is_ajax,$opts);
     }
     else {
         return $cms->error("Неизвестный тип подмодуля");
@@ -486,6 +522,14 @@ sub getBlockContent {
     my $function  = "block_".$action;
     
     return $self->cms->error("getBlockContent(): No function ".$function." in module ".(ref $self)) unless $self->can($function);
+    return $self->$function($action,@_);
+};
+
+sub getBlockKeys {
+    my $self = shift;
+    my $action = shift;
+    my $function  = "keys_".$action;
+    return undef unless $self->can($function);
     return $self->$function($action,@_);
 };
 

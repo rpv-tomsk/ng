@@ -85,7 +85,7 @@ sub beforeOutput {
     	db    => $pObj->db(),
     	table => $pObj->getListSQLTable(),
     	date_field => $config->{FIELD},
-		where => join(",",@db_where),
+		where => join(" and ",@db_where),
 		params => \@db_params
     );
     

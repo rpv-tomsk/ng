@@ -1,0 +1,54 @@
+<script type="text/javascript">
+    forum_prepare_editor("<TMPL_VAR FORUMOBJ.EDITOR ESCAPE=HTML>", {smileys_dir: "<TMPL_VAR FORUMOBJ.SMILEYS_DIR>"});
+</script>
+
+<TMPL_IF ADDMESSAGE.PREVIEW>
+    
+    
+<ul class="forum-topic">
+  <li id="messagePreview">
+    <div class="topic-preview-inner-bg clearfix">
+      <div class="topic-message-count"><TMPL_VAR .RES.PREVIEW_MESSAGE></div>
+    </div>
+    <div class="forum-topic-container">
+      <div class="forum-topic-content-box">
+          <p class="topic-date"><strong><TMPL_VAR ADDMESSAGE.FORM.HEADER> </strong></p>
+          <p class="topic-message"><TMPL_VAR ADDMESSAGE.PREVIEW></p>
+      </div> <!--! end of .forum-topic-content-box-->
+    </div> <!--! end of .forum-topic-container-->
+  </li>
+</ul>
+    
+    
+    
+</TMPL_IF>
+
+<form action="#addmessage_form" method="post" class="answer-box" id="addmessage_form" enctype="multipart/form-data">
+
+<input type="hidden" name="session_id" value="<TMPL_VAR ADDMESSAGE.FORM.SESSION_ID>">
+
+<TMPL_IF ADDMESSAGE.ERRORS.THEME_ID>
+    <p class="forum-error"><TMPL_VAR .RES.ERROR_ADDMESSAGE_THEME_ID></p>
+</TMPL_IF>
+
+<div>
+    <h1><TMPL_VAR .RES.TEXT_ADDMESSAGE></h1>
+    <input type="hidden" value="addmessage" name="post_action">
+    <input type="hidden" name="theme_id" value="<TMPL_VAR ADDMESSAGE.FORM.THEME_ID>">
+    <TMPL_UNLESS FORUMOBJ.USER.ID>
+    <p><TMPL_VAR .RES.TEXT_ADDMESSAGE_AUTHOR></p>
+    <input type="text" name="author" value="<TMPL_VAR ADDMESSAGE.FORM.AUTHOR ESCAPE=HTML>" class="text">
+    </TMPL_UNLESS>
+    <p><TMPL_VAR .RES.TEXT_ADDMESSAGE_HEADER></p>
+    <input type="text" name="header" value="<TMPL_VAR ADDMESSAGE.FORM.HEADER ESCAPE=HTML>" class="text">
+    <p><TMPL_VAR .RES.TEXT_ADDMESSAGE_MESSAGE></p>
+    <div class="editor"><textarea name="message" <TMPL_IF ADDMESSAGE.ERRORS.MESSAGE>class="error"</TMPL_IF> jseditor="1"><TMPL_VAR ADDMESSAGE.FORM.MESSAGE ESCAPE=HTML></textarea></div>
+    <TMPL_IF ADDMESSAGE.ERRORS.MESSAGE> <p class="input-error"><small><TMPL_VAR .RES.ERROR_ADDMESSAGE_MESSAGE></small></p></TMPL_IF>
+</div>
+
+    <TMPL_IF .FORUMOBJ.USER.ID><p><label><input type="checkbox" name="addfiles" <TMPL_IF ADDTHEME.FORM.ADDFILES>checked</TMPL_IF>><TMPL_VAR .RES.TEXT_ADDMESSAGE_ADDFILES></label></p></TMPL_IF>
+
+        <button class="button" type="submit"><TMPL_VAR .RES.TEXT_ADDMESSAGE_SUBMIT></button> 
+        <button class="button" type="submit" name="formaction" value="preview"><TMPL_VAR .RES.TEXT_ADDMESSAGE_PREVIEW></button>
+        
+</form>

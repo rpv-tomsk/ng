@@ -1,0 +1,18 @@
+<form action="?action=groupsadmin" method="post">
+<h1><label for="addgroup1"><TMPL_VAR .RES.TEXT_ADDGROUP_NAME></label></h1>
+<div class="form-element">
+  <table>
+    <tbody><tr>
+      <td>
+        <div class="input-wrap">
+          <input type="hidden" name="post_action" value="addgroup">
+          <input id="addgroup1" type="text" name="name" class="text<TMPL_IF ADDGROUP.ERRORS.NAME> error</TMPL_IF>" value="<TMPL_VAR ADDGROUP.FORM.NAME ESCAPE=HTML>">
+        </div>
+        <TMPL_IF ADDGROUP.ERRORS.NAME><div><small class="error-box"><TMPL_VAR .RES.ERROR_ADDGROUP_NAME></small></div></TMPL_IF>
+      </td>
+    </tr>
+  </table>
+  <button type="submit" class="button"><TMPL_VAR .RES.TEXT_ADDGROUP></button>
+</div>
+
+</form>

@@ -1,0 +1,38 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+    <h1><TMPL_VAR SECTION.NAME></h1>
+    <table class="forum-table">
+      <thead>
+        <tr>
+          <td></td>
+          <td></td>
+          <td><TMPL_VAR .RES.TEXT_THEMES_COUNT></td>
+          <td><TMPL_VAR .RES.TEXT_MESSAGES_COUNT></td>
+          <td><TMPL_VAR .RES.TEXT_LAST_MESSAGE></td>
+        </tr>
+      </thead>
+      <tbody>
+      <TMPL_LOOP FORUMS>
+        <tr>
+            <td class="theme-icon"><span class="forum-new-message-icon png_bg"></span></td>
+            <td class="theme-name">
+                <p class="theme-name-first"><a href="?action=showthemes&forum_id=<TMPL_VAR ID>" class="underlined"><TMPL_VAR NAME></a></p>
+                <p class="theme-name-second"><TMPL_VAR SECONDNAME></p>
+            </td>
+            <td class="count-themes"><TMPL_VAR THEMES_CNT></td>
+            <td class="message-count"><TMPL_VAR MESSAGES_CNT></td>
+            <td class="last-message">
+                <TMPL_IF LAST_THEME_ID>
+                    <p><a href="?action=showmessages&theme_id=<TMPL_VAR LAST_THEME_ID>" class="underlined"><strong><TMPL_VAR LAST_THEME_NAME></strong></a><p>
+                    <p>
+                        <TMPL_IF LAST_MESSAGE_USER_ID><a href="?action=showuserinfo&user_id=<TMPL_VAR LAST_MESSAGE_USER_ID>" class="author"></TMPL_IF>
+                            <TMPL_VAR LAST_MESSAGE_USER>
+                        <TMPL_IF LAST_MESSAGE_USER_ID></a></TMPL_IF>
+                        , <TMPL_VAR LAST_MESSAGE_DATE>
+                    </p>
+                </TMPL_IF>
+            </td>
+        </tr>      
+      </TMPL_LOOP>
+      </tbody>
+      </table>    

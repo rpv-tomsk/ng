@@ -12,7 +12,7 @@ body {
 	background: url(/admin-side/img/img_background.gif) repeat-y left;
 	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
 	font-size: 11px;
-	min-width: 1000px;
+	min-width: 1150px;
 	width: expression((document.documentElement.clientWidth || document.body.clientWidth) < 1020 ? '1021px': 'auto');
 	position: relative;
 }
@@ -113,8 +113,8 @@ span.history_items a {
 /*******************Оснавная часть******************/
 #middle {
 	width: 100%;
-	padding-top: 15px;
-	margin-bottom: 15px
+	padding-top: 10px;
+	margin-bottom: 15px;
 }
 #middle_top_line_left {
 	height: 15px;
@@ -131,25 +131,25 @@ span.history_items a {
 /********************Левая панель*************************/
 
 *html #middle_left {
-	width:370px;
+	width:360px;
 }
 *html #middle_right {
-	margin-left:370px;
+	margin-left:360px;
 	padding-right: 30px;
 }
 #middle_left {
 	float:left;
 	width:320px;
 	margin-right:-100%;
-	padding: 0px 0 0 20px;
+	padding: 5px 0 0 10px;
 }
 /*********************Активный элемент**************************************/
 
 /*Общие параметры вкладки, центральная часть*/
 span.active, span.atten_active {
 	background: url(/admin-side/img/img_menu_select.gif) repeat-x top;
-	height: 31px;
-	line-height: 31px;
+	height:22px;
+	line-height: 22px;
 	text-align: center;
 	font-size:12px;
 	color:#004882;
@@ -176,9 +176,15 @@ span.atten_active {
 	padding-right:0px;
 }
 
+span.tab {
+	display: inline-block;
+	margin-top:5px;
+	vertical-align:bottom;
+}
+
 span.active_right, span.atten_active_right {
 	background: url(/admin-side/img/right_angle.gif) no-repeat right top;
-	height: 31px;
+	height: 22px;
 	width: 5px;
 	float: left;
 }
@@ -191,7 +197,7 @@ span.atten_active_right {
 /*Общие параметры вкладки, левая часть*/
 span.active_left, span.atten_active_left {
 	background: url(/admin-side/img/left_angle.gif) no-repeat;
-	height: 31px;
+	height:22px;
 	width: 5px;
 	float: left;
 }
@@ -209,7 +215,6 @@ span.no-active, span.atten_no-active {
 	height: 22px;
 	text-align: center;
 	line-height: 21px;
-	margin-top: 9px;
 	float: left;
 }
 span.atten_no-active {
@@ -229,7 +234,7 @@ span.no-active a, span.atten_no-active a {
 }
 span.no-active_right, span.atten_no-active_right {
 	background: url(/admin-side/img/no-active_right.gif) no-repeat right bottom;
-	height: 31px;
+	height:22px;
 	width: 6px;
 	float: left;
 }
@@ -238,7 +243,7 @@ span.atten_no-active_right {
 }
 span.no-active_left, span.atten_no-active_left {
 	background: url(/admin-side/img/no-active_left.gif) no-repeat bottom;
-	height: 31px;
+	height:22px;
 	width: 6px;
 	float: left;
 }
@@ -294,17 +299,22 @@ div.title {
 
 /***********************Правая панель основная часть*********************************************/
 #middle_right {
-	margin-left:370px;
-	padding-right: 30px;
+	margin-left: 350px;
+    padding-right: 10px;
 }
 #middle_right_header {
-	height: 31px;
+	overflow: hidden;
+	margin-right:4px;
+	_width:100%;
 }
+
 #line_left {
 	height: 31px;
 	background: url(/admin-side/img/img_middle_right_line.gif) repeat-x bottom;
-	_float: right;
-	margin-right:4px;
+	z-index:-100;
+	margin-top:-1px;
+	/*IE decides to show it me...*/
+	/*font-size:1pt;*/
 }
 html:root #line_left {
 	height: 31px;
@@ -389,7 +399,7 @@ span#listFilters div.button {
 #info_content {
 	border-left: 1px solid #96c5ec;
 	border-right: 1px solid #96c5ec;
-	padding: 15px 15px 0px 20px;
+	padding: 15px 10px 0px 10px;
 	padding-top:0px;
 	overflow: hidden;
 	zoom: 1;
@@ -432,6 +442,7 @@ div#top_info_right {
 div#table_content {
 	padding-top: 15px;
 	width:100%;
+	max-width: 100%;
 }
 .content_table_tree {
 	min-width:700px;
@@ -797,9 +808,8 @@ input.checkbox {
 	margin-top:3px;
 }
 td.form {
-	width:100%;
-	padding-right:7px;
-	_padding-right:0px;
+	width: auto;
+
 }
 td.form div.shadow_right {
 	padding-right:7px;
@@ -844,6 +854,7 @@ textarea.info_textarea {
 	scrollbar-face-color:#f4f4f4;
 	height:150px;
 	margin-top: 5px;
+	width: 100%;
 }
 /*select в полях формы*/
 select.info_text {
@@ -1273,7 +1284,6 @@ div.wrapper_info_content {
 }
 div.input_info {
 	overflow: hidden;
-	_width: 100%;
 	padding-right: 6px;
 }
 div.input_info input {
@@ -1299,6 +1309,7 @@ input {
 	/*padding-top:2px;*/
 	/*padding-left:2px;*/
 	border: 1px solid #65a7dd;
+	margin: 0;
 }
 input[type=image] {
 	border: none;
@@ -1310,10 +1321,14 @@ textarea {
 	color:#0e75a3;
 	font-size:11px;
 	font-family: Verdana;
-	width: 100%;
+	width: 100%%;
+	margin: 0;
+	position: relative;
+	float: left;
+ 	overflow: hidden;	
 }
 input.info_text {
-	width: 100%;
+	width: 99%;
 }
 input.info_file {
 	_border: 1px solid #65a7dd;
@@ -1382,6 +1397,7 @@ table.admin-table td.title {
 p {
 	color: #004882;
 	font-size: 12px;
+	margin-bottom: 7px;
 }
 
 #content #info_content {
@@ -1801,27 +1817,34 @@ div.pageprivileges div.modulename p {
 div.pageprivileges div.privilege {
 	border:1px solid #7FB4DF;
 	border-top:none;
-	height:25px;
+	padding:2px 5px;
+	/*height:25px;*/
+    overflow: hidden;
 }
 div.pageprivileges div.privilege p.name{
 	float:left;
 	border-top:none;
-	padding: 5px 0 5px 10px;
+	/*padding: 5px 0 5px 0px;*/
+	padding:0; margin:0;
 	font-weight: bold;
 }
 div.pageprivileges div.privilege img.status {
-	padding:3px 2px 0 2px;
-	float:left;
+	/*padding:3px 2px 0 2px;*/
+	padding:0 2px; margin:0;
+	/*float:left;*/
+	display:inline-block;
 }
 div.pageprivileges div.privilege p.status {
 	border-top:none;
 	float:left;
-	padding-top:5px;
+	/*padding-top:5px;*/
+	padding:0; margin:0;
 }
 div.pageprivileges div.privilege p.links {
 	float:right;
 	border-top:none;
-	padding:5px 10px;
+	/*padding:5px 10px;*/
+	padding:0 10px;  
 }
 div.pageprivileges div.sources {
 	border:1px solid #7FB4DF;
@@ -1962,12 +1985,57 @@ div.addRuleBar p.name {
 	font-weight:bold;
 	padding:2px 2px 0 2px;
 }
-#content select {
-	width: 50%;
+.logout {
+	background: url(/admin-side/img/img_top2_inact.gif) 0 0 no-repeat;
+	width: 73px;
+	height: 43px;
+	display: inline-block;
 }
-#middle_right_content select {
-	width: 50%;
+.logout:hover {
+	background:url(/admin-side/img/img_top2_act.gif) 0 0 no-repeat;
 }
+
 #middle_right_content  #middle_right_menu select {
 	width: 160px;
 	overflow: auto;
+}
+#middle_right_header .active {
+	margin-top: 9px;
+	height: 21px;
+	line-height: 21px;
+	color: #1d6798;
+}
+#middle_right_header .active_left,#middle_right_header .active_right {
+	height: 21px;
+	margin-top: 9px;
+}
+.tab {
+	display: inline-block;
+}
+#middle_right_header {
+	height: auto;
+	overflow: hidden;
+}
+.logout {
+	background: url(../img/img_top2_inact.gif) 0 0 no-repeat;
+	width: 73px;
+	height: 43px;
+	display: inline-block;
+}
+.logout:hover {
+	background:url(../img/img_top2_act.gif) 0 0 no-repeat;
+}
+#middle_right_content .input_info select {
+	width: auto;	
+}
+.withTextArea {
+
+}
+.clearAll {
+  height: 1px;
+  overflow: hidden;
+  clear: both;
+  width: 100%;
+}
+
+.left_links{margin-right:200px; overflow:hidden;}

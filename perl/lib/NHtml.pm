@@ -22,12 +22,12 @@ BEGIN
 			unhtmlspecialchars
 			nl2br
 			nl2p
+			nl2li
 			parse_bbcodes
 			escape_js
 			strip_tags
 			escape_angle_brackets
             parseBBlink
-            trim
                      );
 };
 $cite_start_tag="";
@@ -35,13 +35,6 @@ $cite_end_tag="";
 
 $quote_start_tag="";
 $quote_end_tag="";
-
-sub trim
-{
-    my $text = shift;
-    $text =~ s/^\s+|\s+$// if (defined $text);
-    return $text; 
-};
 
 sub strip_tags {
 	my $text = shift;
@@ -185,6 +178,7 @@ sub unhtmlspecialchars {
 sub escape_js {
     my ($var) = @_;
     return $var unless defined $var;
+    $var =~ s/\\/\\\\/g;
     $var =~ s/(["'])/\\$1/g; #"
     $var =~ s/\r/\\r/g;
     $var =~ s/\n/\\n/g;
@@ -209,9 +203,13 @@ sub nl2p {
 
 sub nl2li {
 	my $str=shift;
-	$$str=~ s/\r//gi;
-	$str=~ s/\n/<li>/gi;
-	return "<ol>".$str."</ol>";
+	my $otag=shift||'<ol>';
+	my $ctag = $otag;
+	$ctag=~s/^\</\<\//;
+	$str=~ s/^(\r?\n)+//;
+	$str=~ s/(\r?\n)+$//;
+	$str=~ s/(\r?\n)/<\/li>$1<li>/gs;
+	return $otag."<li>".$str."</li>".$ctag;
 };
 
 sub parse_bbcodes {

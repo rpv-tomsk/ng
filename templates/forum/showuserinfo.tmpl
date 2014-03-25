@@ -1,0 +1,48 @@
+<TMPL_INCLUDE "panel.tmpl">
+<script type="text/javascript">
+    forum_prepare_editor("<TMPL_VAR FORUMOBJ.EDITOR ESCAPE=HTML>", {smileys_dir: "<TMPL_VAR FORUMOBJ.SMILEYS_DIR>"});
+</script>
+
+<h1><TMPL_VAR .RES.TEXT_USER_PROFILE></h1>
+
+<ul class="forum-topic">
+  <li>
+    <div class="forum-topic-container">
+      <div class="forum-topic-content-box">
+        <div class="forum-topic-content">
+          <p>
+            <strong><TMPL_IF USERINFO.IS_GLOBAL_MODERATE><TMPL_VAR .RES.TEXT_USER_PROFILE_MODERATE></TMPL_IF></strong><br>
+            <TMPL_VAR .RES.TEXT_USER_PROFILE_MESSAGES_COUNT>: <TMPL_VAR USERINFO.MESSAGES_CNT DEFAULT=0>
+          </p>
+          <p class="author-signature"><TMPL_VAR USERINFO.SIGNATURE></p>
+        </div>
+      </div>
+      <div class="forum-topic-author-content">
+        <img src="<TMPL_IF USERINFO.AVATAR><TMPL_VAR USERINFO.AVATAR><TMPL_ELSE><TMPL_VAR USERINFO.GRAVATAR></TMPL_IF>" alt="avatar">
+        <span class="author-name"><TMPL_VAR USERINFO.LOGIN></span>
+        <p><TMPL_VAR .RES.USER_STATUS>: <TMPL_VAR USERINFO.STATUS></p>
+      </div>
+    </div>
+  </li>
+</ul>
+
+<TMPL_LOOP EXTENDS>
+    <TMPL_IF VALUE>
+    <p><b><TMPL_VAR LABEL>: </b><TMPL_VAR VALUE></p>
+    <hr />
+    </TMPL_IF>
+</TMPL_LOOP>
+
+<TMPL_IF CAN_ADD>
+<h2><TMPL_VAR .RES.TEXT_USER_INFO_SEND_PM></h2>
+<form action="<TMPL_VAR FORUMOBJ.CURRENT_URL>" method="post" class="answer-box">
+    <input type="hidden" name="ref" value="<TMPL_VAR FORUMOBJ.CURRENT_URL ESCAPE=URI>">
+    <input type="hidden" name="post_action" value="pageradd">
+    <input type="hidden" name="user_id" value="<TMPL_VAR USERINFO.ID>">
+    <p><TMPL_VAR .RES.TEXT_PAGER_HEADER></p>
+    <input type="text" name="header" value="<TMPL_VAR NAME ESCAPE=HTML>" class="text">
+    <p><TMPL_VAR .RES.TEXT_PAGER_MESSAGE></p>
+    <div class="editor"><textarea name="message" jseditor="1"><TMPL_VAR MESSAGE ESCAPE=HTML></textarea></div>
+    <button><TMPL_VAR .RES.TEXT_PAGER_ADD></button>
+</form>
+</TMPL_IF>

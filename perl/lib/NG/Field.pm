@@ -46,6 +46,9 @@ sub new {
         mp3properties   => {CLASS=>"NG::Field::MP3Properties"},
 		turing			=> {CLASS=>"NG::Field::Turing"},
     };
+    
+    #Обратная совместимость. Следует использовать тип number, который был изначально, а не плодить типы втупую.
+    $config->{TYPE} = "number" if $config->{TYPE} eq "float";
 	
 	if ($config->{TYPE} eq "fkparent") {
         if (!exists $config->{EDITABLE}) {
@@ -128,6 +131,11 @@ sub init {
     $hash->{INVALID_DATE} = "Неверный формат даты";
     $hash->{IS_EMPTY}     = "Не указано значение поля \"{n}\"";
     $hash->{MISSING_KEY}  = "Не указано значение ключевого поля {n}";
+    $hash->{INVALID_INT}  = "Значение не является целым числом";
+    $hash->{INVALID_NUMBER}="Значение не является числом";
+    $hash->{INVALID_CIDR} = "Адрес или сеть указаны некорректно";
+    $hash->{OUT_OF_RANGE} = "Значение находится вне допустимых пределов";
+    $hash->{VALUE_TOO_LONG}="Введенный текст слишком длинный ({size} символов при ограничении {limit})";
     
     $hash->{MISSING_FILE}            = "Не выбран файл";
     $hash->{EXTENSION_EXISTS}        = "Неверный формат файла *.{e}. Разрешаются только файлы без расширений.";
@@ -242,9 +250,17 @@ sub parent {
 sub setError {
 	my $field = shift;
 	my $errormsg = shift;
+	my $mask     = shift;
     
     $errormsg =~ s/{n}/$field->{NAME}/;
     $errormsg =~ s/{f}/$field->{FIELD}/;
+    
+    if ($mask && ref $mask eq "HASH") {
+        foreach my $key (keys %$mask) {
+            my $v = $mask->{$key};
+            $errormsg =~ s/{$key}/$v/;
+        };
+    };
     
     $errormsg ||= "";
 print STDERR "NG::Field($field->{FIELD})::setError(".ts($errormsg).")";
@@ -262,6 +278,13 @@ print STDERR "NG::Field(".(ref $self?$self->{FIELD}:"").")::set_err($errstr)";
 };
 
 sub error { return shift->{ERRORMSG}; };
+*ERROR = \&error;
+
+sub hasError {
+    my $field = shift;
+    return 1 if $field->{ERRORMSG};
+    return 0;
+};
 
 sub ajaxError {
 	my ($s) = @_;
@@ -450,11 +473,9 @@ sub _setValue {
             $field->{VALUE} = "";
 		};
 	}
-	elsif ($field->{TYPE} eq "rtffile") {
+	elsif (($field->{TYPE} eq "number") || ($field->{TYPE} eq "int")) {
 		$field->{VALUE} = $value;
-	}
-	elsif ($field->{TYPE} eq "textfile") {
-		$field->{VALUE} = $value;
+        $field->{VALUE} = undef if $value eq "";
 	}
 	else {
 		$field->{VALUE} = $value;
@@ -484,10 +505,10 @@ sub setFormValue {
     
     my $q = $field->parent()->q();
     
-	my ($contentType, $is_utf8) = ($q->content_type(),0);
+	my ($contentType, $is_utf8) = ($q->content_type()||"",0);
 
     $is_utf8++ if $contentType =~ /utf\-?8/i; # application/x-www-form-urlencoded; charset=UTF-8
-    $is_utf8++ if $q->http('X-Requested-With') eq "XMLHttpRequest";
+    $is_utf8++ if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest";
     
     my $value = ($is_utf8) ? _convert($q->param($field->{FIELD})) : $q->param($field->{FIELD});
     
@@ -507,9 +528,10 @@ sub setTmpFile {
     my $tmpfile  = shift;
     my $filename = shift;  # Не обязательный. Если не указан, то имя сформируется из параметра вызова setValue($tmpfile)
     
+    close($filename) if $filename && ref $filename;
     $filename =~ s/.*?([^\\\/]+)$/$1/ if $filename;
     
-    $field->{TMP_FILENAME} = $filename;
+    $field->{TMP_FILENAME} = $filename; # Исходное имя файла.
     $field->{TMP_FILE} = $tmpfile;      # Эта переменная содержит только пути к временным файлам.
                                         # Если файл не временный, путь к нему содержится только в VALUE
     $field->setValue($tmpfile);
@@ -520,6 +542,10 @@ sub value {
 	my $field = shift;
 	return $field->{VALUE};
 };
+*VALUE = \&value;
+
+sub REQUIRED {return shift->{IS_NOTNULL}; };
+sub NAME {return shift->{NAME}; };
 
 sub genNewFileName {
     my $field = shift;
@@ -615,9 +641,7 @@ sub checkFileType {
     my $allowed_re = $field->options("ALLOWED_EXT");
     
     if (defined $allowed_re && !$allowed_re && $ext) {
-        my $e = $field->getErrorByCode("EXTENSION_EXISTS");
-        $e =~ s/{e}/$ext/;
-        return $field->setError($e);
+        return $field->setErrorByCode("EXTENSION_EXISTS",{e=>$ext});
     };
     
     if ($field->type() eq "image") {
@@ -640,29 +664,24 @@ sub checkFileType {
     };
     
     if ($allowed_re && $ext !~ $allowed_re) {
-        my $e = "";
         if (!$ext) {
             #+Требуется расширение по списку if $exts
             #Требуется расширение
             if ($exts) {
-                $e = $field->getErrorByCode("EXTENSIONLIST_NEEDED");
-                $e =~ s/{el}/$exts/;
+                return $field->setErrorByCode("EXTENSIONLIST_NEEDED",{el=>$exts,e=>""});
             }
-            #else {
-            #    return $field->setErrorByCode("EXTENSION_NEEDED");
-            #};
+            else {
+                return $field->setErrorByCode("EXTENSION_NEEDED");
+            };
         }
         else {
             if ($exts) {
-                $e = $field->getErrorByCode("EXTENSIONLIST_NEEDED");
-                $e =~ s/{el}/$exts/;
+                return $field->setErrorByCode("EXTENSIONLIST_NEEDED",{el=>$exts,e=>$ext});
             }
             else {
-                $e = $field->getErrorByCode("EXTENSION_FORBIDDEN");
+                return $field->setErrorByCode("EXTENSION_FORBIDDEN",{e=>$ext});
             }
-            $e =~ s/{e}/$ext/;
         };
-        return $field->setError($e);
     };
     
     my $disabled_re  = $field->options("DISABLED_EXT");
@@ -686,25 +705,19 @@ sub checkFileType {
     };
     
     if ($disabled_re && $ext =~ $disabled_re) {
-        my $e = "";
         if (!$ext) {
             return $field->setErrorByCode("EXTENSION_NEEDED");
         }
         elsif ($exts) {
-            $e = $field->getErrorByCode("EXTENSIONLIST_FORBIDDEN");
-            $e =~ s/{el}/$exts/;
+            return $field->setErrorByCode("EXTENSIONLIST_FORBIDDEN",{el=>$exts,e=>$ext});
         }
         else {
-            $e = $field->getErrorByCode("EXTENSION_FORBIDDEN");
+            return $field->setErrorByCode("EXTENSION_FORBIDDEN",{e=>$ext});
         };
-        $e =~ s/{e}/$ext/;
-        return $field->setError($e);
     };
     
     if ($ext =~ $DISABLED_FILES_RE) {
-        my $e = $field->getErrorByCode("EXTENSION_FORBIDDEN");
-        $e =~ s/{e}/$ext/;
-        return $field->setError($e);
+        return $field->setErrorByCode("EXTENSION_FORBIDDEN",{e=>$ext});
     };
     return 1;
 };
@@ -751,9 +764,10 @@ sub getErrorByCode {
 sub setErrorByCode {
     my $field = shift;
     my $code  = shift;
+    my $mask  = shift;
 
     my $e = $field->getErrorByCode($code);
-    return $field->setError($e);
+    return $field->setError($e,$mask);
 };
 
 sub pushErrorTexts {
@@ -830,7 +844,7 @@ sub check {
             return $field->setError("Недопустимо использовать ключевые поля в опции UNIQUE") if ($tmpfield->type() eq "id");
             #TODO: is_empty() проверяет value() а в запросе участвует dbValue()
             return $field->setError("При проверке уникальности не найдено значение поля \"$tmpfield->{FIELD}\"") if(is_empty($tmpfield->value()));
-            $sameWhere .=  $tmpfield->{FIELD}."=? and";
+            $sameWhere .=  $tmpfield->{FIELD}."=? and ";
             push @sameValues, $tmpfield->dbValue();
         };
         $sameWhere .= $field->{FIELD}."=?";
@@ -871,13 +885,28 @@ sub check {
     };
     
     if ($type eq "date" && !is_empty($value) && !is_valid_date($value)) {
-        return $field->setErrorByCode("INVALID_DATE")
+        return $field->setErrorByCode("INVALID_DATE");
     };
     
     if ($type eq "datetime" && !is_empty($value) && !is_valid_datetime($value)) {
-        return $field->setErrorByCode("INVALID_DATE")
+        return $field->setErrorByCode("INVALID_DATE");
     };
     
+    if ($type eq "int" && $value && !is_int($value)) {
+        return $field->setErrorByCode("INVALID_INT");
+    };
+    if ($type eq "number" && $value && !is_float($value)) {
+        return $field->setErrorByCode("INVALID_NUMBER");
+    };
+    if (($type eq "number" || $type eq "int") && defined $value && ((exists $field->{MIN} && $value < $field->{MIN}) || (exists $field->{MAX} && $value > $field->{MAX}))) {
+        return $field->setErrorByCode("OUT_OF_RANGE");
+    }; 
+    if ($type eq "cidr" && $value && !is_valid_cidr($value)) {
+        return $field->setErrorByCode("INVALID_CIDR");
+    };
+    if ($value && exists $field->{LENGTH} && $type =~ /^((?:rtf|text)(?:file)?|textarea)?$/ && length($value) > $field->{LENGTH}) {
+        return $field->setErrorByCode("VALUE_TOO_LONG", {size=>length($value),limit=>$field->{LENGTH}});
+    }
     return 1;
 };
 
@@ -1035,6 +1064,13 @@ sub process {
         return 1 unless $self->isFileField();
         my $newDBV = $self->dbValue();
         my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDBV;
+        
+        eval { mkpath($self->parent()->getDocRoot().$self->{UPLOADDIR}); };
+        if ($@) {
+            $@ =~ /(.*)at/s;
+            return $self->setError("Ошибка при создании директории: $1");
+        };
+                
         #TODO: хм, а что будет если $self->value() вернет путь к несуществующему файлу, равный $dirfile ?
         if ($self->value() ne $dest) {
             copy($self->value(),$dest) or return $self->setError("Ошибка копирования файла: ".$!);
@@ -1062,7 +1098,12 @@ sub process {
         my $source = $self->value();
         my $newDBV = $self->dbValue();
         my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDBV;
-        
+        eval { mkpath($self->parent()->getDocRoot().$self->{UPLOADDIR}); };
+        if ($@) {
+            $@ =~ /(.*)at/s;
+            return $self->setError("Ошибка при создании директории: $1");
+        };
+               
         $pCtrl->process($source,$dest) or return $self->showError($cms->getError());
         $self->setDBValue($newDBV);
     }
@@ -1177,6 +1218,28 @@ sub getJSSetValue {
     my $key_value = $field->parent()->getComposedKeyValue();
     $value ||= "";
     return "parent.document.getElementById('$fd$key_value').value='$value';\n";
+};
+
+sub getJSShowError {
+    my $field = shift;
+    my $key_value = $field->parent()->getComposedKeyValue();
+    my $fd = $field->{FIELD};
+    my $em = escape_js $field->error();
+    
+    if (($field->{TYPE} eq "id") || $field->{TYPE} eq "hidden" || ($field->{TYPE} eq "filter") || ($field->{HIDE})) {
+        return (undef,$em);
+    };
+    
+    my $error = "";
+    if ($em) {
+        $error .= "parent.document.getElementById('error_$fd$key_value').innerHTML='$em';";
+        $error .= "parent.document.getElementById('error_$fd$key_value').style.display='block';\n";
+    }
+    else {
+        $error .= "parent.document.getElementById('error_$fd$key_value').innerHTML='';";
+        $error .= "parent.document.getElementById('error_$fd$key_value').style.display='none';\n";
+    };
+    return $error;
 };
 
 sub clean {

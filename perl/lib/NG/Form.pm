@@ -344,25 +344,13 @@ sub ajaxErrorReport {
 sub ajax_showerrors {
 	my $self = shift;
     my $key_value = $self->getComposedKeyValue();
-    my $error = "";
+    
     my $globalError = "";
-	$error = "<script type='text/javascript'>";
+	my $error = "<script type='text/javascript'>";
 	foreach my $field (@{$self->{_fields}}) {
-		my $em = escape_js $field->error();
-		my $fd = $field->{FIELD};
-        if (($field->{TYPE} eq "id") || $field->{TYPE} eq "hidden" || ($field->{TYPE} eq "filter") || ($field->{HIDE})) {
-            $em ||="";
-            $globalError .= $em;
-            next;
-        };
-		if ($em) {
-            $error .= "parent.document.getElementById('error_$fd$key_value').innerHTML='$em';";
-            $error .= "parent.document.getElementById('error_$fd$key_value').style.display='block';\n";
-		}
-        else {
-			$error .= "parent.document.getElementById('error_$fd$key_value').innerHTML='';";
-			$error .= "parent.document.getElementById('error_$fd$key_value').style.display='none';\n";
-		};
+        my ($e,$ge) = $field->getJSShowError();
+        $error .= $e if $e;
+        $globalError .= $ge if $ge;
 	};
     $error .= "parent.document.getElementById('error_$key_value').innerHTML='$globalError';";
 	$error .= "</script>\n";
@@ -385,7 +373,7 @@ sub has_err_msgs {
 	my $self = shift;
     
     foreach my $field (@{$self->{_fields}}) {
-        return 1 if $field->error();
+        return 1 if $field->hasError();
 	};
     return 0;
 };
@@ -823,6 +811,14 @@ sub getParam {
 	return $field->value();
 };
 *getValue = \&getParam;
+
+sub setParam
+{
+ my ($self, $fn, $p) = @_;
+ 
+ my $field = $self->_getfieldhash($fn) or die "NG::Form::setParam(): field \"$fn\" is not found";
+ $field->setValue($p);
+};
 
 sub cleanField {
     my $self = shift;

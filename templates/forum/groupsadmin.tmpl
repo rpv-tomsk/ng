@@ -1,0 +1,26 @@
+<TMPL_INCLUDE "panel.tmpl">
+<TMPL_INCLUDE "addgroup.tmpl">
+
+<h2>Список групп</h2>
+<ul class="groupsadmin-list">
+<TMPL_LOOP GROUPS>
+<li class="clearfix">
+  <p class="groupsadmin-list-item-name">
+        <TMPL_IF DEFAULT>
+          <TMPL_VAR .RES.TEXT_DEFAULT_GROUP_NAME>
+        <TMPL_ELSIF ANONYMOUS>
+          <TMPL_VAR .RES.TEXT_ANONYMOUS_GROUP_NAME>
+        <TMPL_ELSE>
+          <TMPL_VAR NAME>
+        </TMPL_IF>
+  </p>
+        <TMPL_UNLESS DEFAULT>
+          <TMPL_UNLESS ANONYMOUS>
+            <a href="?action=deletegroup&id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>" onclick="return confirm('<TMPL_VAR .RES.TEXT_CONFIRM_DELETE_GROUP ESCAPE=HTML>');"><TMPL_VAR .RES.TEXT_DELETE_GROUP></a>
+            <a href="?action=editgroup&id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><TMPL_VAR .RES.TEXT_EDIT_GROUP></a>
+          </TMPL_UNLESS>
+        </TMPL_UNLESS>
+        <a href="?action=changeprivs&id=<TMPL_VAR ID>"><TMPL_VAR .RES.TEXT_CHANGE_GROUP_PRIVS></a>
+</li>
+</TMPL_LOOP>
+</ul>

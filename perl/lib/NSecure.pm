@@ -22,9 +22,11 @@ BEGIN
 			is_empty
 			is_float
 			is_valid_date
+            is_valid_time
 			is_valid_timestamp
 			is_valid_image
 			is_valid_datetime
+			is_valid_cidr
 			looks_like_number
 	             );
 };
@@ -47,14 +49,15 @@ sub looks_like_number {
 sub is_valid_id {
 	my $number = shift;
 	$number = "" if !defined $number;
-	$number=~ s/\s//gi;
+	$number=~ s/^\s*//i;
+	$number=~ s/\s*$//i;
 	return $number=~ /^[1-9]\d*$/;
 };
 
 sub is_valid_email {
 	my $email = shift;
 	$email = "" if !defined $email;
-	return $email =~ /^(?:[a-z0-9]+(?:[-.]?[_a-z0-9]+)?@[a-z0-9][a-z0-9\-]*(?:\.?[a-z0-9][a-z0-9\-]*)?\.[a-z]{2,5})$/i;
+	return $email =~ /^(?:[a-z0-9]+(?:[-.]?[_a-z0-9]+)*@[a-z0-9][a-z0-9\-]*(?:\.?[a-z0-9][a-z0-9\-]*)?\.[a-z]{2,5})$/i;
 }
 
 sub is_valid_link {
@@ -79,8 +82,9 @@ sub is_valid_referer {
 sub is_int {
 	my $number = shift;
 	$number = "" if !defined $number;
-	$number=~ s/\s//gi;
-	return $number=~ /^\-{0,1}[0-9]\d*$/;
+	$number=~ s/^\s*//i;
+	$number=~ s/\s*$//i;
+	return $number=~ /^[+-]?\d+$/;
 };
 
 sub is_empty {
@@ -92,13 +96,14 @@ sub is_empty {
 sub is_float {
 	my $number = shift;
 	$number = "" if !defined $number;
-	$number=~ s/\s//gi;
-	return $number=~ /^\-{0,1}\d+[\.\,]{0,1}\d*$/;
+	$number=~ s/^\s*//i;
+	$number=~ s/\s*$//i;
+	return $number=~ /^[+-]?\d+(?:\.\d+)?$/;
 };
 
 sub is_valid_image {
 	my $filename = shift;
-	return $filename =~ /\.(jpg|bmp|tiff|jpeg|ico|gif)$/i;
+	return $filename =~ /\.(jpg|bmp|tiff|jpeg|ico|gif|png)$/i;
 }
 
 #  is_valid_date internal functions from Date::Simple version 1.03
@@ -138,6 +143,19 @@ sub is_valid_date {
 	};
 }
 
+sub is_valid_time {
+	my $time = shift;
+	if (defined $time && $time =~ /^(\d{1,2})\:(\d{1,2})(?:\:(\d{1,2}))?$/) {
+		return 0 unless (0 <= $1) and ($1  < 24);
+		return 0 unless (0 <= $2) and ($2 <= 59);
+        return 1 unless defined $3;
+		return 0 unless (0 <= $3) and ($3 <= 59);
+        return 1;
+	} else {
+		return 0;
+	};
+}
+
 sub is_valid_datetime {
 	my $date = shift;
 	if (defined $date && $date =~ /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2})\:(\d{1,2})(?:\:(\d{1,2}))?$/) {
@@ -164,6 +182,21 @@ sub is_valid_timestamp {
 		return undef;
 	};
 }
+
+sub is_valid_cidr {
+	my $cidr = shift;
+	
+	if ($cidr =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?:\/(\d{2}))?$/) { 
+		return 0 if ($1 > 255 || $1 < 0);
+		return 0 if ($2 > 255 || $2 < 0);
+		return 0 if ($3 > 255 || $3 < 0);
+		return 0 if ($4 > 255 || $4 < 0);
+		
+		return 0 if ($5 && ($5 < 0 || $5 > 32));
+		return 1;
+	};
+	return 0;
+}; 
 
 return 1;
 END{};

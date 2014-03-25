@@ -1,0 +1,11 @@
+<div class="catalog-menu-cell">
+  <h2><TMPL_VAR .RES.FORUM_INFO></h2>
+  <ul class="forum-menu-cell-ul information">
+    <li>
+      <p><TMPL_VAR .RES.FORUM_INFO_USERS>: <strong><TMPL_VAR USERS_COUNT DEFAULT=0></strong></p>
+      <p><TMPL_VAR .RES.FORUM_INFO_TOTAL> <strong><TMPL_VAR MESSAGES_COUNT DEFAULT=0></strong> <TMPL_VAR .RES.FORUM_INFO_MESSAGES_IN> <strong><TMPL_VAR THEMES_COUNT DEFAULT=0></strong> <TMPL_VAR .RES.FORUM_INFO_THEMES_IN> <strong><TMPL_VAR FORUMS_COUNT DEFAULT=0></strong> <TMPL_VAR .RES.FORUM_INFO_FORUMS>.</p>
+    </li>
+<!--    <li><p><span class="forum-new-message-icon png_bg"></span>&mdash;&nbsp;Есть новые сообщения</p></li>
+    <li><p><span class="forum-theme-closed-icon png_bg"></span>&mdash;&nbsp;Тема закрыта</p></li> -->
+  </ul>
+</div>

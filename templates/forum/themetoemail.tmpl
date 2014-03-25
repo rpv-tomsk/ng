@@ -1,0 +1,15 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR .RES.THEMETOEMAIL><a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_THEMES>"></a></h1>
+
+<TMPL_IF SUCCESS><div class="state-ok-box"><TMPL_VAR .RES.THEMETOEMAIL_SUCCESS></div></TMPL_IF>
+
+<form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="get" class="answer-box">
+    <input type="hidden" name="action" value="themetoemail">
+    <input type="hidden" name="do" value="send">
+    <input type="hidden" name="ref" value="<TMPL_VAR .FORUMOBJ.REFERER>">
+    <input type="hidden" name="theme_id" value="<TMPL_VAR THEME.ID>">
+    <p><TMPL_VAR .RES.THEMETOEMAIL_EMAIL></p>
+    <input type="text" name="email" class="text">
+    <button><TMPL_VAR .RES.THEMETOEMAIL></button>
+</form>

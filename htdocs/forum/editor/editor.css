@@ -1,0 +1,96 @@
+.editor .textEditorControls {
+  width: 100%;
+  top:11px;
+  position:relative;
+  margin: 0 auto;
+  height: 22px;
+  border-color: #b6babf;
+  border-style: solid;
+  border-width: 1px 0;
+  padding: 2px 0;
+  background: #e5e9ee url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAABkCAIAAADITs03AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAINJREFUeNpcjlkSxCAIBR+puf9xJ1HQN4LGZT66WkAWkMSidteKGnC4U0pj2ILSbSVQNajbLN5ZtWFByo5OnrS4n4w75fA3SBeIi8AFsL0lfMZeZzdxxOD7r8/gmxNucz3n/+Wvb9s7Znss7tX/kf0+7Pete2bN9wjmjnm3zz33/gQYAAaxpn4MLugCAAAAAElFTkSuQmCC)
+    no-repeat;
+  -o-background-size: 100% 100%; -webkit-background-size: 100% 100%; -khtml-background-size: 100% 100%; background-size: 100% 100%;
+ 
+  background: -moz-linear-gradient(top,#ffffff,#e5e9ee);
+  background: -webkit-gradient(linear, left top, left bottom, from(#ffffff), to(#e5e9ee));
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled='true',startColorstr=#ffffff,endColorstr=#e5e9ee,GradientType=0); zoom: 1;
+  background: linear-gradient(top,#ffffff,#e5e9ee);
+
+  background-clip: border-box; -moz-background-clip: border; -webkit-background-clip: border-box;
+  background-origin: border-box; -moz-background-origin: border; -webkit-background-origin: border-box;
+}
+
+.editor .icon-item {
+  width: auto;
+  height: 20px;
+  overflow: hidden;
+  margin: 1px;
+  display: inline-block;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+.editor .icons-group a.hover {
+  border: 1px solid #f0c958;
+  background: url('icon-item-hover.png') repeat-x 0 0;
+  margin: 0;
+}
+.editor .icons-group a.active {
+  border: 1px solid #c28a30;
+  background: url('icon-item-active.png') repeat-x 0 0;
+  margin: 0;
+}
+.editor .icons-group a.active-hover {
+  background: url('icon-item-active-hover.png') repeat-x 0 0 !important;
+}
+.editor .icons-group a:active {
+  border: 1px sold #c2762b;
+  background: url('icon-item-pressed.png') repeat-x 0 0 !important;
+  margin: 0;
+}
+ 
+.editor .icon-item span {
+  text-indent: -9999px;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  display: block;
+}
+.editor .icon-bold,
+.editor .icon-italic,
+.editor .icon-underline,
+.editor .icon-addLink,
+.editor .icon-addPicture,
+.editor .icon-quotation { background: url('textareaEditor-icons.png') no-repeat 0 0; }
+.editor .icon-bold { background-position: 0 0; }
+.editor .icon-italic { background-position: -20px 0; }
+.editor .icon-underline { background-position: -40px 0; }
+.editor .icon-addLink { background-position: -60px 0; }
+.editor .icon-addPicture { background-position: -80px 0; }
+.editor .icon-quotation { background-position: -100px 0; }
+.editor .icon-smile { position: relative; }
+.editor .icon-smile img { position: absolute; right: 0; top: 0; }
+.editor .smiles-container { position: absolute; background: #E9ECEF; border: 1px solid #E9ECEF; padding: 1px; display: none; }
+.editor .smiles-container ul { background: #E9ECEF; border: 1px solid #fff; margin: 0 auto; padding-left: 0;}
+.editor .smiles-container li {
+  width: 51px;
+  min-height: 18px;
+  display: -moz-inline-stack;
+  display: inline-block;
+  vertical-align: top;
+  margin: 5px;
+  zoom: 1;
+  *display: inline;
+  _height: 18px;
+}
+
+
+
+
+
+
+
+
+

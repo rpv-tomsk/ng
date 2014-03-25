@@ -46,7 +46,7 @@ sub CheckData {
 	if(!is_valid_link($urlField->{'VALUE'})) {
 		$urlField->setError("Некорректный url");
 	};
-	return NG::Module::M_OK;
+	return NG::Block::M_OK;
 };
 
 return 1;

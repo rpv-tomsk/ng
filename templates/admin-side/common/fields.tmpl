@@ -9,6 +9,17 @@
 	    </div>
     </div>	 
 </TMPL_IF IS_TEXT>
+<TMPL_IF IS_INT>
+    <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>   
+    <div class="form-line">
+        <div class="form_contener">
+            <TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF> 
+        </div> 
+        <div class="input_info"> 
+            <input class="short_text" type="text" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR VALUE ESCAPE=HTML>"<TMPL_IF READONLY> readonly</TMPL_IF>/>
+        </div>
+    </div>
+</TMPL_IF IS_INT>
 <TMPL_IF IS_EMAIL>
    <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>   
    <div class="form-line">
@@ -145,7 +156,8 @@
     <div class="form_contener"  style="width: 100%;">
        <TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF>
 	</div>
-    <div class="input_info">
+	<div class="clearAll"></div>
+    <div class="input_info withTextArea">
     <textarea class="info_textarea" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="<TMPL_IF HEIGHT>height:<TMPL_VAR HEIGHT></TMPL_IF>" ><TMPL_VAR VALUE ESCAPE=HTML></textarea>
     </div>
 </div>
@@ -210,7 +222,7 @@
 	 	</div>	    
 	    <div class="wrapper_info_content rft-component">
             <div class="input_info">
-			<textarea name="<TMPL_VAR FIELD>" class="info_text" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR VALUE escape=html></textarea>
+			<textarea name="<TMPL_VAR FIELD>" style="width: 100%;" class="info_text" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR VALUE escape=html></textarea>
             </div>
 		    <TMPL_IF IS_AJAX>
 			<IFRAME SRC='' name="retext" id='richedit<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>' onload="UseEditor('<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>','<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_uploadimage&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1','<TMPL_VAR FORM.KEY_VALUE>',<TMPL_IF OPTIONS.CONFIG><TMPL_VAR OPTIONS.CONFIG><TMPL_ELSE OPTIONS.CONFIG>undefined</TMPL_IF OPTIONS.CONFIG>);" style='display: none; position: absolute; left: 0px; top: 0px; ' ></IFRAME>

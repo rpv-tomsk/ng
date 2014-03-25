@@ -1,0 +1,63 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<script type="text/javascript">
+    forum_prepare_editor("<TMPL_VAR FORUMOBJ.EDITOR ESCAPE=HTML>", {smileys_dir: "<TMPL_VAR FORUMOBJ.SMILEYS_DIR>"});
+</script>
+
+<TMPL_IF ADDTHEME.PREVIEW>
+<ul class="forum-topic">
+  <li id="messagePreview">
+    <div class="topic-preview-inner-bg clearfix">
+      <div class="topic-message-count"><TMPL_VAR .RES.PREVIEW_MESSAGE></div>
+    </div>
+    <div class="forum-topic-container">
+      <div class="forum-topic-content-box">
+          <p class="topic-date"><strong><TMPL_VAR ADDTHEME.FORM.HEADER> </strong></p>
+          <p class="topic-message"><TMPL_VAR ADDTHEME.PREVIEW></p>
+      </div> <!--! end of .forum-topic-content-box-->
+    </div> <!--! end of .forum-topic-container-->
+  </li>
+</ul>
+
+</TMPL_IF>
+
+<form action="#addtheme_form" method="post" class="answer-box" id="addtheme_form" enctype="multipart/form-data">
+
+    <input type="hidden" name="session_id" value="<TMPL_VAR ADDTHEME.FORM.SESSION_ID>">
+
+<TMPL_IF ADDTHEME.ERRORS.FORUM_ID>
+    <p class="forum-error"><TMPL_VAR RES.ERROR_ADDTHEME_FORUM_ID></p>
+</TMPL_IF>
+
+<div>
+    <h1><TMPL_VAR RES.TEXT_ADDTHEME> <a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_FORUMS>"></a></h1>
+    <input type="hidden" value="addtheme" name="post_action">
+    <input type="hidden" name="forum_id" value="<TMPL_VAR ADDTHEME.FORM.FORUM_ID>">
+    <TMPL_UNLESS FORUMOBJ.USER.ID>
+    <p><TMPL_VAR RES.TEXT_ADDTHEME_AUTHOR></p>
+    <input type="text" name="author" value="<TMPL_VAR ADDTHEME.FORM.AUTHOR ESCAPE=HTML>" class="text">
+    </TMPL_UNLESS>
+    <p><TMPL_VAR RES.TEXT_ADDTHEME_NAME></p>
+    <input type="text" name="name" value="<TMPL_VAR ADDTHEME.FORM.NAME ESCAPE=HTML>" class="text<TMPL_IF ADDTHEME.ERRORS.NAME> error</TMPL_IF>">
+    <TMPL_IF ADDTHEME.ERRORS.NAME> <p class="input-error"><small><TMPL_VAR RES.ERROR_ADDTHEME_NAME></small></p></TMPL_IF>
+    <p><TMPL_VAR RES.TEXT_ADDTHEME_MESSAGE></p>
+    <div class="editor"><textarea name="message" jseditor="1" <TMPL_IF ADDTHEME.ERRORS.MESSAGE>class="error"</TMPL_IF>><TMPL_VAR ADDTHEME.FORM.MESSAGE ESCAPE=HTML></textarea></div>
+    <TMPL_IF ADDTHEME.ERRORS.MESSAGE> <p class="input-error"><small><TMPL_VAR RES.ERROR_ADDTHEME_MESSAGE></small></p></TMPL_IF>
+
+    <TMPL_IF .FORUMOBJ.USER.ID><p><label><input type="checkbox" name="addfiles" <TMPL_IF ADDTHEME.FORM.ADDFILES>checked</TMPL_IF>><TMPL_VAR .RES.TEXT_ADDTHEME_ADDFILES></label></p></TMPL_IF>
+    
+    <TMPL_IF ADDTHEME.FORM.POLLVARIANTS>
+    <p><label><input type="checkbox" name="multichoice" <TMPL_IF ADDTHEME.FORM.MULTICHOICE>checked</TMPL_IF>><TMPL_VAR .RES.TEXT_ADDTHEME_POLLMULTICHOICE></label></p>
+    <TMPL_LOOP ADDTHEME.FORM.POLLVARIANTS>
+    <p>
+        <p><TMPL_VAR RES.TEXT_ADDTHEME_VARIANT> | <button class="button link" type="submit" name="deletepollvariant" value="<TMPL_VAR ID>"><TMPL_VAR RES.TEXT_ADDTHEME_DELETEVARIANT></button></p>
+        <input type="text" name="poll_variant_<TMPL_VAR ID>" value="<TMPL_VAR VALUE ESCAPE=HTML>" class="text">
+    </p>
+    </TMPL_LOOP>
+    </TMPL_IF>
+</div>
+
+        <button class="button" type="submit"><TMPL_VAR RES.TEXT_ADDTHEME_SUBMIT></button> 
+        <button class="button" type="submit" name="formaction" value="preview"><TMPL_VAR RES.TEXT_ADDTHEME_PREVIEW></button>
+        <button class="button" type="submit" name="formaction" value="addpollvariant"><TMPL_IF ADDTHEME.FORM.POLLVARIANTS><TMPL_VAR RES.TEXT_ADDTHEME_ADDPOLLVARIANT><TMPL_ELSE><TMPL_VAR RES.TEXT_ADDTHEME_CREATEPOLL></TMPL_IF></button>
+</form>

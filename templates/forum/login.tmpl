@@ -1,0 +1,14 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<form action="" method="post" class="answer-box" >
+<h1><TMPL_VAR RES.TEXT_FORUM_AUTH></h1>
+<TMPL_IF LOGINDATA.ERROR>
+    <p class="forum-error"><TMPL_VAR RES.ERROR_FORUM_AUTH></p>
+</TMPL_IF>
+    <input type="hidden" name="post_action" value="login">
+    <p><TMPL_IF VIA_EMAIL><TMPL_VAR .RES.TEXT_LOGIN_EMAIL><TMPL_ELSE><TMPL_VAR .RES.TEXT_LOGIN_LOGIN></TMPL_IF>:</p>
+    <input type="login" name="login" class="text">
+    <p><TMPL_VAR .RES.TEXT_LOGIN_PASSWORD>:</p>
+    <input type="password" name="password" class="text">
+    <button type="submit" class="button"><TMPL_VAR RES.TEXT_FORUM_LOGIN></button>
+</form>

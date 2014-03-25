@@ -1,0 +1,14 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR .RES.NEWMESSAGES></h1>
+
+<ul class="forum-menu-cell-ul activeUsers">
+<TMPL_LOOP THEMES>
+    <TMPL_IF SHOW>
+		<li><hr>
+        <TMPL_VAR SECTION_NAME>&nbsp;<span style="font-size: 1.386em;">&rarr;</span>&nbsp;<a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=showmessages&theme_id=<TMPL_VAR ID>&lastmessage=1" target="_blank"><TMPL_VAR NAME></a>
+        <p><TMPL_IF AUTHOR_USER_ID><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=showuserinfo&user_id=<TMPL_VAR AUTHOR_USER_ID>" class="author"></TMPL_IF><TMPL_VAR AUTHOR><TMPL_IF AUTHOR_USER_ID></a>, </TMPL_IF><TMPL_VAR LASTUPDATE_DATE></p>
+		</li>
+    </TMPL_IF>
+</TMPL_LOOP>
+</ul>

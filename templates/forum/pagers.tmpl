@@ -1,0 +1,20 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1 class="news-header"><TMPL_VAR .RES.TEXT_PAGER></h1>
+<h3 class="pager-menu-container">
+  <a href="?action=pager" <TMPL_IF IN>class="current"</TMPL_IF>><TMPL_VAR .RES.TEXT_PAGER_IN></a>
+  <span style="color: #444;">&#8596;</span>
+  <a href="?action=pager&out=1" <TMPL_UNLESS IN>class="current"</TMPL_UNLESS>><TMPL_VAR .RES.TEXT_PAGER_OUT></a>
+</h3>
+
+<TMPL_LOOP MESSAGES>
+<hr />
+<div class="question-container pager-message-container">
+  <div class="notes-block clearfix">
+    <a href="?action=deletepager&id=<TMPL_VAR ID>&<TMPL_VAR FORUMOBJ.CURRENT_REFPARAM>" onclick="return confirm('<TMPL_VAR .RES.TEXT_PAGER_CONFIRM_DELETE>')" class="file-icon-delete"><TMPL_VAR .RES.TEXT_PAGER_DELETE></a>
+    <p class="theme-name-first"><a href="?action=pagerfull&id=<TMPL_VAR ID>" class="underlined"><TMPL_IF HEADER><TMPL_VAR HEADER><TMPL_ELSE><TMPL_VAR .RES.TEXT_PAGER_NO_THEME></TMPL_IF></a></p>
+    <p class="theme-name-second"><a href="?action=showuserinfo&user_id=<TMPL_VAR USER_ID>" class="author"><TMPL_VAR LOGIN></a>, <TMPL_VAR CREATE_DATE></p>
+  </div>
+</div>
+</TMPL_LOOP>
+
+<TMPL_INCLUDE "pagination.tmpl">

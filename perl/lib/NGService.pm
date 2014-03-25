@@ -6,6 +6,7 @@ use NSecure;
 use POSIX;
 use File::Copy;
 use File::Path;
+use URI::Escape;
 
 BEGIN
 {
@@ -45,9 +46,29 @@ BEGIN
                        keys_exists
                        value_by_keys
                        create_json
+                       trim
+                       split_cost
              );
 };
 
+sub split_cost {
+    my $cost = shift;
+    if ($cost =~ /\./) { $cost = sprintf("%.2f", $cost);};
+    my ($kop) = $cost =~ /(\.\d*)/;
+    $cost =~ s/(\.\d*)//;
+    $cost = reverse $cost;
+    $cost =~ s/(.{3})/$1 /gi;
+    $cost = reverse $cost;
+    $cost .= $kop;
+    
+    return $cost;
+};
+
+ sub trim {
+    my $string = shift;
+    $string =~ s/^\s+|\s+$//;
+    return $string;
+ };
 
  sub create_json {
 	my ($var, $p) = @_;
@@ -70,7 +91,11 @@ BEGIN
 		} else {
 			if ( looks_like_number($var) ) {
 				$t .= $var;
-			} else {
+			}
+            elsif (!defined $var) {
+                $t .= "null";
+            }
+            else {
 				$var =~ s/\"/\\\"/g;
 				$var =~ s/[\x0a\x0d]{1,2}/\\n/g;
 				$t .= "\"$var\"";
@@ -138,9 +163,17 @@ sub getURLWithParams {
     foreach my $param (@_) {
         next unless $param;
         #die $param;
-        use Carp;
-        croak "Incorrect param-value pair \"$param\" in getURLWithParams()" if($param !~ /[^\?\&\=\s]\=[^\?\&\=\s]/);  #TODO: do it more intellectual
-        $url .= $param."&";
+        my $ref = ref $param;
+        if ($ref eq "HASH") {
+            foreach my $key (keys %$param) {
+                $url .= sprintf("%s=%s&", $key, uri_escape($param->{$key}));        
+            };
+        }
+        else {
+            use Carp;
+            croak "Incorrect param-value pair \"$param\" in getURLWithParams()" if($param !~ /[^\?\&\=\s]\=[^\?\&\=\s]/);  #TODO: do it more intellectual        
+            $url .= $param."&";
+        };
     }
     $url =~ s/\&$//;
     return $url;
@@ -337,8 +370,9 @@ sub create_page_list {
     my %args=(@_); 
     my $size=$args{size};  if ($size==0){$size=1;}  # Число записей
     my $page=$args{page};			    # Текущая страница
+    my $urlMask = (exists($args{'urlmask'})) ? $args{'urlmask'} : '';
     my $el_on_page=$args{onpage};		    # Число записей на странице
-    my $page_display=$args{page_display};	    # Отображать число ссылок
+    my $page_display=$args{page_display}||$args{onlist};	    # Отображать число ссылок
    
     my $url = $args{url} || "?";
     if ($url =~ /\/$/) {
@@ -375,7 +409,13 @@ sub create_page_list {
 	    $tmp->{PAGE}=$fp-1;
 	    $tmp->{PREV_LIST}=1;
 		$tmp->{URL}=$url;
-		$tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+		if($urlMask) {
+                      $tmp->{PAGEURL} = $urlMask;
+		      $tmp->{PAGEURL} =~ s/{page}/$tmp->{PAGE}/;
+		}
+		else {
+		    $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+	        };	    
 	    push @pages, $tmp;
 	}
     if ($page>1) {
@@ -384,7 +424,13 @@ sub create_page_list {
             $tmp->{PAGE}=$page-1;
             $tmp->{IS_PREV}=1;
 	        $tmp->{URL}=$url;
-			$tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+            if($urlMask) {
+                $tmp->{PAGEURL} = $urlMask;
+	        $tmp->{PAGEURL} =~ s/{page}/$tmp->{PAGE}/;
+	    }
+	    else {
+	        $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+	    };	    
             push @pages, $tmp;
     };
     for (my $i=$fp;$i<=$ep;$i++) {
@@ -397,7 +443,13 @@ sub create_page_list {
 	    };
             $tmp->{PAGE_NAME}=$page_name;
             $tmp->{URL}=$url;
-	    $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+	    if($urlMask) {
+                $tmp->{PAGEURL} = $urlMask;
+                $tmp->{PAGEURL} =~ s/{page}/$tmp->{PAGE}/;
+            }
+	    else {
+	        $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+	    };	    
             push @pages, $tmp;
     };
     if ($page<$page_count) {
@@ -406,16 +458,28 @@ sub create_page_list {
             $tmp->{PAGE}=$page+1;
             $tmp->{IS_NEXT}=1;
     	    $tmp->{URL}=$url;
-    	    $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+    	    if($urlMask) {
+                $tmp->{PAGEURL} = $urlMask;
+	        $tmp->{PAGEURL} =~ s/{page}/$tmp->{PAGE}/;
+	    }
+	    else {
+	        $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+	    };	    
     	    push @pages, $tmp;
     };
 	if ($ep<$page_count) {
 	    my $tmp;
-        $tmp->{PAGE_NAME}=$page_name;
+            $tmp->{PAGE_NAME}=$page_name;
 	    $tmp->{PAGE}=$ep+1;
 	    $tmp->{NEXT_LIST}=1;
-    	$tmp->{URL}=$url;
-    	$tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+            $tmp->{URL}=$url;
+            if($urlMask) {
+                $tmp->{PAGEURL} = $urlMask;
+	        $tmp->{PAGEURL} =~ s/{page}/$tmp->{PAGE}/;
+	    }
+	    else {
+	        $tmp->{PAGEURL}=$url.$page_name."=".$tmp->{PAGE};
+	    };	    
 	    push @pages, $tmp;
 	}
 

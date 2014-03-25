@@ -1,0 +1,43 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR .RES.BANIP> / <TMPL_VAR .RES.UNBANIP></h1>
+<!--
+<form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="get" class="answer-box">
+    <input type="hidden" name="action" value="banip">
+    <p><TMPL_VAR .RES.BANIP_IP></p>
+    <input type="text" name="ip">
+    <button class="button" type="submit"><TMPL_VAR .RES.BANIP_BUTTON></button>
+    <button class="button" type="submit" name="do" value="unban"><TMPL_VAR .RES.UNBANIP_BUTTON></button>
+</form>
+-->
+<form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" class="answer-box">
+<input type="hidden" name="action" value="banip">
+<div class="form-element">
+  <TMPL_IF UNBANSUCCESS><div class="state-ok-box"><TMPL_VAR .RES.BANIP_UNBANSUCCESS> <TMPL_VAR IP></div></TMPL_IF>
+  <TMPL_IF BANSUCCESS><div class="state-error-box"><TMPL_VAR .RES.BANIP_BANSUCCESS> <TMPL_VAR IP></div></TMPL_IF>
+  <table><tbody><tr><td>
+    <div><label for="1"><TMPL_VAR .RES.BANIP_IP></label></div>
+    <div class="input-wrap"><input type="text" name="ip"></div>
+  </td></tr></tbody></table>
+  <button class="button" type="submit" name="do" value="ban"><TMPL_VAR .RES.BANIP_BUTTON></button>
+  <button class="button" type="submit" name="do" value="unban"><TMPL_VAR .RES.UNBANIP_BUTTON></button>
+</div>
+</form>
+
+<TMPL_IF IPS>
+<table class="user-right-container">
+<tbody>
+  <TMPL_LOOP IPS>
+<tr>
+  <td style="text-align:left">
+    <p class="user-rights-panel"><TMPL_VAR IP></p>
+  </td>
+  <td style="text-align:left">
+    <p class="user-rights-panel">
+      <a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=banip&do=unban&ip=<TMPL_VAR IP>"><span class="add-card red-card">&nbsp;</span><TMPL_VAR .RES.UNBANIP_BUTTON></a>
+    </p>
+  </td>
+</tr>
+  </TMPL_LOOP>
+</tbody></table>
+</TMPL_IF>

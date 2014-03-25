@@ -1,0 +1,17 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1 class="news-header"><TMPL_VAR .RES.TEXT_PAGER><a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_PAGER>"></a></h1>
+
+<div class="question-container pager-message-container">
+  <div class="notes-block clearfix">
+  
+    <h3><p class="theme-name-first"><a style="text-decoration: none"><TMPL_IF PAGER.HEADER><TMPL_VAR PAGER.HEADER><TMPL_ELSE><TMPL_VAR .RES.TEXT_PAGER_NO_THEME></TMPL_IF></a></p></h3>
+    <TMPL_IF PAGER.OUT>
+    <p class="theme-name-second"><a href="?action=showuserinfo&user_id=<TMPL_VAR PAGER.RECIPIENT_USER_ID>" class="author"><TMPL_VAR PAGER.RECIPIENT_LOGIN></a>, <TMPL_VAR PAGER.CREATE_DATE></p>
+    <TMPL_ELSE>
+    <p class="theme-name-second"><a href="?action=showuserinfo&user_id=<TMPL_VAR PAGER.SENDER_USER_ID>" class="author"><TMPL_VAR PAGER.SENDER_LOGIN></a>, <TMPL_VAR PAGER.CREATE_DATE></p>
+    </TMPL_IF>
+    <div class="pager-message-container topic-message">
+      <TMPL_VAR PAGER.MESSAGE>
+    </div>
+  </div>
+</div>

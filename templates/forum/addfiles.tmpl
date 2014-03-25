@@ -1,0 +1,38 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR .RES.ADDFILES></h1>
+
+<TMPL_IF FILES>
+<TMPL_LOOP FILES>
+<div class="docs-list">
+  <a title="<TMPL_VAR .RES.TEXT_DOWNLOAD>" class="file-icon file-icon-<TMPL_VAR EXT>" href="<TMPL_VAR FILE>">&nbsp;</a>
+  <a class="" href="<TMPL_VAR FILE>" title="<TMPL_VAR FILENAME>"><TMPL_VAR FILENAME></a>
+  <span>(<TMPL_VAR .RES.TEXT_FILE_SIZE>: <TMPL_VAR SIZE>)</span>
+  <a href="?action=deletefile&id=<TMPL_VAR ID>&<TMPL_VAR FORUMOBJ.CURRENT_REFPARAM>" onclick="return confirm('<TMPL_VAR .RES.TEXT_DELETEFILE_CONFIRM ESCAPE=JS>');" class="file-icon-delete"><TMPL_VAR .RES.TEXT_EDITMESSAGE_DELETEFILE></a>
+</div>
+</TMPL_LOOP>
+</TMPL_IF>
+
+ <a href="<TMPL_VAR MESSAGE_URL>"><TMPL_VAR .RES.ADDFILES_GOTO_MESSAGE></a>
+ 
+ <p><TMPL_VAR .RES.ADDFILES_MAX_FILES_COUNT>: <TMPL_VAR MAX_FILES_COUNT></p>
+ <p><TMPL_VAR .RES.ADDFILES_MAX_FILE_SIZE>: <TMPL_VAR MAX_FILE_SIZE></p>
+ <p><TMPL_VAR .RES.ADDFILES_MAX_TOTAL_FILES_SIZE>: <TMPL_VAR MAX_TOTAL_FILES_SIZE></p>
+ 
+<TMPL_UNLESS .FORUMOBJ.USER.ID>
+    <h2><TMPL_VAR .RES.ADDFILES_ANONYOUS_DENIED></h2>
+<TMPL_ELSE>
+<TMPL_IF EMPTY>
+    <form action="<TMPL_VAR .FORUMOBJ.URL>" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="addfiles">
+        <input type="hidden" name="message_id" value="<TMPL_VAR MESSAGE_ID>">
+        <TMPL_LOOP EMPTY>
+            <input type="file" name="file_<TMPL_VAR _>">
+        </TMPL_LOOP>
+        
+        <button class="button" type="submit"><TMPL_VAR .RES.ADDFILES_BUTTON></button>
+    </form>
+<TMPL_ELSE>
+    <h2><TMPL_VAR .RES.ADDFILES_MOREFILES_DENIED></h2>
+</TMPL_IF>
+</TMPL_UNLESS>

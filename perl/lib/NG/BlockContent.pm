@@ -57,8 +57,10 @@ sub _setOutput {
         csslist => '' || ['','','']
         jslist  => '' || ['','','']
         title   => ''
-        keywords => ''
-        description => ''
+        meta => {
+            keywords => ''
+            description => ''
+        }
     };
 
 return $cms->output($tmplObj->output());

@@ -1,0 +1,11 @@
+<div class="catalog-menu-cell">
+  <h2><TMPL_VAR .RES.FORUM_LATEST_THEMES></h2>
+  <ul class="forum-menu-cell-ul">
+    <TMPL_LOOP THEMES>
+    <li>
+      <p><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=showmessages&theme_id=<TMPL_VAR ID>" class="underlined"><TMPL_VAR NAME></a></p>
+      <p><TMPL_IF AUTHOR_USER_ID><a href="#" class="author"></TMPL_IF><TMPL_VAR AUTHOR><TMPL_IF AUTHOR_USER_ID></a></TMPL_IF>, <TMPL_VAR LASTUPDATE_DATE></p>
+    </li>
+    </TMPL_LOOP>
+  </ul>
+</div>

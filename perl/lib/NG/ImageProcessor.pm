@@ -15,6 +15,72 @@ sub init {
     $self;
 };
 
+sub composite {
+    my $self = shift;
+    my $pCtrl = $self->getCtrl();
+    my $iObj = $self->_getIObj(1) or return $pCtrl->error();
+    my $image = $pCtrl->paramOrOption('image','IMAGE');
+    my $position = $pCtrl->paramOrOption('position','POSITION');
+    return $pCtrl->error('Can\'t find file '.$image) unless (-e $image);
+    my $file = Image::Magick->new();
+    $file->Read($image);
+    
+    $iObj->Composite (
+        'image'=>$file,
+        'gravity'=>$position
+    );
+    return 1;
+};
+
+sub crop_height {
+    my $self = shift;
+    my $pCtrl = $self->getCtrl();
+    my $iObj = $self->_getIObj(1) or return $pCtrl->error();
+    my $height = $pCtrl->paramOrOption("height","HEIGHT");
+    my ($iwidth,$iheight) = $iObj->Get('columns','rows');
+    if ($iheight > $height) {
+        my $e = $iObj->Crop(geometry=>$iwidth.'x'.$height.'+0+0');
+        return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
+    };
+    return 1;
+};
+
+sub crop_width_center {
+    my $self = shift;
+    my $pCtrl = $self->getCtrl();
+    my $iObj = $self->_getIObj(1) or return $pCtrl->error();
+    my $width = $pCtrl->paramOrOption("width","WIDTH");
+    my ($iwidth,$iheight) = $iObj->Get('columns','rows');
+    if ($iwidth > $width) {
+        my $delta_width = int(($iwidth-$width)/2);
+        my $e = $iObj->Crop(geometry=>$width.'x'.$iheight.'+'.$delta_width.'+0');
+        return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
+    };
+    return 1;
+};
+
+sub crop_to_center {
+    my $self = shift;
+    my $pCtrl = $self->getCtrl();
+    my $iObj = $self->_getIObj(1) or return $pCtrl->error();
+    my $width = $pCtrl->paramOrOption("width","WIDTH");
+    my $height = $pCtrl->paramOrOption("height","HEIGHT");
+    my ($iwidth,$iheight) = $iObj->Get('columns','rows');
+    my $current_height = $iheight;
+    if ($iheight>$height) {
+        my $delta = int(($iheight-$height)/2);
+        my $e = $iObj->Crop(geometry=>$iwidth.'x'.$height.'+0'.'+'.$delta);
+        return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
+        $current_height = $height;    
+    };
+    if ($iwidth>$width) {
+        my $delta = int(($iwidth-$width)/2);
+        my $e = $iObj->Crop(geometry=>$width.'x'.$current_height.'+'.$delta.'+0');
+        return $pCtrl->error("Ошибка обработки изображения : $e") if $e;    
+    };  
+    return 1;  
+};
+
 sub setValue {
     my $self = shift;
     my $value = shift;
@@ -45,7 +111,6 @@ sub _getIObj {
     my $id = $pCtrl->param('id') || 'main';
     
     return $pCtrl->error('Изображение с id '.$id.' не сформировано') unless exists $self->{_iobjs}->{$id};
-print STDERR "DoCopy=$doCopy ID=$id IOBJ=".$self->{_iobjs}->{$id};
     return $self->{_iobjs}->{$id} unless ($doCopy);
 
     my $toid = $pCtrl->param('toid') || $id;    
@@ -53,7 +118,6 @@ print STDERR "DoCopy=$doCopy ID=$id IOBJ=".$self->{_iobjs}->{$id};
         $self->{_iobjs}->{$toid} = $self->{_iobjs}->{$id}->Clone();
         return $pCtrl->error("Ошибка клонирования объекта изображения") unless $self->{_iobjs}->{$toid};
     };
-print STDERR "DoCopy=$doCopy ID=$id TOID=$toid IOBJ=".$self->{_iobjs}->{$toid};
     return $self->{_iobjs}->{$toid};
 };
 
@@ -150,15 +214,21 @@ sub torectangle {
     my $pCtrl = $self->getCtrl();
 
     my $width = $pCtrl->paramOrOption('width','WIDTH');
-    return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода tomaximal") unless defined $width;
+    return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода torectangle") unless defined $width;
     my $height = $pCtrl->paramOrOption('height','HEIGHT');
-    return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода tomaximal") unless defined $height;
+    return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода torectangle") unless defined $height;
 
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
 
     my ($iwidth,$iheight) = $iObj->Get('base-columns','base-rows');
-    my $koef = ($iwidth/$width)>($iheight/$height) ? $iwidth/$width : $iheight/$height;
-    my $err=$iObj->Resize(width=>int($iwidth/$koef),height=>int($iheight/$koef));
+    my $koef = undef;
+    if ($pCtrl->paramOrOption('crop','CROP')) {
+        $koef = ($iwidth/$width)<($iheight/$height) ? $iwidth/$width : $iheight/$height;
+    }
+    else {
+        $koef = ($iwidth/$width)>($iheight/$height) ? $iwidth/$width : $iheight/$height;
+    };
+    my $err=$iObj->Resize(width=>int($iwidth/$koef)+1,height=>int($iheight/$koef)+1);
     return  "Ошибка обработки изображения: $err" if $err;
 
     ## Blank image

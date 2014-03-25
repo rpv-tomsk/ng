@@ -9,8 +9,8 @@ sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->config();
-    $self->init(@_);
+    $self->config() or return undef;
+    $self->init(@_) or return undef;
     return $self; 
 }
 
@@ -42,11 +42,12 @@ sub password {
 sub connect {
     my $self = shift;
     if (scalar(@_)) {
-        $self->{_ds} = shift;
-        $self->{_username} = shift;
-        $self->{_passwd} = shift;
+        foreach my $k qw(_ds _username _passwd _attr) {
+            my $t = shift or next;
+            $self->{$k} = $t;
+        }
     }
-    $self->{_dbh} = DBI->connect_cached($self->{_ds},$self->{_username},$self->{_passwd});
+    $self->{_dbh} = DBI->connect_cached($self->{_ds},$self->{_username},$self->{_passwd},$self->{_attr});#,{'pg_enable_utf8'=>1}
     if (!defined $self->{_dbh}) {
         $self->{_errstr} = $DBI::errstr;
         #$self->{_errstr} = "Не могу подключиться к БД";
@@ -60,12 +61,17 @@ sub init {
     my $self = shift;
     $self->{_dbh} = undef;
     $self->{_errstr} = "";
+    foreach my $k qw(_ds _username _passwd _attr) {
+        my $t = shift or next;
+        $self->{$k} = $t;
+    };
+    1;
 }
 
 sub dbh {
     my $self = shift;
     if (!defined $self->{_dbh}) {
-        $self->{_dbh} =  $self->connect();
+        $self->{_dbh} =  $self->connect(@_);
     }
     return $self->{_dbh};
 };

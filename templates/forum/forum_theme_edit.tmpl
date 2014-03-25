@@ -1,0 +1,23 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<form action="#edittheme_form" method="post" class="answer-box" id="edittheme_form">
+
+<TMPL_IF EDITTHEME.ERRORS.ID>
+    <p class="forum-error"><TMPL_VAR RES.ERROR_EDITTHEME_ID></p>
+</TMPL_IF>
+
+<div>
+    <h1><TMPL_VAR RES.TEXT_EDITTHEME> <a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_THEME>"></a></h1>
+    <input type="hidden" value="<TMPL_VAR EDITTHEME.FORM.ID>" name="id">
+    <input type="hidden" value="edittheme" name="post_action">
+    <input type="hidden" value="<TMPL_VAR REFERER>" name="ref">
+    <p><TMPL_VAR RES.TEXT_EDITTHEME_NAME></p>
+    <input type="text" name="name" value="<TMPL_VAR EDITTHEME.FORM.NAME ESCAPE=HTML>" class="text<TMPL_IF EDITTHEME.ERRORS.NAME> error</TMPL_IF>">
+    <TMPL_IF EDITTHEME.ERRORS.NAME> <p class="input-error"><small><TMPL_VAR RES.ERROR_EDITTHEME_NAME></small></p></TMPL_IF>
+
+</div>
+
+
+<button class="button" type="submit"><TMPL_VAR RES.TEXT_EDITTHEME_SUBMIT></button> 
+
+</form>

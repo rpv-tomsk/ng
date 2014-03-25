@@ -1,0 +1,11 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1 class="mb15"><TMPL_VAR .RES.EDITSUBSCRIBE><a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_USERSLIST>"></a></h1>
+
+<ul class="forum-menu-cell-ul activeUsers">
+<TMPL_LOOP SUBSCRIBE>
+	<li>
+    <p><TMPL_VAR NAME>&nbsp;&nbsp;<a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=deletesubscribe&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>&user_id=<TMPL_VAR .USER_ID>&theme_id=<TMPL_VAR ID>" class="author"><TMPL_VAR .RES.EDITSUBSCRIBE_DELETE></a></p>
+	</li>
+</TMPL_LOOP>
+</ul>

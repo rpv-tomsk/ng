@@ -237,5 +237,18 @@ sub glob {
 	return $_[0]->{_glob};
 }
 
+sub skipped {
+    my $self = shift;
+    return $self->{_onpage}*($self->{_page}-1);
+}
+
+sub pageExists {
+    my $self = shift;
+    die "NG::DBlist object not opened yet." if !$self->opened();
+    return 1 if $self->{_page} == 1;
+    return 0 if $self->{_page} < 0 || $self->{_disable_pages} || $self->{_size}==0 || !$self->{_sth}->rows();
+    return 1;
+}
+
 return 1;
 END{};

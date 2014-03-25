@@ -1,0 +1,11 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1><TMPL_VAR .RES.ENTERLOGIN></h1>
+
+<form action="<TMPL_VAR .FORUMOBJ.FORUM_URL>" method="post" class="answer-box">
+    <input type="hidden" name="action" value="enterlogin">
+    <p><TMPL_VAR .RES.ENTERLOGIN_LOGIN></p>
+    <input type="text" name="login" class="text">
+    <TMPL_IF ERRORS.EMPTY_LOGIN><p class="input-error"><small><TMPL_VAR .RES.ENTERLOGIN_ERROR_EMPTY_LOGIN></small></p></TMPL_IF>
+    <TMPL_IF ERRORS.IS_DUPLICATE><p class="input-error"><small><TMPL_VAR .RES.ENTERLOGIN_ERROR_IS_DUPLICATE></small></p></TMPL_IF>
+    <button type="submit" class="button"><TMPL_VAR .RES.ENTERLOGIN_BUTTON></button>
+</form>

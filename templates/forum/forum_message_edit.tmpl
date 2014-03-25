@@ -1,0 +1,56 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<script type="text/javascript">
+    forum_prepare_editor("<TMPL_VAR FORUMOBJ.EDITOR ESCAPE=HTML>", {smileys_dir: "<TMPL_VAR FORUMOBJ.SMILEYS_DIR>"});
+</script>
+
+<TMPL_IF EDITMESSAGE.PREVIEW>
+<ul class="forum-topic">
+  <li id="messagePreview">
+    <div class="topic-preview-inner-bg clearfix">
+      <div class="topic-message-count"><TMPL_VAR .RES.PREVIEW_MESSAGE></div>
+    </div>
+    <div class="forum-topic-container">
+      <div class="forum-topic-content-box">
+          <p class="topic-date"><strong><TMPL_VAR EDITMESSAGE.FORM.HEADER> </strong></p>
+          <p class="topic-message"><TMPL_VAR EDITMESSAGE.PREVIEW></p>
+      </div> <!--! end of .forum-topic-content-box-->
+    </div> <!--! end of .forum-topic-container-->
+  </li>
+</ul>
+</TMPL_IF>
+
+
+<form action="#edittheme_form" method="post" class="answer-box" id="edittheme_form">
+
+<TMPL_IF EDITMESSAGE.ERRORS.ID>
+    <p class="forum-error"><TMPL_VAR RES.ERROR_EDITMESSAGE_ID></p>
+</TMPL_IF>
+
+<div >
+    <h1><TMPL_VAR RES.TEXT_EDITMESSAGE> <a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_THEME>"></a></h1>
+    <input type="hidden" value="<TMPL_VAR EDITMESSAGE.FORM.ID>" name="id">
+    <input type="hidden" value="editmessage" name="post_action">
+    <input type="hidden" value="<TMPL_VAR REFERER>" name="ref">
+    <p><TMPL_VAR RES.TEXT_EDITMESSAGE_MESSAGE></p>
+    <div class="editor"><textarea name="message" jseditor="1"><TMPL_VAR EDITMESSAGE.FORM.MESSAGE ESCAPE=HTML></textarea></div>
+    <TMPL_IF EDITMESSAGE.ERRORS.MESSAGE> <p class="input-error"><small><TMPL_VAR RES.ERROR_EDITMESSAGE_MESSAGE></small></p></TMPL_IF>
+</div>
+
+<TMPL_IF FILES>
+<TMPL_LOOP FILES>
+<div class="docs-list">
+  <a title="<TMPL_VAR .RES.TEXT_DOWNLOAD>" class="file-icon file-icon-<TMPL_VAR EXT>" href="<TMPL_VAR FILE>">&nbsp;</a>
+  <a class="" href="<TMPL_VAR FILE>" title="<TMPL_VAR FILENAME>"><TMPL_VAR FILENAME></a>
+  <span>(<TMPL_VAR .RES.TEXT_FILE_SIZE>: <TMPL_VAR SIZE>)</span>
+  <a href="?action=deletefile&id=<TMPL_VAR ID>&ref=<TMPL_VAR ESCAPE_CURRENT_URL>" onclick="return confirm('<TMPL_VAR .RES.TEXT_DELETEFILE_CONFIRM ESCAPE=JS>');" class="file-icon-delete"><TMPL_VAR .RES.TEXT_EDITMESSAGE_DELETEFILE></a>
+</div>
+</TMPL_LOOP>
+</TMPL_IF>
+
+
+<button class="button" type="submit"><TMPL_VAR RES.TEXT_EDITMESSAGE_SUBMIT></button>
+<button class="button" type="submit" name="formaction" value="preview"><TMPL_VAR RES.TEXT_EDITMESSAGE_PREVIEW></button>
+
+</form>
+

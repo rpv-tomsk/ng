@@ -58,14 +58,14 @@ sub showPage {
     my $layout = undef;     #Шаблон вывода
     #4. Берем параметр $pageRow->{template|printtemplate}
     $layout = $pageObj->{_pageRow}->{template} if $pageObj->{_pageRow} && !defined $layout && !$cms->isPrint();
-    $layout = $pageObj->{_pageRow}->{printtemplate} if $pageObj->{_pageRow} && !defined $layout && $cms->isPrint();
+    $layout = $pageObj->{_pageRow}->{print_template} if $pageObj->{_pageRow} && !defined $layout && $cms->isPrint();
     #5. Считываем параметр ЦМС "CMS.LAYOUT_{LANG}|CMS.PRINTLAYOUT_{LANG}"
     $layout = $cms->confParam("CMS.".$layoutConf."_L".$langId,undef) if $langId && !defined $layout;
     #5. Считываем параметр ЦМС "CMS.LAYOUT_S{SUBSITEID}|CMS.PRINTLAYOUT_S{SUBSITEID}"
     $layout = $cms->confParam("CMS.".$layoutConf."_S".$subsiteId,undef) if $subsiteId && !defined $layout;
     #6. Считываем параметр ЦМС "CMS.LAYOUT|CMS.PRINTLAYOUT"
     $layout = $cms->confParam("CMS.".$layoutConf,undef) if !defined $layout;
-    
+
 	return $cms->buildPage($pageObj,$layout);
 }
 
@@ -384,6 +384,7 @@ sub updateSearchIndex {
 		}
 		else {
 			# Индекс с такими ключами не найден, просто добавляем
+			$blockIndex->{OWNER} = $self->getModuleCode();
 			push @{$indexes}, $blockIndex;
 		}
 	};

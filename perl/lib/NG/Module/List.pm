@@ -165,7 +165,7 @@ sub buildList {
         if ($fm->{EDITLINKNAME} && $self->hasEditPriv($fm)) {
             my $link = {};
             $link->{NAME}=$fm->{EDITLINKNAME};
-            $link->{URL}=$self->getBaseURL().$self->getSubURL()."?action=updf&".$self->{_idname}."={".$self->{_idname}."}".($fm->{EDITLINKPARAMS}?("&".$fm->{EDITLINKPARAMS}):"").($fm->{PREFIX}?"&_form=".$fm->{PREFIX}:"");
+            $link->{URL}=$self->getBaseURL().$self->getSubURL()."?action=updf&".$self->{_idname}."={".$self->{_idname}."}".($fm->{EDITLINKPARAMS}?("&".$fm->{EDITLINKPARAMS}):"").($fm->{PREFIX}?"&_form=".$fm->{PREFIX}:"")."&rand=".int(rand(10000));
             $link->{AJAX}=$fm->{DISABLEAJAX}?0:1;
             $self->addRowLink($link) or return $self->showError("Ошибка добавления ссылки на редактирование записи");
         };
@@ -670,7 +670,7 @@ sub processForm {
     if ($fa eq "insert") {
         ## Insert
         my $posField = $self->getPosField();
-        if ($posField) {
+        if ($posField && !defined $posField->{'VALUE'}) {
             my $posFieldName = $posField->{FIELD};
             $posField = $form->addfields($posField) or return $self->error($form->getError());
             my $insertTo = $posField->{INSERTTO} || "bottom";
@@ -848,7 +848,7 @@ sub Delete {
         IS_AJAX   => $is_ajax,
     );
     $form->addfields($self->{_fields}) or return $self->error($form->getError());
-
+    $form->setFormValues(); # Чо за гон а кто будет параметры fkparent пихать в форму
     $self->{_idname} or return $self->showError("Delete(): Не найдено имя ключевого поля id");
 
     my $id = $q->param($self->{_idname});
@@ -879,7 +879,7 @@ sub Delete {
                 return $self->showError() if ($self->cms()->getError() ne "");
                 $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
             };   
-            $self->afterDelete($id) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
+            $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
             $self->_makeEvent('delete',{ID=>$id});
             $self->_makeLogEvent({operation=>"Удаление записи",operation_param=>"KEY ".$id});
             return $self->redirect(uri_unescape($q->param("ref")));
@@ -1817,7 +1817,10 @@ sub processSorting {
     my $posField = $self->getPosField();
     if ($posField) {
 		push @{$listfields}, $posField;
-		unshift @{$self->{_orders}}, {FIELD=>$posField->{FIELD}};
+		my $order = {};
+		$order->{FIELD} = $posField->{FIELD};
+		$order->{DEFAULTBY} = "DESC" if $posField->{REVERSE};
+		unshift @{$self->{_orders}}, $order;
 	}
 
     my $orderfield = "";
@@ -2037,7 +2040,7 @@ sub getDeleteLink {
     	my $idn = $self->{_idname};
     	return {
 			NAME=> $self->{_delete_link_name},
-			URL=> getURLWithParams($self->getBaseURL().$self->getSubURL()."?action=delete&$idn={$idn}",$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam()),
+			URL=> getURLWithParams($self->getBaseURL().$self->getSubURL()."?action=delete&$idn={$idn}",$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),'rand='.(int(rand(10000)))),
 			AJAX=>1
 		};
 	};
@@ -2257,7 +2260,7 @@ sub _destroyBlock {
         
         $self->beforeDelete($v) or return $self->showError("_destroyBlock(): Ошибка вызова BeforeDelete()");
         $form->Delete() or return $self->error($form->getError());
-        $self->afterDelete($v) or return $self->showError("_destroyBlock(): Ошибка вызова AfterDelete()");
+        $self->afterDelete($v,$form) or return $self->showError("_destroyBlock(): Ошибка вызова AfterDelete()");
     };
     $sth->finish();
 
@@ -2471,7 +2474,8 @@ sub order {
     }
     else { # Пришла строка
         my $field = shift;
-        push @{$self->{_orders}}, {FIELD=>$field};
+        my $order = shift || 'ASC';
+        push @{$self->{_orders}}, {FIELD=>$field, 'DEFAULTBY'=>$order};
 	};
 };
 

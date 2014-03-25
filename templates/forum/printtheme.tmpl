@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<style type="text/css">
+html {
+  * { background: transparent !important; color: black !important; text-shadow: none !important; filter:none !important;
+  -ms-filter: none !important; }
+  a, a:visited { color: #444 !important; text-decoration: underline; }
+  a[href]:after { content: " (" attr(href) ")"; }
+  abbr[title]:after { content: " (" attr(title) ")"; }
+  .ir a:after, a[href^="javascript:"]:after, a[href^="#"]:after { content: ""; }
+  pre, blockquote { border: 1px solid #999; page-break-inside: avoid; }
+  thead { display: table-header-group; }
+  tr, img { page-break-inside: avoid; }
+  @page { margin: 0.5cm; }
+  p, h2, h3 { orphans: 3; widows: 3; }
+  h2, h3{ page-break-after: avoid; }
+}
+body {
+  font-family: sans-serif;
+}
+ul.forum-topic {
+  list-style: none;
+}
+ul.forum-topic li {
+  border-bottom: 1px solid #444;
+}
+ul.forum-topic li+li {
+  margin-top: 1.5em;
+}
+</style>
+</head>
+<body>
+<h1>ÌÅÕÀÒĞÎÍÈÊÀ-ÏĞÎ</h1>
+<h2>ÍÀÓ×ÍÎ-ÏĞÎÈÇÂÎÄÑÒÂÅÍÍÀß ÔÈĞÌÀ</h2>
+<TMPL_IF .FORUMOBJ.HISTORY>
+<div class="history">
+    <TMPL_LOOP .FORUMOBJ.HISTORY>
+        <TMPL_UNLESS __LAST__>
+          <a href="<TMPL_VAR URL>"><TMPL_VAR NAME></a>
+          &rarr;
+        <TMPL_ELSE>
+          <strong><TMPL_VAR NAME></strong>
+        </TMPL_UNLESS>
+    </TMPL_LOOP>
+</div>
+</TMPL_IF>
+
+<ul class="forum-topic">
+<TMPL_LOOP MESSAGES>
+<li>
+  <div class="forum-topic-content">
+    <p class="topic-date"><strong># <TMPL_VAR ID> &nbsp;&nbsp;<TMPL_VAR AUTHOR>&nbsp;&nbsp;</strong><TMPL_VAR CREATE_DATE></p>
+    <p class="topic-message"><TMPL_VAR MESSAGE></p>
+  </div> <!--! end of .forum-topic-content-->
+  <div class="forum-topic-author-content">
+  </div> <!--! end of .forum-topic-author-content -->
+</li>
+</TMPL_LOOP>
+</ul>
+
+
+</body>
+</html>

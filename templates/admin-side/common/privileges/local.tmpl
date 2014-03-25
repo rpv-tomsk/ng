@@ -32,9 +32,9 @@ function getPrivHtml(index) {
     var subj = "";
     var priv = allPrivs[index];
     if (priv.active==null)
-        subj = "Не определено";
+        subj = "Не&nbsp;определено";
     else if (priv.padminId)
-        subj = "Пользователь, ";
+        subj = "Пользователь,&nbsp;";
     else if (priv.pgroupId!=null && adminId != null) 
         subj = '<a href="'+baseUrl+pageId+'/?groupId='+priv.pgroupId+'">Группа</a>, ';
     
@@ -48,15 +48,6 @@ function getPrivHtml(index) {
         source = "Локально";
         
     var html = "";
-    html = html + '<p class="name">'+ priv.name +'</p>';
-    if (priv.active==null)
-        html = html + '<img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">';
-    else if (priv.active)
-        html = html + '<img class="status" src="/admin-side/img/privs/allow.gif" title="разрешено" alt="+">';
-    else 
-        html = html + '<img class="status" src="/admin-side/img/privs/deny.gif" title="запрещено" alt="-">';
-    
-    html = html + '<p class="status">('+ subj + source +')</p>';
     html = html + '<p class="links">';
     
     var gId = groupId;
@@ -70,6 +61,19 @@ function getPrivHtml(index) {
     }
     html = html + '[<a href="#" onclick="return showSources('+index+');">Редактировать</a>]';
     html = html + '</p>';
+    
+    html = html + '<div class="left_links">';
+    html = html + '<p class="name">'+ priv.name +'</p>';
+    if (priv.active==null)
+        html = html + '<img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">';
+    else if (priv.active)
+        html = html + '<img class="status" src="/admin-side/img/privs/allow.gif" title="разрешено" alt="+">';
+    else 
+        html = html + '<img class="status" src="/admin-side/img/privs/deny.gif" title="запрещено" alt="-">';
+    
+    html = html + '<p class="status">('+ subj + source +')</p>';
+    html = html + '</div>';
+    
     return html;
 };
 

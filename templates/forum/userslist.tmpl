@@ -1,0 +1,67 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<form action="" method="get" class="user-filter-form">
+<table><tbody><tr>
+<td class="search-form-input-text">
+<div>
+  <input type="hidden" name="action" value="userslist">
+  <input type="text" name="search" value="<TMPL_VAR SEARCH ESCAPE=HTML>">
+</div>
+</td>
+<td class="search-form-submit-button">
+  <div>
+    <button type="submit">
+      <span><TMPL_VAR RES.TEXT_USERSSEARCH></span>
+    </button>
+  </div>
+</td>
+</tbody></table>
+</form>
+
+<TMPL_IF IS_SEARCH>
+  <a href="?action=userslist" style="font-size: 1.231em;">&larr;&nbsp;<TMPL_VAR RES.TEXT_BACK_TO_USERSLIST></a>
+</TMPL_IF>
+
+<table class="user-right-container">
+<TMPL_LOOP USERS>
+<tr>
+  <td>
+    <div class="text-container">
+      <p class="user-rights-panel"><a href="?action=showuserinfo&user_id=<TMPL_VAR ID>"><TMPL_VAR LOGIN></a></p>
+    </div>
+
+  </td>
+  <td>
+    <TMPL_IF .FORUMOBJ.USER.IS_MODERATE>
+    <div class="user-rights-panel">
+      <TMPL_IF IS_BANNED>
+      <a href="?action=forumunban&user_id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>" title="<TMPL_VAR .RES.TEXT_UNSET_USERBAN>"><span class="add-card red-card">&nbsp;</span><TMPL_VAR .RES.TEXT_USER_BAN></a>
+      <TMPL_ELSE>
+      <a href="?action=forumban&user_id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>" title="<TMPL_VAR .RES.TEXT_SET_USERBAN>"><span class="add-card green-card">&nbsp;</span><TMPL_VAR .RES.TEXT_USER_TOBAN></a>
+      </TMPL_IF>
+      <TMPL_IF IS_MODERATE>
+      <a href="?action=unmoderate&user_id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>" title="<TMPL_VAR .RES.TEXT_UNSET_MODERATE>"><span class="add-card green-card">&nbsp;</span><TMPL_VAR .RES.TEXT_USER_MODERATOR></a>
+      <TMPL_ELSE>
+      <a href="?action=moderate&user_id=<TMPL_VAR ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>" title="<TMPL_VAR .RES.TEXT_SET_MODERATE>"><span class="add-card yellow-card">&nbsp;</span><TMPL_VAR .RES.TEXT_USER_USER></a>
+      </TMPL_IF>
+    </div>
+    </td>
+    <td>
+      <a href="?action=showusergroups&user_id=<TMPL_VAR ID>"><TMPL_VAR .RES.TEXT_USER_GROUPS></a><br>
+      <a href="?action=showbanforums&user_id=<TMPL_VAR ID>"><TMPL_VAR .RES.TEXT_USER_BAN_FORUM></a>
+      <a href="?action=editsubscribe&user_id=<TMPL_VAR ID>"><TMPL_VAR .RES.TEXT_USER_EDIT_SUBSCRIBE></a>
+
+    </TMPL_IF>
+
+  </td>
+</tr>
+</TMPL_LOOP>
+</table>
+
+<TMPL_UNLESS USERS><TMPL_IF IS_SEARCH>
+  <div class="error-box">
+    <p><TMPL_VAR .RES.ERROR_USERS_NOT_FOUND></p>
+  </div>
+</TMPL_IF></TMPL_UNLESS>
+
+<TMPL_INCLUDE "pagination.tmpl">

@@ -1,0 +1,63 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR .RES.BANFORUMS><a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_USERSLIST>"></a></h1>
+
+<div class="profile-container">
+<div class="clearfix">
+<h2><TMPL_VAR .RES.BANFORUMS_USERINFO></h2>
+<div class="container">
+  <div class="content">
+    <div class="form-element">
+      <table>
+        <tbody>
+        <tr>
+          <td>
+            <div><label><TMPL_VAR .RES.BANFORUMS_LOGIN></label></div>
+            <div class="input-wrap"><TMPL_VAR USERINFO.LOGIN></div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div><label><TMPL_VAR .RES.BANFORUMS_EMAIL></label></div>
+            <div class="input-wrap"><TMPL_VAR USERINFO.EMAIL></div>
+          </td>
+        </tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="left-sidebar">
+  <div class="avatar-container">
+    <TMPL_IF USERINFO.AVATAR>
+    <img src="<TMPL_VAR USERINFO.AVATAR>">
+    <TMPL_ELSE>
+    <img src="<TMPL_VAR USERINFO.GRAVATAR>">
+    </TMPL_IF>
+  </div>
+</div>
+</div>
+</div>
+
+<TMPL_IF SECTIONS>
+<hr>
+<h2><TMPL_VAR .RES.BANFORUMS_LIST></h2>
+<br>
+<table class="user-right-container">
+<tbody>
+<TMPL_LOOP SECTIONS>
+    <TMPL_IF IS_SHOW>
+<tr>
+  <td style="text-align:left">
+    <p class="user-rights-panel"><TMPL_VAR NAME></p>
+  </td>
+  <td style="text-align:left">
+    <p class="user-rights-panel">
+      <a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=userunban&section_id=<TMPL_VAR ID>&user_id=<TMPL_VAR USERINFO.ID>&<TMPL_VAR .FORUMOBJ.CURRENT_REFPARAM>"><span class="add-card red-card">&nbsp;</span><TMPL_VAR .RES.BANFORUMS_UNBAN></a>
+    </p>
+  </td>
+</tr>
+    </TMPL_IF>
+</TMPL_LOOP>
+</tbody></table>
+</TMPL_IF>

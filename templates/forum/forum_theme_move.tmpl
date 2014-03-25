@@ -1,0 +1,28 @@
+<TMPL_IF ERRORS.NOFORUM>
+    <p class="forum-error"><TMPL_VAR RES.TEXT_MOVETHEME_ERROR_NOFORUM></p>
+</TMPL_IF>
+
+<TMPL_IF ERRORS.NOACCESS>
+    <p class="forum-error"><TMPL_VAR RES.TEXT_MOVETHEME_ERROR_NOACCESS></p>
+</TMPL_IF>
+
+<form action="?" method="get">
+    <h1><TMPL_VAR RES.TEXT_MOVETHEME> <a href="<TMPL_VAR BACKURL>" class="forum-back-theme-icon png_bg" title="<TMPL_VAR .RES.BACK_TO_THEME>"></a></h1>
+    <input type="hidden" name="id" value="<TMPL_VAR THEME.ID>">
+    <input type="hidden" name="action" value="movetheme">
+    <input type="hidden" value="<TMPL_VAR REFERER>" name="ref">
+    <select name="forum_id">
+        <TMPL_LOOP FORUMS_SECTIONS>
+            <TMPL_IF COUNT>
+            <optgroup label="<TMPL_VAR NAME ESCAPE=HTML>">
+            <TMPL_LOOP FORUMS>
+                <TMPL_IF VISIBLE>
+                <option <TMPL_IF CURRENT>selected</TMPL_IF> value="<TMPL_VAR ID>"><TMPL_VAR NAME></option>
+                </TMPL_IF>
+            </TMPL_LOOP>
+            </optgroup>
+            </TMPL_IF>
+        </TMPL_LOOP>
+    </select>
+    <button type="submit" name="move" value="1" class="button" ><TMPL_VAR RES.TEXT_MOVETHEME_MOVE></button>
+</form>

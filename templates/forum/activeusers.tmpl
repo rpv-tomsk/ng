@@ -1,0 +1,30 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<h1><TMPL_VAR .RES.ACTIVEUSERS></h1>
+
+<form action="<TMPL_VAR FORUMOBJ.FORUM_URL>" method="get" class="mb10 pl10">
+    <input type="hidden" name="action" value="activeusers">
+    <p><TMPL_VAR .RES.ACTIVEUSERS_DAYCOUNT>:&nbsp;&nbsp;
+    <select name="day">
+        <option value=1 <TMPL_IF DAY1>selected</TMPL_IF>>1</option>
+        <option value=2 <TMPL_IF DAY2>selected</TMPL_IF>>2</option>
+        <option value=3 <TMPL_IF DAY3>selected</TMPL_IF>>3</option>
+        <option value=4 <TMPL_IF DAY4>selected</TMPL_IF>>4</option>
+        <option value=5 <TMPL_IF DAY5>selected</TMPL_IF>>5</option>
+        <option value=6 <TMPL_IF DAY6>selected</TMPL_IF>>6</option>
+        <option value=7 <TMPL_IF DAY7>selected</TMPL_IF>>7</option>
+    </select>
+    <button type="submit"><TMPL_VAR .RES.ACTIVEUSERS_BUTTON></button>
+		</p>
+</form>
+
+
+
+<ul class="forum-menu-cell-ul activeUsers">
+<TMPL_LOOP USERS>
+  <li><hr>
+    <p><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=showmessages&theme_id=<TMPL_VAR THEME_ID>&lastmessage=1" target="_blank"><TMPL_VAR THEME></a></p>
+    <p><a href="<TMPL_VAR .FORUMOBJ.FORUM_URL>?action=showuserinfo&user_id=<TMPL_VAR ID>" class="author"><TMPL_VAR LOGIN></a>, <TMPL_VAR CREATE_DATE></p>
+  </li>
+</TMPL_LOOP>
+</ul>

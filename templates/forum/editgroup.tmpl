@@ -1,0 +1,16 @@
+<TMPL_INCLUDE "panel.tmpl">
+<h1>Редактирование группы</h1>
+<h2>Группа: <TMPL_VAR EDITGROUP.FORM.NAME ESCAPE=HTML><!-- Название группы <TMPL_VAR RES.TEXT_EDITGROUP_NAME>--></h2>
+<form action="?action=editgroup" method="post" class="answer-box">
+    <input type="hidden" name="post_action" value="editgroup">
+    <input type="hidden" name="id" value="<TMPL_VAR EDITGROUP.FORM.ID>">
+    <div class="form-item">
+    <label for="input231">Название группы</label>
+    <input id="input231" type="text" name="name" class="text<TMPL_IF EDITGROUP.ERRORS.NAME> error</TMPL_IF>" value="<TMPL_VAR EDITGROUP.FORM.NAME ESCAPE=HTML>">
+    <TMPL_IF EDITGROUP.ERRORS.NAME>
+      <small class="error-box"><TMPL_VAR RES.ERROR_EDITGROUP_ID></small>
+      <small class="error-box"><TMPL_VAR RES.ERROR_EDITGROUP_NAME></small>
+    </TMPL_IF>
+    </div>
+    <button type="submit" class="button"><TMPL_VAR RES.TEXT_EDITGROUP></button>
+</form>

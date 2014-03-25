@@ -1,0 +1,149 @@
+<TMPL_INCLUDE "panel.tmpl">
+<div class="profile-container">
+<div class="clearfix">
+<div class="container">
+  <div class="content">
+    <h2><TMPL_VAR .RES.TEXT_PROFILE_CHANGE_PASSWORD_AND_EMAIL></h2>
+    <form action="<TMPL_VAR FORUMOBJ.FORUM_URL>?action=profile" method="post">
+      <div class="form-element">
+        <table>
+          <tr>
+            <td>
+              <div><label for="1"><TMPL_VAR .RES.TEXT_PROFILE_CURRENT_PASSWORD></label></div>
+              <div class="input-wrap"><input type="password" name="password" id="1"/></div>
+              <TMPL_IF ERRORS.PASSWORD><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_PASSWORD></small></TMPL_IF>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div><label for="2"><TMPL_VAR .RES.TEXT_PROFILE_NEW_PASSWORD></label></div>
+              <div class="input-wrap"><input type="password" name="new_password" id="2" /></div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div><label for="3"><TMPL_VAR .RES.TEXT_PROFILE_RETYPE_PASSWORD></label></div>
+              <div class="input-wrap"><input type="password" name="retype_password" id="3" /></div>
+              <TMPL_IF ERRORS.RETYPE_PASSWORD><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_RETYPE_PASSWORD></small></TMPL_IF>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div><label for="4"><TMPL_VAR .RES.TEXT_PROFILE_EMAIL></label></div>
+              <div class="input-wrap"><input type="text" name="email" id="4" value="<TMPL_VAR PROFILE.EMAIL>"/></div>
+              <TMPL_IF ERRORS.EMAIL><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_EMAIL></small></TMPL_IF>
+              <TMPL_IF ERRORS.EMAIL_DUPLICATE><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_EMAIL_DUPLICATE></small></TMPL_IF>
+            </td>
+          </tr>
+        </table>
+      <button type="submit" name="formaction" value="change"><TMPL_VAR .RES.TEXT_PROFILE_CHANGE></button>
+      </div>
+    </form>
+  </div>
+</div>
+    
+
+<div class="left-sidebar">
+  <h2<TMPL_IF ERRORS.AVATAR> style="color: red;"</TMPL_IF>><TMPL_VAR .RES.TEXT_PROFILE_CHANGE_AVATAR></h2>
+  <form action="<TMPL_VAR FORUMOBJ.FORUM_URL>?action=profile" method="post" class="form-element" enctype="multipart/form-data">
+
+    <div class="avatar-container">
+      <img src="<TMPL_IF PROFILE.AVATAR><TMPL_VAR AVATARS_UPLOAD_DIR><TMPL_VAR PROFILE.AVATAR><TMPL_ELSE>/img/no-avatar.jpg</TMPL_IF>" width="100px" height="100px" alt="">
+      <div class="input-file-wrapper"><button>Выбрать фото</button><input type="file" name="avatar" class="input-file-button"></div>
+      <TMPL_IF ERRORS.AVATAR.EMPTY><p><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_AVATAR_EMPTY></small></p></TMPL_IF>
+      <TMPL_IF ERRORS.AVATAR.NOT_IMAGE><p><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_AVATAR_NOT_IMAGE></small></p></TMPL_IF>
+      <TMPL_IF ERRORS.AVATAR.WRONG_UPLOAD><p><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_AVATAR_WRONG_UPLOAD></small></p></TMPL_IF>
+      <TMPL_IF ERRORS.AVATAR.PROCESS><p><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_AVATAR_PROCESS></small></p></TMPL_IF>
+      <label><p><input type="checkbox" name="deleteavatar"> <TMPL_VAR .RES.TEXT_PROFILE_DELETE_AVATAR></p></label>
+      <button type="submit" name="formaction" value="avatar"><TMPL_VAR .RES.TEXT_PROFILE_CHANGE></button>
+    </div>
+  </form>
+</div>
+</div>
+<hr />
+
+<TMPL_IF EXTENDS>
+<div>
+    <h2><TMPL_VAR .RES.TEXT_PROFILE_EXTEND></h2>
+    <form action="<TMPL_VAR FORUMOBJ.FORUM_URL>?action=profile" method="post" class="form-element">
+    <input type="hidden" name="action" value="profile">
+    <div class="form-element">
+        <table>
+        <TMPL_LOOP EXTENDS>
+            <TMPL_IF TYPE_TEXT>
+            <tr>
+                <td>
+                    <div><label <TMPL_IF NOTNULL>style="font-weight:bold"</TMPL_IF>><TMPL_VAR LABEL></label></div>
+                    <div class="input-wrap"><input type="text" name="<TMPL_VAR NAME>" value="<TMPL_VAR VALUE ESCAPE=HTML>" /></div>
+                    <TMPL_IF ERROR><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_EXTEND></small></TMPL_IF>
+                </td>
+            </tr>            
+            </TMPL_IF>
+            <TMPL_IF TYPE_TEXTAREA>
+            <tr>
+                <td>
+                    <div><label <TMPL_IF NOTNULL>style="font-weight:bold"</TMPL_IF>><TMPL_VAR LABEL></label></div>
+                    <div class="input-wrap"><textarea name="<TMPL_VAR NAME>" rows="7"><TMPL_VAR VALUE ESCAPE=HTML></textarea></div>
+                    <TMPL_IF ERROR><small class="error-box"><TMPL_VAR .RES.ERROR_PROFILE_EXTEND></small></TMPL_IF>
+                </td>
+            </tr>            
+            </TMPL_IF>
+        </TMPL_LOOP>
+        <tr>
+          <td><button name="formaction" value="extend"><TMPL_VAR .RES.TEXT_PROFILE_EXTEND_BUTTON></button></td>
+        </tr>         
+        </table>
+    </div>
+    </form>
+</div>
+<hr />
+</TMPL_IF>
+
+<div>
+  <h2><TMPL_VAR .RES.TEXT_PROFILE_CHANGE_OTHER></h2>
+  <form action="<TMPL_VAR FORUMOBJ.FORUM_URL>?action=profile" method="post" class="form-element">
+    <div class="form-element">
+      <table>
+        <tr>
+          <td><label for="textarea1"><TMPL_VAR .RES.TEXT_PROFILE_SIGNATURE></label></td>
+        </tr>
+        <tr>
+          <td><textarea id="textarea1" name="signature" rows="7"><TMPL_VAR PROFILE.SIGNATURE></textarea></td>
+        </tr>
+        <TMPL_IF .FORUMOBJ.USER.IS_MODERATE>
+        <tr>
+          <td><label><input name="is_subscribe" type="checkbox" value="1" <TMPL_IF PROFILE.IS_SUBSCRIBE>checked</TMPL_IF>> <TMPL_VAR .RES.TEXT_PROFILE_IS_SUBSCRIBE></label></td>
+        </tr>
+        </TMPL_IF>
+        <tr>
+          <td><button name="formaction" value="other"><TMPL_VAR .RES.TEXT_PROFILE_CHANGE></button></td>
+        </tr>
+      </table>
+    </div>
+  </form>
+</div>
+
+<hr />
+<div>
+  <h2><TMPL_VAR .RES.TEXT_RPOFILE_CHANGE_ZONES></h2>
+  <form action="<TMPL_VAR FORUMOBJ.FORUM_URL>?action=profile" method="post" class="form-element">
+    <div class="form-element">
+      <table>
+        <tr>
+          <td>
+            <div><label for="select1"><TMPL_VAR .RES.TEXT_PROFILE_ZONE></label></div>
+            <div class="input-wrap">
+              <select id="select1" name="tz">
+                <TMPL_LOOP ZONES>
+                  <option value="<TMPL_VAR VALUE>" <TMPL_IF CURRENT>selected</TMPL_IF>><TMPL_VAR ZONE>UTC</option>
+                </TMPL_LOOP> 
+              </select>
+            </div>
+          </td>
+        </tr>
+        <tr><td><button name="formaction" value="tz"><TMPL_VAR .RES.TEXT_PROFILE_CHANGE></button></td></tr>
+      </table>
+    </div>
+  </form>
+</div>
+</div> <!--! end of .profile-container -->

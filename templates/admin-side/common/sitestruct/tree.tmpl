@@ -207,12 +207,12 @@
                     <TMPL_UNLESS CANENABLE>
                       <img src="/admin-side/img/off.gif" alt="" align="top" border="0" alt="Выключена" title="Выключена">
                     <TMPL_ELSIF DISABLED>
-                      <a href="<TMPL_VAR PAGEURL>?action=enablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Включить" title="Включить" onclick=""><img src="/admin-side/img/off.gif" alt="" align="top" border="0"></a>&nbsp;
+                      <a href="<TMPL_VAR PAGEURL>?action=enablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Включить" title="Включить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Включить"></a>&nbsp;
                     <TMPL_ELSE DISABLED>
-                      <a href="<TMPL_VAR PAGEURL>?action=disablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Выключить" title="Выключить" onclick=""><img src="/admin-side/img/off.gif" alt="" align="top" border="0"></a>&nbsp;
+                      <a href="<TMPL_VAR PAGEURL>?action=disablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Выключить" title="Выключить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Выключить"></a>&nbsp;
                     </TMPL_IF DISABLED>
                   <TMPL_IF PRIVILEGES.DELPAGE>
-                    <a href="<TMPL_VAR PAGEURL>?action=deletenode&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Удалить" title="Удалить" onclick="ajax_url('<TMPL_VAR PAGEURL>?action=deletenode&_ajax=1&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+                    <a href="<TMPL_VAR PAGEURL>?action=deletenode&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Удалить" title="Удалить" onclick="ajax_url('<TMPL_VAR PAGEURL>?action=deletenode&_ajax=1&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Удалить" align="top" border="0"></a>&nbsp;
                   </TMPL_IF>
 					<a href="<TMPL_VAR PAGEURL>?action=movenodeup&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вверх" title="Передвинуть вверх"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
 					<a href="<TMPL_VAR PAGEURL>?action=movenodedown&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вниз" title="Передвинуть вниз"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;

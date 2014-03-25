@@ -75,7 +75,8 @@ sub moveUploadedFile {
 
     my $mask = umask();
     $mask = 0777 &~ $mask;
-    move($tmpfilename, $uploadfile);
+    close($original_filename);
+    move($tmpfilename, $uploadfile) or return $self->error("Error on file move: ".$!);
     chmod $mask, $uploadfile;
     $self->{_filename} = $filename;
     return 1;

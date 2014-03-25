@@ -1,0 +1,15 @@
+<TMPL_INCLUDE "panel.tmpl">
+
+<div class="search-result-container">
+<div class="search-index"><TMPL_VAR .RES.TEXT_SEARCH_RESULT> &laquo;<TMPL_VAR SESSION.KEYWORDS>&raquo;</div>
+<ol class="search-result">
+<TMPL_LOOP RESULTS>
+<li>
+  <div class="search-result-link"><a href="<TMPL_VAR FORUM_URL>?action=showmessages&theme_id=<TMPL_VAR THEME_ID>&message_id=<TMPL_VAR MESSAGE_ID>" class="underlined" target="_blank"><TMPL_VAR THEME></a></div>
+  <div class="search-result-text">
+    <p><TMPL_VAR MESSAGE></p>
+  </div>
+</li>
+</TMPL_LOOP>
+</ol>
+</div>

@@ -1,0 +1,13 @@
+<TMPL_IF PAGINATOR.PAGES>
+<div class="paginator clearfix"> 
+  <a href="<TMPL_VAR PAGINATOR.PREV_URL>" class="<TMPL_UNLESS PAGINATOR.PREV_URL>not-active </TMPL_UNLESS>first">&larr; <TMPL_VAR .RES.PAGINATOR.PREV_PAGE></a> 
+  <a href="<TMPL_VAR PAGINATOR.NEXT_URL>" class="<TMPL_UNLESS PAGINATOR.NEXT_URL>not-active </TMPL_UNLESS>last"><TMPL_VAR .RES.PAGINATOR.NEXT_PAGE> &rarr;</a> 
+  <ul> 
+    <TMPL_LOOP PAGINATOR.PAGES>
+        <TMPL_IF CURRENT><li><a href="<TMPL_VAR URL>" class="current"><TMPL_VAR PAGE></a></li></TMPL_IF>
+        <TMPL_IF NORMAL><li><a href="<TMPL_VAR URL>"><TMPL_VAR PAGE></a></li></TMPL_IF> 
+        <TMPL_IF SKIP><li>&#133;</li></TMPL_IF> 
+    </TMPL_LOOP> 
+  </ul> 
+</div>
+</TMPL_IF>

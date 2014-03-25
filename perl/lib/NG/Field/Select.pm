@@ -147,7 +147,6 @@ sub setSelectOptions {
         $field->{DBVALUE} = $seloption->{ID};
         $field->{_changed} = 1;
     };
-    
     $field->{_selected_option}->{SELECTED}=1 if $field->{_selected_option};
     $field->{SELECT_OPTIONS} = \@o;
     $field->{_dict_loaded} = 1;
@@ -289,8 +288,11 @@ sub value {
 
 sub dbValue {
     my $field = shift;
+    
+    return $field->{DB_NULL_VALUE} if (exists $field->{DB_NULL_VALUE} && $field->{VALUE} eq $field->{NULL_VALUE});
     return $field->{DBVALUE};
 };
+
 
 sub _getSOFromDB {
     my $field = shift;
@@ -331,13 +333,15 @@ sub selectedName {
         return "[no dict]";
     };
     
-    return "" unless $field->{VALUE};
+    return "" unless defined $field->{VALUE};
     my $so = $field->_getSOFromDB();
     $field->{_selected_option} = $so if $so;
     return "" unless $field->{_selected_option};
     return $field->{_selected_option}->{NAME};
 };
+
 *SELECTEDNAME = \&selectedName;
+
 
 sub selectOptions {
 	my $field = shift;
@@ -352,6 +356,11 @@ sub selectOptions {
     };
     return $field->{SELECT_OPTIONS};
 };
+
+sub SELECT_OPTIONS {
+    my $field = shift;
+    return $field->{SELECT_OPTIONS};
+}
 
 sub getJSSetValue {
     my $field = shift;
@@ -400,7 +409,7 @@ sub getJSSetValue {
 
 sub check {
     my $field = shift;
-    
+     
     unless ($field->{_selected_option}) {
         if ($field->{VALUE} && !$field->{_dict_loaded}) {
             #Dict not loaded, try to load SO

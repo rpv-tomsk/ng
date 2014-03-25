@@ -3,13 +3,8 @@ use strict;
 
 use Carp;
 use Carp qw(cluck);
-use HTML::Template::Compiled 0.85;
-use NG::Nodes;
 use NGService;
-use NHtml;
 use NSecure;
-use Config::Simple;
-use NG::Session;
 
 use NG::BlockContent;
 
@@ -20,13 +15,14 @@ use constant M_OK       => 1;
 use constant M_REDIRECT => 2;
 use constant M_404      => 3;
 use constant M_EXIT     => 4;
+use constant M_CONTINUE  => 5;
 
 sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->init(@_);    
-    return $self; 
+    $self->init(@_);
+    return $self;
 };
 
 sub init {
@@ -35,14 +31,19 @@ sub init {
 
     $self->{_q} = $param{CGIObject};
     $self->{_db} = $param{DBObject};
+    $self->{_pm} = $param{PageModule};
     
-    $self->{_siteroot} = $param{SiteRoot};
-    $self->{_docroot}      = $self->{_siteroot}."/htdocs/";
-    $self->{_template_dir} = $self->{_siteroot}."/templates/";
-    $self->{_config_dir}   = $self->{_siteroot}."/config/";
+$self->{_siteroot} = $param{SiteRoot};
+    $self->{_docroot}      = (exists $param{DocRoot})?$param{DocRoot}:$self->{_siteroot}."/htdocs/";
+    $self->{_template_dir} = (exists $param{TmplDir})?$param{TmplDir}:$self->{_siteroot}."/templates/";
+    $self->{_template_dir}.="/" unless $self->{_template_dir} =~ /\/$/;
+    $self->{_config_dir}   = (exists $param{CfgDir})?$param{CfgDir}:$self->{_siteroot}."/config/";
     $self->{_cookies} = [];
     $self->{_charset} = "windows-1251";
+    $self->{_echarset} = "windows-1251";
 	$self->{_type} = "text/html";
+
+    $self->{_debug} = $param{Debug} || 0;
 
     $self->{_nocache}=0;
     $self->{_headerssent} = 0;
@@ -54,17 +55,18 @@ sub init {
     $self->{_events} = {}; # List executing events in this time
     
     #NG::CMS
-    #$self->{_pageParams} = undef;
     $self->{_subsiteRow} = undef;
     
     $self->{_moduleInstances} = {};
     $self->{_stash} = {};
     $self->{_mstash} = {};   ##Stash for NG::Module stash methods.
+    $self->{_mrowC}  = {};   # Cache for ng_modules rows.  ( _mrowC->{CODE} = $moduleRow; )
+    $self->{_mrowR}  = {};   # Flag what all modules for REF is loaded ( _mrowR->{REF} = 1; )
 	
-	$self->openConfig();
     
     $NG::Application::cms = $self;
     $NG::Application::pageObj = undef;
+    $NG::Application::blocksController = undef;
     $self;
 };
 
@@ -72,6 +74,12 @@ sub getDocRoot()  { return $_[0]->{_docroot};  };
 sub getSiteRoot() { return $_[0]->{_siteroot}; };
 
 sub getSubsiteRow { return $_[0]->{_subsiteRow}};
+
+sub debug {
+    my $self = shift;
+    $self->{_debug} = shift || 0 if (scalar @_);
+    return $self->{_debug};
+};
 
 ## NG::CMS functions
 
@@ -88,6 +96,7 @@ sub getResource {
         next if $_->{KEY} && !exists $row->{$_->{KEY}};
         my $module = $self->confParam("Resource.CMS".($_->{PREFIX}?"_".$_->{PREFIX}.$row->{$_->{KEY}}:""));
         $module or next;
+        
         my $obj = $self->getObject($module) or return $self->error();
         my $value = $obj->getResource($name,
             {
@@ -101,29 +110,59 @@ sub getResource {
 };
 
 =comment
-    getObject($class, parameters-for-new()-constructor)
-    TODO: сделать поддержку версии в параметре $class, значение вида "Site::Module 0.123".
+    $cms->getObject($class, parameters-for-new()-constructor)
+    $cms->getObject({CLASS=>$class, METHOD=>"new", USE=>"Class::Package"}, parameters-for-$METHOD()-constructor)
 =cut
 
 sub getObject {
     my $cms = shift;
     my $class = shift or return croak("getObject: No class value");
+
+    my $cname = "new";  #Constructor method name
+    my $use = $class;
+    if (ref $class eq "HASH") {
+        $cname = $class->{METHOD} || "new";
+        $use   = (exists $class->{USE}) ? $class->{USE} : $class->{CLASS};
+        $class = $class->{CLASS} or return croak("getObject(): Class hash has no CLASS key value");
+    };
+    $class = $1 if ($class =~ /(.*)\s(.*)/);
+    unless ($class->can("can") && $class->can($cname)) {
+        eval "use $use;";
+        return $cms->error("Ошибка подключения модуля \"".$use."\": ".$@) if ($@);
+    };
+    return $cms->error("Класс $class не содержит конструктора $cname().") unless UNIVERSAL::can($class,$cname);
+    return $class->$cname(@_) or $cms->defError("getObject():","Ошибка создания объекта класса $class");
+};
+
+sub loadSubsite {
+    my $cms = shift;
+    my $ssId = shift;
     
-#use Data::Dumper;    
-#warn "cms->getObject($class). Opts=".Dumper(@_);
+    my $q = $cms->q();
+    my $dbh = $cms->db()->dbh();
     
-	unless ($class->can("can") && $class->can("new")) {
-		eval "use $class;";
-        return $cms->error("Ошибка подключения модуля \"".$class."\": ".$@) if ($@);
-        
-        #warn $@ if $@;
-        #return $cms->setError("Не могу подключить модуль $module. Подробный текст ошибки в логе сервера.") if ($@);
-	};
-    unless (UNIVERSAL::can($class,"new")) {
-		return $cms->error("Класс $class не содержит конструктора new().");
-	}; 
-	my $bObj = $class->new(@_) or return $cms->error("Ошибка создания объекта класса $class");
-    return $bObj;
+    my $hasSubsites  = $cms->confParam("CMS.hasSubsites",0);
+    my $hasLanguages = $cms->confParam('CMS.hasLanguages',0);
+    
+    return (NG::Application::M_OK,0) unless $hasSubsites || $hasLanguages;
+    
+    my $fields = "st.url,ss.id,ss.domain,ss.root_node_id,ss.name";
+    my $from   = "ng_sitestruct st, ng_subsites ss";
+    my $where  = "st.id = ss.root_node_id";
+    
+    if ($hasLanguages) {
+        $fields .= ",ln.codes,ss.lang_id";
+        $from   .= ",ng_lang ln";
+        $where  .= " and ln.id = ss.lang_id ";
+    };
+    
+    $where .= "and ss.id = ?";
+    
+    my $sth = $dbh->prepare("select $fields from $from where $where") or return $cms->error($DBI::errstr);
+    $sth->execute($ssId) or return $cms->error($DBI::errstr);
+    $cms->{_subsiteRow} = $sth->fetchrow_hashref();
+    $sth->finish();
+    return $cms->{_subsiteRow};
 };
 
 =head findSubsite()
@@ -164,9 +203,7 @@ sub findSubsite {
     
     my $fields = "st.url,ss.id,ss.domain,ss.root_node_id,ss.name";
     my $from   = "ng_sitestruct st, ng_subsites ss";
-    #учесть, что рутовая нода подсайта может быть отключена и редиректить на нее нет смысла
-    #что делать если пользователь отключит ВСЕ подсайты?(Vinnie 15.08.2010 2:51:43)
-    my $where  = "st.id = ss.root_node_id and st.disabled=0";
+   my $where  = "st.id = ss.root_node_id";
     
     my %user_langs;
     if ($hasLanguages) {
@@ -284,7 +321,7 @@ sub findPageRowByURL {
     my $url  = shift;
     my $ssId = shift || 0;
     
-    my $dbh = $cms->db()->dbh();
+    my $dbh = $cms->dbh();
     
 	#Загружаем свойства страницы
     my $fields = $cms->getPageFields();
@@ -318,6 +355,7 @@ sub findPageRowByURL {
         return $cms->error("Некорректная ссылка") unless $lurl =~ /^\//; #проверяем корректность
         #Ищем максимальное совпадение,отрезая куски ссылок
         while ($lurl ne "/") {
+            next if ($lurl=~s%\/\/$%\/%);
             unless (exists $data->{$lurl}) {
                 $lurl=~s%[^\/]+\/$%%;
                 next;
@@ -362,7 +400,7 @@ sub processRequest {
     my $url = shift;
     my $ssId = shift || 0;
     
-    my $dbh = $cms->db()->dbh();
+    my $dbh = $cms->dbh();
     
     if ($url !~ /[\\\/]$/) {
         $url .= "/";
@@ -370,6 +408,7 @@ sub processRequest {
     };
     
     my $row = $cms->findPageRowByURL($url,$ssId);
+#NG::Profiler::saveTimestamp("findPRbURL","processRequest");
     return $cms->notFound() unless defined $row;
     return $cms->error() unless $row;
     
@@ -384,6 +423,7 @@ sub processRequest {
     #$cms->setLinkId($row->{'link_id'});
     
     my $pageObj = $cms->getPageObjByRow($row) or return $cms->error();
+#NG::Profiler::saveTimestamp("getPObjbRow","processRequest");
     return $cms->error("Модуль ".(ref $pageObj)." не содержит метода run") unless $pageObj->can("run");
     return $pageObj->run();
 };
@@ -438,13 +478,14 @@ sub getPageObjByRow {
 
 sub getModuleRow {
     my $cms = shift;
-    my $where = shift or return $cms->error("getModuleRow(): Отсуствует параметр where");
+    my $where = shift or return $cms->error("getModuleRow(): Отсутствует параметр where");
 
     my $dbh = $cms->db()->dbh();
 
-    my $sth = $dbh->prepare("select id,code,module,base,name from ng_modules where $where") or return $cms->error($DBI::errstr);
+    my $sth = $dbh->prepare("select id,code,module,base,name,params from ng_modules where $where") or return $cms->error($DBI::errstr);
     $sth->execute(@_) or return $cms->error($DBI::errstr);
-    my $mRow = $sth->fetchrow_hashref();
+    my $mRow = $sth->fetchrow_hashref() or return $cms->error("getModuleRow(): Запрошенный модуль не найден");
+    $sth->fetchrow_hashref() and return $cms->error("getModuleRow(): Условие запроса не определяет уникальной записи в ng_modules");
     $sth->finish();
     return $mRow;
 };
@@ -468,6 +509,7 @@ sub getPageActiveBlock {
     return undef unless $pageObj->can("getActiveBlock");
     
     my $ab = $pageObj->getActiveBlock();    # BLOCK + LAYOUT + PRIO + DISABLE_NEIGHBOURS + DISABLE_BLOCKPARAMS
+#NG::Profiler::saveTimestamp("getP_AB-getAB","buildPage");
     
     return $cms->notFound unless defined $ab; #TODO: выводить 404 через запрос блока или лайоута в конфиге
     return $cms->defError("getActiveBlock()","неизвестная ошибка") if $ab eq 0;
@@ -479,22 +521,11 @@ sub getPageActiveBlock {
     
     my $aBlock = {};
     $aBlock->{CODE} = $mName."_".$ab->{BLOCK};
-    $aBlock->{ACTION} = $ab->{BLOCK};
+    $aBlock->{ACTION} = $ab->{ACTION} || $ab->{BLOCK}; ## Backward compatability
     $aBlock->{LAYOUT} = $ab->{LAYOUT};
-    
-    my $abKeys = {}; # KEY ETAG LM CACHE_ALWAYS_VALID???
-    if ($pageObj->can("getBlockKeys")) {
-        #$notModified = 0;
-        #last;
-        $abKeys = $pageObj->getBlockKeys($ab->{BLOCK}) or return $cms->error("getBlockKeys() блока ".$ab->{BLOCK}." не вернул значения"); # KEY ETAG LM CACHE_ALWAYS_VALID???
-        return $cms->error("getBlockKeys() блока ".$ab->{BLOCK}." вернул не хэш") unless ref $abKeys eq "HASH"; 
-    };
-    
-    #return $cms->error("getBlockKeys() активного блока ".$ab->{BLOCK}." страницы не вернул ключа KEY") unless exists $abKeys->{KEY};
-    
-    $aBlock->{KEYS} = $abKeys;
-    $aBlock->{KEY}  = $abKeys->{KEY} if exists $abKeys->{KEY};
+    $aBlock->{PRINTLAYOUT} = $ab->{PRINTLAYOUT};
     $aBlock->{MODULEOBJ} = $pageObj;
+    
     return $aBlock;
 };
 
@@ -506,6 +537,7 @@ sub buildPage {
     my $q   = $cms->q();
     
     my $aBlock = $cms->getPageActiveBlock($pageObj);
+#NG::Profiler::saveTimestamp("getP_AB","buildPage");
     return $aBlock if defined $aBlock && ($aBlock eq "0" || (ref $aBlock && UNIVERSAL::isa($aBlock,'NG::BlockContent')));
     
     if ($aBlock) {
@@ -523,7 +555,7 @@ sub buildPage {
         #2. Считываем параметр "BLOCK_{CODE}.LAYOUT|BLOCK_{CODE}.PRINTLAYOUT"
         $abLayout = $cms->confParam("BLOCK_".$aBlock->{CODE}.".".$layoutConf,undef) if !defined $abLayout;
         #3. Берем параметр layout из параметров блока
-        $abLayout = $aBlock->{LAYOUT} if exists $aBlock->{LAYOUT} && !defined $abLayout;
+        $abLayout = $aBlock->{$layoutConf} if exists $aBlock->{$layoutConf} && !defined $abLayout;
         
         $layout = $abLayout if defined $abLayout;
     };
@@ -533,15 +565,10 @@ sub buildPage {
     };
     
     my $bctrl = $cms->getObject("NG::BlocksController",$pageObj) or return $cms->error();
+    local $NG::Application::blocksController = $bctrl;
     if ($aBlock) {
-        $bctrl->pushBlock($aBlock) or return $cms->error();
-    };
-    
-    my $abContent = undef;
-    if ($aBlock && !exists $aBlock->{KEY}) {
-        #Если нет KEY значит кэширование невозможно.
-        #Сделаем вызов getBlockContent() до построения списка блоков, на случай редиректа и т д  - оптимизация.
-        $abContent = $bctrl->getBlockContent($aBlock->{CODE});
+        my $abContent = $bctrl->pushABlock($aBlock);
+#NG::Profiler::saveTimestamp("pushABlock","buildPage");
         return $abContent if ($abContent eq 0 || !$abContent->is_output());
     };
     
@@ -551,6 +578,7 @@ sub buildPage {
     if ($layout) {
         #получаем список блоков шаблона.
         $lBlocks = $bctrl->loadTemplateBlocks($layout) or return $cms->error();
+#NG::Profiler::saveTimestamp("loadTemplateBlocks","buildPage");
     };
     
     my $hasNeighbours = 1;
@@ -577,25 +605,28 @@ sub buildPage {
     };
      
     # Сборка страницы.
-    $bctrl->requestCacheKeys(); #Запрашиваем ключи всех блоков страницы, чтобы сравнить 
+#NG::Profiler::saveTimestamp("b_reqCacheKeys","buildPage");
+    $bctrl->requestCacheKeys() or return $cms->error(); #Запрашиваем ключи всех блоков страницы, чтобы сравнить
+#NG::Profiler::saveTimestamp("requestCacheKeys","buildPage");
     
-    if ($abContent || ($aBlock && !$bctrl->hasValidCacheContent($aBlock))) {
-        #Если в кэше нет контента для АБ, запрашиваем его отдельным запросом, позволяя коды возврата
-        $abContent ||= $bctrl->getBlockContent($aBlock->{CODE});
-        return $abContent if ($abContent eq 0 || !$abContent->is_output());
-    };
-    
-    $bctrl->prepareContent() or return $cms->error(); # делаем запрос контента для всех блоков
+#NG::Profiler::saveTimestamp("b_prepCont","buildPage");
+    my $abContent = $bctrl->prepareContent(); # or return $cms->error(); # делаем запрос контента для всех блоков
+    return $abContent if ($abContent ne 1);
+#NG::Profiler::saveTimestamp("prepCont","buildPage");
     
     $bctrl->splitRegions() or return $cms->error();
+#NG::Profiler::saveTimestamp("splitReg","buildPage");
     
     my $rContent = $bctrl->getRegionsContent() or return $cms->error();
+#NG::Profiler::saveTimestamp("getRegContent","buildPage");
     
     warn "No layout to output regions" if (!$layout && scalar keys %$rContent > 1);
     return $cms->output($rContent->{CONTENT}) unless $layout;
     
     my $tObj = $cms->gettemplate($layout) or return $cms->error();
+#NG::Profiler::saveTimestamp("get_layout","buildPage");
     $bctrl->attachTemplate($tObj) or return $cms->error();
+#NG::Profiler::saveTimestamp("att_layout","buildPage");
     
     my $rObj = $cms->getObject("NG::ResourceController",$cms) or return $cms->error();
     $tObj->param(
@@ -604,6 +635,7 @@ sub buildPage {
         SUBSITEROW => $cms->{_subsiteRow},
         RES => $rObj
     );
+#NG::Profiler::saveTimestamp("pre_output","buildPage");
     return $cms->output($tObj);
         
         
@@ -703,10 +735,14 @@ sub buildPage {
     
 };
 
-#TODO: переименовать
+sub getABRelated {
+    return $NG::Application::blocksController->getABRelated();
+};
+
 sub isPrint {
     my $self=shift;
-    return 1 if(defined $self->q()->param('print'));
+    my $q = $self->q();
+    return 1 if(defined $q->param('print') || ($q->param('keywords') && $q->param('keywords') eq 'print'));
     return 0;  
 };
 
@@ -715,12 +751,6 @@ sub getPrintParam {
     return "print=1";
 };
 
-=head
-sub getPageParams {
-    my $cms = shift;
-    return $cms->{_pageParams};
-};
-=cut
 
 
 
@@ -738,7 +768,7 @@ sub _session {
 	my $params= shift;
 	
 	$self->openConfig();
-	my $session = NG::Session->$meth(
+	my $session = $self->getObject({CLASS=>"NG::Session",METHOD=>$meth},
 		{
 			App      => $self,
 			ConfName => $cname,
@@ -825,36 +855,65 @@ sub processEvent {
     delete $self->{_events}->{$sender}->{$class}->{$name};
 };
 
+sub defaultTemplateParams {
+    my $self = shift;
+    return {};
+}
+
 sub gettemplate {
 	my $self = shift;
 	my $filename = shift;
+    my $eopts = shift;
+    
+    if ($eopts && ref $eopts ne "HASH") {
+        $self->setError("gettemplate(tmpl,eopts): eopts value is not hashref");
+        return undef;
+    };
 
     unless ( -f $self->{_template_dir}.$filename ) {
         $self->setError("Could not open template '$filename': $!");
         return undef;
     };
 
-    my $tmplObj = $self->getObject("HTML::Template::Compiled",
-        filename=>$filename,
-        path=>$self->{_template_dir},
-        loop_context_vars=>1,
-        die_on_bad_params=>0,
-        global_vars=>1,
-        cache=>0,
-	use_expressions=>1,
-        use_perl => 1, # enable <TMPL_PERL>
-        #debug=>1,
-        #stack_debug=>1,
-        #cache_dir=> $self->{_siteroot}."/htc_cache",
-        case_sensitive => 0
-    ) or return $self->error();
-
-    #TODO: передавать PAGEPARAMS через объект, чтобы можно было в модуле менять параметры страницы
-    #$tmplObj->param(
-    #    PAGEPARAMS => $self->{_pageParams},
-    #);
+    my $opts = {};
     
-    return $tmplObj;
+    #default values
+    $opts->{loop_context_vars}=1;
+    $opts->{global_vars}=1;
+    
+    if ($self->{_debug}) {
+        $opts->{cache}=1; #RAM cache...
+        #use HTML::Template::Compiled;
+        #HTML::Template::Compiled->clear_cache();
+        $opts->{debug_file}='start,end,short';
+    }
+    else {
+        my $m = $self->confParam("CMS.HTC_Cache",undef);
+        $opts->{cache_dir} = $m if $m;
+        $opts->{cache} = 1;
+    };
+    
+    #$opts->{use_perl} = 1; # enable <TMPL_PERL>
+    #$opts->{debug}=1;
+    #$opts->{cache_dir} = $self->{_siteroot}."/htc_cache";
+    $opts->{case_sensitive} = 0;
+    
+    
+    #defaultTemplateParams() support
+    my $d = $self->defaultTemplateParams();
+    unless ($d && ref $d eq "HASH") {
+        return $self->defError("gettemplate():","defaultTemplateParams() returns invalid value");
+    };
+    map {$opts->{$_} = $d->{$_}} keys %$d;
+
+    #eopts support
+    map {$opts->{$_} = $eopts->{$_}} keys %$eopts;
+    
+    $opts->{filename}= $filename;
+    $opts->{path} = $self->{_template_dir};
+    #$opts->{open_mode} =':utf8' if !exists $opts->{open_mode} && $self->{_charset} eq "utf-8";
+    # $opts->{utf8}= 1,
+    return $self->getObject("HTML::Template::Compiled 0.85", %$opts);
 };
 
 
@@ -1042,7 +1101,11 @@ sub showError {
     my $self = shift;
     my $text = $self->{_error} || shift || "Неизвестная ошибка"; 
 	
-	$self->_header({-nocache=>1});
+    my $h = {};
+    $h->{-nocache} = 1;
+    $h->{-charset} = $self->{_echarset};
+    
+    $self->_header($h);
     print "Exception: $text";
     return undef;
 };
@@ -1090,8 +1153,7 @@ sub _do404 {
     };
     
     if (!defined $ret || ($ret && ref $ret ne "NG::BlockContent")) {
-        use Data::Dumper;
-        $ret = $cms->output("Страница не найдена. При обработке страницы 404 получен некорректный код возврата ".Dumper($ret));
+        $ret = $cms->output("Страница не найдена. При обработке страницы 404 получен некорректный код возврата");
     }; 
     if ($ret eq 0 || $ret->is_error()) {
         $ret = $cms->output("Страница не найдена. При обработке страницы 404 произошла ошибка: ".$cms->getError());
@@ -1122,7 +1184,7 @@ sub exit {
 sub outputJSON {
 	my $self = shift;
 	my $json = shift;
-	return NG::BlockContent->exit(create_json($json),-type=>"application/x-javascript");
+	return NG::BlockContent->exit(create_json($json),-type=>"application/json");
 };
 
 sub _doOutput {
@@ -1147,6 +1209,20 @@ sub _doOutput {
 sub redirect {
     my $self = shift;
     return NG::BlockContent->redirect(@_);
+};
+
+sub redirectRefererOr {
+    my $self = shift;
+    my $backup_url = shift;
+    my $redirect_url = $self->q->referer();
+    if (!defined $redirect_url || $redirect_url eq "")  {
+        if (defined $backup_url && $backup_url ne "") {
+                $redirect_url = $self->q->url(-base=>1).$backup_url;
+        } else {
+                $redirect_url = $self->q->url(-base=>1)."/";
+        };
+    };
+    return NG::BlockContent->redirect($redirect_url);
 };
 
 sub _doRedirect {
@@ -1178,7 +1254,7 @@ sub processResponse {
 	
 	if (!$ret || $ret->is_error) {
 		$cms->{_error} = $ret->getError() if $ret;
-		return $cms->showError("Ошибка контроллера ".$cms->{_error});
+		return $cms->showError("Ошибка контроллера");
 	}
     elsif ($ret->is_output() || $ret->is_exit()) {
         return $cms->_doOutput($ret);
@@ -1196,23 +1272,45 @@ sub processResponse {
 
 # NG::Application Interface method
 sub run {
-    my $self = shift;
-    $self->_header();
-    print "You must redefine sub run() {} in your module ".ref $self;
-};
+    my $cms=shift;
+    
+    if ($cms->{_pm}) {
+        my $ret = $cms->runPageController($cms->{_pm});
+        return $cms->processResponse($ret);
+    };
 
+    $cms->openConfig() || return $cms->showError();
+    
+    my $url = $cms->q()->url(-absolute=>1);
+    my ($ret,$subsiteId) = $cms->findSubsite($url); #or return; # 302 или Error
 
-sub getConfigObject {
-	my $self = shift;
-	my $configName = shift || die "NG::Application::getConfigObject(): configName parameter missing";
-	
-    return new Config::Simple($configName,@_) || $self->setError("Could not open config '$configName': ". Config::Simple->error());
+    return $cms->processResponse($ret) unless $ret eq NG::Application::M_OK;
+
+    #if ($url =~ /\/news/) {
+    #    $cms->runPageController("SBI::News",$opts);
+    #};
+
+    #Система статистики: TODO: заменить на отдельный спец вызов
+    my $counterClass = $cms->confParam("Site.CounterClass","");
+    my $counterObj = undef;
+    if ($counterClass) {
+        $counterObj = $cms->getObject($counterClass) or return $cms->showError();
+    };
+    
+    $ret = $cms->processRequest($url,$subsiteId);
+
+    if ($counterObj) {
+        $counterObj->countPage($ret) or $counterObj->showError();
+    };
+
+    return $cms->processResponse($ret);
 };
 
 sub openConfig {
     my $self = shift;
-    $self->{_confObj} = $self->getConfigObject($self->{_config_dir}."site.cfg");    
-}
+    $self->{_confObj} = $self->getObject("Config::Simple",$self->{_config_dir}."site.cfg");
+    $self->{_confObj} || $self->setError("Could not open config '".$self->{_config_dir}."site.cfg': ". Config::Simple->error());
+};
 
 sub setStash ($$$) {
     my $self = shift;
@@ -1232,7 +1330,7 @@ sub getStash ($$) {
     my $key  = shift;
     
     unless (exists $self->{_stash}->{$key}) {
-        #warn "getStash(): key $key not found";
+        #warn "Applicaton::getStash(): key $key not found";
         return undef;
     };
     return $self->{_stash}->{$key};
@@ -1245,7 +1343,7 @@ sub getModuleByCode ($$) {
 	my $opts = shift || {};
 
     my $hash = $cms->modulesHash({CODE=>$code});
-    return $cms->defError("getModuleByCode():","modulesHash() не вернул значения") unless $hash;
+    return $cms->defError("getModuleByCode():","modulesHash() не вернул значения для CODE $code") unless $hash;
     return $cms->defError("getModuleByCode():","возвращенное modulesHash() значение не HASHREF") if ref $hash ne "HASH";
     
     return $cms->error("getModuleCode: Хэш из modulesHash() не содержит ключа $code") unless exists $hash->{$code};
@@ -1271,17 +1369,25 @@ sub modulesHash {
     
     return undef unless $ref;
     
-    my $mRow = undef;
     if ($ref->{CODE}) {
-        $mRow ||= $cms->getModuleRow("code=?",$ref->{CODE}) or return $cms->defError("getModuleByCode():","Запрошенный модуль ".$ref->{CODE}." не найден");
+        return $cms->{_mrowC} if exists $cms->{_mrowC}->{$ref->{CODE}};
+        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or return $cms->defError("getModuleByCode():","Запрошенный модуль ".$ref->{CODE}." не найден");
+        $cms->{_mrowC}->{$ref->{CODE}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
     }
     elsif ($ref->{REF}) {
-        $mRow = $cms->getModuleRow("module=?",$ref->{REF}) or return undef;
+        return $cms->{_mrowC} if exists $cms->{_mrowR}->{$ref->{REF}};
+        my $sth = $cms->dbh()->prepare("select id,code,module,base,name,params from ng_modules where module=?") or return $cms->error($DBI::errstr);
+        $sth->execute($ref->{REF}) or return $cms->error($DBI::errstr);
+        while (my $mRow = $sth->fetchrow_hashref()) {
+            $cms->{_mrowC}->{$mRow->{code}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
+        };
+        $sth->finish();
+        $cms->{_mrowR}->{$ref->{REF}} = 1;
     }
     else {
         return undef;
     }
-    return {$mRow->{code}=>{MODULE=>$mRow->{module},MODULEROW=>$mRow}}; 
+    return $cms->{_mrowC};
 };
 
 sub getModuleInstance ($$) {
@@ -1295,27 +1401,6 @@ sub getModuleInstance ($$) {
     
     return $cms->{_moduleInstances}->{$code};
 };
-
-=head
-=cut
-
-sub getCacheContentKeys {
-    my $cms = shift;
-    return {};
-};
-
-sub getCacheContent {
-    my $cms = shift;
-    return {};
-};
-
-sub storeCacheContent {
-    my $cms = shift;
-    return 1;
-};
-
-=head
-=cut
 
 sub _fixBlock {
     my $cms = shift;
@@ -1434,7 +1519,6 @@ sub getNeighbourBlocks {
 		
         my @c = caller(0);
         my $cobj = $NG::Application::cms->{_confObj};
-        
         if (ref $inovacate && $inovacate->isa("NG::Module")) {
             my $code = $inovacate->getModuleCode() or die "confParam($param): at ".$c[0]." line ".$c[2].": can`t getModuleCode()";
             $param = "MODULE_" .$code.'.'.$param;
@@ -1453,14 +1537,62 @@ sub getNeighbourBlocks {
 		
 		my $defaultValue = shift;
 		return $defaultValue unless $cobj;
-		return $cobj->param($param) || $defaultValue;	
+        my $v = $cobj->param($param);
+        defined $v or return $defaultValue;
+        $v;
 	};
     
     sub cms { return $NG::Application::cms; };
     sub db  { return $NG::Application::cms->{_db}; };
-    sub dbh { return $NG::Application::cms->{_db}->dbh(); };
+    sub dbh { shift; return $NG::Application::cms->{_db}->dbh(@_); };
     sub q   { return $NG::Application::cms->{_q};  };
-}
+};
+
+package NG::ResourceController;
+
+our $AUTOLOAD;
+
+sub new {
+    my $class = shift;
+    my $self = {};
+    bless $self,$class;
+	my $cms = $self->cms();
+    $self->{_parent} = shift or return $cms->error("NG::ResourceController has no parent object");
+	$self->{_parent}->can("getResource") or return $cms->error("Class has no getResource() method");
+    return $self;
+};
+
+sub AUTOLOAD {
+    my $self = shift;
+    my $param = $AUTOLOAD;
+    my $package = ref $self;
+    $param =~ s/$package\:\://;
+    return $self->{_parent}->getResource($param);
+};
+
+sub DESTROY {};
+
+package NG::Cache::Stub;
+use strict;
+
+sub getCacheContentKeys {
+    warn "STUB getCacheContentKeys()";
+    return {};
+};
+
+sub getCacheContent {
+    return {};
+};
+
+sub storeCacheContent {
+    return 1;
+};
+
+BEGIN {
+    return if $NG::Application::Cache;
+    $NG::Application::Cache = {};
+    bless $NG::Application::Cache,__PACKAGE__;
+};
 
 return 1;
 END{};

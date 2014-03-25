@@ -96,6 +96,13 @@ function ajax_url (url,blockId,onLoad) {
 	var params = new Array(2);
 	params[0] = blockId;
 	params[1] = onLoad;
+    re = /\?/;
+    if (re.test(url)) {
+        url = url + '&random='+Math.random();
+    }
+    else {
+        url = url + '?random='+Math.random();
+    }; 
 	new net.ContentLoader(url,putResponseToBlock,params,'GET');
 };
 
