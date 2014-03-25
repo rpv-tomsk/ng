@@ -20,6 +20,7 @@ BEGIN
 			get_links
 			htmlspecialchars
 			unhtmlspecialchars
+			unescapehtml
 			nl2br
 			nl2p
 			nl2li
@@ -173,6 +174,18 @@ sub unhtmlspecialchars {
 	$str =~ s/&#039;/\'/g;
 	$str =~ s/&quot;/\"/g;
 	return $str;
+};
+
+sub unescapehtml {
+    my $str= shift;
+    return $str if !defined $str;
+    $str=~ s/&lt;/>/g;
+    $str=~ s/&gt;/</g;
+    $str=~ s/&quot;/"/g;
+    $str=~ s/&apos;/'/g;
+    $str=~ s/&amp;/&/g;
+    $str=~ s/&#039;/'/g;
+    return $str;
 };
 
 sub escape_js {
