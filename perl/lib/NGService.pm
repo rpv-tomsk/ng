@@ -602,19 +602,37 @@ sub extract_month {
 	if ($date =~/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/) { return $2; } else { die "Incorrect date format"; }
 }
 
+use Fcntl qw( :DEFAULT );
+my $Fetch_Flags = O_RDONLY | O_BINARY;
+my $Store_Flags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
+
 sub loadValueFromFile {
     my $file = shift;
-    my $value = "";
-    my $fh = undef;
- 
-    open ($fh,"<".$file) or return wantarray?(undef, "Can't open file: $!"):undef;
-    while(<$fh>) {$value .= $_;};
-    close ($fh);
-    return $value;
+    
+    my $buf = "";
+    my $read_fh;
+    unless ( sysopen( $read_fh, $file, $Fetch_Flags ) ) {
+        return wantarray?(undef, "Can't open file: $!"):undef;
+    };
+    my $size_left = -s $read_fh;
+    while (1) {
+        my $read_cnt = sysread( $read_fh, $buf, $size_left, length $buf );
+        if ( defined $read_cnt ) {
+            last if $read_cnt == 0;
+            $size_left -= $read_cnt;
+            last if $size_left <= 0;
+        }
+        else {
+            warn "read_file '$file' - sysread: $!";
+            return wantarray?(undef, "Error reading file: $!"):undef;
+        };
+    };
+    close ($read_fh);
+    return $buf;
 }
 
 sub saveValueToFile {
-    my $value = shift;
+    my $data = shift;
     my $file = shift;
     my $dir = $file;
     if ($dir =~ /[\/\\]$/) {
@@ -630,14 +648,22 @@ sub saveValueToFile {
         return wantarray?(undef,"Недостаточно привилегий для записи файла в директорию"):undef;
     }
     
-    my $fh = undef;
-    open ($fh,">".$file);
-    unless ($fh) {
-        return wantarray?(undef,"Can't open file: $!"):undef;
-    } 
-    print $fh $value;
-    close ($fh);    
-    
+    my $write_fh;
+    unless ( sysopen( $write_fh, $file, $Store_Flags ) ) {
+        #croak "write_file '$file' - sysopen: $!";
+        return wantarray?(undef,"Can't write file: $!"):undef;
+    }
+    my $size_left = length($data);
+    my $offset    = 0;
+    do {
+        my $write_cnt = syswrite( $write_fh, $data, $size_left, $offset );
+        unless ( defined $write_cnt ) {
+            die "write_file '$file' - syswrite: $!";
+        }
+        $size_left -= $write_cnt;
+        $offset += $write_cnt;
+    } while ( $size_left > 0 );
+    close ($write_fh);
     return 1;
 }
 
