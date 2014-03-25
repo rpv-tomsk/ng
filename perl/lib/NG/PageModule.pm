@@ -207,19 +207,17 @@ sub getPageTabs {
             #Формируем объект, если нужны его табы или это его таб
             if ($eblock->{editable} == 2 || $tab->{SELECTED}) {
                 $mObj = &$getObj($eblock) or return $cms->error();
-                
                 $self->{_selectedModule} = $mObj if $tab->{SELECTED};
-                
+            };
+            if ($eblock->{editable} == 2) {
                 my $mTabs = $mObj->getModuleTabs();
-                if (defined $mTabs) {
-                    returm $mTabs if $mTabs eq "0"; #cms error
-                    return $cms->error((ref $mObj)."::getModuleTabs(): не вернул списка вкладок") unless ($mTabs && ref $mTabs eq "ARRAY");
-                    foreach (@$mTabs) {
-                        $_->{SELECTED} = 0 unless $tab->{SELECTED}; #гасим вложенные табы
-                        push @tabs, $_;
-                    };
-                    $tab = undef; #Больше не нужен
+                return $mTabs if $mTabs eq "0"; #cms error
+                return $cms->error((ref $mObj)."::getModuleTabs(): не вернул списка вкладок") unless ($mTabs && ref $mTabs eq "ARRAY");
+                foreach (@$mTabs) {
+                    $_->{SELECTED} = 0 unless $tab->{SELECTED}; #гасим вложенные табы
+                    push @tabs, $_;
                 };
+                $tab = undef; #Больше не нужен
             };
 			push @tabs, $tab if $tab;
 		};
