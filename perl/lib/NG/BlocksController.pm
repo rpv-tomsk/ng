@@ -845,7 +845,7 @@ sub processBlock {
 sub HTML {
     my $self = shift;
     my $html = "";
-    $html.= "<title>".$self->{_title}."</title>\n" if defined $self->{_title};
+    #$html.= "<title>".$self->{_title}."</title>\n" if defined $self->{_title};
     $html.= $self->LINK_HTML();
     $html.= $self->SCRIPT_HTML();
     $html.= $self->META_HTML();
