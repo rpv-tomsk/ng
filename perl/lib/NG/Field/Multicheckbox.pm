@@ -118,7 +118,10 @@ sub _loadDict {
     };
     $sth->finish();
     
-    $field->{SIZE} ||= scalar @result if $field->{TYPE} eq "multiselect";
+    my $cnt = scalar @result;
+    $field->{SIZE} ||= $cnt if $field->{TYPE} eq "multiselect";
+    
+    $result[int($cnt/2)]->{HALF} = 1 if $cnt > 1;
     
     $field->param('SELECT_OPTIONS',\@result);
     $field->{_dict_loaded} = 1;
