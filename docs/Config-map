@@ -51,5 +51,15 @@ SiteAccessModule = "MODULECODE" ("")     #Код модуля проверки привилегий
 type_class = "Site::Field::Type"
 type_processor = "Site::TypeProcessor"
 
+[Resource]
+{MODULECODE}_P{page_id}     = "Site::Module::Resource"      # Поддержка т.н. ресурсов, т.е. значений,
+{MODULECODE}_LI{link_id}    = "Site::Module::Resource"      # которые зависят от использования модуля.
+{MODULECODE}_S{subsite_id}  = "Site::Module::Resource"      # $cms->getResource($VARNAME)
+{MODULECODE}_L{lang_id}     = "Site::Module::Resource"      # $mObj->getResource($VARNAME)
+{MODULECODE}                = "Site::Module::Resource"      # Либо в шаблоне через переменную RESOURCE (RESOURCE.VARNAME)
+CMS_S{subsite_id}           = "Site::Module::Resource"
+CMS_L{lang_id}              = "Site::Module::Resource"      # Модуль Site::Module::Resource представляет собой некий класс
+CMS                         = "Site::Module::Resource"      # поддержкой метода getResource($VARNAME,$keys).
+                                                            # $keys - хэш со значениями ключей в фигурных скобках
 
 #TODO: задокументировать конфигурирование сессий, возможно переделать его
