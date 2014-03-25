@@ -11,8 +11,6 @@ sub init {
     my %param = @_;
     $self->SUPER::init(@_);
     
-    $self->{_rightSelector} = [];
-	
     $self->{_linkBlocksPrivileges} = {};
    
     $self->{_siteStructObj} = undef;
@@ -229,123 +227,11 @@ sub _fillStructureTree {
 }
 =cut
 
-sub _getModulesTreeHTML {
-	my $app = shift;
-    
-    my $param = shift;
-	
-	my $q = $app->q();
-    my $qId = $param->{NODE_ID};
-    
-    my $adminId   = $app->getAdminId();
-    my $groupId   = $app->getAdminGId();
-    
-    
-    $app->{_sitePAccessObj}->loadAdminPrivileges(ADMIN_ID=>$adminId, GROUP_ID=>$groupId) if ($app->{_sitePAccessObj});
-    $app->{_siteMAccessObj}->loadAdminPrivileges(ADMIN_ID=>$adminId, GROUP_ID=>$groupId) if ($app->{_siteMAccessObj});
-    
-	NG::Nodes->initdbparams(
-		db	   => $app->db(),
-		table  => "ng_admin_menu",  
-		fields => "main.name,main.node_id,main.url,main.module_id,main.collapse, ngs.disabled,ngs.subsite_id",
-        join   => "left join ng_sitestruct ngs on main.node_id = ngs.id",
-	); 
-    
-    my $tree = undef;
-    eval {
-        my $menuRootId = undef;
-        my $openLevels = 3;
-        
-        $tree = NG::Nodes->loadtree($menuRootId,$openLevels + 1);  #or last;   #Загружаем нужное число уровней + 1 для определения наличия childs
-        $tree = $tree->getChild(0);
-        $tree->loadBranchToNode($qId, 3) if $qId;           #or last;    #Загружаем три уровня: саму ноду, её детей и их детей для определения их наличия
-        
-        my $sNode = undef;
-        $sNode = $tree->getNodeById($qId) if $qId;
-        
-        my @allNodes = ();
-        $tree->traverse(
-            sub {
-                my $_tree = shift;
-                my $value = $_tree->getNodeValue();
-                
-                $value->{_HASACCESS} = 0;
-                $value->{HASACCESS} = 1;
-                if ($value->{node_id}) {
-                    my $u = $value->{url};
-                    $u ||= $value->{node_id};
-                    $value->{url} = "/admin-side/pages/$u/";
-                    $value->{_HASACCESS} = 1 if $app->hasPageAccess($value->{node_id},$value->{subsite_id});
-                    $value->{HASACCESS} = 0 if $value->{disabled};
-                }
-                elsif ($value->{module_id}) {
-                    my $u = $value->{url};
-                    $u ||= $value->{module_id};
-                    $value->{url} = "/admin-side/modules/$u/";
-                    $value->{_HASACCESS} = 1 if ($app->hasModulePrivilege(MODULE_ID=>$value->{module_id},PRIVILEGE=>'ACCESS'));
-                }
-                else {
-                    $value->{url} = '';
-                };
-                push @allNodes, $_tree;
-            }
-        );
-
-        $sNode = undef if ($sNode && $sNode->getNodeValue()->{_HASACCESS} != 1);
-        
-        my $pHas = {}; #Хэш доступных чайлдов ноды
-        foreach my $_node (reverse @allNodes) {
-            my $v = $_node->getNodeValue();
-            my $p = $_node->getParent();
-            
-            #print STDERR "NODE ".$_node->{_id}." PARENT ".$p->{_id}." HA ".$v->{HASACCESS}." U ".$v->{url};
-            if ($v->{_HASACCESS} && $v->{url}) {
-                #Нода доступна, занесем в хэш. Движемся снизу вверх, поэтому перезатираем имеющееся значение
-                $pHas->{$p} = $_node;
-            }
-            else {
-                #Нода не доступна.
-                if (exists $pHas->{$_node}) {
-                    #print STDERR "UPDATE";
-                    #Но у неё есть доступные чайлды
-                    #$v->{HASACCESS} = 1;
-                    $v->{url} = $pHas->{$_node}->getNodeValue()->{url};
-                    delete $pHas->{$_node};
-                    $pHas->{$p} = $_node;
-                }
-                else {
-                    #Недоступна и чайлдов нет, удаляем
-                    #print STDERR "REMOVE";
-                    $_node->getParent()->removeChild($_node);
-                }
-            };
-            delete $v->{_HASACCESS};
-        };
-        
-        
-        #3. Нода в ветке выбранной ноды, и уровень ноды > разрешенного количества _после выбранной_
-        $tree->collapseBranch({
-            KEY=>"collapse",
-            MAXLEVELS=>$openLevels,
-            SELECTEDNODE=> $sNode,
-        });
-        #Удаляем третий уровень у выбранной ноды
-        $sNode->collapseBranch({
-            MAXLEVELS => 2,
-        }) if $sNode;
-    };
-    return $@ if ($@);
-	my $template = $app->gettemplate('admin-side/common/content_tree.tmpl') || return $app->getError();
-	
-	$tree->printToDivTemplate($template,'ADMINMENU',$qId);
-	return $template->output();
-};
-
 sub _getRightBlockContentAsErrorMessage {
 	my $app = shift;
 	my $error = shift;
 	$error ||= "_getRightBlockContentAsErrorMessage(): Вызов без указания текста сообщения.";
-	$app->{_rightSelector} = [{HEADER=> "Ошибка",SELECTED=>1}] unless scalar(@{$app->{_rightSelector}});
+	#$app->{_rightSelector} = [{HEADER=> "Ошибка",SELECTED=>1}] unless scalar(@{$app->{_rightSelector}});
 	
 	my $tmpl = $app->gettemplate("admin-side/common/error.tmpl")  || return "Не могу открыть шаблон отображения ошибки. Текст ошибки: $error";
 	$tmpl->param(ERROR => $error );
@@ -361,52 +247,6 @@ sub _checkSubsiteAccess {
     my $dbh = $self->db()->dbh();
     $dbh->selectrow_hashref("select 1 from ng_subsite_privs where subsite_id = ? and admin_id = ? and privilege='ACCESS'",undef,$subsiteId,$self->getAdminId()) or return 0;
     return 1;
-};
-
-sub __getRow {
-    my $app = shift;
-    my $where = shift;
-    
-    my $dbh = $app->db()->dbh();
-    my $sql = "select id,node_id,module_id,url,subsite_id from ng_admin_menu where $where";
-    my $sth = $dbh->prepare($sql) or die $DBI::errstr;
-    $sth->execute(@_) or die $DBI::errstr;
-    my $row = $sth->fetchrow_hashref();
-    $sth->finish();
-    
-    if ($row) {
-        die "ng_admin_menu contains filled module and node_id" if $row->{module_id} && $row->{node_id};
-        $row->{url} ||= $row->{module_id} if ($row->{module_id});
-        $row->{url} ||= $row->{node_id} if ($row->{node_id}); 
-    };
-    return $row;
-};
-
-sub _getRowByPageID {
-    my $app = shift;
-    return $app->__getRow("node_id=?",@_);
-};
-
-sub _getRowByPageURL {
-    my $app = shift;
-    return $app->__getRow("url=? and node_id is not null",@_);   
-};
-
-sub _getRowByModuleID {
-    my $app = shift;
-    return $app->__getRow("module_id=?",@_);
-};
-
-sub _getRowByModuleURL {
-    my $app = shift;
-    my $url = shift;
-    
-    while ($url) {
-        my $row = $app->__getRow("url=? and node_id is null",$url);
-        return $row if $row;
-        $url =~ s/(\/?[^\/]+)$//;
-    };
-    return undef;
 };
 
 sub run {
@@ -467,66 +307,37 @@ sub _run {
         };
     };
     
-    #TODO: fix
-    my $baseUrl = "/admin-side/";
-
-    my $q = $cms->q();
-    my $url = $q->url(-absolute=>1);
+    #Получаем объект router.
+    my $class = $cms->confParam("Admin-side.RouterClass","NG::Adminside::Router");
+    return $cms->error("Отсутствует параметр Admin-side.RouterClass") unless $class;
     
-	my $status = NG::Application::M_ERROR;
-
-    my $pageId = undef;
-    my $mId = undef;
-    my $menuNodeId = undef;
-    my $subsiteId = undef;
+    my $router = $cms->getObject($class) or return $cms->defError("RouterClass:", "Ошибка создания объекта класса");
+    
+    my ($ret,$route) = $router->Route($is_ajax);
+    return $ret if $ret != NG::Application::M_CONTINUE;
+    
+    my $status = NG::Application::M_ERROR;
+	my $tabs = undef;
+    my @urls = ();
 	
-	if ($subUrl eq "pages/") {
-        $baseUrl = $baseUrl.$subUrl;
-        $subUrl = ($url=~ /^$baseUrl([^\/\s]+)\//) ? $1."/" : "";
-        
+	if ($route->{PAGEID}) {
         while (1) {
-            unless ($subUrl) {
-                return $cms->redirect("/admin-side/");
-            };
-            my $row = undef;
+            my $opts = $route->{OPTS} || {};
+            my $pageId = $route->{PAGEID};
             
-            if ($subUrl =~ /^(\d+)\//) {
-                $row = $cms->_getRowByPageID($1);
-            }
-            else {
-                my $t = $subUrl;
-                $t =~ s/\/$//;
-                $row = $cms->_getRowByPageURL($t);
-            };
-            
-            $row = undef unless $row->{node_id};
-            unless ($row) {
-                $status = $cms->error("Запрошенная страница не найдена");
-                last;
-            };
-            
-            $baseUrl = $baseUrl.$subUrl;
-            $pageId = $row->{node_id};
-            $menuNodeId = $row->{id}; #Для подсветки пункта меню
-            
-			my $pageRow = $cms->getPageRowById($pageId);
-			unless ($pageRow) {
-				$status = $cms->error();
-				last;
-			};
-            $subsiteId = $pageRow->{subsite_id};
+            my $pageRow = $cms->getPageRowById($pageId) or return $cms->error();
+            my $subsiteId = $pageRow->{subsite_id};
             unless ($cms->hasPageAccess($pageId,$subsiteId)) {
                 $status = $cms->error("Отсутствует доступ к запрошенной странице");
                 last;
             };
             
-            my $pageObj = $cms->getPageObjByRow($pageRow,{ADMINBASEURL=>$baseUrl}) or return $cms->error();
+            my $pageObj = $cms->getPageObjByRow($pageRow,$opts) or return $cms->error();
             unless ($pageObj->can("adminPage")) {
                 $status = $cms->error("Модуль ".(ref $pageObj)." не содержит метода adminPage");
                 last;
             };
 
-			my $tabs = undef;
             unless ($pageObj->can("getPageTabs")){
                 $status = $cms->error("Модуль ".(ref $pageObj)." не содержит метода getPageTabs()");
                 last;
@@ -547,72 +358,49 @@ sub _run {
                 $status = $pageObj2->moduleAction($is_ajax); #TODO: метод, сам модуль- выверить
                 last;
 			};
-            $cms->{_rightSelector} = $tabs;
+            
+            push @urls, {URL=> "/admin-side/modules/".$cms->{_siteStructObj}->moduleParam('id')."/$pageId/", NAME=>"Свойства"} if $cms->{_siteStructObj} && $cms->hasPageStructAccess($pageId,$subsiteId);
+            push @urls, {URL=> "/admin-side/modules/".$cms->{_sitePAccessObj}->moduleParam('id')."/$pageId/", NAME=>"Права"}   if $cms->{_sitePAccessObj} && $cms->hasModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_sitePAccessObj}->moduleParam('id'),PAGE_ID=>$pageId);
+            
             $status = $pageObj->adminPage($is_ajax);
 			last;
 		}
 	}
-    elsif ($subUrl eq "modules/") {
-        $baseUrl = $baseUrl.$subUrl;
-        $subUrl = ($url=~ /^$baseUrl([^\s]+)\//) ? $1."/" : "";
+    elsif ($route->{MODULEID}) {
+        my $mId  = $route->{MODULEID};
+        my $opts = $route->{OPTS} || {};
 
-        my $row = undef;
-        if (!$subUrl) {
-        }
-        elsif ($subUrl =~ /^(\d+)\//) {
-            $row = $cms->_getRowByModuleID($1);
-            $row = undef if $row->{node_id};
-        }
-        else {
-            my $t = $subUrl;
-            $t =~ s/\/$//;
-            $row = $cms->_getRowByModuleURL($t);
-        }
-        
-        return $cms->error("Запрошенный модуль не найден") unless $row && $row->{id};
-        return $cms->error("Отсутствует значение поля module_id для строки ".$row->{id}) unless $row->{module_id};
         #return $cms->error("Доступ к запрошенному подсайту запрещен") unless $cms->_checkSubsiteAccess($row->{subsite_id});
-        return $cms->error("Отсутствует доступ к запрошенному модулю") unless $cms->hasModulePrivilege(MODULE_ID=>$row->{module_id},PRIVILEGE=>"ACCESS");
-
-        $row->{url}.="/" unless $row->{url} =~ /\/$/;
-        $baseUrl = $baseUrl.$row->{url};
+        return $cms->error("Отсутствует доступ к запрошенному модулю") unless $cms->hasModulePrivilege(MODULE_ID=>$mId ,PRIVILEGE=>"ACCESS");
         
-        $subsiteId = $row->{subsite_id};
-        $menuNodeId = $row->{id};
-        $mId = $row->{module_id};
-        
-        my $mRow = $cms->getModuleRow("id=?",$row->{module_id}) or return $cms->defError("getModuleByCode():","Запрошенный модуль c кодом ".$row->{module_id}." не найден");
-        my $mObj = $cms->getObject($mRow->{module},{ADMINBASEURL=>$baseUrl, MODULEROW=>$mRow}) or return $cms->error();
+        my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("Запрошенный модуль c кодом ($mId) не найден");
+        $opts->{MODULEROW} = $mRow;
+        my $mObj = $cms->getObject($mRow->{module},$opts) or return $cms->error();
         
         while(1) {
             unless ($mObj->can("getModuleTabs")) {
                 $status = $cms->error("Модуль ".ref($mObj)." не содержит метода getModuleTabs()");
                 last;
             };
-            my $mtabs = $mObj->getModuleTabs();
-            if ($mtabs eq "0") {
+            $tabs = $mObj->getModuleTabs();
+            if ($tabs eq "0") {
                 $status = $cms->error();
                 last;
             };
-            unless ($mtabs && ref $mtabs eq "ARRAY") {
+            unless ($tabs && ref $tabs eq "ARRAY") {
                 $status = $cms->error("Модуль ".ref($mObj)." вернул некорректное значение в getModuleTabs()") ;
                 last;
             };
-            $cms->{_rightSelector} = $mtabs;
+            push @urls, {URL=> "/admin-side/modules/".$cms->{_siteMAccessObj}->moduleParam('id')."/$mId/", NAME=>"Права"}   if $cms->{_siteMAccessObj} && $cms->hasModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_siteMAccessObj}->moduleParam('id'));
             $status = $mObj->adminModule($is_ajax);
             last;
         };
     }
-    elsif ($subUrl eq "") {
-		my $pageObj = $cms->getObject('NG::Module::MainAdm');
-		unless ($pageObj) {
-            $status = $cms->error();
-            last;
-		};
-        $status = $pageObj->adminModule($is_ajax);
+    elsif ($route->{STATUS}) {
+        $status = $route->{STATUS};
     }
     else {
-        $status = $cms->error("Некорректная ссылка. Исправьте модуль.");
+        return $cms->error("Incorrect router response");
     };
 
     my $rightBlock = "";
@@ -645,7 +433,7 @@ sub _run {
 	}
     elsif ($status->is_redirect()) {
 		return $status unless $is_ajax;
-        my $redirectUrl = $status->getRedirectUrl() || $url;
+        my $redirectUrl = $status->getRedirectUrl() || $cms->q->url(-absolute=>1);;
 
         if ($redirectUrl =~ /\/$/) {
             $redirectUrl .= "?";
@@ -663,22 +451,6 @@ sub _run {
         return $cms->output($rightBlock) if ($is_ajax);
 	};
 
-    my @pageurls = ();
-    if ($pageId) {
-        push @pageurls, {URL=> "/admin-side/modules/".$cms->{_siteStructObj}->moduleParam('id')."/$pageId/", NAME=>"Свойства"} if $cms->{_siteStructObj} && $cms->hasPageStructAccess($pageId,$subsiteId);
-        push @pageurls, {URL=> "/admin-side/modules/".$cms->{_sitePAccessObj}->moduleParam('id')."/$pageId/", NAME=>"Права"}   if $cms->{_sitePAccessObj} && $cms->hasModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_sitePAccessObj}->moduleParam('id'),PAGE_ID=>$pageId);
-    };
-    if ($mId) {
-        push @pageurls, {URL=> "/admin-side/modules/".$cms->{_siteMAccessObj}->moduleParam('id')."/$mId/", NAME=>"Права"}   if $cms->{_siteMAccessObj} && $cms->hasModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_siteMAccessObj}->moduleParam('id'));
-    };
-
-    my $leftBlock = $cms->_getModulesTreeHTML({
-        PAGE_ID => $pageId,
-        NODE_ID => $menuNodeId,
-        SUBSITE_ID => $subsiteId,
-    });
-    
-    $cms->pushRegion({CONTENT=>$leftBlock,REGION=>"LEFT"});
     $cms->pushRegion({CONTENT=>$rightBlock,REGION=>"RIGHT"});
     
     my $template = $cms->gettemplate('admin-side/common/universaladm.tmpl') || return $cms->showError();
@@ -697,9 +469,9 @@ sub _run {
     $template->param(
         REGION => $rContent,
         AS => {
-            RIGHT_SELECTOR => $cms->{_rightSelector},
+            RIGHT_SELECTOR => $tabs,
             TITLE          => $cms->confParam('CMS.SiteName','Cайт')." :: Администрирование",
-            PAGEURLS       => \@pageurls,
+            PAGEURLS       => \@urls,
             CUSTOMHEAD     => $customHead,
         },
     );
@@ -713,11 +485,6 @@ sub pushRegion {  #REGION WEIGHT CONTENT
     $h->{WEIGHT}||=0;
     $self->{_regions}->{$r}||=[];
     push @{$self->{_regions}->{$r}}, $h;
-};
-
-sub setTabs {
-    my $self = shift;
-    $self->{_rightSelector} = shift;
 };
 
 return 1;
