@@ -56,7 +56,7 @@ sub pushLink {
 	
     $link->{URL} = getURLWithParams($link->{URL},"ref=".$self->list()->buildRefCurrentUrl());
 	if ($link->{AJAX}) {
-		$link->{AJAX_URL} = getURLWithParams($link->{URL},"_ajax=1");
+		$link->{AJAX_URL} = getURLWithParams($link->{URL},"_ajax=1","rand=".int(rand(10000)));
 	};
 	push @{$self->{ROW_LINKS}}, $link;
 }; 
