@@ -1,0 +1,228 @@
+<div id="menu_content" >
+ 
+</div>
+
+<div id="info_content">
+    <div style="width:100%;">
+     
+       
+	<div  id="container_select_user">
+    <form method=GET action="<TMPL_VAR ACTION>">
+	<table id="table_permissions" style="padding-bottom:20px;">
+	<tr>
+              <th  colspan="3" style="text-align:left;padding-left:10px;">Администратор</th>
+            
+      
+   </tr>
+   
+   <TMPL_IF ADMIN_IS_IAM>
+	<tr>
+	<td class="mess_attention"  colspan="3"><p>Внимание, Вы не можете менять права самому себе.</p></td>
+	</tr>
+   </TMPL_IF>
+ 
+	<tr>
+	<td  class="text title_select_user" style="width:50%;border-right:none;border-left:none;">Имя: <TMPL_VAR ADMIN.FIO> (<TMPL_VAR ADMIN.LOGIN>)</td>
+	<td class="text select_user" style="border-right:none;border-left:none;text-align:right;"><nobr></nobr></td>
+	<td class="select_user" >
+	<select name="admin_id">
+        <TMPL_LOOP ADMINS>
+                <TMPL_IF NEWGROUP>
+                <TMPL_UNLESS __FIRST__>
+                </optgroup>
+                </optgroup>
+                </TMPL_UNLESS> 
+                <optgroup label="<TMPL_VAR LOGIN>">
+                </TMPL_IF>
+                
+                <TMPL_IF NEWLEVEL>
+                <TMPL_UNLESS AFTERGROUP>
+                </optgroup>
+                </TMPL_UNLESS> 
+                <optgroup label="<TMPL_VAR LOGIN>">
+                </TMPL_IF>               
+                 
+                <TMPL_UNLESS NOADMIN><option value="<TMPL_VAR ID>" <TMPL_IF SELECTED>selected</TMPL_IF>><TMPL_VAR LOGIN></option></TMPL_UNLESS>
+                    
+                <TMPL_IF __LAST__>                
+                </optgroup>
+                </optgroup>
+                </TMPL_IF>
+        </TMPL_LOOP ADMINS>
+	</select>
+	</td>
+	</tr>
+	<tr>
+	<td  class="text title_select_user" style="width:50%;border-right:none;border-left:none; "> Подсайт: <TMPL_VAR SUBSITE.NAME></td>
+	<td  class="text select_user" style="border-right:none;border-left:none;text-align:right; "></td>
+	
+	<td class="select_sait">
+        <TMPL_IF SUBSITES>
+		<select name="subsite_id">
+        <TMPL_LOOP SUBSITES>
+            <option value="<TMPL_VAR ID>" <TMPL_IF SELECTED>selected</TMPL_IF>><TMPL_VAR NAME></option>
+        </TMPL_LOOP>
+        </select>
+        </TMPL_IF SUBSITES>
+	</td>
+	</tr>
+    
+	<tr>
+	<td  colspan="3" id="container_button_select">
+	<input type="image" src="/admin-side/img/buttons/select.gif" style="">
+	</td>
+
+	</tr>
+    
+	</table>
+    </form>
+
+	
+	</div>
+        <div id="container_table_permissions">
+            <form method="POST" action="<TMPL_VAR ACTION>">
+            <input type="hidden" name="action" value="updatesubsiteprivs">
+            <input type="hidden" name="admin_id" value="<TMPL_VAR ADMIN.ID>">
+            <input type="hidden" name="subsite_id" value="<TMPL_VAR SUBSITE.ID>">
+            <table id="table_permissions">
+            <tr>
+                <th id="title_permissions">Привилегии на подсайт</th>
+                <th></th>
+            </tr>
+            <TMPL_LOOP SUBSPRIVS>
+            <tr>
+                <td class="text"><TMPL_VAR NAME>:</td>
+                <td><input  name="<TMPL_VAR PRIVILEGE>" type="checkbox" value="1" <TMPL_IF CHECKED>checked</TMPL_IF>> </td>
+            </tr>
+            </TMPL_LOOP>
+
+			<tr>
+                <td class="text" colspan="2" style="padding-top:10px;padding-bottom:8px;text-align:right;padding-right:20px;">
+                <TMPL_UNLESS ADMIN_IS_IAM>
+                    <input type="image" src="/admin-side/img/buttons/apply.gif" height="23" width="122" border="0"></input>
+                </TMPL_UNLESS ADMIN_IS_IAM>                    
+				</td>
+            </tr>
+            </table>
+            </form>
+        </div>
+
+        <!--------------------------------------------------------------->
+
+        <div id="table_content" class="content_table_tree" style=" position:relative;overflow:hidden;" >
+        <form method="POST" action="<TMPL_VAR ACTION>">
+        <input type="hidden" name="action" value="updatepagesprivs">
+        <input type="hidden" name="admin_id" value="<TMPL_VAR ADMIN.ID>">
+        <input type="hidden" name="subsite_id" value="<TMPL_VAR SUBSITE.ID>">
+
+        <table id="table_tree">
+            <tr>
+              <th style="text-align:left; padding-left:20px;width:100%;">Привилегии на Страницу / Раздел </th>
+     
+            </tr>
+            <tr>
+                <td style="width:100%;border-bottom:none;" style="font-weight: normal;">           
+<!-- ZZ TREE -->
+<TMPL_LOOP TREE> 
+<TMPL_IF LEVEL0_LEAF>
+	<div class="element_0 <TMPL_IF INACTIVE>inactive_element_0</TMPL_IF INACTIVE>">
+</TMPL_IF LEVEL0_LEAF>
+<TMPL_IF LEVEL0_FOLDER>
+    <div class="level_0 <TMPL_IF INACTIVE>inactive_level_0</TMPL_IF INACTIVE>">
+        <img src="/admin-side/img/pagepriv/img_fold_new.gif" class="img_folder_level_0">
+		  <div class="new_level_background" style="padding-bottom: 10px;">
+</TMPL_IF LEVEL0_FOLDER>
+<TMPL_IF LEVEL_LEAF>
+    <TMPL_IF LAST_CHILD>
+        <TMPL_IF SELECTED>
+            <div class="new_level_open_last <TMPL_IF INACTIVE>inactive_new_level_open_last</TMPL_IF INACTIVE>">
+        <TMPL_ELSE>
+            <div class="new_level_close_last <TMPL_IF INACTIVE>inactive_new_level_close_last</TMPL_IF INACTIVE>">
+        </TMPL_IF>
+    <TMPL_ELSE LAST_CHILD>
+        <TMPL_IF SELECTED>
+		
+            <div class="new_level_open <TMPL_IF INACTIVE>inactive_new_level_open</TMPL_IF INACTIVE>">
+        <TMPL_ELSE>
+		    <div class="new_level_background" style="padding-bottom: 10px;">
+            <div class="new_level_close <TMPL_IF INACTIVE>inactive_new_level_close</TMPL_IF INACTIVE>">
+        </TMPL_IF>
+    </TMPL_IF LAST_CHILD>
+</TMPL_IF LEVEL_LEAF>
+
+<TMPL_IF LEVEL_FOLDER>
+    <TMPL_UNLESS LAST_CHILD>
+        <div class="new_level_background" style="padding-bottom: 10px;">
+    </TMPL_UNLESS LAST_CHILD>
+    <div class="new_level <TMPL_IF INACTIVE>inactive_new_level</TMPL_IF INACTIVE>">
+        <img src="/admin-side/img/pagepriv/level000_new.gif" class="img_folder">
+		  <div class="new_level_background" style="padding-bottom: 10px;">
+</TMPL_IF LEVEL_FOLDER>
+
+<div class="namePage"><TMPL_VAR NAME></div>
+
+                        <TMPL_LOOP PAGEBLOCKS>
+						
+            <TMPL_IF NAME>
+            <div class="nameModule">
+            <TMPL_VAR NAME>
+                                    <TMPL_IF LINKED>
+                       
+                            <TMPL_IF FLAG_URL>
+                                <img src="/admin-side/img/flag.gif" style="border:1px solid #cfe1ee;">
+                            <TMPL_ELSE FLAG_URL>
+                                <img src="/admin-side/img/common_content.gif" style="border:1px solid #cfe1ee;" alt="Общий контент на связанных страницах">
+                            </TMPL_IF FLAG_URL>
+            
+                        </TMPL_IF LINKED>
+            </div>
+            
+            </TMPL_IF>
+                        
+
+                        
+                        
+                    	
+						<TMPL_LOOP PRIVILEGES>                             
+                            <div class="inputPage"> <INPUT type="checkbox" value="1" name="<TMPL_VAR CODE>" <TMPL_IF CHECKED>checked</TMPL_IF>><TMPL_VAR NAME></div>
+                        </TMPL_LOOP PRIVILEGES>
+					
+					   	</TMPL_LOOP PAGEBLOCKS>
+
+<TMPL_IF LEVEL0_FOLDER>	
+  </div>
+</TMPL_IF LEVEL0_FOLDER>
+
+<TMPL_IF LEVEL_FOLDER>	
+    </div>
+</TMPL_IF LEVEL_FOLDER>
+
+<TMPL_IF LEVEL_LEAF>
+    </div></div>
+    <TMPL_IF LAST_CHILD></div> <!-- class=new_level --> <TMPL_IF PARENT_IS_LEVEL><!--</div>--> <!-- level background --></TMPL_IF> </TMPL_IF LAST_CHILD>
+</TMPL_IF LEVEL_LEAF>
+<TMPL_LOOP CLOSERS></div><!-- closer --></TMPL_LOOP CLOSERS>
+</TMPL_LOOP TREE>
+<!-- /ZZ TREE -->
+           
+                </td>
+            </tr>
+			<tr><td colspan="3" style="text-align:right;padding:10px 10px 10px 0px;border-top:none; height:53;">
+			<TMPL_UNLESS ADMIN_IS_IAM>   
+                <INPUT type="image" src="/admin-side/img/buttons/apply.gif" height="23" width="122" border="0">
+            <TMPL_ELSE ADMIN_IS_IAM>
+            </TMPL_UNLESS ADMIN_IS_IAM>
+			</td></tr>
+        </table>
+        </form>
+        </div> 
+	
+     
+     
+    </div>
+</div>
+<div id="middle_bottom">
+    <div id="middle_bottom_left">
+        <div id="middle_bottom_right"></div>
+    </div>
+</div>

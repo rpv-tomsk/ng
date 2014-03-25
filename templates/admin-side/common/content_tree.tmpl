@@ -1,0 +1,86 @@
+<TMPL_IF SUBSITES>
+<form method="post" action="/admin-side/actions/switchsubsite/" id="form">
+<select name="subsiteid" id="town">
+<TMPL_LOOP SUBSITES>
+    <option <TMPL_IF SELECTED>selected</TMPL_IF SELECTED> value="<TMPL_VAR ID>"><TMPL_VAR NAME></option>
+</TMPL_LOOP SUBSITES>    
+</select>
+<input type="hidden" name="frompageid" value="<TMPL_VAR PAGE_ID>">
+<input type="image" src="/admin-side/img/buttons/query.gif">
+</form>
+</TMPL_IF SUBSITES>
+
+
+<div id="calendar_div">
+	<TMPL_IF CALENDAR><TMPL_INCLUDE "calendar.tmpl"></TMPL_IF CALENDAR>
+</div>
+
+<!-- ZZ TREE -->
+<div class="divTree">
+<TMPL_LOOP ADMINMENU>
+<TMPL_IF NODE_START>
+	<!-- node <TMPL_VAR ID> start -->
+    
+    <TMPL_IF LEVEL0_LEAF>
+        <div class="element_0 <TMPL_UNLESS HASACCESS>noaccess_element_0</TMPL_UNLESS> <TMPL_IF INACTIVE>inactive_element_0</TMPL_IF INACTIVE>">
+    </TMPL_IF LEVEL0_LEAF>
+
+    <TMPL_IF LEVEL0_FOLDER>   
+   
+    		<TMPL_IF CHILDS_CLOSED>
+    	 	<div class="folder_close <TMPL_IF INACTIVE>inactive_folder_close<TMPL_ELSE><TMPL_UNLESS  HASACCESS>noaccess_folder_close</TMPL_UNLESS></TMPL_IF>">    
+    		
+    		<TMPL_ELSE>
+    	 	<div class="level_0 <TMPL_IF INACTIVE>inactive_level_0<TMPL_ELSE><TMPL_UNLESS  HASACCESS>noaccess_level_0</TMPL_UNLESS></TMPL_IF>">
+    	
+        	</TMPL_IF>
+			<div class="new_level_background1">
+    </TMPL_IF LEVEL0_FOLDER>
+
+    <TMPL_IF LEVEL_LEAF>
+		<TMPL_IF LAST_CHILD>
+			<div class="new_level_close_last  <TMPL_UNLESS HASACCESS>noaccess_new_level_close_last</TMPL_UNLESS> <TMPL_IF INACTIVE>inactive_new_level_close_last</TMPL_IF INACTIVE>">
+		<TMPL_ELSE LAST_CHILD>
+			<div class="new_level_background">
+			<div class="new_level_close <TMPL_UNLESS HASACCESS>noaccess_new_level_close</TMPL_UNLESS> <TMPL_IF INACTIVE>noaccess_new_level_close</TMPL_IF INACTIVE>  <TMPL_IF INACTIVE>inactive_new_level_close</TMPL_IF INACTIVE>">
+		</TMPL_IF LAST_CHILD>
+    </TMPL_IF LEVEL_LEAF>
+    
+    <TMPL_IF LEVEL_FOLDER>
+        <TMPL_UNLESS LAST_CHILD>
+            <div class="new_level_background">
+        </TMPL_UNLESS LAST_CHILD>
+        
+       <TMPL_IF CHILDS_CLOSED> 
+       		<div class="folder_plus <TMPL_IF INACTIVE>inactive_folder_plus<TMPL_ELSE><TMPL_UNLESS  HASACCESS>noaccess_folder_plus</TMPL_UNLESS></TMPL_IF>">  
+     	<TMPL_ELSE CHILDS_CLOSED>     	
+     	    <div class="folder_mines <TMPL_IF INACTIVE>inactive_folder_mines<TMPL_ELSE><TMPL_UNLESS  HASACCESS>noaccess_folder_mines</TMPL_UNLESS></TMPL_IF>">    
+		</TMPL_IF CHILDS_CLOSED>
+        <!--div class="paddingForTitle  <TMPL_IF CHILDS_CLOSED>closed</TMPL_IF>"-->
+    </TMPL_IF LEVEL_FOLDER>
+
+	<!-- node <TMPL_VAR ID> data -->
+        <div class="title">
+            <TMPL_IF URL><a <TMPL_IF IS_SELECTED>class="selected"</TMPL_IF>href="<TMPL_VAR URL>"><TMPL_VAR NAME></a><TMPL_ELSE URL><TMPL_VAR NAME></TMPL_IF>
+        </div>
+	<!-- node <TMPL_VAR ID> data end -->
+	<TMPL_IF LEVEL_FOLDER><!--/div--></TMPL_IF>
+	<TMPL_IF LEVEL0_FOLDER></div></div></TMPL_IF>
+
+	
+	<!-- node <TMPL_VAR ID> start end -->
+</TMPL_IF NODE_START>
+
+<TMPL_IF NODE_END>
+	<!-- node <TMPL_VAR ID> end -->
+	<TMPL_IF LEVEL0_FOLDER><!--/div--></TMPL_IF LEVEL0_FOLDER>
+	<TMPL_IF LEVEL0_LEAF></div></TMPL_IF LEVEL0_LEAF>
+	<TMPL_IF LEVEL_FOLDER> </div> <TMPL_UNLESS LAST_CHILD></div></TMPL_UNLESS LAST_CHILD> <!--/div--> </TMPL_IF LEVEL_FOLDER>
+	<TMPL_IF LEVEL_LEAF>  </div> <TMPL_UNLESS LAST_CHILD></div></TMPL_UNLESS LAST_CHILD> </TMPL_IF LEVEL_LEAF>
+	<!-- node <TMPL_VAR ID> end end -->
+</TMPL_IF NODE_END>
+
+</TMPL_LOOP ADMINMENU>
+<!-- /ZZ TREE -->
+</div>
+	

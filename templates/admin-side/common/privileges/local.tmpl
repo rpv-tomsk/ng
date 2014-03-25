@@ -1,0 +1,345 @@
+<script type="text/javascript">
+var allPrivs = new Array();
+var baseUrl = '';
+var adminId = null;
+var groupId = null;
+var data = [];
+var pageId = null;
+
+function buildRightsPage (modules) {
+    var container = $('.pageprivileges');
+    var index = 0;
+    if (modules.length == 0 || (adminId == null && groupId == null)) {
+        container.append('<div class="modulename"><p>Для назначения прав на страницу добавьте администратора или группу.</p></div>');
+    };
+    for (var i in modules) {
+        var add_class = "";
+        if (i == 0)
+            add_class = "first";
+        container.append('<div class="modulename '+ add_class +'"><p>'+ modules[i].name +'</p></div>');
+        for (var j in modules[i].privileges) {
+            var priv = modules[i].privileges[j];
+            priv.moduleId = modules[i].moduleId;
+            priv.ident = priv.moduleId+'_'+priv.privilege;
+            allPrivs[index] = priv;
+            container.append('<div class="privilege" id="priv_'+priv.ident+'">' + getPrivHtml(index) + '</div>');
+            index++;
+        };
+    };
+};
+
+function getPrivHtml(index) {
+    var subj = "";
+    var priv = allPrivs[index];
+    if (priv.active==null)
+        subj = "Не определено";
+    else if (priv.padminId)
+        subj = "Пользователь, ";
+    else if (priv.pgroupId!=null && adminId != null) 
+        subj = '<a href="'+baseUrl+pageId+'/?groupId='+priv.pgroupId+'">Группа</a>, ';
+    
+    var source = "";
+    if (priv.active==null) {
+        
+    }
+    else if (priv.storageId)
+        source = 'наследовано от '+'<a href="'+baseUrl+priv.storageId+'/inheritable/?priv='+priv.privilege+'&mId='+priv.moduleId+'">'+ priv.storageName +'</a>'; 
+    else
+        source = "Локально";
+        
+    var html = "";
+    html = html + '<p class="name">'+ priv.name +'</p>';
+    if (priv.active==null)
+        html = html + '<img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">';
+    else if (priv.active)
+        html = html + '<img class="status" src="/admin-side/img/privs/allow.gif" title="разрешено" alt="+">';
+    else 
+        html = html + '<img class="status" src="/admin-side/img/privs/deny.gif" title="запрещено" alt="-">';
+    
+    html = html + '<p class="status">('+ subj + source +')</p>';
+    html = html + '<p class="links">';
+    
+    var gId = groupId;
+    if (adminId)
+        gId = null;
+    if (priv.active) {
+        html = html + '[<a href="#" onclick="return doPrivilege2(\'dodeny\',{index:'+index+',adminId: '+adminId+',groupId:'+gId+'});">Запретить</a>]';
+    }
+    else {
+        html = html + '[<a href="#" onclick="return doPrivilege2(\'doallow\',{index:'+index+',adminId: '+adminId+',groupId:'+gId+'});">Разрешить</a>]';
+    }
+    html = html + '[<a href="#" onclick="return showSources('+index+');">Редактировать</a>]';
+    html = html + '</p>';
+    return html;
+};
+
+function doPrivilege(action,p) {
+    var params = {};
+    var index = p.index;
+    params.adminId = p.adminId;
+    params.groupId = p.groupId;
+    params.moduleId = allPrivs[index].moduleId;
+    params.privilege = allPrivs[index].privilege;
+    params.storageId = allPrivs[index].storageId;
+    params.nocache = Math.random(10000);
+    params['do'] = action;
+    
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else
+                buildSources(data,index);
+        },
+        data: params,
+        url: baseUrl+pageId +'/',
+        dataType: 'json'
+    });
+    return false;
+}
+
+function doPrivilege2(action,p) {
+    var params = {};
+    var index = p.index;
+    params.adminId = p.adminId;
+    params.groupId = p.groupId;
+    params.moduleId = allPrivs[index].moduleId;
+    params.privilege = allPrivs[index].privilege;
+    params.storageId = allPrivs[index].storageId;
+    params.nocache = Math.random(10000);
+    params['do'] = action;
+    
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else {
+                var priv = allPrivs[index];
+                priv.active = data.active;
+                priv.padminId = data.padminId;
+                priv.pgroupId = data.pgroupId;
+                priv.storageId = data.storageId;
+                priv.storageName = data.storageName;
+                if (data.privilege != priv.privilege || data.moduleId != priv.moduleId) {
+                    alert("Server returns incorrect data");
+                    return;
+                };
+                allPrivs[index] = priv;
+                
+                var ident = priv.ident;
+                
+                $('#priv_'+ident).html(getPrivHtml(index)); //Обновляем статус привилегии
+                $('#sources_'+ident).remove(); //Удаляем старое отображение субъектов
+            }
+        },
+        data: params,
+        url: baseUrl+pageId +'/',
+        dataType: 'json'
+    });
+    return false;
+}
+
+function showSources (index) {
+    var sources = $('#sources_'+allPrivs[index].ident);
+    if (sources.html() != null) {
+        sources.remove();
+        return false;
+    };
+    var p = {};
+    p.index = index;
+    p.adminId = adminId;
+    p.groupId = groupId;
+    return doPrivilege('showsources',p);
+};
+ 
+function buildSources(data,index) {
+    var priv = allPrivs[index];
+    priv.active = data.active;
+    priv.padminId = data.padminId;
+    priv.pgroupId = data.pgroupId;
+    priv.storageId = data.storageId;
+    priv.storageName = data.storageName;
+    if (data.privilege != priv.privilege || data.moduleId != priv.moduleId) {
+        alert("Server returns incorrect data");
+        return;
+    };
+    allPrivs[index] = priv;
+    
+    var ident = priv.ident;
+    
+    $('#priv_'+ident).html(getPrivHtml(index)); //Обновляем статус привилегии
+    $('#sources_'+ident).remove(); //Удаляем старое отображение субъектов
+    var div = $('<div class="sources" id="sources_'+ident+'"></div>');
+    
+    var found = 0;
+    for (var i in data.subjects) {
+        var subject = data.subjects[i];
+        div.append('<p class="subject">'+ subject.name +'</p>');
+        var sources = subject.sources;
+        for (j in sources) {
+            var source = sources[j];
+            var sHtml = '';
+            if (!found && source.active != null) {
+                sHtml = sHtml + '<div class="source ';
+                if (source.active) 
+                    sHtml = sHtml + 'allow'; //inactive allow deny
+                else 
+                    sHtml = sHtml + 'deny'; //inactive allow deny
+                sHtml = sHtml + '">';
+                found = 1;
+            }
+            else 
+                sHtml = '<div class="source">';
+            
+            if (source.active==null)
+                sHtml = sHtml + '<img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">';
+            else if (source.active)
+                sHtml = sHtml + '<img class="status" src="/admin-side/img/privs/allow.gif" title="разрешено" alt="+">';
+            else 
+                sHtml = sHtml + '<img class="status" src="/admin-side/img/privs/deny.gif" title="запрещено" alt="-">';
+            
+            if (source.storageId) {
+                sHtml = sHtml + '<p class="name">Наследовано от "<a href="'+baseUrl+source.storageId+'/inheritable/?priv='+priv.privilege+'&mId='+priv.moduleId+'">'+source.storageName+'</a>"</p>';
+                sHtml = sHtml + '<p class="links">';
+                /*
+                if (source.nodeactive)
+                    sHtml = sHtml + '<a href="#" onclick="return doPrivilege(\'disain\',{index:'+index+',adminId: '+subject.adminId+',groupId: '+subject.groupId+',storageId: '+source.storageId+'});">[Отключить наследование]</a>';
+                else
+                    sHtml = sHtml + '<a href="#" onclick="return doPrivilege(\'enain\',{index:'+index+',adminId: '+subject.adminId+',groupId: '+subject.groupId+',storageId: '+source.storageId+'});">[Включить наследование]</a>';
+                */
+                sHtml = sHtml + '</p>';
+            }
+            else {
+                sHtml = sHtml + '<p class="name">Локально</p>';
+                sHtml = sHtml + '<p class="links">';
+                if (source.active==null || !source.active)
+                    sHtml = sHtml + '<a href="#" onclick="return doPrivilege(\'doallow\',{index:'+index+',adminId: '+subject.adminId+',groupId: '+subject.groupId+'});">[Разрешить]</a>';
+                if (source.active == null || source.active)
+                    sHtml = sHtml + '<a href="#" onclick="return doPrivilege(\'dodeny\',{index:'+index+',adminId: '+subject.adminId+',groupId: '+subject.groupId+'});">[Запретить]</a>';
+                if (source.active != null)
+                    sHtml = sHtml + '<a href="#" onclick="return doPrivilege(\'dodelete\',{index:'+index+',adminId: '+subject.adminId+',groupId: '+subject.groupId+'});">[Удалить]</a>';
+                sHtml = sHtml + '</p>';
+            }
+            sHtml = sHtml + '</div>';
+            div.append(sHtml);
+        };
+    };
+    div.append('<div class="close"><a href="#" onclick="return closeSources('+index+');">[Закрыть]</a></div>');
+    $('#priv_'+ident).after(div);
+}; 
+
+function closeSources(index) {
+    $('#sources_'+allPrivs[index].ident).remove();
+    return false;
+};
+
+function addSubj(action,divId) {
+    var div = $('#'+divId);
+    if (div.html() != '') {
+        div.html('');
+        return false;
+    };
+    var params = {};
+    params.action = action;
+    params.nocache = Math.random(10000);
+    div.load(baseUrl+pageId +'/',params);
+    return false;
+};
+function closeAddSubj(divId) {
+    $('#'+divId).html('');
+    return false;
+};
+</script>
+
+<script>
+data = [
+    <TMPL_LOOP MODULES>{
+        name: '<TMPL_VAR NAME ESCAPE=JS>',
+        moduleId: <TMPL_VAR MODULEID>,
+        privileges: [
+            <TMPL_LOOP PRIVILEGES>{
+                privilege: '<TMPL_VAR PRIVILEGE ESCAPE=JS>',
+                name: '<TMPL_VAR NAME ESCAPE=JS>',
+                active: <TMPL_VAR ACTIVE DEFAULT=null>,
+            <TMPL_IF STORAGEID>
+                storageId: <TMPL_VAR STORAGEID>,
+                storageName: '<TMPL_VAR STORAGENAME ESCAPE=JS>',
+            </TMPL_IF STORAGEID>
+                padminId: <TMPL_VAR PADMIN_ID DEFAULT=null>,
+                pgroupId: <TMPL_VAR PGROUP_ID DEFAULT=null>
+            }<TMPL_UNLESS __LAST__>,</TMPL_UNLESS __LAST__></TMPL_LOOP PRIVILEGES>
+        ]
+    }<TMPL_UNLESS __LAST__>,</TMPL_UNLESS __LAST__></TMPL_LOOP MODULES>
+];
+adminId = <TMPL_VAR ADMIN_ID DEFAULT=null>;
+groupId = <TMPL_VAR GROUP_ID DEFAULT=null>;
+baseUrl = '<TMPL_VAR BASEURL>';
+pageId  = <TMPL_VAR PAGEID>;
+
+$(document).ready(
+    function () {
+        buildRightsPage(data);
+    }
+);
+</script>
+
+<div id="menu_content">
+</div>
+
+<div id="info_content">
+  <div style="width: 100%;">
+    <!--  =Start Content BLOCK=  -->
+   
+    <div style="border:0px solid red; overflow:hidden;padding-bottom:10px;width:100%;padding-top:10px;">
+        <div style="float:left;font-weight:normal;">
+            <a href="<TMPL_VAR BASEURL>">Дерево страниц</a> >
+            <TMPL_LOOP HISTORY>
+                <a href="<TMPL_VAR BASEURL><TMPL_VAR ID>/local/" <TMPL_IF __LAST__>class="selected"</TMPL_IF>><TMPL_VAR NAME></a><TMPL_UNLESS __LAST__> > </TMPL_UNLESS>
+                <TMPL_IF __LAST__>[<a href="<TMPL_VAR BASEURL>?pageId=<TMPL_VAR ID>">В дереве</a>]</TMPL_IF __LAST__>
+            </TMPL_LOOP HISTORY>
+            <!--<a href="/admin-side/modules/12/">Сайт</a> > <a href="#" class="selected"><TMPL_VAR PAGENAME></a>-->
+        </div>
+    </div>
+
+    <div class="subjects" id="admins">
+        <div class="name">Администраторы:</div>
+        <div class="list">
+            <TMPL_IF PAGEADMINS>
+                <TMPL_LOOP PAGEADMINS>
+                    <p class="link<TMPL_IF CURRENT> selected</TMPL_IF>"><a href="<TMPL_VAR BASEURL><TMPL_VAR PAGEID>/local/?adminId=<TMPL_VAR ID>"><TMPL_VAR FIO> (<TMPL_VAR LOGIN>)</a></p>
+                </TMPL_LOOP PAGEADMINS>
+            <TMPL_ELSE PAGEADMINS>
+                <p class="link">Привилегии на страницу администраторам не предоставлены</p>
+            </TMPL_IF PAGEADMINS>
+        </div>
+        <p class="link" style="float:right;">[<a href="#" onclick="return addSubj('addadmin','addAdmin');" title="Добавить">+</a>]</p>
+    </div>
+        
+    <div id="addAdmin"></div>
+    
+    <div class="subjects" id="groups" style="border:0px dashed red;">
+        <div class="name">Группы:</div>
+        <div class="list" style="border:0px solid blue;">
+            <TMPL_IF PAGEGROUPS>
+                <TMPL_LOOP PAGEGROUPS>
+                    <p class="link<TMPL_IF CURRENT> selected</TMPL_IF CURRENT>"><a href="<TMPL_VAR BASEURL><TMPL_VAR PAGEID>/local/?groupId=<TMPL_VAR ID>"><TMPL_VAR NAME></a></p>
+                </TMPL_LOOP PAGEGROUPS>
+            <TMPL_ELSE PAGEGROUPS>
+                <p class="link">Привилегии на страницу группам не предоставлены</p>
+            </TMPL_IF PAGEGROUPS>
+        </div>
+        <p class="link" style="float:right;">[<a href="#" onclick="return addSubj('addgroup','addGroup');" title="Добавить">+</a>]</p>
+    </div>
+    <div id="addGroup"></div>
+        
+    <div class="pageprivileges"></div>
+        
+  </div>
+</div>
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>

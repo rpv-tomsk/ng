@@ -1,0 +1,56 @@
+Index: perl/lib/NG/Module/List.pm
+===================================================================
+--- perl/lib/NG/Module/List.pm	(revision 361)
++++ perl/lib/NG/Module/List.pm	(working copy)
+@@ -892,15 +892,15 @@
+             $row->{FIELDS} = $fields;
+             $row->{COLUMNS}=\@row_columns;
+             
+-            $row->{DELETE_URL} = ($self->{_has_delete_link})?"$myurl?action=delete&$self->{_idname}=$id&ref=$u":undef;
++            $row->{DELETE_URL} = ($self->{_has_delete_link})?"$myurl?action=".$self->{_delete_link_urlaction}."&$self->{_idname}=$id&ref=$u":undef;
+             $row->{DELETE_LINK_NAME} = $self->{_delete_link_name};
+             
+-            $row->{MOVE_URL} = $self->getURLWithParams($myurl,"action=move","$self->{_idname}=$id",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),"ref=$u") if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==0);
++            $row->{MOVE_URL} = $self->getURLWithParams($myurl,"action=".$self->{_move_link_urlaction},"$self->{_idname}=$id",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),"ref=$u") if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==0);
+ 			$row->{MOVE_URL_HIDDEN} = 1 if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==1);
+ 
+ 			if ($self->{_has_edit_link} == 1) {	
+-				$row->{EDIT_URL} = "$myurl?action=updateform&$self->{_idname}=$id&ref=$u";
+-				$row->{AJAX_EDIT_URL} = "$myurl?action=updateform&_ajax=1&$self->{_idname}=$id&ref=$u";
++				$row->{EDIT_URL} = "$myurl?action=".$self->{_edit_link_urlaction}."&$self->{_idname}=$id&ref=$u";
++				$row->{AJAX_EDIT_URL} = "$myurl?action=".$self->{_edit_link_urlaction}."&_ajax=1&$self->{_idname}=$id&ref=$u";
+                 $row->{EDIT_LINK_NAME} = $self->{_edit_link_name};
+ 			}
+ 
+@@ -918,8 +918,8 @@
+     if ($self->{_has_add_link}) {
+         unshift @{$self->{_topbar_links}}, {
+                 NAME    => $self->{_add_link_name},
+-                URL     => $self->getURLWithParams($myurl,"action=insertform",$self->getFilterParam(),$self->getFKParam(),"ref=$u"),
+-                AJAX_URL=> $self->getURLWithParams($myurl,"action=insertform",$self->getFilterParam(),$self->getFKParam(),"ref=$u","_ajax=1"),
++                URL     => $self->getURLWithParams($myurl,"action=".$self->{_add_link_urlaction},$self->getFilterParam(),$self->getFKParam(),"ref=$u"),
++                AJAX_URL=> $self->getURLWithParams($myurl,"action=".$self->{_add_link_urlaction},$self->getFilterParam(),$self->getFKParam(),"ref=$u","_ajax=1"),
+         };
+     };
+     my $template = $self->template() || return $self->error("NG::Module::List::buildList(): Template not opened");
+@@ -1052,6 +1052,8 @@
+     $self->{_pageBlockMode} = 0;
+     $self->{_templateBlockMode} = 0;
+     
++    $self->{_prefix} = "";
++    
+     #переменные, для передачи данных между функциями построения списка
+     $self->{_shlistActiveOrder} = undef;    # Активный order 
+     $self->{_shlistFKParam}="";
+@@ -1070,6 +1072,11 @@
+     $self->{_edit_link_name} = "Редактировать";
+     $self->{_delete_link_name} = "Удалить";
+     
++    $self->{_add_link_urlaction} = "insertform";
++    $self->{_edit_link_urlaction} = "updateform";
++    $self->{_delete_link_urlaction} = "delete";
++    $self->{_move_link_urlaction} = "move";
++    
+     $self->{_listtemplate} = "admin-side/common/universallist.tmpl";  ## TODO: remove
+     $self->{_formtemplate} = "admin-side/common/universalform.tmpl";  ## TODO: remove
+     

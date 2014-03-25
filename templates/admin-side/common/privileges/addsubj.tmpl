@@ -1,0 +1,18 @@
+<div style="border:1px solid #65A7DD; background:#fff; margin-bottom:10px; padding:5px; overflow:hidden;">
+    <p style="float:left; font-weight:bold;"><TMPL_VAR NAME>:</p>
+    <TMPL_IF DATA>
+    <form method="GET" action="<TMPL_VAR FORMURL>">
+    <div class="selectWrapper" style="margin:0 5 0 5px;">
+    <select name="<TMPL_VAR PARAM_NAME>" style="width: 200px;">
+        <TMPL_LOOP DATA>
+            <option value="<TMPL_VAR ID>"><TMPL_VAR NAME></option>
+        </TMPL_LOOP>
+    </select>
+    </div>
+    <input type="image" src="/admin-side/img/buttons/add.gif" alt="Добавить" style="margin-top:-1px;">
+    </form>
+    <TMPL_ELSE>
+        <p>Все объекты уже добавлены</p>
+    </TMPL_IF DATA>
+    <div class="close" style="padding-top: 5px; text-align:center;"><a href="#" onclick="return closeAddSubj('<TMPL_VAR DIVID>');">[Закрыть]</a></div>
+</div>

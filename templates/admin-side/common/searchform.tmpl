@@ -1,0 +1,64 @@
+
+
+<div style="margin-bottom: 40px;" id="searchdiv">
+            <div id="title_search">
+            Поиск
+            </div>
+          		<form action="<TMPL_VAR FORM.URL>" method="get" id="formsearch">
+          		<input id="_ajax" type="hidden" name="_ajax" value="0">
+                <div id="panel_search" style="padding:0;">
+                 	<TMPL_LOOP FORM.ELEMENTS>
+                 		
+                 	<TMPL_IF IS_HIDDEN>	
+                 		<input type="hidden" name="<TMPL_VAR FIELD>" value="<TMPL_VAR VALUE>"/>	
+					</TMPL_IF>     			
+					
+                	<TMPL_IF IS_DATETIME>  
+			            <div style="width: 100%;padding: 10px;">
+			            <table  style="width: 100%;">
+			            <tr>
+			            <td style="width: 20%;"><p><TMPL_VAR NAME></p></td>
+			            <td ><input type="text" name="<TMPL_VAR FIELD>"  value="<TMPL_VAR VALUE ESCAPE=HTML>" class="info_text" style="width: 70px;"></td>
+			            </tr>
+			            </table>
+			            </div>
+           			</TMPL_IF>
+
+                	<TMPL_IF IS_DATE>  
+			            <div style="width: 100%;padding: 10px;">
+			            <table  style="width: 100%;">
+			            <tr>
+			            <td style="width: 20%;"><p><TMPL_VAR NAME></p></td>
+			            <td ><input type="text" name="<TMPL_VAR FIELD>"  value="<TMPL_VAR VALUE ESCAPE=HTML>" class="info_text" style="width: 70px;"></td>
+			            </tr>
+			            </table>
+			            </div>
+           			</TMPL_IF>
+
+                	<TMPL_IF IS_TEXT>
+			            <div style="width: 100%;padding: 10px;">
+			            <table  style="width: 100%;">
+			            <tr>
+			            <td style="width: 20%; border: none;" ><p><TMPL_VAR NAME></p></td>
+			            <td ><input type="text" name="<TMPL_VAR FIELD>"  value="<TMPL_VAR VALUE ESCAPE=HTML>" class="info_text" style="width: 90%;"></td>
+			            </tr>
+			            </table>
+			            </div>
+           			</TMPL_IF>
+
+                	
+                  </TMPL_LOOP>							
+                    <div style="text-align: center; padding-bottom: 10px;">		
+                        <input type="image" src="/admin-side/img/buttons/search.gif">
+					    <TMPL_IF IS_AJAX>
+					        <a onclick="clear_block('<TMPL_IF CONTAINER><TMPL_VAR CONTAINER escape=html><TMPL_ELSE CONTAINER><TMPL_IF NEW>form0<TMPL_ELSE NEW>form0</TMPL_IF NEW></TMPL_IF CONTAINER>');return false;">
+					    <TMPL_ELSE>
+					        <a href="<TMPL_VAR CANCEL_SEARCH_URL>">
+					    </TMPL_IF IS_AJAX>
+					    <img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;"></a>
+                    </div>		
+                	
+                </div>	
+                </form>												
+</div>
+

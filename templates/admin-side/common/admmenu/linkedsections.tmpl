@@ -1,0 +1,65 @@
+<div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+<table class="info_new_page" border=1>
+    <tr><th colspan="2">Добавление подпунктов в связанные меню</td></tr>
+      
+    <TMPL_LOOP LINKED_ELEMENTS>
+
+		<!-- TODO: оформить/проверить вывод сообщений -->
+        <tr style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>; width:100%;" id="errortr_<TMPL_VAR SUBSITE_ID>">
+			<td colspan="2">
+				<div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Ошибка_<TMPL_VAR SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
+			</td>
+        </tr>
+        <tr style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>; width:100%;" id="messagetr_<TMPL_VAR SUBSITE_ID>">
+			<td colspan="2">
+				<div class="errormsg" id="message_<TMPL_VAR SUBSITE_ID>">Сообщение_<TMPL_VAR SUBSITE_ID> <TMPL_VAR MESSAGE></div>
+			</td>
+        </tr>            
+        
+        <tr>
+            <td width="40%">
+                <div>Пункт меню: <TMPL_VAR NODE_NAME></div>
+                <div>Подсайт: <TMPL_VAR SUBSITE_NAME> <img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" style="border:1px solid #cfe1ee;"></div>
+            </td>
+            <td>
+                <TMPL_IF THIS_SUBSITE_ELEM>
+                    <div style="border:0px solid red; margin-top:5px;">
+                        <!-- Добавить: -->
+                        <div style="border:0px solid green; margin: 0 10 0 20px;">
+                            Название пункта:
+                            <div style="border:0px solid #65a7dd; height:20px; font-weight:bold;"><TMPL_VAR NAME ESCAPE=HTML></div>
+                            URL:
+                            <div style="border:0px solid #65a7dd; height:20px; font-weight:bold;"><TMPL_VAR URL ESCAPE=HTML></div>
+                        </div>
+                    </div>
+                <TMPL_ELSE THIS_SUBSITE_ELEM>
+                    <div style="margin-top:0px;">
+                        <input type="radio" name="<TMPL_VAR KEY>_rb" id="<TMPL_VAR KEY>_rb_skip"  value="skip" <TMPL_IF SKIP_SLTD>checked</TMPL_IF>>
+                        Не добавлять
+                    </div>
+                    <div style="border:0px solid red; margin-top:5px;">
+                        <input type="radio" name="<TMPL_VAR KEY>_rb" id="<TMPL_VAR KEY>_rb_asis"  value="asis" <TMPL_IF ASIS_SLTD>checked</TMPL_IF> style="float:left;">
+                        Добавить:
+                        <div style="border:0px solid green; margin: 0 10 0 20px;">
+                            Название пункта:
+                            <input class="info_text" type="text" name="<TMPL_VAR KEY>_name" id="<TMPL_VAR KEY>_name" value="<TMPL_VAR NAME ESCAPE=HTML>"/> 
+                            URL:
+                            <input class="info_text" type="text" name="<TMPL_VAR KEY>_url" id="<TMPL_VAR KEY>_url" value="<TMPL_VAR URL ESCAPE=HTML>"/>
+                        </div>
+                    </div>
+                </TMPL_IF THIS_SUBSITE_ELEM>
+                <TMPL_IF HAS_ADAPTED> <!-- TODO: this is not implemented in code -->
+                    <div style="margin:5 0 5 0px;">
+                        <input type="radio" name="<TMPL_VAR KEY>_rb" id="<TMPL_VAR KEY>_rb_adapt"  value="adapt" <TMPL_IF ADAPT_SLTD>checked</TMPL_IF>>
+                        Добавить адаптированно к подсайту:
+                        <div style="border:0px solid green; margin: 0 10 0 20px;">
+                            Название пункта:
+                            <input class="info_text" type="text" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR NAME ESCAPE=HTML>"<TMPL_IF READONLY> readonly</TMPL_IF>/> 
+                            URL:  http://othersubsite.tld/bash/org/en/
+                        </div>
+                    </div>
+                </TMPL_IF HAS_ADAPTED>
+            </td>
+        </tr>
+        </TMPL_LOOP LINKED_ELEMENTS>
+</table>

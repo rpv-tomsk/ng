@@ -1,0 +1,81 @@
+html, body, div, span, p, a, em, img, strong, fieldset, form, label, blockquote, input {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	vertical-align: top;
+}
+html {
+	color: #35a6ba;
+	font: normal normal 11px/15px Verdana, Geneva, sans-serif;
+	height: 100%;
+}
+body {
+	background: url('/admin-side/img/back-page-login.gif') 0 0 repeat;
+	height: 100%;
+}
+#page {
+	background: url('/admin-side/img/img_center.jpg') 50% 50% no-repeat;
+	height: 100%;
+	min-height: 570px;
+	min-width: 999px;
+	margin-right: 50px;
+}
+a {
+	color: #35a6ba;
+}
+a:hover {
+	text-decoration: none;
+}
+form {
+	background: url('/admin-side/img/loginform.gif') no-repeat;
+	height: 200px;
+	left: -110px;
+	margin-left: 50%;
+	position: relative;
+	top: 46%;
+	width: 262px;
+}
+form p {
+	padding: 17px 0 0 0;	
+}
+form label {
+	color: #28618F;
+	font-size: 12px;
+	font-weight: bold;
+	width: 85px;
+	_width: 100px;
+	float: left;
+	text-align: right;
+	padding-right: 10px;
+	padding-top: 2px;
+	display: block;
+}
+input.text {	
+	background: #eaf5fd;
+	border: 1px solid #aac0d1;
+	color: #0e75a3;
+	font-size: 10px;
+	height: 21px;
+	padding: 2px 0 0 5px;
+	width: 122px;
+}
+form .button {
+	height: 39px;
+	width: 122px;
+	margin-left: 95px;
+}
+form .info {
+	margin-top: 25px;
+}
+form .info blockquote {
+	background: #FFE6E6;
+	border: 1px solid #E16A6A;
+	color: #990000;
+	padding: 5px 0;
+	margin: 30px 0 10px 0;	
+	text-align: center;
+	width: 100%;	
+}
+form .info div {
+	text-align: center;
+}

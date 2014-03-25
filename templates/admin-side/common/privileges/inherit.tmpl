@@ -1,0 +1,527 @@
+<div id="menu_content">
+</div>
+
+<div id="info_content">
+  <div style="width: 100%;">
+    <!--  =Start Content BLOCK=  -->
+   
+    <div style="border:0px solid red; overflow:hidden;padding-bottom:10px;width:100%;padding-top:10px;">
+        <div style="float:left;font-weight:normal;">
+            <a href="<TMPL_VAR BASEURL>">Дерево страниц</a> >
+            <TMPL_LOOP HISTORY>
+                <a href="<TMPL_VAR BASEURL><TMPL_VAR ID>/inheritable/" <TMPL_IF __LAST__>class="selected"</TMPL_IF>><TMPL_VAR NAME></a><TMPL_UNLESS __LAST__> > </TMPL_UNLESS>
+                <TMPL_IF __LAST__>[<a href="<TMPL_VAR BASEURL>?pageId=<TMPL_VAR ID>">В дереве</a>]</TMPL_IF __LAST__>
+            </TMPL_LOOP HISTORY>
+            <!--<a href="/admin-side/modules/12/">Сайт</a> > <a href="#" class="selected"><TMPL_VAR PAGENAME></a>-->
+        </div>
+    </div>
+        
+<script type="text/javascript">
+var selfPageId = null;
+var baseUrl    = '';
+function buildInheritUsage(json) {
+    var div = $("#privs_m"+json.mId+'p'+json.priv);
+    div.css("display","block");
+    div.html("");
+    var select_id  = 'select_'+json.mId+'_'+json.priv;
+    var insert_admin_id = "insert_admin_"+select_id; 
+    var insert_group_id = "insert_group_"+select_id;    
+    
+    div.append('<p class="group">Наследуемое право предоставлено пользователям:</p>');
+    for (var i in json.admins) {
+        var html = getInheritUsageRow(json.admins[i],"a",json);
+        div.append(html);
+    };
+    div.append('<a id="'+insert_admin_id+'"></a>');
+    
+    div.append('<p class="group">Наследуемое право предоставлено группам:</p>');
+    for (var i in json.groups) {
+        var html = getInheritUsageRow(json.groups[i],"g",json);
+        div.append(html);
+    };
+    div.append('<a id="'+insert_group_id+'"></a>');
+    
+    div.append('<div class="selectWrapper">'
+        + '<select id="'+select_id+'" onchange="addInheritPrivOwner(this,'+json.mId+',\''+json.priv+'\');">'
+        + '<option>--Добавить пользователя/группу--</option>'
+        + '</select>'
+        + '</div>');
+    
+    var select = $('#'+select_id);
+    select.append('<option disabled>Администраторы</option>');
+    for (var i in json.aadmins) {
+        select.append('<option value="a'+json.aadmins[i].id+'">&nbsp;&nbsp;&nbsp;'+json.aadmins[i].name+'</option>');
+    };
+    select.append('<option disabled>Группы</option>');
+    for (var i in json.agroups) {
+        select.append('<option value="g'+json.agroups[i].id+'">&nbsp;&nbsp;&nbsp;'+json.agroups[i].name+'</option>');
+    };
+    div.append('<div class="close"><a href="#" onclick="return closeInheritUsage({mId:'+json.mId+',priv:\''+json.priv+'\'});">[Закрыть]</a></div>');
+    
+};
+
+function closeInheritUsage(opts){
+    var div = $("#privs_m"+opts.mId+'p'+opts.priv);
+    div.css("display","none");
+    div.html("");
+    return false;
+};
+
+function addInheritPrivOwner(elem,id,priv) {
+    var select = $(elem);
+    var value = select.children("option:selected").val();
+    var name = select.children("option:selected").text();
+    var re = new RegExp ("([a|g])(\\d+)");
+    var arr = re.exec(value);
+    var user = arr[1];
+    var user_id = arr[2];
+    var html = getInheritUsageRow({"name":name,"id":user_id,"active":null},user,{"mId":id,"priv":priv});
+    if (user == "a") {
+        $("#insert_admin_"+select.attr("id")).before(html);
+    }
+    else {
+        $("#insert_group_"+select.attr("id")).before(html);
+    };
+    select.children("option:selected").remove();
+//     select.children("option:first").attr("selected",true);
+};
+
+function getInheritUsageRow(right,oType,opts) {
+    // oType [a - admin|g - group]
+    var status_class = "";
+    var status_image = "";
+    var status_name = ""; 
+    var rowId = right.id+'_'+opts.mId+"_"+opts.priv+"_"+oType;
+    
+    var links = '<a href="#" onclick="return showInheritPrivApply('+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Применение]</a>';
+    
+    if (right.active == 1) {
+        status_class = "allow";
+        status_image = "allow.gif";
+        status_name = "Разрешено";
+        links += '<a href="#" onclick="return inheritPrivAction(\'inhdeny\','+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Запретить]</a>';
+        links += '<a href="#" onclick="return inheritPrivAction(\'inhdelete\','+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Удалить]</a>';
+    }
+    else if (right.active == 0) {
+        status_class = "deny";
+        status_image = "deny.gif";
+        status_name = "Запрещено";
+        links += '<a href="#" onclick="return inheritPrivAction(\'inhallow\','+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Разрешить]</a>';
+        links += '<a href="#" onclick="return inheritPrivAction(\'inhdelete\','+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Удалить]</a>';
+    }
+    else {
+        status_class = "inactive";
+        status_image = "undef.gif";
+        status_name = "Неопределено";
+        links += '<a href="#" onclick="return inheritPrivAction(\'inhallow\','+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Разрешить]</a>';
+        links += '<a href="#" onclick="return inheritPrivAction(\'inhdeny\','+right.id+','+opts.mId+',\''+opts.priv+'\',\''+oType+'\');">[Запретить]</a>';
+    };
+    
+    return '<div class="owner '+status_class+'" id="owner_'+rowId+'">' +
+        '<img class="status" src="/admin-side/img/privs/'+status_image+'" title="'+status_name+'" alt="'+status_name+'">' +
+        '<p class="name">'+right.name+'</p>' +
+        '<p class="status">('+ status_name +')</p>' +
+        '<p class="links">' + links + '</p>' +
+        '</div>' +
+        '<div class="ownerPages" style="display:none;" id="pages_'+rowId+'"></div>';
+};
+
+function inheritPrivAction(action,oId,mId,priv,oType){
+    var div = $("#pages_"+oId+"_"+mId+"_"+priv+"_"+oType);
+    div.css("display","none");
+    div.html("");
+
+    var params = {};
+    params.mId = mId;
+    params.priv = priv;
+    params.nocache = Math.random(10000);
+    if (oType == 'a') {
+        params.adminId = oId;
+    };
+    if (oType == 'g') {
+        params.groupId = oId;
+    };
+    params['do'] = action;
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else {
+                var opts = {};
+                opts.mId = mId;
+                opts.priv = priv;
+                
+                var right = {};
+                
+                right.id = oId;
+                right.name = data.name;
+                right.active = data.active;
+            
+                var divId = "owner_" + oId + "_" + mId + "_" + priv + "_" + oType;
+                var div = $('#'+divId);
+                var prev = div.prev();
+                div.remove();
+                var html = getInheritUsageRow(right,oType,opts);
+                prev.after(html);
+            }
+        },
+        data: params,
+        url: '<TMPL_VAR FORMURL>',
+        dataType: 'json'
+    }); 
+    return false;
+};
+
+function showInheritUsage(opts){
+    var div = $("#privs_m"+opts.mId+'p'+opts.priv);
+    if (div.html() != '') {
+        return closeInheritUsage(opts);
+    };
+    var params = {};
+    params.mId = opts.mId;
+    params.priv = opts.priv;
+    params.nocache = Math.random(10000);
+    params['do'] = 'showusage';
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else {
+                data.mId = opts.mId;
+                data.priv = opts.priv;
+                buildInheritUsage(data)
+            }
+        },
+        data: params,
+        url: '<TMPL_VAR FORMURL>',
+        dataType: 'json'
+    }); 
+    return false;
+};
+
+function showInheritPrivApply(oId,mId,priv,oType) {
+    var divId = "pages_"+oId+"_"+mId+"_"+priv+"_"+oType;
+    var div = $('#'+divId);
+    if (div.html()!="") {
+        div.css("display","none");
+        div.html("");
+        return false;
+    };
+  
+    var params = {};
+    params.mId = mId;
+    params.priv = priv;
+    params.nocache = Math.random(10000);
+    params['do'] = 'showapply';
+    if (oType == 'a') {
+        params.adminId = oId;
+    }
+    else if (oType == 'g') {
+        params.groupId = oId;
+    }
+    else {
+        alert('showInheritPrivApply(): invalid oType');
+    };
+    $.ajax({
+        success: function(json) {
+            //alert(json);
+            if (json.error)
+                alert(json.error);
+            else {
+                var data = {};
+                data.oId = oId;
+                data.oType = oType;
+                data.mId = mId;
+                data.priv = priv;
+                data.pages = json;
+                buildInheritPrivApply(data);
+            }
+        },
+        data: params,
+        url: '<TMPL_VAR FORMURL>',
+        dataType: 'json'
+    }); 
+    return false;
+};
+
+function buildInheritPrivApply (json) {
+    var divId = "pages_"+json.oId+"_"+json.mId+"_"+json.priv+"_"+json.oType;
+    var div = $('#'+divId);
+    
+    div.css("display","block");
+    div.append('<p class="help">Наследуемое право распространяется на страницы:</p>');
+    for (var i in json.pages) {
+        var status_image = "";
+        var status_name = "";
+        var inhherit = "";
+        
+        if (json.pages[i].storageId && json.pages[i].storageId == selfPageId) {
+            inhherit = "наследованно c этого уровня";
+        }
+        else if (json.pages[i].storageId) {
+            inhherit = "наследованно от <a href=\"\">"+json.pages[i].storageName+"</a>";
+        }
+        else {
+            inhherit = "локально";
+        };
+        
+        if (json.pages[i].active == 1) {
+            status_image = "allow.gif";
+            status_name = "Разрешено";
+        }
+        else if (json.pages[i].active == 0) {
+            status_image = "deny.gif";
+            status_name = "Запрещено";
+        }
+        else {
+            status_image = "undef.gif";
+            status_name = "Неопределено";
+        };
+        
+        var ap = '';
+        if (json.oType == 'a') {
+          ap='?adminId='+json.oId;
+        }
+        else if (json.oType == 'g') {
+          ap='?groupId='+json.oId;
+        }
+        
+        if(json.pages[i].pgroupId) {
+            status_name = status_name + " от группы <a href=\"\">"+json.pages[i].pgroupName+"</a>";
+            ap = '?groupId='+json.pages[i].pgroupId;
+        }
+        
+        var html =  '<div class="page">' +
+            '<img class="status" src="/admin-side/img/privs/'+status_image+'" title="'+status_name+'" alt="'+status_name+'" style="">' +
+            '<p style="float:left;">Страница <a href="'+baseUrl+json.pages[i].pageId+'/local/'+ap+'">'+json.pages[i].pageName+'</a></p>' +
+            '<p class="status">('+status_name+', '+inhherit+')</p>' +
+            '</div>';
+        div.append(html);
+    };
+    if (json.pages.length == 0) {
+        div.append('<p>Список страниц пуст</p>');
+    };
+    div.append('<div class="close"><a href="#" onclick="return closeInheritPrivApply(\''+divId+'\');">[Закрыть]</a></div>');
+};
+function closeInheritPrivApply(divId){
+    var div = $('#'+divId);
+    div.css("display","none");
+    div.html("");
+    return false;
+};
+</script>
+
+<script type="text/javascript">
+  selfPageId = <TMPL_VAR PAGEID>;
+  baseUrl = '<TMPL_VAR BASEURL>';
+  <TMPL_IF SHOW>
+  $(document).ready(
+      function () {
+          showInheritUsage({mId:<TMPL_VAR SHOW.MID>,priv:'<TMPL_VAR SHOW.PRIVILEGE ESCAPE=JS>'});
+      }
+  );
+  </TMPL_IF SHOW>
+</script>
+    <div class="pageprivileges">
+    <TMPL_LOOP DATA>
+        <div class="modulename<TMPL_IF __FIRST__> first</TMPL_IF>">
+            <p><TMPL_VAR NAME></p>
+        </div>
+        <TMPL_LOOP PRIVS>
+        <div class="privilege" id="<TMPL_VAR ID>_<TMPL_VAR PRIVILEGE>">
+            <p class="name"><TMPL_VAR NAME></p>
+            <p class="links">[<a href="#" onclick="return showInheritUsage({mId:<TMPL_VAR ID>,priv:'<TMPL_VAR PRIVILEGE>'})">Просмотреть</a>]</p>
+        </div>
+        <div class="owners" id="privs_m<TMPL_VAR ID>p<TMPL_VAR PRIVILEGE>" style="display:none"></div>
+        </TMPL_LOOP PRIVS> 
+    </TMPL_LOOP>
+    <TMPL_UNLESS DATA>
+      <div class="modulename"><p>Наследуемые привилегии не определены.</p></div>
+    </TMPL_UNLESS DATA>
+    </div>
+
+    <!--
+    <div class="pageprivileges">
+        <div class="modulename first">
+            <p>Структура сайта</p>
+        </div>
+        <div class="privilege">
+            <p class="name">Доступ к странице</p>
+            <p class="links">[<a href="#">Просмотреть</a>]</p>
+        </div>
+        
+        <div class="owners">
+            <p class="group">Наследуемое право предоставлено пользователям:</p>
+            <div class="owner inactive">
+                <img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">
+                <p class="name">Вася Пупкин</p>
+                <p class="status">(Не определено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Разрешить]</a>
+                    <a href="#">[Запретить]</a>
+                </p>
+            </div>
+            <div class="owner allow">
+                <img class="status" src="/admin-side/img/privs/allow.gif" title="Разрешено" alt="+">
+                <p class="name">Петя Иванов</p>
+                <p class="status">(Разрешено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Запретить]</a>
+                    <a href="#">[Удалить]</a>
+                </p>
+            </div>
+            <div class="owner deny">
+                <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+">
+                <p class="name">Юрий Угорелов</p>
+                <p class="status">(Запрещено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Разрешить]</a>
+                    <a href="#">[Удалить]</a>
+                </p>
+            </div>
+            <div class="owner inactive">
+                <img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">
+                <p class="name">Вася Пупкин</p>
+                <p class="status">(Не определено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Разрешить]</a>
+                    <a href="#">[Запретить]</a>
+                </p>
+            </div>
+            <div class="owner allow">
+                <img class="status" src="/admin-side/img/privs/allow.gif" title="Разрешено" alt="+">
+                <p class="name">Петя Иванов</p>
+                <p class="status">(Разрешено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Запретить]</a>
+                    <a href="#">[Удалить]</a>
+                </p>
+            </div>
+            <div class="owner deny">
+                <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+">
+                <p class="name">Юрий Угорелов</p>
+                <p class="status">(Запрещено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Разрешить]</a>
+                    <a href="#">[Удалить]</a>
+                </p>
+            </div>
+            <div class="ownerPages" style="display:block;">
+                <p class="help">Наследуемое право распространяется на страницы:</p>
+                <p>Список страниц пуст</p>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/allow.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В Томске"</a></p>
+                    <p class="status">(Разрешено, локально)</p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В России"</a></p>
+                    <p class="status">(Запрещено, с этого уровня)</p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В Америке"</a></p>
+                    <p class="status">(Запрещено, наследованно от <a href="#">"Главная страница"</a>)</p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В Мире"</a></p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В Томске"</a></p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В России"</a></p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В Америке"</a></p>
+                </div>
+                <div class="page">
+                    <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+" style="">
+                    <p style="float:left;">Страница <a href="#">"В Мире"</a></p>
+                </div>
+                <div class="close"><a href="#">[Закрыть]</a></div>
+            </div>
+            
+
+            <div class="owner allow">
+                <img class="status" src="/admin-side/img/privs/allow.gif" title="Разрешено" alt="+">
+                <p class="name">Петя Иванов</p>
+                <p class="status">(Разрешено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Запретить]</a>
+                    <a href="#">[Удалить]</a>
+                </p>
+            </div>
+            <p class="group">Наследуемое право предоставлено группам:</p>
+            <div class="owner deny">
+                <img class="status" src="/admin-side/img/privs/deny.gif" title="Разрешено" alt="+">
+                <p class="name" style="font-weight:bold;">Администраторы новостей</p>
+                <p class="status">(Запрещено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Разрешить]</a>
+                    <a href="#">[Удалить]</a>
+                </p>
+            </div>
+            <div class="owner inactive">
+                <img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">
+                <p class="name" style="font-weight:bold;">Модеры Форума</p>
+                <p class="status">(Не определено)</p>
+                <p class="links">
+                    <a href="#">[Применение]</a>
+                    <a href="#">[Разрешить]</a>
+                    <a href="#">[Запретить]</a>
+                </p>
+            </div>
+            
+            <div class="selectWrapper">
+            <select name="<TMPL_VAR PARAM_NAME>">
+                <option value="<TMPL_VAR ID>">--Добавить пользователя/группу--</option>
+                <TMPL_LOOP ZDATA>
+                    <option value="<TMPL_VAR ID>"><TMPL_VAR NAME></option>
+                </TMPL_LOOP>
+            </select>
+            </div>
+            <div class="close"><a href="#">[Закрыть]</a></div>
+            
+        </div>
+        <div class="privilege">
+            <p class="name">Редактирование свойств</p>
+            <p class="links">[<a href="#">Просмотреть</a>]</p>
+        </div>
+          
+        <div class="modulename">
+            <p>Модуль новости</p>
+        </div>
+        <div class="privilege">
+            <p class="name">Доступ к модулю</p>
+            <p class="links">[<a href="#">Просмотреть</a>]</p>
+        </div>
+        <div class="privilege">
+            <p class="name">Добавление категорий</p>
+            <p class="links">[<a href="#">Просмотреть</a>]</p>
+        </div>
+
+    </div>
+    -->
+  </div>
+</div>
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>

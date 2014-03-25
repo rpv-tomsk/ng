@@ -1,0 +1,15 @@
+<html>
+	<header>
+		<script language="JavaScript" type="text/javascript" src="/admin-side/js/common/swap_image.js"></script>
+		<script language="javascript" type="text/javascript" src="/admin-side/js/common/ajax.js"></script>	
+		<link rel="stylesheet" href="/admin-side/styles/style.css">
+	</header>
+<body>
+<TMPL_IF UPDATED>
+<div style="text-align:center;width:100%;" id="updated">Данные обновлены.</div>
+<TMPL_ELSE>
+<div id="updated"></div>
+</TMPL_IF UPDATED>
+<TMPL_VAR FORM>
+</body>
+</html>

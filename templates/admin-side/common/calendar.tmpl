@@ -1,0 +1,30 @@
+               <div class="calendar"> 
+                    <form action="<TMPL_VAR CALENDAR.ACTION>" method="get">
+                    <TMPL_LOOP CALENDAR.CPARAMS>
+                        <input type="hidden" name="<TMPL_VAR NAME>" value="<TMPL_VAR VALUE>">
+                    </TMPL_LOOP> 
+                    <div class="line_select">
+                    <div class="selectWrapper" style="margin-right:9px;">
+                    <select class="month" name="_month"> 
+                        <TMPL_VAR CALENDAR.MONTH_OPTIONS> 
+                    </select> 
+                     </div>
+                    <div class="selectWrapper">
+                    <select class="year" name="_year"> 
+                        <TMPL_VAR CALENDAR.YEAR_OPTIONS>
+                    </select> 
+                     </div>
+                    <input type="image" src="/admin-side/img/buttons/query.gif" class="button_go" alt="Выбрать">
+                    </div>
+                    </form> 
+                  <div class="select_date"><a href="<TMPL_VAR CALENDAR.PREV_URL>"> << </a> <b><a href="<TMPL_VAR CALENDAR.CURRENT_URL>"><TMPL_VAR CALENDAR.CURRENT_MONTH> <TMPL_VAR CALENDAR.CURRENT_YEAR></a></b> <a href="<TMPL_VAR CALENDAR.NEXT_URL>"> >> </a></div> 
+                  <div class="border_table"> 
+                    <TMPL_VAR CALENDAR.HTML>
+                  </div>
+                  <div class="border_table" style="padding: 5px;text-align:center;border-bottom:none;border-top:none;">
+                    <TMPL_VAR CALENDAR.FILTER_DESCRIPTION>
+                  </div>
+                  <div class="border_table" style="padding: 5px;text-align:center;">
+                    <a href="<TMPL_VAR CALENDAR.ACTION>">Сбросить календарь</a>
+                  </div>                   
+                </div> 

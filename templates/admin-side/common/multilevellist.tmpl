@@ -1,0 +1,625 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- new style template -->
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=windows-1251" />
+	<title>Администрирование<TMPL_IF NG_TITLE> - <TMPL_VAR NG_TITLE></TMPL_IF></title>
+	<link rel="stylesheet" type="text/css" href="/admin-side/styles/admin.css" media="all" />
+	
+	<script language="javascript" type="text/javascript" src="/admin-side/js/common/ajax.js"></script>	
+	<script language="javascript" type="text/javascript" src="/admin-side/js/common/cookie.js"></script>	
+	<script language="javascript" type="text/javascript" src="/admin-side/js/common/addfile.js"></script>
+	<script language="javascript" type="text/javascript" src="/admin-side/js/tinymce/tiny_mce.js"></script>
+	<script type="text/javascript">
+		function ShowMenuAdmin() {
+			var vis = document.getElementById("menuadmin").style.display;
+			document.getElementById("menuadmin").style.display = (vis == "block"?"none":"block");
+			document.getElementById("menuadmin_img").src = (vis == "block"?"/admin-side/img/plus.gif":"/admin-side/img/minus.gif");
+			if (vis == "block") {
+				setCookie("showadminmenu", 0);
+			} else {
+				setCookie("showadminmenu", 1);
+			};
+		};
+	</script>
+	<script>
+	    function UseEditor(tname,thandler,tparentid,image_action_handler,css_file,styles_list)
+        {
+          tinyMCE.init({
+   	                    theme : "advanced",
+   	                    language : "ru",
+   	                    theme_advanced_toolbar_location : "top",
+   	                    theme_advanced_toolbar_align : "left",
+                        mode : "exact",
+                        elements: tname,
+                        plugins : "table,advimage,advlink,preview,print,searchreplace,contextmenu,paste",
+                        plugin_preview_width : "600",
+	                    convert_urls : false,
+	                    relative_urls : true,  
+                        plugin_preview_height : "400",
+                        theme_advanced_buttons1: "styleselect,formatselect,bold,italic,underline,justifyleft,justifycenter,justifyright,justifyfull,bullist,numlist,undo,redo,link,unlink,image,code,removeformat",
+                       
+                        theme_advanced_styles : styles_list,
+                        theme_advanced_buttons2: "tablecontrols",
+                        theme_advanced_buttons3: "",
+                        theme_advanced_statusbar_location : "bottom",
+                        theme_advanced_resizing : true,
+                        theme_advanced_resize_horizontal : false,
+                        theme_advanced_image_processURL : thandler,
+                        theme_advanced_image_parentid : tparentid,
+                        theme_advanced_blockformats : "h1,h2",
+                        extended_valid_elements :"a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name|float],font[face|size|color|style],span[class|align|style],br[clear]",
+                        content_css : css_file,
+                        image_action : image_action_handler
+                       });
+        }; 
+  	</script>               
+
+	
+<script type="text/javascript" src="/admin-side/js/highslide/highslide.js"></script>
+<script type="text/javascript" src="/admin-side/js/highslide/highslide-html.js"></script>
+<script type="text/javascript">    
+    hs.graphicsDir = '/admin-side/js/highslide/graphics/';
+    hs.outlineType = 'rounded-white';
+    hs.outlineWhileAnimating = true;
+    window.onload = function() {
+    hs.preloadImages();
+    }
+</script>
+
+
+	
+</head>
+<body>
+
+<table border="0" id="main_table">
+<!--********************************** HEADER LAYER begin ********************************************-->	
+	<tr>
+		<td id="main_table_top">
+			&nbsp;
+		</td>
+	</tr>
+<!--********************************** HEADER LAYER end ********************************************-->		
+<!--********************************** HISTORY LAYER begin ********************************************-->		
+	<tr>
+		<td id="main_table_history">
+		
+			<table id="history_table" border="0">
+				<tr>
+					<td id="history_table_left">
+						<a href="#" onclick="ShowMenuAdmin();return false;"><img id="menuadmin_img" src="/admin-side/img/<TMPL_IF SHOW_ADMINMENU>minus.gif<TMPL_ELSE>plus.gif</TMPL_IF>" border=0></a>&nbsp;<a href="#" onclick="ShowMenuAdmin();return false;">Разделы сайта</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+						<a href="/admin-side/struct/">Редактор структуры</a>&nbsp;&nbsp;
+						<!-- |&nbsp;&nbsp;<a href="/admin-side/">Администрирование&nbsp;модулей</a>&nbsp;&nbsp;|  -->
+						<!-- &nbsp;&nbsp;<a href="/admin-side/templates/">Шаблоны&nbsp;сайта</a><!--&nbsp;&nbsp;| -->
+						<!-- &nbsp;&nbsp;<a href="/admin-side/">Языки&nbsp;сайта</a>-->
+					</td>
+					
+					
+					
+					<td id="history_table_right">
+					
+<!--************************************************* TOP RIGHT begin ************************************************-->		
+
+<table id="top_right_table" border="0">
+	<tr>
+		<!--********************* LANGUAGE ***************-->	
+		<td style="padding-top: 3px;">
+				<a href="#" onclick="return hs.htmlExpand(this, { contentId: 'highslide_html_lang' } )" class="highslide">Языки</a>
+		</td>		
+				
+		<td style="padding-top: 4px; padding-left: 0px;">		
+				<img src="/admin-side/img/lang/ru.gif" alt="" width="20" height="14" border="0">
+		</td>	
+		<!--********************* LANGUAGE ***************-->
+	
+		<div class="highslide-html-content" id="highslide_html_lang" style="width: 100px;">
+		
+	   
+	    <div style="padding-bottom: 5px; padding-top: 5px;" class="highslide-body">
+	    	
+			
+		<TMPL_LOOP LANGS>			
+			<p style="background: transparent url(/admin-side/img/lang/ru.gif) no-repeat; padding-left: 30px;"><a href="?lang=<TMPL_VAR LANG>" <TMPL_IF CURRENT>style="font-weight:bold"</TMPL_IF>><TMPL_VAR LANG></a></p>
+		</TMPL_LOOP>		
+			
+		</div>
+		
+		<div class="highslide-footer">
+        	<div>
+            	<span class="highslide-resize" title="{hs.resizeTitle}">
+                	<span></span>
+            	</span>
+        	</div>
+    	</div>
+	</div>
+	
+		
+		<td>
+		
+		
+		<!--*********************************** HELP LAYOUT begin *************************************-->	
+		
+<a href="#" onclick="return hs.htmlExpand(this, { contentId: 'highslide-html' } )" 
+		class="highslide"><img src="/admin-side/img/help_button.gif" alt="" title="Справка" width="20" height="20" border="0"></a>
+						
+<div class="highslide-html-content" id="highslide-html" style="width: 400px;">
+	
+	<div style="height:20px; padding: 2px">
+	    <a href="#" onclick="return hs.close(this)" class="control">Закрыть</a>
+	    <a href="#" onclick="return false" class="highslide-move control">Переместить</a>
+	</div>
+	
+	
+	
+
+<div class="highslide-body">
+		
+		
+		
+		
+		<h3>Справка &laquo;Администрирование&raquo;</h3>
+		
+		
+		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aliquam dapibus leo quis nisl. In lectus. Vivamus consectetuer pede in nisl. Mauris cursus pretium mauris. Suspendisse condimentum mi ac tellus. <a href="http://nikolas.ru" target="_blank"><b>Nikolas Group</b></a> morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p> 
+
+
+<p>Donec sed enim. Ut vel ipsum. Cras consequat velit et justo. Donec mollis, mi at tincidunt vehicula, nisl mi luctus risus, quis scelerisque arcu nibh ac nisi. Sed risus. Curabitur urna. Aliquam vitae nisl. Quisque imperdiet semper justo. Pellentesque nonummy pretium tellus. Donec sed enim. Ut vel ipsum. Cras consequat velit et justo. Donec mollis, mi at tincidunt vehicula, nisl mi luctus risus, quis scelerisque arcu nibh ac nisi. Sed risus. Curabitur urna. Aliquam vitae nisl. Quisque imperdiet semper justo. Pellentesque nonummy pretium tellus.</p>
+	</div>
+	
+</div>
+
+
+<!--*********************************** HELP LAYOUT end *************************************-->	
+		
+		
+		</td>
+	</tr>
+</table>
+
+	
+	
+	
+
+						
+<!--************************************************* TOP RIGHT end ************************************************-->						
+					</td>
+				</tr>
+			</table>
+
+		
+		
+			
+			
+		</td>
+	</tr>
+<!--********************************** HISTORY LAYER end ********************************************-->			
+   
+<!--********************************** MIDDLE LAYER begin ********************************************-->			
+	<tr>
+		<td id="main_table_middle">
+		
+		
+				<table id="main_content_tree" border="0">
+					<tr>
+
+<!--******************************************* LEFT COLOMN LAYER begin ******************************************-->
+<td id="main_content_tree_left">
+<div id="menuadmin" style="display:<TMPL_IF SHOW_ADMINMENU>block;<TMPL_ELSE>none;</TMPL_IF>padding-top:5px;">
+	<script type="text/javascript">
+		var show = getCookie("showadminmenu");
+		var vis = document.getElementById("menuadmin").style.display;
+		if (vis == "none" && show == 1) {
+			document.getElementById("menuadmin").style.display = "block";
+			document.getElementById("menuadmin_img").src = "/admin-side/img/minus.gif";
+		};
+	</script>	
+<div class="blue_box_header"><img src="/admin-side/img/blue_grd_box_right_top.gif" alt="" width="9" height="10" border="0"></div>
+<div class="blue_box_body" style="padding: 0px 0px 0px 15px">
+<b>Модули сайта</b><br>	
+<TMPL_LOOP ADMINMENU>
+<TMPL_LOOP LEVELS>
+	 <TMPL_IF IS_LEAF>
+	 	 <IMG src="/admin-side/img/tree/page.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_FOLDER>
+	 	 <IMG src="/admin-side/img/tree/folder.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_FOLDERO>
+	 	 <IMG src="/admin-side/img/tree/folderopen.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_LINE>
+	 	 <IMG src="/admin-side/img/tree/line.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_JOIN>
+	 	 <IMG src="/admin-side/img/tree/join.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_JOINB>
+	 	 <IMG src="/admin-side/img/tree/joinbottom.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_BLANK>
+	 	 <IMG src="/admin-side/img/tree/line_blank.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_MINUSB>
+	 	 <IMG src="/admin-side/img/tree/minus1_last.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_MINUS>
+	 	 <IMG src="/admin-side/img/tree/minus1.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_PLUST>
+	 	 <A href="#"><IMG src="/admin-side/img/tree/plus1_top.gif" align=top></A>
+	 </TMPL_IF>
+</TMPL_LOOP>
+<TMPL_IF URL>
+<TMPL_IF SELECTED>
+	<A class=tt href="<TMPL_VAR URL>"><FONT color="red"><TMPL_VAR NAME></font></A><TMPL_VAR NAME2>
+<TMPL_ELSE SELECTED>
+	<A class=tt href="<TMPL_VAR URL>"><TMPL_VAR NAME></A><TMPL_VAR NAME2>
+</TMPL_IF SELECTED>
+<TMPL_ELSE URL>
+	<TMPL_VAR NAME>
+</TMPL_IF URL>	
+
+<BR>
+</TMPL_LOOP>
+</div>
+<div class="blue_box_footer"><img src="/admin-side/img/blue_grd_box_right_bottom.gif" alt="" width="9" height="10" border="0"></div>
+</div>
+
+<br />
+
+							
+							
+<TMPL_IF ROWS>
+<div class="blue_box_header"><img src="/admin-side/img/blue_grd_box_right_top.gif" alt="" width="9" height="10" border="0"></div>
+<div class="blue_box_body">
+<TMPL_LOOP ROWS>
+<TMPL_LOOP LEVELS>
+	 <TMPL_IF IS_LEAF>
+	 	 <IMG src="/admin-side/img/tree/page.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_FOLDER>
+	 	 <IMG src="/admin-side/img/tree/folder.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_FOLDERO>
+	 	 <IMG src="/admin-side/img/tree/folderopen.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_LINE>
+	 	 <IMG src="/admin-side/img/tree/line.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_JOIN>
+	 	 <IMG src="/admin-side/img/tree/join.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_JOINB>
+	 	 <IMG src="/admin-side/img/tree/joinbottom.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_BLANK>
+	 	 <IMG src="/admin-side/img/tree/line_blank.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_MINUSB>
+	 	 <IMG src="/admin-side/img/tree/minus1_last.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_MINUS>
+	 	 <IMG src="/admin-side/img/tree/minus1.gif" align=top>
+	 </TMPL_IF>
+	 <TMPL_IF IS_PLUST>
+	 	 <A href="#"><IMG src="/admin-side/img/tree/plus1_top.gif" align=top></A>
+	 </TMPL_IF>
+</TMPL_LOOP>
+<TMPL_IF SELECTED>
+	<A class=tt href="?<TMPL_IF SHOWPOSITIONS>parent_id=<TMPL_VAR ID>&action=showpositions<TMPL_ELSE>id=<TMPL_VAR ID></TMPL_IF>&lang=<TMPL_VAR CURRENT_LANG>"><FONT color="red"><TMPL_VAR NAME></font></A><TMPL_VAR NAME2>
+<TMPL_ELSE>
+	<A class=tt href="?<TMPL_IF SHOWPOSITIONS>parent_id=<TMPL_VAR ID>&action=showpositions<TMPL_ELSE>id=<TMPL_VAR ID></TMPL_IF>&lang=<TMPL_VAR CURRENT_LANG>"><TMPL_VAR NAME></A><TMPL_VAR NAME2>
+</TMPL_IF><BR>
+</TMPL_LOOP>
+</div>
+<div class="blue_box_footer"><img src="/admin-side/img/blue_grd_box_right_bottom.gif" alt="" width="9" height="10" border="0"></div>
+</TMPL_IF ROWS>
+						
+						</td>
+<!--******************************************* LEFT COLOMN LAYER end ******************************************-->						
+						
+						
+<!--******************************************* RIGHT COLOMN LAYER begin ******************************************-->						
+						<td id="main_content_tree_right">
+			
+
+	<TMPL_IF SHOWPOSITIONS>					
+	<div class="mode_selector_act" style="width: 68px;  float: left;">
+		<div class="mode_selector_left">
+			<div class="mode_selector_right">
+					<a href="?id=<TMPL_VAR SELECTED_NODE_ID>&lang=<TMPL_VAR CURRENT_LANG>">Разделы</a>
+			</div>
+		</div>
+	</div>
+	<div class="mode_selector_ylw" style="width: 68px;  float: left;">
+		<div class="mode_selector_ylw_left">
+			<div class="mode_selector_ylw_right">
+					<a href="?action=showpositions&parent_id=<TMPL_VAR SELECTED_NODE_ID>&lang=<TMPL_VAR CURRENT_LANG>">Позиции</a>
+			</div>
+		</div>
+	</div>	
+	<TMPL_ELSE>
+	<div class="mode_selector_ylw" style="width: 68px;  float: left;">
+		<div class="mode_selector_ylw_left">
+			<div class="mode_selector_ylw_right">
+					<a href="?id=<TMPL_VAR SELECTED_NODE_ID>&lang=<TMPL_VAR CURRENT_LANG>">Разделы</a>
+			</div>
+		</div>
+	</div>
+	<TMPL_IF SELECTED_NODE_CANADDPOSITIONS>
+	<div class="mode_selector_act" style="width: 68px;  float: left;">
+		<div class="mode_selector_left">
+			<div class="mode_selector_right">
+					<a href="?action=showpositions&parent_id=<TMPL_VAR SELECTED_NODE_ID>&lang=<TMPL_VAR CURRENT_LANG>">Позиции</a>
+			</div>
+		</div>
+	</div>	
+	</TMPL_IF>
+	
+	</TMPL_IF>
+	
+	
+
+
+
+	
+	<br clear="all"><br style="line-height: 10px;">
+
+	
+
+<TMPL_IF SHOWCHILDRENS>
+<TMPL_IF SELECTED_NODE_ID>	
+<!--******************* РАЗ ТАБЛИЦА **********************-->	
+<TMPL_UNLESS SHOWCATALOGFORM>
+	<div class="blue_table_container_top">
+		<img src="/admin-side/img/blue_table_container_top_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+	
+	<div class="blue_table_container">
+	<div style="width:100%">
+			<table class="tree_content_table" border="0">
+				<tr>
+					<th>&nbsp;</th>
+				</tr>
+				<tr>
+					<td class="white_cell"><TMPL_VAR SELECTED_NODE_NAME></td>
+				</tr>
+				<tr>
+					<td class="links_menu">
+		<TMPL_IF SELECTED_NODE_CANADD><a href="?id=<TMPL_VAR SELECTED_NODE_ID>&action=insertcatalogform&lang=<TMPL_VAR CURRENT_LANG>" onclick="ajax_url(this.href,'catalogdiv<TMPL_VAR SELECTED_NODE_ID>');return false;">Добавить уровень</a>&nbsp;|&nbsp;</TMPL_IF>
+		<a href="?id=<TMPL_VAR SELECTED_NODE_ID>&action=updatecatalogform&lang=<TMPL_VAR CURRENT_LANG>" onclick="ajax_url(this.href,'catalogdiv<TMPL_VAR SELECTED_NODE_ID>');return false;">Редактировать</a>&nbsp;|&nbsp;
+		<TMPL_IF SELECTED_NODE_CANDELETE><a href="?id=<TMPL_VAR SELECTED_NODE_ID>&action=deletecatalog&lang=<TMPL_VAR CURRENT_LANG>" onclick="return confirm('Вы действительно хотите удалить узел?');">Удалить</a>&nbsp;|&nbsp;</TMPL_IF>
+        <TMPL_LOOP SELECTED_NODE_EXTRA_LINKS>
+        <TMPL_IF AJAX>
+        	<a href="<TMPL_VAR URL>&lang=<TMPL_VAR CURRENT_LANG>" class="doit"  onclick="ajax_url('<TMPL_VAR URL>&lang=<TMPL_VAR CURRENT_LANG>','catalogdiv<TMPL_VAR SELECTED_NODE_ID>');return false;"><TMPL_VAR NAME></a>
+        <TMPL_ELSE>
+        	<a href="<TMPL_VAR URL>&lang=<TMPL_VAR CURRENT_LANG>" class="doit"><TMPL_VAR NAME></a>
+        </TMPL_IF>
+        <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS>
+        </TMPL_LOOP>						
+					</td>
+				</tr>
+			</table>
+			<div id="catalogdiv<TMPL_VAR SELECTED_NODE_ID>"></div>	
+	</div>
+	</div>
+		
+	<div class="blue_table_container_bottom">
+		<img src="/admin-side/img/blue_table_container_bottom_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+	</TMPL_UNLESS SHOWCATALOGFORM>
+	
+	
+	
+	
+<TMPL_IF SUBNODES>	
+	<div class="blue_table_container_top">
+		<img src="/admin-side/img/blue_table_container_top_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+	
+	<div class="blue_table_container">
+	<div style="width:100%">
+			<table class="tree_content_table" border="0">
+				<tr>
+					<th colspan="2">&nbsp;</th>
+				</tr>
+<TMPL_LOOP SUBNODES>			
+				<tr>
+				<td class="white_cell" style="width:10%;">
+					<a href="?id=<TMPL_VAR ID>&action=movecatalogup"><img src="/admin-side/img/arrow_up.gif" border="0"></a>
+					<a href="?id=<TMPL_VAR ID>&action=movecatalogdown"><img src="/admin-side/img/arrow_down.gif" border="0"></a>
+				</td>
+					<td class="white_cell"><TMPL_VAR NAME></td>
+				</tr>
+				<tr>
+					<td class="links_menu" colspan="2">
+		<TMPL_IF CANADD><a href="?id=<TMPL_VAR ID>&action=insertcatalogform&lang=<TMPL_VAR CURRENT_LANG>" onclick="ajax_url(this.href,'catalogdiv<TMPL_VAR ID>');return false;">Добавить уровень</a>&nbsp;|&nbsp;</TMPL_IF>
+		<a href="?id=<TMPL_VAR ID>&action=updatecatalogform&lang=<TMPL_VAR CURRENT_LANG>" onclick="ajax_url(this.href,'catalogdiv<TMPL_VAR ID>');return false;">Редактировать</a>&nbsp;|&nbsp;
+		<TMPL_IF CANDELETE><a href="?id=<TMPL_VAR ID>&action=deletecatalog&lang=<TMPL_VAR CURRENT_LANG>" onclick="return confirm('Вы действительно хотите удалить узел?');">Удалить</a>&nbsp;|&nbsp;</TMPL_IF>
+        <TMPL_LOOP EXTRA_LINKS>
+        <TMPL_IF AJAX>
+        	<a href="<TMPL_VAR URL>&lang=<TMPL_VAR CURRENT_LANG>" class="doit"  onclick="ajax_url('<TMPL_VAR URL>&lang=<TMPL_VAR CURRENT_LANG>','catalogdiv<TMPL_VAR ID>');return false;"><TMPL_VAR NAME></a>
+        <TMPL_ELSE>
+        	<a href="<TMPL_VAR URL>&lang=<TMPL_VAR CURRENT_LANG>" class="doit"><TMPL_VAR NAME></a>
+        </TMPL_IF>
+        <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS>
+        </TMPL_LOOP>						
+        </td>
+		<!-- form container -->
+      	<tr><td id="catalogdiv<TMPL_VAR ID>" colspan="2" style="padding:0px;border:none;"></td></tr>				
+      	<!-- form container / -->		
+				</tr>
+</TMPL_LOOP SUBNODES>				
+			</table>
+	</div>
+	</div>
+	
+	<div class="blue_table_container_bottom">
+		<img src="/admin-side/img/blue_table_container_bottom_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+</TMPL_IF SUBNODES>	
+</TMPL_IF SELECTED_NODE_ID>	
+</TMPL_IF SHOWCHILDRENS>
+
+
+
+
+<TMPL_IF SHOWPOSITIONS>
+
+ <!-- top navigation bar -->                     
+ <table border="0" style="margin: 0 0 10 0px; width:100%;">
+ <tr><td>
+ <!-- top links -->
+ <table border="0">
+ <tr>
+ <TMPL_LOOP TOP_LINKS>
+  <td>
+    <!-- white oblako begin -->
+    <table class="doit" border="0">
+    <tr><td width="2"><img src="/admin-side/img/doit_lt.gif" width="2" height="2" alt="" /></td><td><!-- empty --></td><td width="2"><img src="/admin-side/img/doit_rt.gif" width="2" height="2" alt="" /></td></tr>
+    <tr><td><!-- empty --></td><td style="padding: 2px 0;"><div class="item"><TMPL_IF SELECTED><p class="selected"><TMPL_VAR NAME></p><TMPL_ELSE SELECTED><a href="<TMPL_VAR URL>" class="doit"<TMPL_IF AJAX_URL> onclick="ajax_url('<TMPL_VAR AJAX_URL>','formb0');return false;"</TMPL_IF>><TMPL_VAR NAME></a></TMPL_IF SELECTED></div></td><td><!-- empty --></td></tr>
+    <tr><td width="2"><img src="/admin-side/img/doit_lb.gif" width="2" height="2" alt="" /></td><td><!-- empty --></td><td><img src="/admin-side/img/doit_rb.gif" width="2" height="2" alt="" /></td></tr>
+    </table>		
+    <!-- white oblako end -->
+  </td>
+ </TMPL_LOOP TOP_LINKS>
+ </tr>
+ </table>  
+ <!-- top links / -->
+
+ </td><td style="text-align:right;">
+ <!-- filter links -->
+ <table border="0" style="float:right;">
+ <tr>
+ <TMPL_LOOP FILTERS>
+  <td>
+    <!-- white oblako begin -->
+    <table class="doit" border="0">
+    <tr><td width="2"><img src="/admin-side/img/doit_lt.gif" width="2" height="2" alt="" /></td><td><!-- empty --></td><td width="2"><img src="/admin-side/img/doit_rt.gif" width="2" height="2" alt="" /></td></tr>
+    <tr><td><!-- empty --></td><td style="padding: 2px 0;"><div class="item"><TMPL_IF SELECTED><p class="selected"><TMPL_VAR NAME></p><TMPL_ELSE SELECTED><a href="<TMPL_VAR URL>" class="doit"<TMPL_IF AJAX_URL> onclick="ajax_url('<TMPL_VAR AJAX_URL>','formb0');return false;"</TMPL_IF>><TMPL_VAR NAME></a></TMPL_IF SELECTED></div></td><td><!-- empty --></td></tr>
+    <tr><td width="2"><img src="/admin-side/img/doit_lb.gif" width="2" height="2" alt="" /></td><td><!-- empty --></td><td><img src="/admin-side/img/doit_rb.gif" width="2" height="2" alt="" /></td></tr>
+    </table>		
+    <!-- white oblako end -->
+  </td>
+ </TMPL_LOOP FILTERS>	
+ </tr>
+ </table>
+ <!-- filter links /-->
+ </td></tr>
+ </table>
+ <!-- top navigation bar /  -->                     
+
+ <!-- container --> 
+ <div id="formb0"></div>
+ <!-- container /--> 
+
+
+	<div class="blue_table_container_top">
+		<img src="/admin-side/img/blue_table_container_top_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+	<div class="blue_table_container">
+  		<div style="width:100%">
+			<table class="tree_content_table" border="0">
+				<!-- headers row  -->
+				<tr>
+                <TMPL_LOOP HEADERS>				
+					<th <TMPL_IF WIDTH>style="width:<TMPL_VAR WIDTH>"</TMPL_IF>>
+					<TMPL_IF SELECTED_ASC><img src="/admin-side/img/arrow_up.gif"></TMPL_IF>
+					<TMPL_IF SELECTED_DESC><img src="/admin-side/img/arrow_dn.gif"></TMPL_IF><TMPL_IF ORDER><a href="<TMPL_VAR ORDER>" <TMPL_UNLESS SELECTED_ORDER>style="font-weight:normal"</TMPL_UNLESS>></TMPL_IF><TMPL_VAR NAME><TMPL_IF ORDER></a></TMPL_IF>
+					</th>
+                </TMPL_LOOP HEADERS>					
+				</tr>
+				<!-- headers row / -->
+				<!-- data rows -->
+	    		<TMPL_LOOP DATA>
+				<!-- data columns -->
+				<tr>
+				<TMPL_LOOP FIELDS>
+					<td class="content">
+                    	<TMPL_IF URLFIELD><a href="<TMPL_VAR URLFIELD>" title="<TMPL_VAR TITLE>"></TMPL_IF>
+                            <TMPL_IF IS_IMAGE>	
+                                <TMPL_IF VALUE><img src="<TMPL_VAR DIR><TMPL_VAR VALUE>"></TMPL_IF>
+                            <TMPL_ELSIF IS_FILE>
+                                <TMPL_IF VALUE><b>Загружен</b><TMPL_ELSE>Отсутствует</TMPL_IF>
+                            <TMPL_ELSE>	
+                                <TMPL_VAR VALUE>
+                            </TMPL_IF>
+                    	<TMPL_IF URLFIELD></a></TMPL_IF>
+					</td>
+				</TMPL_LOOP FIELDS>
+				</tr>
+				<!-- data columns / -->				
+				
+				<!-- links row -->
+				<tr>
+					<td class="links_menu" colspan="<TMPL_VAR HEADERS_CNT>">
+         			<TMPL_LOOP EXTRA_LINKS>
+         				<TMPL_IF AJAX>
+         					<a href="<TMPL_VAR URL>" class="doit"  onclick="ajax_url('<TMPL_VAR URL>','<TMPL_VAR AJAX_FORM_CONTAINER>');return false;"><TMPL_VAR NAME></a>&nbsp;&nbsp;&nbsp;&nbsp;
+         				<TMPL_ELSE>
+         					<a href="<TMPL_VAR URL>" class="doit"><TMPL_VAR NAME></a>&nbsp;&nbsp;&nbsp;&nbsp;
+         				</TMPL_IF>
+         			</TMPL_LOOP>
+         			
+         			
+         			<TMPL_IF MOVE_URL>
+                        <a href="<TMPL_VAR MOVE_URL>&dir=up" class="doit">Вверх</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <a href="<TMPL_VAR MOVE_URL>&dir=down" class="doit">Вниз</a>&nbsp;&nbsp;&nbsp;&nbsp;
+         			</TMPL_IF>
+         			
+                	<TMPL_IF EDIT_URL><a href="<TMPL_VAR EDIT_URL>" class="doit"<TMPL_IF AJAX_EDIT_URL>onclick="ajax_url('<TMPL_VAR AJAX_EDIT_URL>','<TMPL_VAR AJAX_FORM_CONTAINER>');return false;"</TMPL_IF>><TMPL_VAR EDIT_LINK_NAME></a>&nbsp;&nbsp;&nbsp;&nbsp;</TMPL_IF>
+	        		<TMPL_IF DELETE_URL><a onclick="return window.confirm('Вы действительно хотите удалить запись ?');" href="<TMPL_VAR DELETE_URL>" class="doit"><TMPL_VAR DELETE_LINK_NAME></a>&nbsp;&nbsp;</TMPL_IF>
+					
+					</td>
+				</tr>
+				<!-- links row / -->
+				<!-- form container -->
+	        	<tr><td id="<TMPL_VAR AJAX_FORM_CONTAINER>" colspan="<TMPL_VAR HEADERS_CNT>" style="padding:0px;border:none;"></td></tr>				
+	        	<!-- form container / -->
+	    	</TMPL_LOOP DATA>			
+	    	<!-- data rows / -->
+			</table>
+			</div>
+	</div>
+	<div class="blue_table_container_bottom">
+		<img src="/admin-side/img/blue_table_container_bottom_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+	
+<!-- PAGENAV -->
+<TMPL_IF PAGES>
+<center><table class="doit" border="0"><tr>
+<TMPL_LOOP PAGES>
+<TMPL_IF IS_PREV><td class="page"><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>"><img src="/admin-side/img/prev_page.gif" width="19" height="24" border="0" alt="Предыдущая страница"></a></td></TMPL_IF>
+<TMPL_IF IS_NEXT><td class="page"><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>"><img src="/admin-side/img/next_page.gif" width="19" height="24" border="0" alt="Следующая страница"/></a></td></TMPL_IF>
+<TMPL_IF NORMAL><td class="left"></td><td class="center"><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>"><TMPL_VAR PAGE></a></td><td class="right"></td></TMPL_IF>
+<TMPL_IF CURRENT><td class="left"></td><td class="center"><p><TMPL_VAR PAGE></p></td><td class="right"></td></TMPL_IF>
+<TMPL_UNLESS __LAST__><td class="space"></td></TMPL_UNLESS>
+</TMPL_LOOP PAGES>
+</tr></table></center>
+</TMPL_IF PAGES>
+<!-- /PAGENAV -->	
+
+</TMPL_IF SHOWPOSITIONS>
+						</td>
+<!--******************************************* RIGHT COLOMN LAYER end ******************************************-->						
+						
+					</tr>	
+				</table>		
+				
+				
+		</td>
+		
+	</tr>
+<!--********************************** MIDDLE LAYER end ********************************************-->				
+<!--********************************** FOOTER LAYER begin ********************************************-->				
+	<tr>
+		<td id="main_table_footer">
+			<div id="footer_box">
+				© 2008 Nikolas Group. All right reserved.
+			</div>
+		</td>
+	</tr>
+<!--********************************** FOOTER LAYER end ********************************************-->					
+</table>
+</body>
+</html>

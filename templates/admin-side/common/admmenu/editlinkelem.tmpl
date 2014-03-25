@@ -1,0 +1,44 @@
+<div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+<table class="info_new_page" border=1>
+	<tr><th colspan="2">Cвязанные пункты меню в других подсайтах</td></tr>
+      
+    <TMPL_LOOP LINKED_ELEMENTS>
+    <tr>
+          <td width="40%" colspan="2">
+              <div>
+                <!-- input type="checkbox" class="checkbox" name="<TMPL_VAR KEY>_chb" id="<TMPL_VAR KEY>_chb" value="1"/ -->
+                Подсайт: <TMPL_VAR SUBSITE_NAME> <img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" style="border:1px solid #cfe1ee;">
+                Пункт меню: <TMPL_VAR NODE_NAME>
+              </div>
+          </td>
+    </tr>
+
+
+    <!-- TODO: оформить/проверить вывод сообщений -->
+    <tr style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>; width:100%;" id="errortr_<TMPL_VAR SUBSITE_ID>">
+        <td colspan="2">
+            <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Ошибка_<TMPL_VAR SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
+        </td>
+    </tr>
+    <tr style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>; width:100%;" id="messagetr_<TMPL_VAR SUBSITE_ID>">
+        <td colspan="2">
+            <div class="errormsg" id="message_<TMPL_VAR SUBSITE_ID>">Сообщение_<TMPL_VAR SUBSITE_ID> <TMPL_VAR MESSAGE></div>
+        </td>
+    </tr>            
+      
+    <tr>
+          <td>
+                <div style="border:0px solid green; margin: 0 10 0 20px;">
+                    Название пункта:
+                    <input class="info_text" type="text" name="<TMPL_VAR KEY>_name" id="<TMPL_VAR KEY>_name" value="<TMPL_VAR NAME ESCAPE=HTML>"/> 
+                </div>
+          </td>
+          <td>
+                <div style="border:0px solid green; margin: 0 10 0 20px;">
+                    URL:
+                    <input class="info_text" type="text" name="<TMPL_VAR KEY>_url" id="<TMPL_VAR KEY>_url" value="<TMPL_VAR URL ESCAPE=HTML>"/>
+                </div>
+          </td>
+    </tr>
+    </TMPL_LOOP LINKED_ELEMENTS>
+</table>

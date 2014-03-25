@@ -1,0 +1,238 @@
+<div id="menu_content" ></div>
+<div id="info_content">
+  <div style="width:100%;">
+    <div id="table_content" class="content_table_tree">
+ 
+ 		<!--div class="divConteinerTable">
+        <table id="content">
+        	<tbody><tr>
+        	 <td class="content">
+        	  <div class="linkAccess">Доступ к сайту:</div>
+        			<form  method="get">
+							<select class="border-for-select">					
+									<option value="0" selected="selected">Глобальные администраторы</option>						
+									<option value="4">Тестовая</option>						
+							</select>				
+        				<input src="/admin-side/img/buttons/select.gif" style="vertical-align: -6px;" type="image">
+        			</form>
+        		</td>
+        	</tr>
+
+		</tbody></table>
+		</div-->
+
+       <table id="table_tree" style="border: none;">
+    
+         <tr>
+           <td class="styleForTdWidthTree">
+           
+           
+<!-- DIV TREE -->
+<TMPL_COMMENT>
+	TODO:
+		IS_SELECTED. Переменная SELECTED - не выставляется в коде вывода дерева в шаблон
+		INACTIVE
+</TMPL_COMMENT>
+<TMPL_LOOP TREE>
+
+<TMPL_IF NODE_START>
+	<!-- node <TMPL_VAR ID> start -->
+	
+	<TMPL_IF LEVEL0_LEAF>
+		<div class="element_0 <TMPL_IF INACTIVE>inactive_element_0</TMPL_IF INACTIVE>">
+	</TMPL_IF LEVEL0_LEAF>
+	
+	<TMPL_IF LEVEL0_FOLDER>
+		<TMPL_COMMENT>этот div отображает папку бэкграундом TODO: учесть INACTIVE ? </TMPL_COMMENT>
+		<!--div class="level_0 <TMPL_IF INACTIVE>inactive_level_0</TMPL_IF INACTIVE>" style="border:1px solid red; margin:0px;"-->
+		 <img src="/admin-side/img/imgForTree/folderopen0.gif" class="img_folder_level_0"/>
+			 <div class="new_level_background">
+	</TMPL_IF LEVEL0_FOLDER>
+	
+	<TMPL_IF LEVEL_LEAF>
+		<TMPL_IF LAST_CHILD>
+			<TMPL_IF SELECTED>
+				<TMPL_COMMENT>!!!! переменная называется IS_SELECTED ;-) Этот код не работает хз сколько лет</TMPL_COMMENT>
+				<div class="new_level_open_last <TMPL_IF INACTIVE>inactive_new_level_open_last</TMPL_IF INACTIVE>">
+			<TMPL_ELSE>
+				<div class="new_level_close_last <TMPL_IF INACTIVE>inactive_new_level_close_last</TMPL_IF INACTIVE>">
+			</TMPL_IF>
+		<TMPL_ELSE LAST_CHILD>
+			<TMPL_IF SELECTED>
+				<div class="new_level_open <TMPL_IF INACTIVE>inactive_new_level_open</TMPL_IF INACTIVE>">
+			<TMPL_ELSE>
+				<div class="new_level_background">
+				<div class="new_level_close <TMPL_IF INACTIVE>inactive_new_level_close</TMPL_IF INACTIVE>">
+			</TMPL_IF>
+		</TMPL_IF LAST_CHILD>
+	</TMPL_IF LEVEL_LEAF>
+	
+	<TMPL_IF LEVEL_FOLDER>
+		<TMPL_UNLESS LAST_CHILD>
+			<TMPL_COMMENT>Добавляет вертикальную палку к нижележащему элементу</TMPL_COMMENT>
+			<div class="new_level_background">
+		</TMPL_UNLESS LAST_CHILD>
+
+		<TMPL_COMMENT>Дает отступ вправо для содержимого</TMPL_COMMENT>
+		<div class="new_level <TMPL_IF INACTIVE>inactive_new_level</TMPL_IF INACTIVE>">
+	
+		<a href="?nodeid=<TMPL_VAR ID>#container<TMPL_VAR ID>">
+		<TMPL_IF CHILDS_CLOSED>
+			<img src="/admin-side/img/imgForTree/level_closed.gif" class="img_folder" border=0>
+		<TMPL_ELSE CHILDS_CLOSED>
+			<img src="/admin-side/img/imgForTree/level000_new.gif" class="img_folder" border=0>
+		</TMPL_IF CHILDS_CLOSED>
+		</a>
+	   
+		<TMPL_COMMENT>Добавляет вертикальную палку к чайлду</TMPL_COMMENT>
+		<div class="new_level_top  <TMPL_IF CHILDS_CLOSED>closed</TMPL_IF>" >
+	</TMPL_IF LEVEL_FOLDER>
+  
+	<!-- node <TMPL_VAR ID> data -->
+		<div class="info_privileges edit-menu">
+			<table>
+			  <tr><td class="td-width-title">
+				<div id="container<TMPL_VAR ID>" class="div-left-info-tree">
+				<a href="?nodeid=<TMPL_VAR ID>#container<TMPL_VAR ID>">
+					<TMPL_IF IS_SELECTED><font color="red"></TMPL_IF IS_SELECTED>
+					<TMPL_VAR NAME>
+					<TMPL_IF IS_SELECTED></font></TMPL_IF IS_SELECTED>
+					</a>
+					<!-- HasClosedChilds: <TMPL_VAR CHILDS_CLOSED> -->
+				</div>
+		 
+				<div  class="div-right-info-tree">
+					<a href="#" onclick=""><img src="/admin-side/img/off.gif" alt="" align="top" border="0"></a>&nbsp;
+					<a href="?action=insert&id=<TMPL_VAR ID>" onclick="ajax_url(this.href+'&_ajax=1','tree_form<TMPL_VAR ID>'); return false;"><img src="/admin-side/img/plus.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+					<a href="?action=update&id=<TMPL_VAR ID>" onclick="ajax_url(this.href+'&_ajax=1','tree_form<TMPL_VAR ID>'); return false;"><img src="/admin-side/img/pen.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+					<a href="?action=del&id=<TMPL_VAR ID>"><img src="/admin-side/img/mines.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+					<a href="?action=move_up&id=<TMPL_VAR ID>"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
+					<a href="?action=move_down&id=<TMPL_VAR ID>"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
+				</div>
+			   </td>
+			  </tr>  						
+			</table>
+		</div>
+		<div class="new-line"> 
+			<table style="border: none;">
+				<tr><td id='tree_form<TMPL_VAR ID>' style="border: none;"></td></tr>
+			</table>
+		</div>
+	<!-- node <TMPL_VAR ID> data end -->
+	
+	<TMPL_IF LEVEL_FOLDER></div></TMPL_IF>
+	<TMPL_IF LEVEL0_FOLDER></div></TMPL_IF>
+	
+	<!-- node <TMPL_VAR ID> start end -->
+</TMPL_IF NODE_START>
+
+<TMPL_IF NODE_END>
+	<!-- node <TMPL_VAR ID> end -->
+	<TMPL_IF LEVEL0_FOLDER><!--/div--></TMPL_IF LEVEL0_FOLDER>
+	<TMPL_IF LEVEL0_LEAF></div></TMPL_IF LEVEL0_LEAF>
+	<TMPL_IF LEVEL_FOLDER> </div> <TMPL_UNLESS LAST_CHILD></div></TMPL_UNLESS LAST_CHILD> <!--/div--> </TMPL_IF LEVEL_FOLDER>
+	<TMPL_IF LEVEL_LEAF>  </div> <TMPL_UNLESS LAST_CHILD></div></TMPL_UNLESS LAST_CHILD> </TMPL_IF LEVEL_LEAF>
+	<!-- node <TMPL_VAR ID> end end -->
+</TMPL_IF NODE_END>
+
+</TMPL_LOOP TREE>
+<!-- /DIV TREE -->
+ 
+           </td>
+
+    </tr>
+ </table>
+ <br><br>
+<table id="table_tree" style="border: none;">
+         <tr>
+           <td class="styleForTdWidthTree">
+<!-- TABLE TREE -->
+<table class="contentTree">
+<TMPL_LOOP TREE1>
+<tr NodeId="" NodeParentId=""><td>
+<TMPL_LOOP LEVELS>
+	 <TMPL_IF IS_LEAF>
+	 	 <IMG src="/admin-side/img/tree/page.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_FOLDER>
+	 	 <IMG src="/admin-side/img/tree/folder.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_FOLDERO>
+	 	 <IMG src="/admin-side/img/tree/folderopen.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_LINE>
+	 	 <IMG src="/admin-side/img/tree/line.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_JOIN>
+	 	 <IMG src="/admin-side/img/tree/join.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_JOINB>
+	 	 <IMG src="/admin-side/img/tree/joinbottom.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_BLANK>
+	 	 <IMG src="/admin-side/img/tree/line_blank.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_MINUSB>
+	 	 <IMG src="/admin-side/img/tree/minus1_last.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_MINUS>
+	 	 <IMG src="/admin-side/img/tree/minus1.gif" align=top class="floatLeft">
+	 </TMPL_IF>
+	 <TMPL_IF IS_PLUST>
+	 	 <A href="#"><IMG src="/admin-side/img/tree/plus1_top.gif" align=top class="floatLeft"></A>
+	 </TMPL_IF>
+</TMPL_LOOP>
+<TMPL_IF URL>
+<TMPL_IF SELECTED>
+<div class="border-bottom">
+<span style="float: left;">
+	<!--A class=tt href="<TMPL_VAR URL>"><FONT color="red"><TMPL_VAR NAME></font></A><TMPL_VAR NAME2-->
+    <TMPL_VAR NAME>
+</span>
+<TMPL_ELSE SELECTED>
+<div class="border-bottom">
+<span style="float: left;">
+	<!-- A class=tt href="<TMPL _VAR URL>"><TMPL _VAR NAME></A><TMPL _VAR NAME2-->
+    <TMPL_VAR NAME>
+</span>
+</TMPL_IF SELECTED>
+<TMPL_ELSE URL>
+<div class="border-bottom">
+<span style="float: left;">
+	<TMPL_VAR NAME>
+</span>
+</TMPL_IF URL>	
+
+		<small  class="linkInTableTree">
+			 <a href="?action=insertform&id=<TMPL_VAR ID>" onclick="ajax_url(this.href+'&_ajax=1','tree_form<TMPL_VAR ID>'); return false;" title="Добавить подпункт"><img src="/admin-side/img/plus.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+			 <a href="?action=updateform&id=<TMPL_VAR ID>" onclick="ajax_url(this.href+'&_ajax=1','tree_form<TMPL_VAR ID>'); return false;"><img src="/admin-side/img/pen.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+			 <a href="?action=del&id=<TMPL_VAR ID>"><img src="/admin-side/img/mines.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+			 <a href="?action=move_up&id=<TMPL_VAR ID>"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
+			 <a href="?action=move_down&id=<TMPL_VAR ID>"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
+		</small>
+		</div>
+	</td>				          
+</tr>
+<tr><td colspan="2" class="noBorder" id="tree_form<TMPL_VAR ID>"></td></tr>
+</TMPL_LOOP>
+</table>
+<!-- /TABLE TREE -->
+
+ 
+ </td>
+ <td>
+ <TMPL_VAR TREE2>
+ </td></tr>
+ </table>
+ 
+ 
+ 
+ 
+     </div> 
+   </div>
+ </div>
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>

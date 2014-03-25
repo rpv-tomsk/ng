@@ -1,0 +1,104 @@
+<TMPL_UNLESS IS_AJAX>  
+<div id="menu_content"> </div>
+    <div id="info_content" style="padding-bottom:10px;">	
+	<div style="width:100%;" id="<TMPL_VAR CONTAINER>">	
+</TMPL_UNLESS IS_AJAX>
+
+<iframe name='ifr<TMPL_VAR KEY_VALUE>' style="display: none;"></iframe>
+<form action="<TMPL_VAR FORM_URL>" method="post" enctype="multipart/form-data" id="form<TMPL_VAR KEY_VALUE>" name="form<TMPL_VAR KEY_VALUE>" onsubmit="document.forms['form<TMPL_VAR KEY_VALUE>'].elements['_ajax'].value='1'; document.forms['form<TMPL_VAR KEY_VALUE>'].target='ifr<TMPL_VAR KEY_VALUE>'; return true;">
+<input type="hidden" name="resblock" value="service_message<TMPL_VAR KEY_VALUE>">
+<input type="hidden" name="ref" value="<TMPL_VAR REF>">
+<input type="hidden" name="all" value="<TMPL_VAR ALL>">
+<input type="hidden" name="id" value="<TMPL_VAR ID>">
+<input id="_ajax" type="hidden" name="_ajax" value="0">
+
+
+<table class="component_form" ><tbody>
+<TMPL_IF LINKED_PAGES>
+<tr><td class="title_img"><p class="comment_input"><b>Выберите страницы, которые хотите удалить:</b></p></td></tr>
+
+<tr>
+  <td class="title">
+   
+    <table class="info_new_page">
+    <tr>
+      <th style="width:25px;"></th>
+      <th style="width:100px;">Язык</th>
+      <th style="width:100px;">Сайт</th>
+      <th>Название страницы</th>
+    </tr>
+    
+      <TMPL_LOOP LINKED_PAGES>
+     
+      <tr style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>; width:100%;" id="errortr_<TMPL_VAR SUBSITE_ID>">
+      <td colspan="6">
+          <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Ошибка_<TMPL_VAR SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
+      </td>
+      </tr>            
+
+      <tr style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>; width:100%;" id="messagetr_<TMPL_VAR SUBSITE_ID>">
+      <td colspan="6">
+          <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Сообщение_<TMPL_VAR SUBSITE_ID> <TMPL_VAR MESSAGE></div>
+      </td>
+      </tr>            
+
+      
+      <tr>
+        <td style="text-align:center;"><input type="checkbox"  class="checkbox" name="dodelnode_<TMPL_VAR NODE_ID>" id="dodelnode_<TMPL_VAR NODE_ID>" value="1"  <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF> /></td>
+        <td style="text-align:center;">
+            <img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" title="<TMPL_VAR LANG_NAME>" alt="<TMPL_VAR LANG_NAME>" style="border:1px solid #cfe1ee;">
+		</td>
+        <td><TMPL_VAR SUBSITE_NAME></td>
+        <td><TMPL_VAR NODE_NAME></td>
+      </tr>
+      </TMPL_LOOP LINKED_PAGES>
+    </table>
+    
+
+  </td>
+</tr>
+<TMPL_ELSE LINKED_PAGES>
+	<TMPL_IF MESSAGE>
+		<tr><td class="title_img"><b><TMPL_VAR MESSAGE></b></td></tr>
+	<TMPL_ELSE>
+		<tr><td class="title_img"><b>Вы действительно хотите удалить эту страницу ? </b></td></tr>
+	</TMPL_IF>
+    
+    <input type="hidden" name="dodelnode_<TMPL_VAR ID>" id="dodelnode_<TMPL_VAR ID>" value="1">
+</TMPL_IF LINKED_PAGES>
+
+<tr>
+<td class="title_img">
+<center>
+	<TMPL_UNLESS MESSAGE>
+		<input type="image" src="/admin-side/img/buttons/delete.gif"  style="border-width: 0;" />
+	</TMPL_UNLESS MESSAGE>
+    <TMPL_IF IS_AJAX>
+        <a href="#" onclick="clear_block('<TMPL_VAR CONTAINER escape=html>');return false;">
+    <TMPL_ELSE>
+        <a href="<TMPL_VAR REF>">
+    </TMPL_IF IS_AJAX>
+	<TMPL_IF MESSAGE>
+		<img src="/admin-side/img/buttons/close.gif" style="border-width: 0;">
+	<TMPL_ELSE>
+		<img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;">
+	</TMPL_IF>
+        
+        </a>
+</center>    
+</td>
+</tr>
+
+</tbody></table>
+</form>
+
+
+<TMPL_UNLESS IS_AJAX>
+</div>
+</div>
+	<div id="middle_bottom">
+			<div id="middle_bottom_left">
+				<div id="middle_bottom_right"></div>
+			</div>	
+	</div>
+</TMPL_UNLESS IS_AJAX>

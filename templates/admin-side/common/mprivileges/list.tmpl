@@ -1,0 +1,30 @@
+<div id="menu_content">
+</div>
+
+<div id="info_content">
+    <div style="width: 100%;">
+        <div class="pageprivileges" style="padding-top:20px;">
+            <div class="modulename"><p>Список модулей</p></div>
+            <TMPL_LOOP MODULES>
+            <div class="privilege">
+                <p class="name"><TMPL_VAR NAME></p>
+                <p class="links">[<a href="<TMPL_VAR BASEURL><TMPL_VAR ID>/">Привилегии</a>]</p>
+            </div>
+            </TMPL_LOOP MODULES>
+            <!--<div class="privilege">-->
+            <!--    <p class="name">Модуль</p>-->
+            <!--    <p class="links">[<a href="#">Привилегии</a>]</p>-->
+            <!--</div>-->
+            <!--<div class="privilege">-->
+            <!--    <p class="name">Модуль</p>-->
+            <!--    <p class="links">[<a href="#">Привилегии</a>]</p>-->
+            <!--</div>-->
+        </div>
+    </div>
+</div>
+    
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>

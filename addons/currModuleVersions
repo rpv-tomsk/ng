@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+
+@ARRAY  = qw(
+CGI
+CGI::Session
+GD::SecurityImage
+Image::Magick
+MIME::Lite
+MIME::Tools
+MIME::Types
+Config::Simple
+Net::SMTP
+URI::Escape
+HTML::Template::Compiled
+Tree::Simple
+DBI
+DBD::mysql
+File::Copy
+File::Path
+Scalar::Util
+);
+
+
+foreach $m (@ARRAY) {
+
+	eval "use $m;"; $v=$m->VERSION; 
+	print $m."\t\t\t".$v."\n";
+}

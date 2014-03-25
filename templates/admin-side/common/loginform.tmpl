@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title><TMPL_VAR TITLE></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <link rel="stylesheet" href="/admin-side/styles/stylelogin.css">
+  <!--[if lte IE 7]>
+  <link href="/admin-side/styles/styleloginIE.css" rel="stylesheet" type="text/css">
+  <![endif]-->  
+</head>
+<body>
+<div id="page">
+  <form action="/admin-side/login/" method="post">
+    <!-- Очень важные штуки программистов! -->
+    <input type="hidden" name="is_ajax" value="0">
+    <input type="hidden" name="url" value="<TMPL_VAR URL>">
+    <!-- Очень важные штуки программистов закончились! -->
+    <p><label>Логин:</label><input class="text" type="text" name="ng_login"></p>
+    <p><label>Пароль:</label><input class="text" type="password"  name="ng_password"></p>
+    <p><input class="button" value="Войти" type="image" src="/admin-side/img/buttons/enter.gif"></p>
+    <div class="info">
+      <TMPL_IF MESSAGE><blockquote><TMPL_VAR MESSAGE></blockquote></TMPL_IF>  
+      <div>© 2009 <a href="http://nikolas.ru" title="Nikolas Group - Комплексные Internet-решения" target="_blank">Nikolas Group</a>. All rights reserved.</div>
+    </div>
+  </form>
+</div>
+<!-- Перевод фокуса в поле ввода логина. -->
+<script type="text/javascript">
+  document.getElementsByName('ng_login')[0].focus();
+</script>
+</body>
+</html>

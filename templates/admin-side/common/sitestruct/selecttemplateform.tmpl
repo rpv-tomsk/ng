@@ -1,0 +1,32 @@
+<TMPL_IF IS_SELECT>
+        <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+	    <div class="form_contener">
+           <p class="comment_input"><TMPL_VAR NAME></p>
+	       <TMPL_IF IS_NOTNULL><p class="comment_simbol">*</p></TMPL_IF>
+	    </div>
+        <div class="input_info">
+           <div class="selectWrapper">
+             <select name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" class="info_text">
+               <TMPL_LOOP SELECT_OPTIONS>
+                 <option value="<TMPL_VAR ID>"<TMPL_IF SELECTED> selected</TMPL_IF>><TMPL_VAR NAME></option>
+               </TMPL_LOOP>
+             </select>
+           </div>
+        <TMPL_UNLESS HIDE_BUTTON>
+        <div style="float:left;">
+        <input type="image" src="/admin-side/img/buttons/choose.gif" name="selectemplate" style="border-width: 0;margin-top:1px;margin-left:5px;" />
+        </div>
+        </TMPL_UNLESS HIDE_BUTTON>
+</div>
+</TMPL_IF IS_SELECT>
+
+<TMPL_UNLESS HIDE_CLOSE_BTN>
+<center>
+    <TMPL_IF FORM.IS_AJAX>
+        <a href="#" onclick="clear_block('<TMPL_IF FORM.CONTAINER><TMPL_VAR FORM.CONTAINER escape=html><TMPL_ELSE FORM.CONTAINER><TMPL_IF FORM.NEW>formb0<TMPL_ELSE FORM.NEW>formb<TMPL_VAR FORM.KEY_VALUE></TMPL_IF FORM.NEW></TMPL_IF FORM.CONTAINER>');return false;">
+    <TMPL_ELSE FORM.IS_AJAX>
+        <a href="<TMPL_VAR FORM.REF>">
+    </TMPL_IF FORM.IS_AJAX>
+    <img src="/admin-side/img/buttons/close.gif" style="border-width: 0;"></a>
+</center>    
+</TMPL_UNLESS HIDE_CLOSE_BTN>

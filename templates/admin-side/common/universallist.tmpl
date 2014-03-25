@@ -1,0 +1,194 @@
+<div id="menu_content">				
+        <div id="middle_right_menu">
+            <TMPL_LOOP TOP_LINKS>
+                <strong><a href="<TMPL_VAR URL>" <TMPL_IF TITLE>title="<TMPL_VAR TITLE>"</TMPL_IF TITLE> <TMPL_IF AJAX_URL> onclick="ajax_url('<TMPL_VAR AJAX_URL>','form0');return false;"</TMPL_IF>><TMPL_VAR NAME></a></strong>
+                <TMPL_UNLESS __LAST__><span class="line"></span></TMPL_UNLESS>
+            </TMPL_LOOP TOP_LINKS>            
+
+            <TMPL_IF FILTERS>
+            <span id="listFilters">
+            <TMPL_IF FILTERS.USE_FORM>
+                <form action="<TMPL_VAR FILTERS.ACTION>" method="GET" id="filterform" name="filterform">
+                <input id="_ajax" type="hidden" name="_ajax" value="0">
+                <TMPL_LOOP FILTERS.PARAMS>
+                    <input type="hidden" name="<TMPL_VAR NAME>" value="<TMPL_VAR VALUE>">
+                </TMPL_LOOP FILTERS.PARAMS>
+            </TMPL_IF FILTERS.USE_FORM>
+			<TMPL_LOOP FILTERS.LIST>
+            <TMPL_IF TYPE_SELECT>
+                <span class="name">
+				<TMPL_VAR NAME>&nbsp;
+				</span>
+                 <div class="selectWrapper">
+              		  <select name="<TMPL_VAR FILTER_NAME>" onchange="this.form.elements['_ajax'].value='1';ajax_form('filterform','middle_right_content');">
+                 	   <TMPL_LOOP VALUES>
+                 		   <option value="<TMPL_VAR VALUE>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME></option>
+                 	   </TMPL_LOOPVALUES>
+                	</select>
+                </div>
+            </TMPL_IF TYPE_SELECT>
+            <TMPL_IF TYPE_TABS>
+                <span class="tabs">
+                    <span class="name"><TMPL_VAR NAME>&nbsp;</span>
+                    <TMPL_LOOP VALUES><a href="<TMPL_VAR ACTION>&<TMPL_VAR FILTER_NAME>=<TMPL_VAR VALUE>" <TMPL_IF SELECTED>class="selected"</TMPL_IF SELECTED>><TMPL_VAR NAME></a><TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__></TMPL_LOOP VALUES>
+                </span>
+            </TMPL_IF TYPE_TABS>
+        	</TMPL_LOOP FILTERS.LIST>
+            <TMPL_IF FILTERS.USE_FORM>
+                <NOSCRIPT>
+                <div class="button">
+                    <input type="image" src="/admin-side/img/buttons/choose.gif" alt="Выбрать">
+                </div>
+                </NOSCRIPT>
+                </form>
+            </TMPL_IF FILTERS.USE_FORM>
+        	</span>
+        	</TMPL_IF FILTERS>
+        </div>
+</div>
+
+
+<div id="info_content">
+
+<TMPL_IF BEFORE_LIST_TMPL>
+    <TMPL_INCLUDE_VAR BEFORE_LIST_TMPL>
+</TMPL_IF BEFORE_LIST_TMPL>
+    
+ <!-- container TODO: ZZZ XXX--> 
+ <div id="form_container">
+ <div id="form0" style="width:100%;"><TMPL_VAR SEARCHFORMHTML></div>
+ </div>
+ <!-- container /--> 
+
+
+
+    	
+
+    <!-- -->
+    <div id="table_content">
+        <table id="content" >
+            <!-- Строка заголовков -->
+            <tr >            
+                <TMPL_LOOP HEADERS>
+				  <TMPL_IF HEADER_TEMPLATE>
+                    <TMPL_INCLUDE_VAR HEADER_TEMPLATE>
+ 			      <TMPL_ELSE HEADER_TEMPLATE>
+					<td class="title" style="<TMPL_IF WIDTH>width:<TMPL_VAR WIDTH>;</TMPL_IF><TMPL_IF IS_POSORDER>text-align:right;padding-right:20px;</TMPL_IF IS_POSORDER>">			
+                    <TMPL_IF ORDER><nobr><a href="<TMPL_VAR ORDER>" <TMPL_IF SELECTED_ASC> title="Кликните, чтобы отсортировать по убыванию" </TMPL_IF> <TMPL_IF SELECTED_DESC> title="Кликните, чтобы отсортировать по возрастанию" </TMPL_IF> ><TMPL_ELSE ORDER><p></TMPL_IF>
+                    <TMPL_VAR NAME><TMPL_IF ORDER></a><TMPL_ELSE ORDER></p></TMPL_IF>
+					<TMPL_IF SELECTED_ASC><span id="img_upp">&nbsp;&nbsp;</span></TMPL_IF>
+					<TMPL_IF SELECTED_DESC><span id="img_down">&nbsp;&nbsp;</span></TMPL_IF>
+					</nobr>
+					</td>
+                  </TMPL_IF HEADER_TEMPLATE>
+                </TMPL_LOOP HEADERS>	
+    
+            </tr>
+            <!-- /Строка заголовков -->
+            
+            	<!-- data rows -->
+	    		<TMPL_LOOP DATA>
+				<!-- data columns -->
+				
+                <tr><td colspan="<TMPL_VAR HEADERS_CNT>"><a href="#anchor_<TMPL_VAR AJAX_FORM_CONTAINER>" name="anchor_<TMPL_VAR AJAX_FORM_CONTAINER>"></a></tr>
+			
+				<tr>
+				<TMPL_LOOP COLUMNS>
+					<TMPL_IF CUSTOM_TEMPLATE>
+                        <TMPL_INCLUDE_VAR CUSTOM_TEMPLATE>
+                    <TMPL_ELSE CUSTOM_TEMPLATE>
+                        <td class="content"  style="<TMPL_IF IS_CHECKBOX>width:100px;</TMPL_IF><TMPL_IF HIGHLIGHT>background:#ffcccc;</TMPL_IF>">
+                        <TMPL_IF IS_IMAGE>	
+                            <TMPL_IF DBVALUE><div id="img_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><img src="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>"></div></TMPL_IF>
+  						<TMPL_ELSIF IS_CHECKBOX>
+	    					<TMPL_IF VALUE>
+			   					<center><img class="checkbox" src="/admin-side/img/checkbox_checked.gif" alt="" width="12" height="12" border="0"></center>
+					  		<TMPL_ELSE VALUE>
+								<center><img class="checkbox" src="/admin-side/img/checkbox_uncheked.gif" alt="" width="12" height="12" border="0"></center>
+							</TMPL_IF VALUE>
+                        <TMPL_ELSIF IS_FILE>
+                            <TMPL_IF DBVALUE><a href="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>">Загружен</a><TMPL_ELSE>Отсутствует</TMPL_IF>
+                        <TMPL_ELSIF IS_SELECT>
+                            <TMPL_VAR selectedName>
+                        <TMPL_ELSE>
+                            <TMPL_IF URLFIELD><a href="<TMPL_VAR URLFIELD>" title="<TMPL_VAR TITLE>"><TMPL_ELSE URLFIELD><p></TMPL_IF>
+                            <TMPL_VAR VALUE>
+                            <TMPL_IF URLFIELD></a><TMPL_ELSE URLFIELD><p></TMPL_IF>
+                        </TMPL_IF>
+					</td>
+				 </TMPL_IF CUSTOM_TEMPLATE>
+				</TMPL_LOOP COLUMNS>
+                
+                
+                
+                <TMPL_IF MOVE_URL>
+                <td class="content_img">
+				<nobr>
+                    <a href="<TMPL_VAR MOVE_URL>&dir=down"><img class="content_img" src="/admin-side/img/img_down.gif" alt="Вниз" width="12" height="15" border="0" align="top"></a>
+                    <a href="<TMPL_VAR MOVE_URL>&dir=up"><img class="content_img" src="/admin-side/img/img_upp.gif" alt="Вверх" width="12" height="15" border="0" align="top"></a>
+              	</nobr>
+			   </td>
+                </TMPL_IF>
+                <TMPL_IF MOVE_URL_HIDDEN>
+                <td class="content_img" style="text-align:center;">
+            		<img src="/admin-side/img/button_no-active.gif" alt="" width="68" height="15" border="0">
+                </td>
+                </TMPL_IF MOVE_URL_HIDDEN>
+				</tr> 
+				
+				<!-- data columns / -->				
+
+                <!-- /Строка элементов управления записи -->
+                <tr>
+                 
+                    <td class="last_line_right_img" colspan="<TMPL_VAR HEADERS_CNT>">
+                        <TMPL_IF ROW_LINKS>
+                        <TMPL_LOOP ROW_LINKS>
+						<nobr>
+                            <a href="<TMPL_VAR URL>" <TMPL_IF AJAX>onclick="ajax_url('<TMPL_VAR AJAX_URL>','<TMPL_VAR AJAX_FORM_CONTAINER>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
+							<TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
+                        </TMPL_LOOP>
+                        </TMPL_IF ROW_LINKS>
+    					</nobr>	             
+				    </td>
+					
+                </tr>
+                <!--  /Строка элементов управления записи  -->
+
+				<!-- form container -->
+	        	<tr><td id="<TMPL_VAR AJAX_FORM_CONTAINER>" colspan="<TMPL_VAR HEADERS_CNT>" style="padding:0px;border:none;"></td></tr>				
+	        	<!-- form container / -->
+				
+	    	</TMPL_LOOP DATA>			
+	    	<!-- data rows / -->
+
+
+                <!-- Тень -->
+        
+        </table>
+    </div>		
+
+<TMPL_IF AFTER_LIST_TMPL>
+    <TMPL_INCLUDE_VAR AFTER_LIST_TMPL>
+</TMPL_IF AFTER_LIST_TMPL>
+
+    <div id="middle_content_bottom">
+        <!-- PAGENAV -->
+        <TMPL_IF PAGES>
+        Страница:
+        <TMPL_LOOP PAGES>
+        <TMPL_IF PREV_LIST><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>">&lt;&lt;</a></TMPL_IF>
+        <TMPL_IF NEXT_LIST><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>">&gt;&gt;</a></TMPL_IF>
+        <TMPL_IF NORMAL><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>"><TMPL_VAR PAGE></a></TMPL_IF>
+        <TMPL_IF CURRENT><span id="select_page"><TMPL_VAR PAGE></span></TMPL_IF>
+        </TMPL_LOOP PAGES>
+        </TMPL_IF PAGES>
+        <!-- /PAGENAV -->    
+    </div>
+	
+</div>
+	<div id="middle_bottom">
+		 <div id="middle_bottom_left">
+		   <div id="middle_bottom_right"></div>
+		 </div>
+	</div>

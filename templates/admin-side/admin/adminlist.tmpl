@@ -1,0 +1,151 @@
+<div id="menu_content">
+        <div id="middle_right_menu">
+            <span style="color:#4b7495;">
+            <TMPL_LOOP TOP_LINKS>
+                <TMPL_IF SELECTED><p class="selected"><TMPL_VAR NAME></p>
+                <TMPL_ELSE SELECTED><strong><a href="<TMPL_VAR URL>" <TMPL_IF AJAX_URL> onclick="ajax_url('<TMPL_VAR AJAX_URL>','form0');return false;"</TMPL_IF>><TMPL_VAR NAME></a></strong>
+                </TMPL_IF SELECTED>
+                <TMPL_UNLESS __LAST__><span class="line"></span></TMPL_UNLESS>
+            </TMPL_LOOP TOP_LINKS>            
+            </span>
+            
+			<span style="float:right">
+			<TMPL_LOOP FILTERS>
+            <TMPL_IF TYPE_SELECT>
+            <TMPL_IF __FIRST__>	
+            <form action="<TMPL_VAR ACTION>" method="GET" id="filter" name="filter">
+            <input id="_ajax" type="hidden" name="_ajax" value="0">
+        	</TMPL_IF __FIRST__>	
+            <span id="middle_right_select" style="float:left;">
+				<span id="name_select" style="color:#4b7495;">
+				<TMPL_VAR NAME>&nbsp;
+				</span>
+			     <span id="contener_select">
+              		  <select name="<TMPL_VAR FILTER_NAME>" onchange="this.form.elements['_ajax'].value='1'; ajax_form('filter','middle_right_content');">
+                 	   <TMPL_LOOP VALUES>
+                 		   <option value="<TMPL_VAR VALUE>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME></option>
+                 	   </TMPL_LOOPVALUES>
+                	</select>
+				</span>
+            </span>
+            <TMPL_IF __LAST__>
+            <NOSCRIPT>
+			<div id="button_select">		
+				<input type="image" src="/admin-side/img/buttons/choose.gif">
+			</div>
+			</NOSCRIPT>
+            </form>
+        	</TMPL_IF __LAST__>
+            </TMPL_IF TYPE_SELECT>
+        	</TMPL_LOOP>
+        	</span>
+        	
+        </div>
+</div>
+
+
+<div id="info_content">
+		<TMPL_IF GROUPS>
+		<div style="width:100%; padding-top:15px;">
+        <table id="content" style="padding-top:0px;margin-top:0px;">
+        	<tr>
+                <td class="content">
+        			<form action="<TMPL_VAR URL>" method="GET">
+                            <div class="selectWrapper" style="margin-right:5px;margin-top:2px;">
+							<select name="group_id">
+								<TMPL_LOOP GROUPS>
+									<option value="<TMPL_VAR ID>" <TMPL_IF SELECTED>selected</TMPL_IF>><TMPL_VAR NAME></option>
+								</TMPL_LOOP>
+                            </select>
+                            </div>
+        				<input type="image" src="/admin-side/img/buttons/select.gif" style="vertical-align: -6px;">
+        			</form>
+        		</td>
+        	</tr>
+		</table>
+		</div>
+		</TMPL_IF GROUPS>
+
+ <!-- container TODO: ZZZ XXX--> 
+ <div id="form_container">
+ <div id="form0" style="width:100%;"></div>
+ </div>
+ <!-- container /--> 
+
+ 
+<div style="width:100%;">
+    
+	
+
+
+    <div id="table_content">
+		
+		<table id="content" class="admin-table">
+        	
+            <!-- Строка заголовков -->
+
+            <!-- /Строка заголовков -->
+            
+            
+            	<!-- data rows -->
+	    		<TMPL_LOOP ADMINS>
+				<!-- data columns -->
+				<TMPL_IF NEWGROUP>
+				<tr>
+					<td colspan="2" class="title"><p>Группа: <TMPL_VAR GROUP_NAME></p></td>
+				</tr>
+				</TMPL_IF>
+				<TMPL_IF NEWLEVEL>
+				<tr>
+					<td colspan="2" class="title"><p>Уровень: <TMPL_VAR LEVEL></p></td>
+				</tr>
+	            <tr>            
+						<td class="title"><p>Логин</p></td>
+						<td class="title"><p>ФИО</p></td>
+	            </tr>				
+				</TMPL_IF>				
+				<tr >					
+					<td class="content"><TMPL_VAR LOGIN></td>
+					<td class="content"><TMPL_VAR FIO></td>
+				</tr> 
+				
+                <!-- /Строка элементов управления записи -->
+                <tr>
+                 
+                    <td class="last_line_right_img" colspan="2">
+                        <TMPL_LOOP EXTRA_LINKS>
+						<nobr>
+                            <a href="<TMPL_VAR URL>" <TMPL_IF AJAX_URL>onclick="ajax_url('<TMPL_VAR AJAX_URL>','admin_<TMPL_VAR ID>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
+							&nbsp;|&nbsp;
+                        </TMPL_LOOP>
+                        <TMPL_IF EDIT_URL><a href="<TMPL_VAR EDIT_URL>" <TMPL_IF AJAX_EDIT_URL>onclick="ajax_url('<TMPL_VAR AJAX_EDIT_URL>','admin_<TMPL_VAR ID>');return false;"</TMPL_IF>>Редактировать</a>&nbsp;|&nbsp;</TMPL_IF EDIT_URL>
+                        <TMPL_IF DELETE_URL><a href="<TMPL_VAR DELETE_URL>" <TMPL_IF AJAX_DELETE_URL>onclick="ajax_url('<TMPL_VAR AJAX_DELETE_URL>','admin_<TMPL_VAR ID>');return false;"</TMPL_IF>>Удалить</a></TMPL_IF DELETE_URL>
+    					</nobr>	             
+				    </td>
+					
+                </tr>
+                <!-- /Строка элементов управления записи -->
+
+				<!-- form container -->
+	        	<tr><td id="admin_<TMPL_VAR ID>" colspan="2" style="padding:0px;border:none;"></td></tr>				
+	        	<!-- form container / -->
+				
+	    	</TMPL_LOOP>			
+	    	<!-- data rows / -->
+
+
+                <!-- Тень -->
+         						
+
+
+
+
+        </table>
+    </div>		
+</div>			
+</div>
+<div id="middle_bottom">
+	<div id="middle_bottom_left">
+	<div id="middle_bottom_right"></div>
+ </div>
+</div>

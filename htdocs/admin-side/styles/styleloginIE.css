@@ -1,0 +1,6 @@
+#page {
+	width: expression((document.documentElement.clientWidth || document.body.clientWidth) < 999 ? '1000px' : 'auto');
+}
+form .button {
+	margin-left: 103px;
+}

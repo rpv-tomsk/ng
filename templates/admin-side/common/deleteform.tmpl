@@ -1,0 +1,74 @@
+<TMPL_UNLESS FORM.IS_AJAX>  
+<div id="menu_content"> </div>
+    <div id="info_content" style="padding-bottom:10px;">	
+	<div style="width:100%;" id="<TMPL_VAR FORM.CONTAINER>">	
+</TMPL_UNLESS FORM.IS_AJAX>
+
+
+
+<div id="service_message<TMPL_VAR FORM.KEY_VALUE>" class="service_message"></div>
+<iframe name='ifr<TMPL_VAR FORM.KEY_VALUE>' style="display: none;"></iframe>
+<form action="<TMPL_VAR FORM.URL>" method="post" enctype="multipart/form-data" id="form<TMPL_VAR FORM.KEY_VALUE>" name="form<TMPL_VAR FORM.KEY_VALUE>" onsubmit="document.forms['form<TMPL_VAR FORM.KEY_VALUE>'].target='ifr<TMPL_VAR FORM.KEY_VALUE>';document.forms['form<TMPL_VAR FORM.KEY_VALUE>'].elements['_ajax'].value='1';">
+<input type="hidden" name="resblock" value="service_message<TMPL_VAR FORM.KEY_VALUE>">
+<input type="hidden" name="ref" value="<TMPL_VAR FORM.REF>">
+<input id="_ajax" type="hidden" name="_ajax" value="0">
+
+<div id="error_<TMPL_VAR FORM.KEY_VALUE>" class="errormsg"><TMPL_VAR FORM.ERRORMSG></div>	
+
+<table class="component_form" ><tbody>
+
+<TMPL_IF FORM.TITLE>
+<tr>
+  <td class="title"><p class="comment_input"><TMPL_VAR FORM.TITLE></p></td>
+</tr>
+</TMPL_IF FORM.TITLE>
+<tr><td class="title_img"><p class="comment_input" id="errormsg_<TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR DELETE_MESSAGE></p></td></tr>
+
+<TMPL_LOOP FORM.ELEMENTS>
+<TMPL_IF IS_HIDDEN>
+  <!-- TODO: check code to display error messages for hidden and parent fieldtypes to global errormsg container -->
+  <input type="hidden" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR VALUE>"/>
+  <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+</TMPL_IF>
+</TMPL_LOOP FORM.ELEMENTS>
+
+
+
+<TMPL_IF FORM.BUTTONS>
+<tr>
+<td class="title_img">
+<center>
+
+<TMPL_LOOP FORM.BUTTONS>
+<TMPL_IF BUTTON>
+    <button name="formaction" id="action" type="submit" class="styleForButtonApply" style="background: #D4E7F6 url(<TMPL_VAR BUTTON.IMG>) no-repeat top;" title="<TMPL_VAR BUTTON.TITLE>" value="<TMPL_VAR BUTTON.VALUE>"><TMPL_VAR BUTTON.VALUE></button>
+</TMPL_IF BUTTON>
+<TMPL_IF TEMPLATE><TMPL_INCLUDE_VAR NAME="TEMPLATE"></TMPL_IF TEMPLATE>
+<TMPL_IF CLOSE_BTN>
+    <TMPL_IF FORM.IS_AJAX>
+        <a href="#" onclick="CloseEditors('<TMPL_VAR FORM.KEY_VALUE>');clear_block('<TMPL_IF FORM.CONTAINER><TMPL_VAR FORM.CONTAINER escape=html><TMPL_ELSE FORM.CONTAINER><TMPL_IF FORM.NEW>form0<TMPL_ELSE FORM.NEW>form<TMPL_VAR FORM.KEY_VALUE></TMPL_IF FORM.NEW></TMPL_IF FORM.CONTAINER>');return false;">
+    <TMPL_ELSE FORM.IS_AJAX>
+        <a href="<TMPL_VAR FORM.REF>" tabindex="10">
+    </TMPL_IF FORM.IS_AJAX>
+    <img src="<TMPL_VAR CLOSE_BTN.IMG>" style="border-width: 0;"></a>
+</TMPL_IF CLOSE_BTN>
+</TMPL_LOOP>
+</center>
+</td>
+</tr>
+</TMPL_IF FORM.BUTTONS>
+
+
+
+</tbody></table>
+</form>
+
+<TMPL_UNLESS FORM.IS_AJAX>
+</div>
+</div>
+	<div id="middle_bottom">
+			<div id="middle_bottom_left">
+				<div id="middle_bottom_right"></div>
+			</div>	
+	</div>
+</TMPL_UNLESS FORM.IS_AJAX>

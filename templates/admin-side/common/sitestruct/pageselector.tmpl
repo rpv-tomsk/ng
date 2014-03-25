@@ -1,0 +1,115 @@
+<div id="menu_content"></div>
+
+<div id="info_content">
+    <div style="width:100%;">
+
+        <!--------------------------------------------------------------->
+
+        <div id="table_content" class="content_table_tree" style="border-bottom: 1px solid #65a7dd;">
+
+
+        <table id="table_tree" >
+            <tr>
+              <th style="text-align:left; padding-left:20px;width:100%;"> Структура сайта </th>              
+            </tr>
+<TMPL_UNLESS TREE>
+<tr><td> Доступные страницы сайта отстуствуют. </td></tr>
+</TMPL_UNLESS TREE>
+            
+<TMPL_IF TREE>
+            <tr>
+                <td style="width:100%;border-bottom:none;" colspan="1">           
+<!-- ZZ TREE -->
+<TMPL_LOOP TREE> 
+<TMPL_IF LEVEL0_LEAF>
+	<div class="element_0 <TMPL_IF INACTIVE>inactive_element_0</TMPL_IF INACTIVE>">
+</TMPL_IF LEVEL0_LEAF>
+<TMPL_IF LEVEL0_FOLDER>
+    <div class="level_0 <TMPL_IF INACTIVE>inactive_level_0</TMPL_IF INACTIVE>">
+        <img src="/admin-side/img/pagepriv/img_fold_new.gif" class="img_folder_level_0">
+		  <div class="new_level_background">
+</TMPL_IF LEVEL0_FOLDER>
+<TMPL_IF LEVEL_LEAF>
+    <TMPL_IF LAST_CHILD>
+        <TMPL_IF SELECTED>
+            <div class="new_level_open_last <TMPL_IF INACTIVE>inactive_new_level_open_last</TMPL_IF INACTIVE>">
+        <TMPL_ELSE>
+            <div class="new_level_close_last <TMPL_IF INACTIVE>inactive_new_level_close_last</TMPL_IF INACTIVE>">
+        </TMPL_IF>
+    <TMPL_ELSE LAST_CHILD>
+        <TMPL_IF SELECTED>
+		
+            <div class="new_level_open <TMPL_IF INACTIVE>inactive_new_level_open</TMPL_IF INACTIVE>">
+        <TMPL_ELSE>
+		    <div class="new_level_background">
+            <div class="new_level_close <TMPL_IF INACTIVE>inactive_new_level_close</TMPL_IF INACTIVE>">
+        </TMPL_IF>
+    </TMPL_IF LAST_CHILD>
+</TMPL_IF LEVEL_LEAF>
+
+<TMPL_IF LEVEL_FOLDER>
+    <TMPL_UNLESS LAST_CHILD>
+        <div class="new_level_background">
+    </TMPL_UNLESS LAST_CHILD>
+    <div class="new_level <TMPL_IF INACTIVE>inactive_new_level</TMPL_IF INACTIVE>">
+        <img src="/admin-side/img/pagepriv/level000_new.gif" class="img_folder">
+		  <div class="new_level_background">
+</TMPL_IF LEVEL_FOLDER>
+
+
+    <!-- tree row -->
+	<div class="info_privileges" >
+						<table>
+						<tr>
+						<td class="title_privileges" style="border-right:none;">
+						<div>
+						<TMPL_VAR NAME>
+						</div>
+						</td>
+                        <td class="container_link">
+                            <TMPL_LOOP PAGEBLOCKS>
+                                <TMPL_IF ALLOWED>
+                                    <a href="<TMPL_VAR URL>"><TMPL_VAR NAME></a>
+                                <TMPL_ELSE ALLOWED>
+                                    <TMPL_VAR NAME>
+                                </TMPL_IF ALLOWED>
+                                <TMPL_UNLESS __LAST__> / </TMPL_UNLESS __LAST__>
+                            </TMPL_LOOP PAGEBLOCKS>
+                        </td>
+						</tr>
+						</table>
+   </div> 
+   <!-- /tree row -->
+   
+   
+<TMPL_IF LEVEL0_FOLDER>	
+  </div>
+</TMPL_IF LEVEL0_FOLDER>
+
+<TMPL_IF LEVEL_FOLDER>	
+    </div>
+</TMPL_IF LEVEL_FOLDER>
+
+<TMPL_IF LEVEL_LEAF>
+    </div></div>
+    <TMPL_IF LAST_CHILD></div> <!-- class=new_level --> <TMPL_IF PARENT_IS_LEVEL><!--</div>--> <!-- level background --></TMPL_IF> </TMPL_IF LAST_CHILD>
+</TMPL_IF LEVEL_LEAF>
+<TMPL_LOOP CLOSERS></div><!-- closer --></TMPL_LOOP CLOSERS>
+</TMPL_LOOP TREE>
+<!-- /ZZ TREE -->
+           
+                </td>
+            </tr>
+</TMPL_IF TREE>
+			        </table>
+        </div> 
+	
+     
+     
+    </div>
+</div>
+<div id="middle_bottom">
+    <div id="middle_bottom_left">
+        <div id="middle_bottom_right"></div>
+    </div>
+</div>

@@ -1,0 +1,138 @@
+<script type="text/javascript">
+
+function addRuleModuleSelected() {
+    var val = $('#addRuleModuleId').val();
+    if (!val) {
+        return addRuleUpdateModulePrivileges([],0);
+    };
+    var params = {};
+    params.moduleId = val;
+    params.nocache = Math.random(10000);
+    params['do'] = 'getModulePrivs';
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else {
+                addRuleUpdateModulePrivileges(data,1);
+            };
+        },
+        data: params,
+        url: '<TMPL_VAR FORMURL>',
+        dataType: 'json'
+    });
+};
+
+function addRuleUpdateModulePrivileges(data,x) {
+    var select = $('#addRulePrivileges').get(0);
+    select.options.length=0;
+    if (x && data.length==0) {
+        var o = new Option('--Все привилегии добавлены--','',false,false);
+        select.options[0] = o;
+        return false;
+    }
+    var o = new Option('--Выберите привилегию--','',false,false);
+    select.options[0] = o;
+    if (!x)
+        return false;
+    
+    var o = new Option('--Добавить все привилегии--','',false,false);
+    select.options[1] = o;
+    
+    var i = 2;
+    for (var ii in data) {
+        var p = data[ii];
+        var o = new Option(p.NAME,p.PRIVILEGE,false,false);
+        select.options[i] = o;
+        i++;
+    };
+    return false;
+};
+
+function addRuleCheckForm(form) {
+    if (!form.moduleId.selectedIndex) {
+        alert('Выберите модуль.');
+        return false;
+    };
+    if (!form.privilege.selectedIndex) {
+        alert('Выберите привилегию.');
+        return false;
+    };
+    var reg=/^\d+$/;
+    if (form.depth.value.length && (!reg.test(form.depth.value) || form.depth.value < 1)) {
+        alert('Глубина: Некорректное значение.');
+        return false;
+    };
+    return true; 
+};
+</script>
+
+<div id="menu_content">
+</div>
+
+<div id="info_content">
+  <div style="width: 100%;">
+    <!--  =Start Content BLOCK=  -->
+   
+    <div style="border:0px solid red; overflow:hidden;padding-bottom:10px;width:100%;padding-top:10px;">
+        <div style="float:left;font-weight:normal;">
+            <a href="<TMPL_VAR BASEURL>">Дерево страниц</a> >
+            <TMPL_LOOP HISTORY>
+                <a href="<TMPL_VAR BASEURL><TMPL_VAR ID>/rules/" <TMPL_IF __LAST__>class="selected"</TMPL_IF>><TMPL_VAR NAME></a><TMPL_UNLESS __LAST__> > </TMPL_UNLESS>
+                <TMPL_IF __LAST__>[<a href="<TMPL_VAR BASEURL>?pageId=<TMPL_VAR ID>">В дереве</a>]</TMPL_IF __LAST__>
+            </TMPL_LOOP HISTORY>
+            <!--<a href="/admin-side/modules/12/">Сайт</a> > <a href="#" class="selected"><TMPL_VAR PAGENAME></a>-->
+        </div>
+    </div>
+
+    <div class="pageprivileges">
+        <TMPL_IF DATA>
+        <TMPL_LOOP DATA>
+        <div class="modulename<TMPL_IF __FIRST__> first</TMPL_IF>">
+            <p><TMPL_VAR NAME></p>
+        </div>
+            <TMPL_LOOP PRIVS>
+            <div class="privilege">
+                <p class="name"><TMPL_VAR NAME></p>
+                <p class="status">(Глубина <TMPL_VAR DEPTH>)</p>
+                <p class="links">[<a href="<TMPL_VAR FORMURL>?moduleId=<TMPL_VAR ID>&priv=<TMPL_VAR PRIVILEGE>&do=delRule">Удалить</a>]</p>
+            </div>
+            </TMPL_LOOP PRIVS>
+        </TMPL_LOOP DATA>
+        <TMPL_ELSE DATA>
+            <div class="modulename"><p>Правила наследования не созданы</p></div>
+        </TMPL_IF DATA>
+        
+        <div class="addRuleBar">
+            <p class="name">Модуль:</p>
+            <form method="POST" action="<TMPL_VAR FORMURL>" onsubmit="return addRuleCheckForm(this);">
+            <input type="hidden" name="do" value="addRule">
+            <div class="selectWrapper">
+            <select name="moduleId" onchange="addRuleModuleSelected();" id="addRuleModuleId">
+                <option value="">--Выберите модуль--</option>
+                <TMPL_LOOP ALLMODULES>
+                    <option value="<TMPL_VAR ID>"><TMPL_VAR NAME></option>
+                </TMPL_LOOP ALLMODULES>
+            </select>
+            </div>
+            <p class="name">Привилегия:</p>
+            <div class="selectWrapper">
+            <select name="privilege" id="addRulePrivileges">
+                <option value="">--Выберите привилегию--</option>
+            </select>
+            </div>
+            <p class="name">Глубина:</p>
+            <input type="text" name="depth" style="float:left; height:18px; width:50px;" value="1">
+            <input type="image" src="/admin-side/img/buttons/add.gif" alt="Добавить" style="margin-left:5px; margin-top:-1px;">
+            </form>
+        </div>
+    </div>
+        
+  </div>
+</div>
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>

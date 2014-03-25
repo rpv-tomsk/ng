@@ -1,0 +1,168 @@
+<div id="menu_content" ></div>
+<div id="info_content">
+  <div style="width:100%;">
+
+    <TMPL_IF SUBSITES>
+    <table id="content" style="padding-top:0px;margin-top:0px;" border=1>
+        <tr>
+            <td class="content">
+                <!--div style="float:left;">Подсайт:</div-->
+                <form action="<TMPL_VAR BASEURL>" method="GET">
+                    <input type="hidden" name="action" value="switchsubsite">
+                    <div class="selectWrapper" style="padding-right:5px;">
+                    <select name="subsite_id">
+                      <TMPL_LOOP SUBSITES>
+                        <option value="<TMPL_VAR ID>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME></option>
+                      </TMPL_LOOP SUBSITES>
+                    </select>
+                    </div>
+                    <input type="image" src="/admin-side/img/buttons/select.gif" style="vertical-align: -6px;">
+                </form>
+            </td>
+        </tr>
+    </table>
+    </TMPL_IF SUBSITES>
+
+    <div id="table_content" class="content_table_tree">
+
+       <table id="table_tree" style="border: none;">
+    
+         <tr>
+           <td class="styleForTdWidthTree">
+           
+           
+<!-- DIV TREE -->
+<TMPL_COMMENT>
+	TODO:
+		IS_SELECTED. Переменная SELECTED - не выставляется в коде вывода дерева в шаблон
+		INACTIVE
+</TMPL_COMMENT>
+<div class="divTree">
+<TMPL_LOOP TREE>
+
+<TMPL_IF NODE_START>
+	<!-- node <TMPL_VAR ID> start -->
+	
+	<TMPL_IF LEVEL0_LEAF>
+		<div class="element_0 <TMPL_IF INACTIVE>inactive_element_0</TMPL_IF INACTIVE>">
+	</TMPL_IF LEVEL0_LEAF>
+	
+	<TMPL_IF LEVEL0_FOLDER>
+    		<TMPL_IF CHILDS_CLOSED>
+              <div class="folder_close <TMPL_IF INACTIVE>inactive_folder_close</TMPL_IF> <TMPL_IF NOACCESS>noaccess_folder_close</TMPL_IF>">
+    		<TMPL_ELSE>
+              <div class="level_0 <TMPL_IF INACTIVE>inactive_level_0</TMPL_IF> <TMPL_IF NOACCESS>noaccess_level_0</TMPL_IF>">
+        	</TMPL_IF>
+			 <div class="new_level_background1">
+	</TMPL_IF LEVEL0_FOLDER>
+	
+	<TMPL_IF LEVEL_LEAF>
+		<TMPL_IF LAST_CHILD>
+			<div class="new_level_close_last  <TMPL_IF NOACCESS>noaccess_new_level_close_last</TMPL_IF> <TMPL_IF INACTIVE>inactive_new_level_close_last</TMPL_IF INACTIVE>">
+		<TMPL_ELSE LAST_CHILD>
+			<div class="new_level_background">
+			<div class="new_level_close <TMPL_IF NOACCESS>noaccess_new_level_close</TMPL_IF> <TMPL_IF INACTIVE>noaccess_new_level_close</TMPL_IF INACTIVE>  <TMPL_IF INACTIVE>inactive_new_level_close</TMPL_IF INACTIVE>">
+		</TMPL_IF LAST_CHILD>
+    </TMPL_IF LEVEL_LEAF>
+	
+	<TMPL_IF LEVEL_FOLDER>
+		<TMPL_UNLESS LAST_CHILD>
+			<TMPL_COMMENT>Добавляет вертикальную палку к нижележащему элементу</TMPL_COMMENT>
+			<div class="new_level_background">
+		</TMPL_UNLESS LAST_CHILD>
+
+		<!--TMP L_COMMENT>Дает отступ вправо для содержимого</TMP L_COMMENT>
+		<div class="new_level <TMPL_IF INACTIVE>inactive_new_level</TMPL_IF INACTIVE>">
+	
+		<a href="<TMPL_VAR ID>/<TMPL_VAR ID>">
+		<TMPL_IF CHILDS_CLOSED>
+			<img src="/admin-side/img/imgForTree/level_closed.gif" class="img_folder" border=0>
+		<TMPL_ELSE CHILDS_CLOSED>
+			<img src="/admin-side/img/imgForTree/level000_new.gif" class="img_folder" border=0>
+		</TMPL_IF CHILDS_CLOSED>
+		</a>
+	   
+		<TMP L_COMMENT>Добавляет вертикальную палку к чайлду</TMP L_COMMENT -->
+        
+       <TMPL_IF CHILDS_CLOSED> 
+       		<div class="folder_plus <TMPL_IF INACTIVE>inactive_folder_plus</TMPL_IF> <TMPL_IF NOACCESS>noaccess_folder_plus</TMPL_IF>">  
+     	<TMPL_ELSE CHILDS_CLOSED>     	
+     	    <div class="folder_mines <TMPL_IF INACTIVE>inactive_folder_mines</TMPL_IF> <TMPL_IF NOACCESS>noaccess_folder_mines</TMPL_IF>">    
+		</TMPL_IF CHILDS_CLOSED>
+        <!--div class="<TMPL_IF CHILDS_CLOSED>closed</TMPL_IF>"-->
+        
+		<!--div class="new_level_top  <TMPL_IF CHILDS_CLOSED>closed</TMPL_IF>" -->
+	</TMPL_IF LEVEL_FOLDER>
+  
+	<!-- node <TMPL_VAR ID> data -->
+		<div class="info_privileges edit-menu">
+			<table>
+			  <tr><td class="td-width-title">
+				<div id="container<TMPL_VAR ID>" class="div-left-info-tree">
+				<a href="<TMPL_VAR AURL>" <TMPL_IF IS_SELECTED>class="selected"</TMPL_IF IS_SELECTED>><TMPL_VAR NAME></a>
+					<!-- HasClosedChilds: <TMPL_VAR CHILDS_CLOSED> -->
+                      <TMPL_IF CHILDS_CLOSED>[<a href="<TMPL_VAR BASEURL>?pageId=<TMPL_VAR ID>" style="color:grey; font-weight:bold;">Раскрыть</a>]</TMPL_IF CHILDS_CLOSED>
+				</div>
+<TMPL_IF FALSE>
+				<div  class="div-right-info-tree">
+					<a href="#" onclick=""><img src="/admin-side/img/off.gif" alt="" align="top" border="0"></a>&nbsp;
+                  <TMPL_UNLESS SHOW_ALL>
+					<a href="?action=insert&id=<TMPL_VAR ID>" onclick="ajax_url(this.href+'&_ajax=1','tree_form<TMPL_VAR ID>'); return false;"><img src="/admin-side/img/plus.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+					<a href="?action=update&id=<TMPL_VAR ID>" onclick="ajax_url(this.href+'&_ajax=1','tree_form<TMPL_VAR ID>'); return false;"><img src="/admin-side/img/pen.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+                  </TMPL_UNLESS SHOW_ALL>
+                  <TMPL_IF PRIVILEGES.DELPAGE>
+                    <a href="<TMPL_VAR BASEURL><TMPL_VAR ID>/?action=deletenode&all=<TMPL_VAR SHOW_ALL>" onclick="ajax_url('<TMPL_VAR BASEURL><TMPL_VAR ID>/?action=deletenode&_ajax=1&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Вверх" align="top" border="0"></a>&nbsp;
+                  </TMPL_IF>
+					<a href="<TMPL_VAR BASEURL>?action=movenodeup&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
+					<a href="<TMPL_VAR BASEURL>?action=movenodedown&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
+				</div>
+</TMPL_IF FALSE>
+					
+<TMPL_IF FALSE>
+   <TMPL_IF PARENT_ID>[<a href="<TMPL_VAR BASEURL><TMPL_VAR PARENT_ID>/">Уровень выше</a>]</TMPL_IF PARENT_ID>
+   <TMPL_UNLESS SHOW_ALL>[<a href="<TMPL_VAR BASEURL>?all=1">Всё дерево</a>]</TMPL_UNLESS SHOW_ALL>
+</TMPL_IF FALSE>
+			   </td>
+			  </tr>  						
+			</table>
+		</div>
+        <!--
+		<div class="new-line"> 
+			<table style="border: none;">
+				<tr><td id='tree_form<TMPL_VAR ID>' style="border: none;"></td></tr>
+			</table>
+		</div>
+        -->
+	<!-- node <TMPL_VAR ID> data end -->
+	
+	<!--TM PL_IF LEVEL_FOLDER></div></TMP L_IF-->
+	<TMPL_IF LEVEL0_FOLDER></div></div></TMPL_IF>
+	
+	<!-- node <TMPL_VAR ID> start end -->
+</TMPL_IF NODE_START>
+
+<TMPL_IF NODE_END>
+	<!-- node <TMPL_VAR ID> end -->
+	<TMPL_IF LEVEL0_FOLDER><!--/div--></TMPL_IF LEVEL0_FOLDER>
+	<TMPL_IF LEVEL0_LEAF></div></TMPL_IF LEVEL0_LEAF>
+	<TMPL_IF LEVEL_FOLDER> </div> <TMPL_UNLESS LAST_CHILD></div></TMPL_UNLESS LAST_CHILD> <!--/div--> </TMPL_IF LEVEL_FOLDER>
+	<TMPL_IF LEVEL_LEAF>  </div> <TMPL_UNLESS LAST_CHILD></div></TMPL_UNLESS LAST_CHILD> </TMPL_IF LEVEL_LEAF>
+	<!-- node <TMPL_VAR ID> end end -->
+</TMPL_IF NODE_END>
+
+</TMPL_LOOP TREE>
+</div>
+<!-- /DIV TREE -->
+ 
+           </td>
+
+    </tr>
+ </table>
+  </div> 
+   </div>
+ </div>
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>

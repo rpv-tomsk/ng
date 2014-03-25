@@ -1,0 +1,21 @@
+<TMPL_IF IS_SELECT>
+   <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+	 <div class="form_contener">
+    <p class="comment_input"><TMPL_VAR NAME></p>
+	<TMPL_IF IS_NOTNULL><p class="comment_simbol">*</p></TMPL_IF>
+	</div>
+      <div class="input_info">
+         <div class="selectWrapper" style="margin-right:5px;"> 
+            <select name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" class="info_text" <TMPL_IF READONLY>DISABLED</TMPL_IF>>
+                  <TMPL_LOOP SELECT_OPTIONS>
+                  <option value="<TMPL_VAR ID>"<TMPL_IF SELECTED> selected</TMPL_IF>><TMPL_VAR NAME></option>
+                  </TMPL_LOOP>
+            </select>
+         </div>
+         <TMPL_IF CHOOSE>
+            <div style="float:left;">
+               <button name="formaction" id="action" type="submit" title="SubmitTitle" value="<TMPL_VAR FIELD>_choose" style="border-width: 0; background:#cc00cc url(/admin-side/img/buttons/choose.gif) no-repeat top; width:70px; height:18px; text-indent: 200px;_margin-left: -200px; vertical-align:5px; font-size:0px;"><TMPL_VAR FIELD>_choose</button>
+            </div>
+         </TMPL_IF>
+      </div>
+</TMPL_IF>

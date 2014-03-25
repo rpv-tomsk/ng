@@ -1,0 +1,4 @@
+#TODO: rewrite this to not match files. 
+RewriteEngine On
+RewriteCond  %{REQUEST_URI} ^/admin-side/.* 
+RewriteRule .* /perl/admin-side/admin_side.pl 

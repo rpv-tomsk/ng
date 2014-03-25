@@ -1,0 +1,5 @@
+common    http://svn.nikolas.ru/repos/ng/branches/ng5/htdocs/admin-side/js/common/
+highslide http://svn.nikolas.ru/repos/highslide/trunk/highslide/
+tinymce  http://svn.nikolas.ru/repos/tinymce/trunk/jscripts/tiny_mce/
+jquery    http://svn.nikolas.ru/repos/jquery/trunk/
+

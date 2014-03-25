@@ -1,0 +1,22 @@
+<TMPL_IF ID>
+	<TMPL_IF IS_FLASH>
+	  <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0" style="width:<TMPL_VAR SIZEX>px; height:<TMPL_VAR SIZEY>px;">		
+        <param name="allowScriptAccess" value="sameDomain" />
+    	<param name="movie" value="<TMPL_VAR WEBFILENAME><TMPL_IF TARGET>?bx_click=<TMPL_VAR REDIRECT_URL escape=html>?p=<TMPL_VAR PID>|<TMPL_VAR ID></TMPL_IF>"> 
+    	<param name="quality" value="high" />
+  	    <embed src="<TMPL_VAR WEBFILENAME><TMPL_IF TARGET>?bx_click=<TMPL_VAR REDIRECT_URL escape=html>?p=<TMPL_VAR PID>|<TMPL_VAR ID></TMPL_IF>" style="height:<TMPL_VAR SIZEY>px; width:<TMPL_VAR SIZEX>px;" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
+	  </object>	
+	<TMPL_ELSE>
+		<TMPL_IF IS_TEXT>
+		  <TMPL_VAR TEXT>
+		<TMPL_ELSE>
+			<TMPL_IF TARGET>
+			   <a href="<TMPL_VAR REDIRECT_URL escape=html>?p=<TMPL_VAR PLACE_ID>|<TMPL_VAR ID>" target="_blank">
+		    </TMPL_IF>
+		    <img src="<TMPL_VAR WEBFILENAME>" border='0' width="<TMPL_VAR SIZEX>" height="<TMPL_VAR SIZE_Y>" title="<TMPL_VAR ALT escape=html>" alt="<TMPL_VAR ALT escape=html>">
+		    <TMPL_IF TARGET>
+		       </a>
+		    </TMPL_IF>
+		</TMPL_IF>
+  </TMPL_IF>
+</TMPL_IF> 		  

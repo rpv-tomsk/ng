@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title><TMPL_VAR AS.TITLE></title>
+	<link rel="stylesheet" href="/admin-side/styles/style.css">
+	<script language="javascript" type="text/javascript" src="/admin-side/js/common/ajax.js"></script>
+	<script language="javascript" type="text/javascript" src="/admin-side/js/tinymce/tiny_mce.js"></script>
+	<script language="javascript" type="text/javascript" src="/admin-side/js/config.js"></script>
+	<script language="javascript" type="text/javascript" src="/admin-side/js/common/ng.js"></script>
+	<script language="javascript" type="text/javascript" src="/admin-side/js/jquery/jquery.js"></script>
+
+<script type="text/javascript">
+function rs_activate(url,block) {
+    ajax_url(url,'middle_right_content',function() {
+    var elem,right_elem,left_elem;
+    
+	<TMPL_LOOP AS.RIGHT_SELECTOR>
+    left_elem=document.getElementById('left_rs_<TMPL_VAR __counter__>');
+    right_elem=document.getElementById('right_rs_<TMPL_VAR __counter__>');
+    elem = document.getElementById('rs_<TMPL_VAR __counter__>');
+	if (block == <TMPL_VAR __counter__>) {
+		left_elem.className="active_left";
+		right_elem.className="active_right";
+		elem.className="active";
+		elem.innerHTML = '<TMPL_VAR HEADER>';
+		<TMPL_IF NOT_INITIALISED>
+            left_elem.className="atten_active_left";
+            right_elem.className="atten_active_right"; 
+			elem.className="atten_active"; 
+		</TMPL_IF NOT_INITIALISED>
+	}
+	else {
+		left_elem.className="no-active_left";
+		right_elem.className="no-active_right"; 
+		elem.className="no-active"; 
+		<TMPL_IF NOT_INITIALISED>
+			left_elem.className="atten_no-active_left";
+			right_elem.className="atten_no-active_right"; 
+			elem.className="atten_no-active"; 
+		</TMPL_IF NOT_INITIALISED>
+		elem.innerHTML = '<a href="<TMPL_VAR URL>" <TMPL_IF AJAX_URL>onclick="return rs_activate(\'<TMPL_VAR AJAX_URL>\',<TMPL_VAR __counter__>);"</TMPL_IF AJAX_URL>><TMPL_VAR HEADER></a>';
+    }
+	</TMPL_LOOP AS.RIGHT_SELECTOR>
+	});
+	return false;
+};
+</script>
+            
+</head>
+<body onLoad="MM_preloadImages('/admin-side/img/img_top3_act.gif','/admin-side/img/img_top1_act.gif','/admin-side/img/img_top2_act.gif')">
+	<div id="page-all" >	 
+		<div id="top">
+			<div id="top_left">
+				<div id="top_right">
+                    <div id="history_left">
+                        <TMPL_IF AS.CURRENT_USER><strong>Администратор:</strong> <a href="/admin-side/editadmin/" onclick="win = window.open(this.href,'','width=500,height=200,top=100,left=100');return false;" target="_blank"><TMPL_VAR AS.CURRENT_USER></a> </TMPL_IF AS.CURRENT_USER>
+                    </div>
+                    <!--
+					<a href="#" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('Image1','','/admin-side/img/img_top3_act.gif',1);">
+					<img  src="/admin-side/img/img_top3_inact.gif" name="Image1" alt="" width="74" height="43" border="0"></a>
+					<a href="#" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('Image2','','/admin-side/img/img_top1_act.gif',1);">
+					<img  src="/admin-side/img/img_top1_inact.gif" name="Image2" alt="" width="74" height="43" border="0"></a>
+                    -->
+					<div style="float:left;">
+					<a href="/admin-side/logout/" onMouseOut="MM_swapImgRestore()" onMouseOver="MM_swapImage('Image3','','/admin-side/img/img_top2_act.gif',1);">
+					<img  src="/admin-side/img/img_top2_inact.gif" name="Image3" alt="" width="74" height="43" border="0"></a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="history">
+			<div id="history_right">
+			<TMPL_LOOP AS.HISTORY>
+				<TMPL_UNLESS __LAST__>
+					<span class="history_items"><a href="<TMPL_VAR URL>"><TMPL_VAR NAME></a></span>
+				<TMPL_ELSE>
+					<span class="history_select_items"><TMPL_VAR NAME></span>
+				</TMPL_UNLESS>
+			</TMPL_LOOP>
+                <TMPL_IF AS.PAGEURLS>
+					<span class="history_select_items">
+						<small>[
+                        <TMPL_LOOP AS.PAGEURLS>
+                            <a href="<TMPL_VAR URL>"><TMPL_VAR NAME></a><TMPL_UNLESS __LAST__>|</TMPL_UNLESS>
+                        </TMPL_LOOP AS.PAGEURLS>
+                        ]</small>
+					</span>
+				</TMPL_IF AS.PAGEURLS>
+			</div>			
+		</div>
+		<div id="middle_top_line_right">
+			<div id="middle_top_line_left"></div>
+		</div>
+		<div id="middle">			
+			<div id="wrapper">
+				<!--Основная часть правая панель-->
+				<div id="middle_right" >
+					<div id="middle_right_header">
+						<TMPL_LOOP AS.RIGHT_SELECTOR>
+						   <TMPL_UNLESS SELECTED>
+						   	  <span <TMPL_IF NOT_INITIALISED>class="atten_no-active_left"<TMPL_ELSE>class="no-active_left"</TMPL_IF NOT_INITIALISED>  id="left_rs_<TMPL_VAR __COUNTER__>"></span>
+						      <span <TMPL_IF NOT_INITIALISED>class="atten_no-active"<TMPL_ELSE>class="no-active"</TMPL_IF NOT_INITIALISED>  id="rs_<TMPL_VAR __COUNTER__>" >
+							  <a href="<TMPL_VAR URL>" <TMPL_IF AJAX_URL>onclick="return rs_activate('<TMPL_VAR AJAX_URL>',<TMPL_VAR __counter__>);"</TMPL_IF AJAX_URL>><TMPL_VAR HEADER></a>
+							  						      </span>	
+						      <span <TMPL_IF NOT_INITIALISED>class="atten_no-active_right"<TMPL_ELSE>class="no-active_right"</TMPL_IF NOT_INITIALISED>  id="right_rs_<TMPL_VAR __COUNTER__>"></span>
+						   </TMPL_UNLESS>
+						   <TMPL_IF SELECTED>
+						   	  <span <TMPL_IF NOT_INITIALISED>class="atten_active_left"<TMPL_ELSE>class="active_left"</TMPL_IF NOT_INITIALISED>  id="left_rs_<TMPL_VAR __COUNTER__>"></span>
+						    <span <TMPL_IF NOT_INITIALISED>class="atten_active"<TMPL_ELSE>class="active"</TMPL_IF NOT_INITIALISED>  id="rs_<TMPL_VAR __COUNTER__>" >			   
+						   <TMPL_VAR HEADER>							
+						      </span>
+						      <span  <TMPL_IF NOT_INITIALISED>class="atten_active_right"<TMPL_ELSE>class="active_right"</TMPL_IF NOT_INITIALISED>  id="right_rs_<TMPL_VAR __COUNTER__>"></span> 
+                           </TMPL_IF>
+						</TMPL_LOOP AS.RIGHT_SELECTOR>
+						<div id="line_left">	
+							<div id="line_right"></div>
+						</div>
+					</div>
+					<DIV ID="middle_right_block" >
+					   <div id="middle_right_content">
+					   	   <!--div id="menu_content"></div> Правый блок  -->
+					   	     
+						      <TMPL_VAR AS.RIGHT_BLOCK>
+					   </div>
+				    </DIV>
+				</div>
+			</div>
+<!-- Основная часть Левая панель -->
+			<div id="middle_left">
+				<!-- Заголовки -->
+					<span class="active_left" id="left_s"></span>
+					<span class="active" id="s"></span>
+					<span class="active_right" id="right_m"></span>
+				<!-- Дерево -->
+				<div id="middle_left_tree">
+					<TMPL_VAR AS.LEFT_BLOCK> 
+				</div>
+			</div>
+			<div id="page-footer-margin"></div>
+		</div>
+	</div>
+<div id="footer">
+    <div id="footer_left">
+        <div id="footer_right">
+            <p>© 2008-2010 <a href="http://nikolas.ru/">Nikolas Group</a>. All rights reserved.</p>
+        </div>
+    </div>
+</div> 
+</body>
+</html>

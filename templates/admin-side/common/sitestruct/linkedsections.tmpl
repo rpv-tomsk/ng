@@ -1,0 +1,54 @@
+<TMPL_IF LINKED_PAGES>
+<tr>
+  <td class="title" style="border:none;"><p class="comment_input">Добавление страниц в связанные разделы</p></td>
+</tr>
+
+  <tr>
+    <td class="container-for-line form" style="padding-right:10px;">
+      <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+      
+      <table class="info_new_page">
+      <tr>
+        <th style="width:100px;"></th>
+        <th style="width:100px;">Язык</th>
+        <th style="width:100px;">Сайт</th>
+        <th>Раздел</th>
+        <th>Вариант</th>
+        
+      </tr>
+      
+        <TMPL_LOOP LINKED_PAGES>
+       
+        <tr style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>; width:100%;" id="errortr_<TMPL_VAR ATTRIB.SUBSITE_ID>">
+			<td colspan="5">
+				<div class="errormsg" id="error_<TMPL_VAR ATTRIB.SUBSITE_ID>">Ошибка_<TMPL_VAR ATTRIB.SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
+			</td>
+        </tr>
+
+		<!-- TODO: оформить -->
+        <tr style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>; width:100%;" id="messagetr_<TMPL_VAR ATTRIB.SUBSITE_ID>">
+			<td colspan="5">
+				<div class="errormsg" id="message_<TMPL_VAR ATTRIB.SUBSITE_ID>">Сообщение_<TMPL_VAR ATTRIB.SUBSITE_ID> <TMPL_VAR MESSAGE></div>
+			</td>
+        </tr>            
+        
+        <tr>
+          <td style="text-align:center;"><input type="checkbox"  class="checkbox" name="doit_<TMPL_VAR ATTRIB.SUBSITE_ID>" id="doit_<TMPL_VAR ATTRIB.SUBSITE_ID>" value="1" <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF>/></td>
+          <td style="text-align:center;">
+		  <img src="/admin-side/img/langs/<TMPL_VAR ATTRIB.LANG_IMG>" style="border:1px solid #cfe1ee;">
+		  </td>
+          <td><TMPL_VAR ATTRIB.SUBSITE_NAME></td>
+          <td><TMPL_VAR ATTRIB.NODE_NAME></td>
+          <td><TMPL_VAR ATTRIB.VARIANT_NAME></td>
+        </tr>
+        </TMPL_LOOP LINKED_PAGES>
+      </table>
+      
+
+    </td>
+  </tr>
+  <TMPL_ELSE LINKED_PAGES>
+        <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
+        <input type="hidden" name="doit_<TMPL_VAR SUBSITE_ID>" id="doit_<TMPL_VAR SUBSITE_ID>" value="1">
+  </TMPL_IF LINKED_PAGES>
+  <input type="hidden" name="unused" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>">

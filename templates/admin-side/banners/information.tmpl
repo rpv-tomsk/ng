@@ -1,0 +1,30 @@
+<table class="component_form" border="0">
+  <tr>
+    <td class="title">
+      <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><TMPL_VAR ERRORMSG></div>   
+      
+        <p class="comment_input"><TMPL_VAR DATA></p>	
+
+    </td>
+  </tr>
+  <tr>
+    <td class="title_img">
+      <center>
+        <TMPL_IF AJAX><a href="#" onclick="clear_block('formb_<TMPL_VAR KEY_VALUE>');return false;"><TMPL_ELSE><a href="<TMPL_VAR REF>"></TMPL_IF AJAX><img src="/admin-side/img/button_cancel.gif" style="border-width: 0;"></a>
+      </center>    
+    </td>
+  </tr>
+</table>
+
+<!--
+<script LANGUAGE="JavaScript">
+ random = parseInt(Math.random()*10000);
+ banner = '<iframe src=\"<TMPL_VAR WEBPATH>?pid=<TMPL_VAR ID>&r=';
+ banner += random + '&s=1;\" frameborder=0 width=<TMPL_VAR SIZEX> height=<TMPL_VAR SIZEY> marginwidth=0 marginheight=0   scrolling=no>';
+ banner+='</iframe>';
+ document.write(banner);
+</script>
+<NOSCRIPT>
+ <IFRAME  src="<TMPL_VAR WEBPATH>?pid=<TMPL_VAR ID>&r=1&s=1" frameborder="0" width="<TMPL_VAR SIZEX>" height="<TMPL_VAR SIZEY>" marginwidth="0" marginheight="0" scrolling="no"></IFRAME>
+</NOSCRIPT>
+-->

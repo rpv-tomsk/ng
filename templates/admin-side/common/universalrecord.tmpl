@@ -1,0 +1,85 @@
+<!-- new style template -->
+<TMPL_IF FORM.NEW>
+	<div class="blue_table_container_top">
+		<img src="/admin-side/img/blue_table_container_top_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+	<div class="blue_table_container">	
+	<div style="border:1px solid #929292;width:100%;">
+<TMPL_ELSE FORM.NEW>	
+    <TMPL_UNLESS FORM.KEY_VALUE>
+    
+    </TMPL_UNLESS>
+</TMPL_IF FORM.NEW>
+
+<div id="menu_content"></div>
+<div id="info_content" id="content_componeta">
+
+<TMPL_IF SUBPAGES>
+
+   <div id="middle_content_part">
+	     <TMPL_VAR SUBPAGES_NAME>	
+		 &nbsp;&nbsp;
+	 	<TMPL_LOOP SUBPAGES>
+			   <a href="<TMPL_VAR URL>" class="doit" onclick="ajax_url('<TMPL_VAR AJAX_URL>','middle_right_content');return false;"><TMPL_VAR SUBPAGE></a>&nbsp;|&nbsp;
+		</TMPL_LOOP>      
+    </div>
+	
+</TMPL_IF SUBPAGES>
+
+
+<div id="service_message<TMPL_VAR FORM.KEY_VALUE>" style="color:red;font-size:14px;"></div>
+<iframe name='ifr<TMPL_VAR FORM.KEY_VALUE>' style="display: none;"></iframe>
+<form action="<TMPL_VAR FORM.URL>"  method="post" enctype="multipart/form-data" id="form<TMPL_VAR FORM.KEY_VALUE>" name="form<TMPL_VAR FORM.KEY_VALUE>" onsubmit="document.forms['form<TMPL_VAR FORM.KEY_VALUE>'].target='ifr<TMPL_VAR FORM.KEY_VALUE>';document.forms['form<TMPL_VAR FORM.KEY_VALUE>'].elements['_ajax'].value='1';">
+<input type="hidden" name="resblock" value="service_message<TMPL_VAR FORM.KEY_VALUE>">
+<input type="hidden" name="ref" value="<TMPL_VAR FORM.REF>">
+<input id="_ajax" type="hidden" name="_ajax" value="0">
+
+<div id="error_<TMPL_VAR FORM.KEY_FIELD><TMPL_VAR FORM.KEY_VALUE>" class="errormsg"><TMPL_VAR ERRORMSG></div>	
+
+<div id="outside_block" >
+<table  class="component_new_form" border="0" style="border-top:1px solid #65a7dd;"><tbody>
+
+<!--  -->
+<TMPL_LOOP FORM.ELEMENTS>
+    <TMPL_IF HIDDEN_FIELD><input type="hidden" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR VALUE>"/></TMPL_IF HIDDEN_FIELD>
+    <TMPL_IF ROW_START><TMPL_IF ROW.HEADER><tr><td class="row-header"><TMPL_VAR ROW.HEADER></td></tr></TMPL_IF ROW.HEADER><tr><td class="container-for-line form"></TMPL_IF ROW_START>
+    <TMPL_IF COLUMNS_START><table border="0"><tr></TMPL_IF COLUMNS_START>    
+    <TMPL_IF COLUMN_START><td class="head-colunm" <TMPL_IF COLUMN.WIDTH>style="width:<TMPL_VAR COLUMN.WIDTH>"</TMPL_IF COLUMN.WIDTH>><TMPL_IF COLUMN.HEADER><div class="text-head-column"><TMPL_VAR COLUMN.HEADER></div></TMPL_IF COLUMN.HEADER></TMPL_IF COLUMN_START>
+    <TMPL_IF FIELD><TMPL_INCLUDE_VAR NAME="TEMPLATE"></TMPL_IF FIELD>
+    <TMPL_IF COLUMN_END></td></TMPL_IF COLUMN_END>
+    <TMPL_IF COLUMNS_END></tr></table></TMPL_IF COLUMNS_END>
+    <TMPL_IF ROW_END></td></tr></TMPL_IF ROW_END>
+</TMPL_LOOP FORM.ELEMENTS>
+<!--  -->
+
+</tbody></table>
+
+<div style="padding-top:20px;padding-bottom:20px; text-align:center;">
+	&nbsp;
+	<button name="formaction" id="action" type="submit" title="Сохранить" value="update" class="styleForButtonApply">update</button>
+	<a href="#" title="Отменить изменения" onclick="document.getElementById('form<TMPL_VAR FORM.KEY_VALUE>').reset();return false;"><img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;"></a>
+</div>
+
+</div>
+
+</form>
+<TMPL_IF FORM.NEW>
+	</div>
+   	</div>
+	
+	<div class="blue_table_container_bottom">
+		<img src="/admin-side/img/blue_table_container_bottom_right.gif" alt="" width="2" height="2" border="0">
+	</div>
+      
+<TMPL_ELSE FORM.NEW>	
+    <TMPL_UNLESS FORM.KEY_VALUE>
+         
+           
+    </TMPL_UNLESS>
+</TMPL_IF FORM.NEW>
+</div>
+<div id="middle_bottom">
+	<div id="middle_bottom_left">
+		<div id="middle_bottom_right"></div>
+	</div>	
+</div>

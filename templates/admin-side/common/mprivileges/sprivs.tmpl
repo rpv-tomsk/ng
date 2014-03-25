@@ -1,0 +1,272 @@
+<script type="text/javascript">
+var mId = null;
+var mName = '';
+var baseUrl = null;
+
+function buildAddModSubj(divId,action, data) {
+    var div = $('#'+divId);
+    
+    var html = '';
+    html = html + '<div style="border:1px solid #65A7DD; background:#fff; margin-bottom:10px; padding:5px; overflow:hidden;">';
+    if (action=='addadmin') {
+        html = html + '<p style="float:left; font-weight:bold;">Администратор:</p>';
+    }
+    else {
+        html = html + '<p style="float:left; font-weight:bold;">Группа:</p>';
+    };
+    if (data.length) {
+        html = html + '<form method="GET" action="'+baseUrl+mId+'/">';
+        html = html + '<div class="selectWrapper" style="margin:0 5 0 5px;">';
+        html = html + '<select name="';
+        if (action=='addadmin') {
+            html = html + 'adminId';
+        }
+        else {
+            html = html + 'groupId';
+        };        
+        html = html + '" style="width: 200px;">';
+        
+        for (var i in data) {
+            var obj = data[i];
+            html = html + '<option value="'+obj.id+'">'+obj.name+'</option>';
+        };
+        
+        html = html + '</select>';
+        html = html + '</div>';
+        html = html + '<input type="image" src="/admin-side/img/buttons/add.gif" alt="Добавить" style="margin-top:-1px;">';
+        html = html + '</form>';
+    }
+    else {
+        if (action=='addadmin') {
+            html = html + '<p>Все администраторы уже добавлены</p>';
+        }
+        else {
+            html = html + '<p>Все группы уже добавлены</p>';
+        };
+    };
+    html = html + '<div class="close" style="padding-top: 5px; text-align:center;"><a href="#" onclick="return closeAddModuleSubj(\''+divId+'\');">[Закрыть]</a></div>';
+    html = html + '</div>';
+    div.html(html);
+    return false;
+}
+
+function addModuleSubj(action,divId) {
+    var div = $('#'+divId);
+    if (div.html() != '') {
+        div.html('');
+        return false;
+    };
+
+    var params = {};
+    params.action = action;
+    params.nocache = Math.random(10000);
+    
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else
+                buildAddModSubj(divId,action,data);
+        },
+        data: params,
+        url: baseUrl+mId+'/',
+        dataType: 'json'
+    });
+    return false;
+};
+function closeAddModuleSubj(divId) {
+    $('#'+divId).html('');
+    return false;
+};
+
+function getModulePrivHTML (priv) {
+    //<div class="privilege">
+    //    <p class="name">Привилегия 1</p>
+    //    <img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">
+    //    <p class="status">(Предоставлено группой <a href="#">Глобальные</a>)</p>
+    //    <p class="links">[<a href="#">Разрешить</a>][<a href="#">Запретить</a>]</p>
+    //</div>
+    var html = "";
+    html = html + '<p class="name">'+ priv.name +'</p>';
+    
+    if (priv.active==null)
+        html = html + '<img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">';
+    else if (priv.active)
+        html = html + '<img class="status" src="/admin-side/img/privs/allow.gif" title="разрешено" alt="+">';
+    else 
+        html = html + '<img class="status" src="/admin-side/img/privs/deny.gif" title="запрещено" alt="-">';
+    
+    if (adminId != null && priv.pgroupId!=null) {
+        html = html + '<p class="status">(';
+        if (priv.pgroupName) {
+            html = html + 'Определено группой <a href="'+baseUrl+mId+'/?groupId='+priv.pgroupId+'">'+priv.pgroupName+'</a>';
+        }
+        else {
+            html = html + 'Определено <a href="'+baseUrl+mId+'/?groupId='+priv.pgroupId+'">группой</a>';
+        }
+        
+        html = html + ')</p>';
+    }
+    
+    html = html + '<p class="links">';
+    
+    if ((adminId != null && priv.pgroupId!=null) || priv.active == null) {
+        html = html + '[<a href="#" onclick="return doModulePrivilege(\'doallow\',\''+priv.privilege+'\');">Разрешить</a>]';
+        html = html + '[<a href="#" onclick="return doModulePrivilege(\'dodeny\',\''+priv.privilege+'\');">Запретить</a>]';
+    }
+    else if (priv.active == 1) { 
+        html = html + '[<a href="#" onclick="return doModulePrivilege(\'dodeny\',\''+priv.privilege+'\');">Запретить</a>]';
+        html = html + '[<a href="#" onclick="return doModulePrivilege(\'dodelete\',\''+priv.privilege+'\');">Удалить</a>]';
+    }
+    else if (priv.active == 0) { 
+        html = html + '[<a href="#" onclick="return doModulePrivilege(\'doallow\',\''+priv.privilege+'\');">Разрешить</a>]';
+        html = html + '[<a href="#" onclick="return doModulePrivilege(\'dodelete\',\''+priv.privilege+'\');">Удалить</a>]';
+    }
+    else {
+        alert('Неожиданное значение привилегии');
+    }
+    
+    html = html + '</p>';
+    
+    return html;
+};
+
+function buildMRightsPage(data) {
+    var container = $('.pageprivileges');
+    var index = 0;
+    if (data.length == 0 || (adminId == null && groupId == null)) {
+        container.append('<div class="modulename"><p>Для назначения прав на страницу добавьте администратора или группу.</p></div>');
+        return;
+    };
+    container.append('<div class="modulename "><p>'+ mName +'</p></div>');
+    for (var i in data) {
+        var priv = data[i];
+        container.append('<div class="privilege" id="priv_'+mId+'_'+priv.privilege+'">' + getModulePrivHTML(priv) + '</div>');
+    };
+};
+
+function doModulePrivilege (action,privilege) {
+    var params = {};
+    params.priv = privilege;
+    params.nocache = Math.random(10000);
+    
+    if (adminId) {
+        params.adminId = adminId;
+    }
+    else {
+        params.groupId = groupId;
+    }
+    params['do'] = action;
+    $.ajax({
+        success: function(data) {
+            //alert(data);
+            if (data.error)
+                alert(data.error);
+            else {
+                $('#priv_'+mId+'_'+privilege).html(getModulePrivHTML(data));
+            }
+        },
+        data: params,
+        url: baseUrl+mId + '/',
+        dataType: 'json'
+    }); 
+    return false;
+
+};
+</script>
+
+<script>
+    mId = <TMPL_VAR MID DEFAULT=null>;
+    mName = '<TMPL_VAR MNAME ESCAPE=JS>';
+    baseUrl = '<TMPL_VAR BASEURL>';
+    
+    adminId = <TMPL_VAR ADMIN_ID DEFAULT=null>;
+    groupId = <TMPL_VAR GROUP_ID DEFAULT=null>;
+
+    
+    var data = [];
+    
+    //data[0] = {name: 'Имя привилегии PRIVILEGE1', privilege: 'PRIVILEGE', active:null};
+    //data[1] = {name: 'Имя привилегии PRIVILEGE2', privilege: 'PRIVILEGE2', active:1};
+    //data[2] = {name: 'Имя привилегии PRIVILEGE3', privilege: 'PRIVILEGE3', active:0,pgroupId:1,pgroupName:'Bvz'};
+    <TMPL_LOOP DATA>
+        data[<TMPL_VAR __index__>] = {name: '<TMPL_VAR NAME ESCAPE=JS>', privilege: '<TMPL_VAR PRIVILEGE ESCAPE=JS>', active: <TMPL_VAR ACTIVE DEFAULT=null>,pgroupId:<TMPL_VAR PGROUP_ID DEFAULT=null>,pgroupName:'<TMPL_VAR PGROUP_NAME ESCAPE=JS>'};
+    </TMPL_LOOP>
+    
+    $(document).ready(
+        function () {
+            buildMRightsPage(data);
+        }
+    );
+
+//privilege: '<TMPL_VAR PRIVILEGE ESCAPE=JS>',
+//name: '<TMPL_VAR NAME ESCAPE=JS>',
+//active: <TMPL_VAR ACTIVE DEFAULT=null>,    
+//padminId: <TMPL_VAR PADMIN_ID DEFAULT=null>,
+//pgroupId: <TMPL_VAR PGROUP_ID DEFAULT=null>
+//pgroupName: ''    
+</script>
+
+<div id="menu_content">
+</div>
+
+<div id="info_content">
+  <div style="width: 100%;">
+   
+   
+    <div style="border:0px solid red; overflow:hidden;padding-bottom:10px;width:100%;padding-top:10px;">
+        <div style="float:left;font-weight:normal;">
+            <a href="<TMPL_VAR BASEURL>">Список модулей</a> >
+            <a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/" class="selected"><TMPL_VAR MNAME></a>
+        </div>
+    </div>
+
+    <div class="subjects" id="admins">
+        <div class="name">Администраторы:</div>
+        <div class="list">
+            <TMPL_IF PAGEADMINS>
+                <TMPL_LOOP PAGEADMINS>
+                    <p class="link<TMPL_IF CURRENT> selected</TMPL_IF>"><a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/?adminId=<TMPL_VAR ID>"><TMPL_VAR FIO> (<TMPL_VAR LOGIN>)</a></p>
+                </TMPL_LOOP PAGEADMINS>
+            <TMPL_ELSE PAGEADMINS>
+                <p class="link">Привилегии на модуль администраторам не предоставлены</p>
+            </TMPL_IF PAGEADMINS>
+        </div>
+        <p class="link" style="float:right;">[<a href="#" onclick="return addModuleSubj('addadmin','addAdmin');" title="Добавить">+</a>]</p>
+    </div>
+    <div id="addAdmin"></div>
+    
+    <div class="subjects" id="groups" style="border:0px dashed red;">
+        <div class="name">Группы:</div>
+        <div class="list" style="border:0px solid blue;">
+            <TMPL_IF PAGEGROUPS>
+                <TMPL_LOOP PAGEGROUPS>
+                    <p class="link<TMPL_IF CURRENT> selected</TMPL_IF CURRENT>"><a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/?groupId=<TMPL_VAR ID>"><TMPL_VAR NAME></a></p>
+                </TMPL_LOOP PAGEGROUPS>
+            <TMPL_ELSE PAGEGROUPS>
+                <p class="link">Привилегии на модуль группам не предоставлены</p>
+            </TMPL_IF PAGEGROUPS>
+        </div>
+        <p class="link" style="float:right;">[<a href="#" onclick="return addModuleSubj('addgroup','addGroup');" title="Добавить">+</a>]</p>
+    </div>
+    <div id="addGroup"></div>
+        
+    <div class="pageprivileges">
+        <!--
+        <div class="modulename"><p><TMPL_VAR MNAME></p></div>
+        <div class="privilege">
+            <p class="name">Привилегия 1</p>
+            <img class="status" src="/admin-side/img/privs/undef.gif" title="не определено" alt="?">
+            <p class="status">(Предоставлено группой <a href="#">Глобальные</a>)</p>
+            <p class="links">[<a href="#">Разрешить</a>][<a href="#">Запретить</a>]</p>
+        </div>
+        -->
+    </div>
+  </div>
+</div>
+<div id="middle_bottom">
+  <div id="middle_bottom_left">
+    <div id="middle_bottom_right"></div>
+  </div>
+</div>
