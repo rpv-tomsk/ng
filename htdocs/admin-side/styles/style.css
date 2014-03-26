@@ -141,7 +141,7 @@ span.history_items a {
 	float:left;
 	width:320px;
 	margin-right:-100%;
-	padding: 5px 0 0 10px;
+	padding: 0 0 0 20px;
 }
 /*********************Активный элемент**************************************/
 
@@ -309,16 +309,18 @@ div.title {
 }
 
 #line_left {
-	height: 31px;
+	height: 23px;
 	background: url(/admin-side/img/img_middle_right_line.gif) repeat-x bottom;
 	z-index:-100;
 	margin-top:-1px;
 	/*IE decides to show it me...*/
 	/*font-size:1pt;*/
 }
+/*
 html:root #line_left {
-	height: 31px;
+	height: 23px;
 }
+*/
 #right_items_menu {
 	background: url(/admin-side/img/vertical_line.gif) no-repeat;
 }
@@ -1999,6 +2001,7 @@ div.addRuleBar p.name {
 	width: 160px;
 	overflow: auto;
 }
+/*
 #middle_right_header .active {
 	margin-top: 9px;
 	height: 21px;
@@ -2009,6 +2012,7 @@ div.addRuleBar p.name {
 	height: 21px;
 	margin-top: 9px;
 }
+*/
 .tab {
 	display: inline-block;
 }
