@@ -52,6 +52,19 @@ SiteAuthClass = NG::Adminside::Auth
 type_class = "Site::Field::Type"
 type_processor = "Site::TypeProcessor"
 
+[INTERFACES]                             #INTERFACES - системный префикс конфигурирования интерфейсов
+SITEMAP_class=Galaxy::Sitemap            #SITEMAP - код требуемого интерфейса
+                                         #class - имя параметра, определяющего значение "класс".
+                                         #Могут быть и другие параметры, хотя на данный момент не ясно,
+                                         #как они будут доступны модулю.
+                                         
+[INTERFACE_SITEMAP]                      #INTERFACE - системный префикс конфигурирования интерфейсов
+NEWS_class=Site::News::Sitemap           #SITEMAP - код требуемого интерфейса
+                                         #NEWS - имя модуля, для которого мы определяем класс интерфейса
+                                         #class - имя параметра, определяющего значение "класс".
+                                         #Могут быть и другие параметры, хотя на данный момент не ясно,
+                                         #как они будут доступны модулю.
+
 [Resource]
 {MODULECODE}_P{page_id}     = "Site::Module::Resource"      # Поддержка т.н. ресурсов, т.е. значений,
 {MODULECODE}_LI{link_id}    = "Site::Module::Resource"      # которые зависят от использования модуля.

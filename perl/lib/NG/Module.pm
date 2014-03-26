@@ -236,6 +236,39 @@ sub getStash { # $mObj->getStash($key)
     return $m->{$key};
 };
 
+sub getInterface {
+    my $self = shift;
+    my $interfaceName = shift or die "getInterface(): No interface name specified";
+    
+    my $cms = $self->cms();
+    
+    my $classHash = undef;
+    # пытаемся получить из модуля определённые в нём интерфейсы
+    while (1) {
+        last unless $self->can('moduleInterfaces');
+        my $mInterfaces = $self->moduleInterfaces() or last;
+        if (defined $mInterfaces && ref $mInterfaces ne "HASH") {
+            die "Module ".$self->getModuleCode()." moduleInterfaces() returns unsupported value";
+        };
+        
+        $classHash = $mInterfaces->{$interfaceName};
+        return $classHash if ref($classHash) && ref($classHash) ne "HASH";
+        last;
+    };
+    #проверим не задан ли в конфиге класс, который следует использовать как класс интерфейса.
+    unless ($classHash) {
+        #Класс интерфейса для определенного модуля
+        my $class = $cms->confParam("INTERFACE_".$interfaceName.".".$self->getModuleCode()."_class");
+        #дефолтный класс интерфейса
+        $class ||=  $cms->confParam("INTERFACES.".$interfaceName."_class");
+        $classHash->{CLASS} = $class;
+    };
+    
+    return $cms->getObject($classHash,{PARENT=>$self}) if $classHash;
+    return undef;
+}
+
+
 #API работы с модулем из админки
 
 #TODO: переименовать...
