@@ -134,14 +134,14 @@ span.history_items a {
 	width:360px;
 }
 *html #middle_right {
-	margin-left:360px;
+	margin-left:350px;
 	padding-right: 30px;
 }
 #middle_left {
 	float:left;
 	width:320px;
 	margin-right:-100%;
-	padding: 0 0 0 20px;
+	padding: 0 0 0 10px;
 }
 /*********************Активный элемент**************************************/
 
@@ -299,7 +299,7 @@ div.title {
 
 /***********************Правая панель основная часть*********************************************/
 #middle_right {
-	margin-left: 350px;
+    margin-left: 340px;
     padding-right: 10px;
 }
 #middle_right_header {
