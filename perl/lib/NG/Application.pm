@@ -615,7 +615,7 @@ sub buildPage {
     my $rContent = $bctrl->getRegionsContent() or return $cms->error();
 #NG::Profiler::saveTimestamp("getRegContent","buildPage");
     
-    warn "No layout to output regions" if (!$layout && scalar keys %$rContent > 1);
+    warn "No layout to output regions" if (!$layout && scalar keys %$rContent > 2); #CONTENT & HEAD are persistent regions
     return $cms->output($rContent->{CONTENT}) unless $layout;
     
     my $tObj = $cms->gettemplate($layout) or return $cms->error();
@@ -1571,7 +1571,6 @@ package NG::Cache::Stub;
 use strict;
 
 sub getCacheContentKeys {
-    warn "STUB getCacheContentKeys()";
     return {};
 };
 
