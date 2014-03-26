@@ -367,6 +367,7 @@ sub findPageRowByURL {
         #catch == 0 - ЧПУ отсутствует
         #catch == 1 - ЧПУ с обработкой параметров через ng_rewrite
         #catch == 2 - ЧПУ с обработкой параметров внутри модуля
+        #catch == 3 - ЧПУ с обработкой параметров внутри модуля, с поддержкой обработки "файловых" ссылок
         if ($row->{catch}==1) {
             $sql="select id,pageid,cp.regexp,paramnames from ng_rewrite cp where pageid=? or link_id=? order by id";
             $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
@@ -401,13 +402,14 @@ sub processRequest {
     
     my $dbh = $cms->dbh();
     
-    if ($url !~ /[\\\/]$/) {
-        $url .= "/";
-        return $cms->redirect(-uri=>$url,-status=>301);
-    };
     
     my $row = $cms->findPageRowByURL($url,$ssId);
 #NG::Profiler::saveTimestamp("findPRbURL","processRequest");
+
+    if ((!defined $row || ($row->{catch} != 0 && $row->{catch} != 3)) && $url !~ /\/$/) {
+        return $cms->redirect(-uri=>$url.'/',-status=>301);
+    };
+
     return $cms->notFound() unless defined $row;
     return $cms->error() unless $row;
     
