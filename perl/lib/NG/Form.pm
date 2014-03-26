@@ -166,7 +166,7 @@ sub _addfield { #internal method
             delete $field->{LANGPARAMS};
         };
         $fObj = NG::Field->new($field, $self);
-        return $self->error("Ошибка добавления поля в форму: ". $NG::Field::errstr) unless $fObj;
+        return $self->error("Ошибка добавления поля " . $field->{FIELD} . " в форму: ". $NG::Field::errstr) unless $fObj;
     }
     elsif ($field->isa("NG::Field") ) {
         $fObj = $field;
