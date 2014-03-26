@@ -252,7 +252,10 @@ sub getInterface {
         };
         
         $classHash = $mInterfaces->{$interfaceName};
-        return $classHash if ref($classHash) && ref($classHash) ne "HASH";
+        if (ref($classHash)) {
+            return $classHash if UNIVERSAL::can($classHash,"can");
+            die "Module ".$self->getModuleCode()." moduleInterfaces() returns unsupported value in interfaces hash" if ref($classHash) ne "HASH";
+        };
         last;
     };
     #проверим не задан ли в конфиге класс, который следует использовать как класс интерфейса.
