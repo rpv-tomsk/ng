@@ -794,7 +794,9 @@ sub processBlock {
         if (ref $v eq "HASH") {
             foreach my $key (keys %$v) {
                 if ($key =~ /^-/) {
-                    $self->_pushMeta({"http-equiv"=>$key,content=>$v->{$key}}) or return $cms->error();
+                    my $keys=$key;
+                    $keys=~s/^-//;
+                    $self->_pushMeta({"http-equiv"=>$keys,content=>$v->{$key}}) or return $cms->error();
                 }
                 else {
                     $self->_pushMeta({name=>$key,content=>$v->{$key}}) or return $cms->error();
