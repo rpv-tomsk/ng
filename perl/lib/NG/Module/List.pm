@@ -518,7 +518,7 @@ sub processForm {
 #showForm
     if ($action eq "insf") {
         $form->modeInsert();
-        my $id = $self->db()->get_id($self->{_table});
+        my $id = $self->db()->get_id($self->{_table},$self->{_idname});
         return $self->error($self->db()->errstr()) unless $id;
         $form->param($self->{_idname},$id);
         
@@ -1066,7 +1066,7 @@ sub getBlockIndex {
     }
     else {
         return $self->error('_getIndexes(): Без указания параметра RFUNC использование параметра RFUNCFIELDS невозможно.') if exists $sc->{RFUNCFIELDS};
-        if (exists $sc->{DATAINDEXFIELDS}) {
+        if (exists $sc->{DATAINDEXFIELDS}) { #Обратная совместимость с древним вариантом конфигурации поиска.
             return $self->error('Некорректное значение свойства DATAINDEXFIELDS в конфигурации поиска') if (ref($sc->{DATAINDEXFIELDS}) ne 'ARRAY');
             $sc->{CLASSES} = {};
             foreach my $t (@{$sc->{DATAINDEXFIELDS}}) {
@@ -1118,9 +1118,6 @@ sub getBlockIndex {
     #Получаем значения ключевых полей из суффикса
     my $keyValues = $self->getKeyValuesFromSuffixAndMask($suffix,$sc->{SUFFIXMASK});
     
-    my $useBeforeAndAfter = 1;
-    $useBeforeAndAfter = 0 if scalar keys %$keyValues;
-
     my $fieldObjs = {};
     #Заполняем ключевые поля данными
     foreach my $field (@{$self->{_fields}}) {
@@ -1379,7 +1376,6 @@ sub getBlockIndex {
     $sth->execute($self->getListSQLValues()) or return $self->error($DBI::errstr);
     #die "ooops!!!";
     while (my $row=$sth->fetchrow_hashref()) {
-        $useBeforeAndAfter = 1;
         # Вызываем фильтровую функцию
         if ($filterRFunc) {
             #$self->setError("");
@@ -1490,8 +1486,8 @@ sub getBlockIndex {
         };
     };
     $sth->finish();
-        
-    return $index unless $useBeforeAndAfter;
+    
+    return $index unless scalar keys %{$index->{DATA}};
 
     foreach my $class (keys %{$beforeData}) {
         next unless $beforeData->{$class};
@@ -1548,6 +1544,10 @@ sub _indexGetFieldValue {
     elsif ($fieldObj->{TYPE} eq "datetime") {
         return $self->db()->datetime_from_db($row->{$fieldObj->{FIELD}});
     }
+    else {# для неизвестного типа поля (кастомного) vinnie 22.06.2011 15:02:04
+       $fieldObj->setDBValue($row->{$fieldObj->{FIELD}});
+       return $fieldObj->value();
+    };
     return $self->error("Неподдерживаемый индексатором тип поля ".$fieldObj->{TYPE}." - поле ".$fieldObj->{FIELD});
 };
 ##  /Код, ответственный за индексирование блока
@@ -2124,7 +2124,7 @@ sub showSearchForm {
 	if ($form) {
 		$form->{_ajax} = $is_ajax;
 		my $template = undef;
-		unless ($action eq "showsearchform") {
+		unless ($action && $action eq "showsearchform") {
 			$template = $self->tmpl();
 		};
 		$self->opentemplate($self->{_searchformtemplate});	
@@ -2135,7 +2135,7 @@ sub showSearchForm {
 		if ($is_ajax) {
 			return $self->output($formhtml);
 		};
-		unless ($action eq "showsearchform") {
+		unless ($action && $action eq "showsearchform") {
 			$self->{_template} = $template;
 			$self->tmpl()->param(
 				SEARCHFORMHTML => $formhtml
