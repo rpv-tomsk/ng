@@ -657,6 +657,7 @@ sub AUTOLOAD {
     my $pkg = ref $self;
     $AUTOLOAD =~ s/$pkg\:\://;
 #print STDERR " AUTOLOAD BLOCK ".$AUTOLOAD;
+    local $NG::Application::blocksController = $self->{_ctrl};
     return $self->{_ctrl}->_getTmplBlockContent($AUTOLOAD, $self->{_isPlugin});
 };
 
