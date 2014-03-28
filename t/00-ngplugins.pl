@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use Test::More tests => 24;
+use Test::More tests => 26;
 use Test::Exception;
 
 use lib ('../perl/lib');
@@ -76,6 +76,44 @@ is_deeply(\@got,\@expectedObject3,'Plugin call sequence for $object');
 @got = NGPlugins->plugins($o,'unexistent');
 is_deeply(\@got,\@expectedObject3,'Plugin call sequence for $object, sequential requests ok. (caching check) ');
 
+{
+diag "Perform iterator() checks";
+
+#Declaration must match @expectedObject3 sequence
+my @expected = (
+    ['Test::Module1','param_1'],
+    ['Test::SiteMenu::Plugin','param_1','param_2'],
+    ['Test::Module2','param_1','param_2','param_3'],
+    ['Test::PageModule1','param_1','param_2','param_3','param_4'],
+    ['Test::Later','param_1','param_2','param_3','param_4','param_5'],
+    ['Test::PageModuleAtEnd','param_1','param_2','param_3','param_4','param_5','param_6'],
+);
+
+my @save;
+my @args;
+push @args,'param_1';
+my $i = 1;
+my $iterator = NGPlugins->iterator($o,'method');
+while (my @got = &$iterator(@args)) {
+    $i++;
+    push @args, "param_$i";
+    push @save, \@got;
+};
+is_deeply(\@save,\@expected,'Check plugin call sequence for $object, parameters transmission check.');
+
+@save=();
+@args=();
+push @args,'param_1';
+$i = 1;
+$iterator = NGPlugins->iterator($o,'method');
+while (my @got = &$iterator(@args)) {
+    $i++;
+    push @args, "param_$i";
+    push @save, \@got;
+};
+is_deeply(\@save,\@expected,'Check plugin call sequence for $object, parameters transmission check. Sequential requests ok.');
+}
+
 #ѕроверка наличи€ фантомных прив€зок на класс
 diag "Check for plugins on classes without plugins registed";
 my @expectedEmpty = ();
@@ -113,10 +151,16 @@ is_deeply(\@got,\@expectedClass3,'Plugin call sequence for class (2)');
 
 #Some packages for testing, as NGPlugins tries to 'use' them.
 package Test::PageModule1;
+sub method {return @_};
 package Test::Module1;
+sub method {return @_};
 package Test::Module2;
+sub method {return @_};
 package Test::Later;
+sub method {return @_};
 package Test::PageModuleAtEnd;
+sub method {return @_};
 package Test::SiteMenu::Plugin;
+sub method {return @_};
 
 1;
