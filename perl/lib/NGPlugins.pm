@@ -120,10 +120,10 @@ sub iterator  {
     my ($object, $method) = @_;
     die "NGPlugins->iterator(\$class,\$method): No \$class or \$method." unless $object && $method;
     
-    my $pl = $self->_getPluginsFor($object);
+    my @pl = $self->plugins($object);
     return sub {
         for (;;) {
-            my $plugin = shift(@$pl) or return ();
+            my $plugin = shift(@pl) or return ();
             my $f = $plugin->can($method) or next;
             return &$f($plugin, @_);
         };
