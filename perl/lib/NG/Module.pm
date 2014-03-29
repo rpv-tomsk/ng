@@ -265,7 +265,7 @@ sub getInterface {
         my $class = $cms->confParam("INTERFACE_".$interfaceName.".".$self->getModuleCode()."_class");
         #дефолтный класс интерфейса
         $class ||=  $cms->confParam("INTERFACES.".$interfaceName."_class");
-        $classHash->{CLASS} = $class;
+        $classHash->{CLASS} = $class if $class;
     };
     
     return $cms->getObject($classHash,{PARENT=>$self}) if $classHash;

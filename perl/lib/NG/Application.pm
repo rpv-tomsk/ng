@@ -1414,8 +1414,6 @@ sub modulesHash {
 
 sub getModulesIterator {
     my $cms = shift;
-    my ($object, $method) = @_;
-    die "NGPlugins->iterator(\$class,\$method): No \$class or \$method." unless $object && $method;
     
     my $dbh = $cms->dbh();
     my $fields = $cms->getModuleFields();
@@ -1431,7 +1429,8 @@ sub getModulesIterator {
     
     return sub {
         for (;;) {
-            return $cms->getModuleByCode(shift(@$modules));
+            my $code = shift(@$modules) or return undef; 
+            return $cms->getModuleByCode($code);
         };
     };
 };
