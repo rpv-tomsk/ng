@@ -1389,7 +1389,8 @@ sub modulesHash {
     }
     elsif ($ref->{REF}) {
         return $cms->{_mrowC} if exists $cms->{_mrowR}->{$ref->{REF}};
-        my $sth = $cms->dbh()->prepare("select id,code,module,base,name,params from ng_modules where module=?") or return $cms->error($DBI::errstr);
+        my $fields = $cms->getModuleFields();
+        my $sth = $cms->dbh()->prepare("select $fields from ng_modules where module=?") or return $cms->error($DBI::errstr);
         $sth->execute($ref->{REF}) or return $cms->error($DBI::errstr);
         while (my $mRow = $sth->fetchrow_hashref()) {
             $cms->{_mrowC}->{$mRow->{code}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
