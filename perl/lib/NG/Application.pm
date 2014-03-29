@@ -314,6 +314,11 @@ sub getPageFields {
 	return $pageFields;
 };
 
+sub getModuleFields {
+    my $app = shift;
+    return "id,code,module,base,name,params";
+};
+
 sub findPageRowByURL {
     my $cms = shift;
     my $url  = shift;
@@ -482,9 +487,9 @@ sub getModuleRow {
     my $cms = shift;
     my $where = shift or return $cms->error("getModuleRow(): Отсутствует параметр where");
 
-    my $dbh = $cms->db()->dbh();
-
-    my $sth = $dbh->prepare("select id,code,module,base,name,params from ng_modules where $where") or return $cms->error($DBI::errstr);
+    my $dbh = $cms->dbh();
+    my $fields = $cms->getModuleFields();
+    my $sth = $dbh->prepare("select $fields from ng_modules where $where") or return $cms->error($DBI::errstr);
     $sth->execute(@_) or return $cms->error($DBI::errstr);
     my $mRow = $sth->fetchrow_hashref() or return $cms->error("getModuleRow(): Запрошенный модуль не найден");
     $sth->fetchrow_hashref() and return $cms->error("getModuleRow(): Условие запроса не определяет уникальной записи в ng_modules");
@@ -1385,6 +1390,40 @@ sub modulesHash {
         return undef;
     }
     return $cms->{_mrowC};
+};
+
+=head
+ Usage:
+ 
+ my $iterator = $cms->getModulesIterator();
+ while (my $moduleObj = &$iterator()) {
+    ....
+ }
+=cut 
+
+sub getModulesIterator {
+    my $cms = shift;
+    my ($object, $method) = @_;
+    die "NGPlugins->iterator(\$class,\$method): No \$class or \$method." unless $object && $method;
+    
+    my $dbh = $cms->dbh();
+    my $fields = $cms->getModuleFields();
+    my $sth = $dbh->prepare("select $fields from ng_modules") or return $cms->error($DBI::errstr);
+    $sth->execute() or return $cms->error($DBI::errstr);
+
+    my $modules = [];
+    while (my $mRow = $sth->fetchrow_hashref()) {
+        $cms->{_mrowC}->{$mRow->{code}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
+        my $mObj = $cms->getModuleByCode($mRow->{code});
+        push @$modules, $mObj;
+    };
+    $sth->finish();
+    
+    return sub {
+        for (;;) {
+            return shift(@$modules);
+        };
+    };
 };
 
 sub getModuleInstance ($$) {
