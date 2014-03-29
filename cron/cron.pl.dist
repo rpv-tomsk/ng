@@ -1,0 +1,12 @@
+#!/usr/bin/perl -w
+use strict;
+use lib('/web/ng6/perl/lib','/web/site/perl/lib');
+use NG::Bootstrap;
+
+NG::Bootstrap::importX(
+   undef,
+   App => 'NG::CronManager',
+   DB  => 'Site::DB',
+   SiteRoot => '/web/site',
+   Debug => 0,
+);
