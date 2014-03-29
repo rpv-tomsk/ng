@@ -148,6 +148,7 @@ sub moduleParam {
 sub pluginParam {
     #Метод вредный. Параметры плагина/модуля передаются параметром
     #вызова getBlockKeys()/getBlockContent(), и должны бы использоваться оттуда
+    #TODO: замечание устарело, концепция изменилась. Парсинг параметров надо вынести на уровень выше.
 	my $self = shift;
 	my $param = shift or cluck("pluginParam(): no key specified");
     $self->{_pluginparams}||=$self->_parseParams($self->{_pParamsRaw});
