@@ -1341,7 +1341,6 @@ sub getStash ($$) {
 sub getModuleByCode ($$) {
 	my $cms = shift;
 	my $code = shift;
-
 	my $opts = shift || {};
 
     my $hash = $cms->modulesHash({CODE=>$code});
@@ -1351,19 +1350,31 @@ sub getModuleByCode ($$) {
     return $cms->error("getModuleCode: Хэш из modulesHash() не содержит ключа $code") unless exists $hash->{$code};
     my $v  = $hash->{$code};
     return $cms->defError("getModuleByCode():","Хэш из modulesHash() содержит не HASHREF для кода $code") if ref $v ne "HASH";
-        
-    my $m = $v->{MODULE};
-    my $mRow = $v->{MODULEROW};
-    #TODO: support PARAMS key ?
-    return $cms->defError("getModuleByCode():","MODULEROW из modulesHash() содержит не HASHREF для кода $code") if $mRow && ref $mRow ne "HASH";
-    $m ||= $mRow->{module} if $mRow;
     
-    return $cms->error("getModuleByCode(): Хэш из modulesHash() не содержит значения MODULE или MODULEROW.module для кода $code") unless $m;
+    #TODO: support PARAMS key?
+    #TODO: перенести парсинг параметров из NG::Module->moduleParam()/_parseParams() на этот уровень?
+    my $mRow = $v->{MODULEROW};
+    return $cms->defError("getModuleByCode():","MODULEROW из modulesHash() содержит не HASHREF для кода $code") if $mRow && ref $mRow ne "HASH";
 
+    my $m = $v->{MODULE};
+    $m ||= $mRow->{module} if $mRow;
+    return $cms->error("getModuleByCode(): Хэш из modulesHash() не содержит значения MODULE или MODULEROW.module для кода $code") unless $m;
+    $mRow ||= {module=>$m,code=>$code};
+    
+    #getModuleByRow() is below.
     $opts->{MODULEROW} = $mRow;
 	my $mObj = $cms->getObject($m,$opts) or return $cms->defError("getModuleByCode():");
 	return $mObj;
 };
+
+=head
+sub modulesHash {
+    my ($cms,$helper) = (@_);
+    return {
+        NEWS => {MODULE=>'Site::News',MODULEROW=>{base=>'/news/'}, PARAMS => TODO },
+    };
+}
+=cut
 
 sub modulesHash {
     my $cms = shift;
@@ -1414,14 +1425,13 @@ sub getModulesIterator {
     my $modules = [];
     while (my $mRow = $sth->fetchrow_hashref()) {
         $cms->{_mrowC}->{$mRow->{code}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
-        my $mObj = $cms->getModuleByCode($mRow->{code});
-        push @$modules, $mObj;
+        push @$modules, $mRow->{code};
     };
     $sth->finish();
     
     return sub {
         for (;;) {
-            return shift(@$modules);
+            return $cms->getModuleByCode(shift(@$modules));
         };
     };
 };
