@@ -1560,23 +1560,23 @@ sub getNeighbourBlocks {
 	# как метод CMS: NG::Application->confParam($param,$default)
     # как метод модуля (наследник NG::Module)->confParam($param,$default)  #[MODULE_%MODULECODE%].param=value
 	sub confParam {
-		my $inovacate = shift;
+		my $invoker = shift;
 		my $param = shift;
 		
         my @c = caller(0);
         my $cobj = $NG::Application::cms->{_confObj};
-        if (ref $inovacate && $inovacate->isa("NG::Module")) {
-            my $code = $inovacate->getModuleCode() or die "confParam($param): at ".$c[0]." line ".$c[2].": can`t getModuleCode()";
+        if (ref $invoker && $invoker->isa("NG::Module")) {
+            my $code = $invoker->getModuleCode() or die "confParam($param): at ".$c[0]." line ".$c[2].": can`t getModuleCode()";
             $param = "MODULE_" .$code.'.'.$param;
         }
-        elsif ($inovacate eq "NG::Application" || ref $inovacate && $inovacate->isa("NG::Application")) {
+        elsif ($invoker eq "NG::Application" || ref $invoker && $invoker->isa("NG::Application")) {
             #Do nothing
         }
         else {
-			$inovacate = ref $inovacate if ref $inovacate;
+			$invoker = ref $invoker if ref $invoker;
 			my $group = $param;
 			$param = shift;
-			$param = $inovacate . ( $group ? '_'.$group : '' ).'.'.$param;
+			$param = $invoker . ( $group ? '_'.$group : '' ).'.'.$param;
 		};
 		
 		die $c[3]."($param) config not opened and no default value at ".$c[0]." line ".$c[2] unless $cobj || scalar @_;
