@@ -5,6 +5,7 @@ use NG::Field;
 use NG::Module::List;
 use NSecure;
 use Data::Dumper;
+use Scalar::Util();
 
 $NG::Module::List::Filters::VERSION = 0.1;
 
@@ -30,6 +31,7 @@ sub new {
 	my $filter = {};
 	bless $filter, $class;
 	$filter->{_parentObj} = $pObj;
+	Scalar::Util::weaken($filter->{_parentObj});
 	$filter->{_config} = \%args;
 	$filter->init(@_);
 	$filter;
