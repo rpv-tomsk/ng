@@ -1344,17 +1344,17 @@ sub getModuleByCode ($$) {
 	my $opts = shift || {};
 
     my $hash = $cms->modulesHash({CODE=>$code});
-    return $cms->defError("getModuleByCode():","modulesHash() не вернул значения для CODE $code") unless $hash;
-    return $cms->defError("getModuleByCode():","возвращенное modulesHash() значение не HASHREF") if ref $hash ne "HASH";
+    return $cms->defError("getModuleByCode()","modulesHash() не вернул значения для CODE $code") unless $hash;
+    return $cms->defError("getModuleByCode()","возвращенное modulesHash() значение не HASHREF") if ref $hash ne "HASH";
     
     return $cms->error("getModuleCode: Хэш из modulesHash() не содержит ключа $code") unless exists $hash->{$code};
     my $v  = $hash->{$code};
-    return $cms->defError("getModuleByCode():","Хэш из modulesHash() содержит не HASHREF для кода $code") if ref $v ne "HASH";
+    return $cms->defError("getModuleByCode()","Хэш из modulesHash() содержит не HASHREF для кода $code") if ref $v ne "HASH";
     
     #TODO: support PARAMS key?
     #TODO: перенести парсинг параметров из NG::Module->moduleParam()/_parseParams() на этот уровень?
     my $mRow = $v->{MODULEROW};
-    return $cms->defError("getModuleByCode():","MODULEROW из modulesHash() содержит не HASHREF для кода $code") if $mRow && ref $mRow ne "HASH";
+    return $cms->defError("getModuleByCode()","MODULEROW из modulesHash() содержит не HASHREF для кода $code") if $mRow && ref $mRow ne "HASH";
 
     my $m = $v->{MODULE};
     $m ||= $mRow->{module} if $mRow;
@@ -1363,7 +1363,7 @@ sub getModuleByCode ($$) {
     
     #getModuleByRow() is below.
     $opts->{MODULEROW} = $mRow;
-	my $mObj = $cms->getObject($m,$opts) or return $cms->defError("getModuleByCode():");
+	my $mObj = $cms->getObject($m,$opts) or return $cms->defError("getModuleByCode()");
 	return $mObj;
 };
 
@@ -1384,7 +1384,7 @@ sub modulesHash {
     
     if ($ref->{CODE}) {
         return $cms->{_mrowC} if exists $cms->{_mrowC}->{$ref->{CODE}};
-        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or return $cms->defError("getModuleByCode():","Запрошенный модуль ".$ref->{CODE}." не найден");
+        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or return $cms->error("Запрошенный модуль ".$ref->{CODE}." не найден");
         $cms->{_mrowC}->{$ref->{CODE}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
     }
     elsif ($ref->{REF}) {
