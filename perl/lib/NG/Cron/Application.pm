@@ -1,8 +1,10 @@
-package NG::CronManager;
+package NG::Cron::Application;
 use strict;
 
 use NG::Application;
 our @ISA = qw/NG::Application/;
+
+use NG::Cron::Task;
 
 my $OPS = {
     'runtask'       => {sub => 'doRunTask'},        #Run task specified
@@ -24,22 +26,34 @@ my @helpOrder = qw/
 /;
 
 sub run {
-    my $cms = shift;
+    my $self = shift;
     
-    my $dbh = $cms->dbh();
-    $cms->openConfig() || return $cms->showError();
+    my $dbh = $self->dbh();
+    $self->openConfig() || return $self->showError();
     
     my $cmd = $ARGV[0];
     my $op = undef;
     $op = $OPS->{$cmd} if $cmd;
-
+    
     if (! $cmd || ! $op) {
         $op = $OPS->{help};
-        #push @opParams,$cmd;
     };
-
+    
     my $method = $op->{sub};
-    $cms->$method(@ARGV);
+    my $ret = eval{
+        $cms->$method(@ARGV);
+    };
+    if (my $exc = $@) {
+        if (NG::Exception->caught($exc)) {
+            print STDERR $exc->message();
+        };
+        #warn "Operation '$operation' failed: $exc";
+        #if ($exc =~ /^(.*)\ at\ /) {
+        #    $exc = $1;
+        #};
+        die $exc;
+    };
+    exit(0);
 };
 
 sub doShowUsage {
@@ -64,26 +78,17 @@ sub doShowUsage {
 
 sub doRunTask {
     my ($self,$cmd,$task) = (shift,shift,shift);
-    
-    sub _error { print $_[0]."\n"; exit 1; };
-    
-    _error "Incorrect usage. Run by root is forbidden." if ($< == 0);
-    _error "Incorrect usage. No task to run specified." unless $task;
+    NG::Exception->throw('NG.INTERNALERROR', "Incorrect usage. Run by root is forbidden.") if ($< == 0); #запретим запуск от рута
+    NG::Exception->throw('NG.INTERNALERROR', "Incorrect usage. No task to run specified.") unless $task;
     my $moduleCode = undef;
     if ($task =~ /(\S+?)\/(\S+)/){
         $moduleCode = $1;
         $task = $2;
     };
-    _error "Incorrect usage. No MODULECODE or TASK specified." unless $task && $moduleCode;
-    my $mObj = $self->getModuleByCode($moduleCode);
-    _error $self->getError() unless $mObj;
-    my $interface = $mObj->getInterface('CRON');
-    _error "Task $moduleCode/$task: Module $moduleCode has no CRON interface." unless $interface;
-    
-    
-    
-    print "Running task $task\n";
-}
+    my $task = NG::Cron::Task->new({MODULE=>$moduleCode, TASK=>$task});
+    $task->run({startup=>'auto'});
+};
+
 
 sub doShowCrontab {
     my $self = shift;
@@ -99,7 +104,7 @@ sub doUpdateCrontab {
         exit 1;
     };
     
-    my $crontab = $self->_generateCrontab();
+    #my $crontab = $self->_generateCrontab();
     ### # # # # # NG CMS 6 CRONTAB BEGIN # # # # #
     ### This block can be updated by cron.pl updatecrontab
     ### # # # # #  NG CMS 6 CRONTAB END  # # # # #
@@ -111,6 +116,45 @@ sub doUpdateCrontab {
     #5) Update crontab
     
     die "Not implemented yet";
+    
+    $username = $ENV{USER} if ($< != 0 && !$username);
+    my $cronfile = $self->getSiteRoot()."/tmp/cron.tmp";
+    my @newcrontab =();
+    my $started = 0; #флаг того что найдена строка ограничитель
+    my $modifed = 0;
+    my @cronstr = $self->_generateCrontab();
+    my @oldcron = `crontab -l`; #тут хранится строка крона
+    my $user = uc( $self->confParam("CRONTAB.User") || $username );
+    my $begin_str = "### # # # NG CMS 6 CRONTAB BEGIN $user # # # ###\n";
+    $begin_str .= "MAILTO=".($self->confParam("CRONTAB.DebugTo") || 'rpv@nikolas.ru')."\n";
+    my $end_str = "### # # # NG CMS 6 CRONTAB END $user  # # # ###\n";
+    unshift @cronstr, $begin_str ;
+    push @cronstr, $end_str;
+    $begin_str = qr/NG CMS 6 CRONTAB BEGIN $user/;
+    $end_str = qr/NG CMS 6 CRONTAB END $user/;
+
+    while (my $line = shift @oldcron){
+        if($started){
+            next unless ($line =~ $end_str);
+            $started = 0;
+        }else{
+            if($line =~ $begin_str){
+                $started = 1;
+                $modifed = 1;
+                push @newcrontab , @cronstr;
+                
+            }else{
+                push  @newcrontab, $line;
+            }
+        }
+    }
+    push  @newcrontab, ("\n",@cronstr) unless $modifed;
+    open FH, '>', $cronfile || die $!;
+    print FH @newcrontab;
+    close(FH);
+    my $ret = system("crontab -u $username $cronfile");
+    sleep(1);
+    unlink $cronfile;
 }
 
 sub _generateCrontab {
