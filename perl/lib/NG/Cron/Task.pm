@@ -1,6 +1,9 @@
 package NG::Cron::Task;
 use strict;
 
+use NG::Cron::Logger;
+use Fcntl qw(:flock :DEFAULT);
+
 sub new {
     my $class = shift;
 
@@ -19,7 +22,7 @@ sub new {
 sub _load {
     my ($self,$params) = (shift,shift);
     
-    NG::Exception->throw('NG_INTERNALERROR', "Incorrect usage. No MODULE or TASK specified.")  unless $params->{MODULE} && $params->{TASK};
+    NG::Exception->throw('NG.INTERNALERROR', "Incorrect usage. No MODULE or TASK specified.")  unless $params->{MODULE} && $params->{TASK};
     
     my $cms = $self->cms();
     my $mObj = $cms->getModuleByCode($params->{MODULE});
@@ -33,12 +36,12 @@ sub _load {
     NG::Exception->throw('NG.INTERNALERROR', "Task $moduleCode/$task: Module $moduleCode has invalid configCRON() configuration.") unless $tasklist && ref $tasklist eq "ARRAY";
     my ($config) = grep{$_->{TASK} eq $params->{TASK}}@$tasklist;
     
-    NG::Exception->throw('NG.INTERNALERROR', "Task $moduleCode/$task not found in module $moduleCode.") unless $taskConfig;
+    NG::Exception->throw('NG.INTERNALERROR', "Task $moduleCode/$task not found in module $moduleCode.") unless $config;
     $self->_validateTaskConfig($config);
     $self->{_config} = $config;
-    $self->{_modulecode} = $moduleCode;
+    $self->{_modulecode} = $params->{MODULE};
     #TODO: Путь брать из конфига
-    $self->{_lockfile}   = $cms->getSiteRoot()."/cron/lock/".$moduleCode."_".$config->{TASK}.".pid";
+    $self->{_lockfile}   = $cms->getSiteRoot()."/cron/lock/".$params->{MODULE}."_".$config->{TASK}.".pid";
     $self;
 };
 
@@ -98,12 +101,12 @@ sub run {
 
 sub _run {
     my $self = shift;
-    $self->updateStatus({status=>'run',update_last_run_time=>1});
+    $self->updateStatusRecord({status=>'run',update_last_run_time=>1});
     
     my $method = $self->{_config}->{METHOD};
     $self->{_interface}->$method(NG::Cron::Logger->new($self));
     
-    $self->updateStatus({status=>'stop'});
+    $self->updateStatusRecord({status=>'stop'});
 };
 
 sub _lock {
@@ -191,7 +194,7 @@ sub _getStatusRecord {
     };
 };
 
-sub updateStatus {
+sub updateStatusRecord {
     my ($self, $newStatus) = (shift,shift);
     
     my $ph = "";

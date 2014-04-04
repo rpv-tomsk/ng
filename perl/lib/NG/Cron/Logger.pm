@@ -20,7 +20,7 @@ sub logMessage($$){
 sub setStatus(){
     my $self = shift;
     my $message = shift || return;
-    $self->{_task}->updateStatus({status_text=>$message});
+    $self->{_task}->updateStatusRecord({status_text=>$message});
 };
 
 1;
