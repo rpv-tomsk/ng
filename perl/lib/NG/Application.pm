@@ -409,6 +409,7 @@ sub processRequest {
     
     
     my $row = $cms->findPageRowByURL($url,$ssId);
+    return $cms->error() unless $row;
 #NG::Profiler::saveTimestamp("findPRbURL","processRequest");
 
     if ((!defined $row || ($row->{catch} != 0 && $row->{catch} != 3)) && $url !~ /\/$/) {
@@ -416,7 +417,6 @@ sub processRequest {
     };
 
     return $cms->notFound() unless defined $row;
-    return $cms->error() unless $row;
     
     #подмена основного шаблона на шаблон дл€ печати
     $row->{'template'}=$row->{'print_template'} if $cms->isPrint();
