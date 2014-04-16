@@ -1338,7 +1338,7 @@ input.info_file {
 	padding-right: 10px;
 }
 input.short_text {
-	width: 70px;
+	width: 68px;
 	float: left;/*_margin-left: 4px;*/
 }
 #table_permissions td.mess_attention {
@@ -1492,7 +1492,7 @@ div.form_contener {
 }
 div.input_info input.checkbox {
 	float: left;
-	margin: -3px 3px 5px 5px;
+	margin: 0px 3px 0px 5px;
 }
 .component_new_form td table .td-for-label {
 	width: 70px;
