@@ -1137,22 +1137,24 @@ sub changed {
 };
 
 sub beforeSave {
-	my $self = shift;
-
-	my $oldDbV = $self->{OLDDBVALUE};
-	my $newDbV = $self->dbValue();
-
-	if ($self->isFileField()) {
-		if ($oldDbV && $oldDbV ne $newDbV) {
-			unlink $self->parent()->getDocRoot().$self->{UPLOADDIR}.$oldDbV if $oldDbV;
-		};
-	}
-	elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
+    my $self = shift;
+    my $action = shift;
+    
+    my $oldDbV = $self->{OLDDBVALUE};
+    my $newDbV = $self->dbValue();
+    
+    if ($self->isFileField()) {
+        return $self->setError("Предыдущее значение поля не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
+        if ($oldDbV && $oldDbV ne $newDbV) {
+            unlink $self->parent()->getDocRoot().$self->{UPLOADDIR}.$oldDbV if $oldDbV;
+        };
+    }
+    elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
         my $dbv = $self->dbValue();
         return $self->setError("Отсутствует имя файла для сохранения данных поля ".$self->{FIELD}." типа ".$self->{'TYPE'}) unless $dbv;
-		my ($v,$e) = saveValueToFile($self->{VALUE},$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$dbv);
-		return $self->setError("Ошибка сохранения данных поля $self->{FIELD}: ".$e) unless defined $v;
-	};
+        my ($v,$e) = saveValueToFile($self->{VALUE},$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$dbv);
+        return $self->setError("Ошибка сохранения данных поля $self->{FIELD}: ".$e) unless defined $v;
+    };
     return 1;
 };
 
