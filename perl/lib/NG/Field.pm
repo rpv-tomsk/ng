@@ -449,6 +449,7 @@ sub _setValue {
 	
 	if ($field->{TYPE} eq "checkbox") {
 		$field->{CHECKED}="";
+		$value = 0 unless defined $value;
 		if ($value ne $field->{CB_VALUE}) {
 			$value = 0;
 		}
