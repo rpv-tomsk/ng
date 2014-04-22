@@ -489,7 +489,7 @@ sub _run {
 
 sub setTabs {
     my $self = shift;
-    my $self->{_tabs} = shift;
+    $self->{_tabs} = shift;
 };
 
 sub pushRegion {  #REGION WEIGHT CONTENT
