@@ -44,6 +44,7 @@ use NSecure;
 use NHtml;
 use NG::SiteStruct::Event;
 
+use NGPlugins;
 use NG::Block;
 @ISA = qw(NG::Block);
 
