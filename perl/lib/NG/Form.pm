@@ -641,7 +641,7 @@ sub _saveData {
     };
   
     foreach my $field (@{$fields}) {
-		$field->beforeSave() or return $self->error("Ошибка вызова beforeSave() поля ".$field->{FIELD}.": ".$field->error());
+		$field->beforeSave($action) or return $self->error("Ошибка вызова beforeSave() поля ".$field->{FIELD}.": ".$field->error());
     };
 	my $ret = "";
 	if ($action eq "insert") {
