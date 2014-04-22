@@ -409,7 +409,7 @@ sub processRequest {
     
     
     my $row = $cms->findPageRowByURL($url,$ssId);
-    return $cms->error() unless $row;
+    return $cms->error() if defined $row && !$row;
 #NG::Profiler::saveTimestamp("findPRbURL","processRequest");
 
     if ((!defined $row || ($row->{catch} != 0 && $row->{catch} != 3)) && $url !~ /\/$/) {
