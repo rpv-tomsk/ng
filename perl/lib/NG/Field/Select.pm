@@ -134,7 +134,7 @@ sub setSelectOptions {
         $p->{PRIVILEGE} = $t->{PRIVILEGE} if exists $t->{PRIVILEGE};
         
         $field->{_defoption} = $p if exists $p->{DEFAULT} && $p->{DEFAULT};
-        $field->{_selected_option} = $p if (exists $field->{VALUE} && $field->{VALUE} eq $p->{ID});
+        $field->{_selected_option} = $p if defined $field->{VALUE} && ($field->{VALUE} eq $p->{ID});
         if (exists $p->{SELECTED} && $p->{SELECTED}) {
             delete $seloption->{SELECTED} if $seloption; # Чистим, если в списке несколько опций с флагом SELECTED
             $seloption = $p;
@@ -252,8 +252,7 @@ sub _setDBValue {
     foreach my $opt (@{$field->{SELECT_OPTIONS}}) {
         delete $opt->{SELECTED};
         if (defined $value && $opt->{ID} eq $value) {
-            $opt->{'SELECTED'}=1;
-            #$field->{VALUE} = $opt->{NAME};
+            $opt->{SELECTED}=1;
             $field->{_selected_option} = $opt;
         };
     };
