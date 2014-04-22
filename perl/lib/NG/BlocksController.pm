@@ -176,6 +176,8 @@ sub pushABlock {
         #Сделаем вызов getBlockContent() до построения списка блоков, на случай редиректа и т д  - оптимизация.
         return $self->getBlockContent($block);
     };
+    #Сделаем возврат без получения реального контента. 
+    #Контент и его ключи будут запрошены в общем вызове, вместе со всеми остальными (не АБ) блоками
     return NG::BlockContent->output("DUMMY") unless $abKeys->{HASRELATED};
     #Кеширование возможно, но у нас есть подчиненные блоки, необходимо запросить метаданные.
     #Для надежности, сразу запрашиваем и контент, для обработки случая его отсутствия в кеше.
@@ -199,6 +201,7 @@ warn "not found cache data: $block->{CODE} ".Dumper($block->{KEYS},$block->{CACH
     };
     #Контент или метаданые отсутствуют.
     delete $block->{CACHEKEYS};
+    #Вызовет $block->getBlockContent() что выставит RELATED-значения для подчиненных блоков
     return $self->getBlockContent($block);
 };
 
