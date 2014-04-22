@@ -1343,7 +1343,7 @@ sub collapseBranch {
                 last if $t eq Tree::Simple->ROOT;
                 
                 #Ноду не надо схлопывать, поскольку она лежит на элементе пути.
-                last if $path && $path->{$_tree->{_level}} eq $_tree->{_id};
+                last if $path && $path->{$_tree->{_level}} && $path->{$_tree->{_level}} eq $_tree->{_id};
                 
                 #Схлопываем.
                 &$cleanFunction($_tree);
