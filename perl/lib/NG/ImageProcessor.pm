@@ -234,8 +234,9 @@ sub torectangle {
     ## Blank image
     my $pp = Image::Magick->new;
     $pp->Set(size=>$width.'x'.$height);
-#TODO: add param for background color
-    $pp->ReadImage('xc:white');
+    my $bg = $pCtrl->paramOrOption('background','BACKGROUND');
+    $bg ||= 'xc:white';
+    $pp->ReadImage($bg);
     ## Compose
 #TODO: add param for gravity
     $pp->Composite(image=>$iObj,gravity=>'Center');
