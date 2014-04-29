@@ -13,6 +13,16 @@ sub throw {
     
     $self->{code} = shift;
     $self->{message} = shift;
+    $self->{carpmessage} = "";
+    
+    if ($NG::Application::DEBUG) {
+        local($@, $!);
+        eval { require Carp::Heavy; };
+        unless ($@) {
+            $Carp::Internal{'NG::Exception'}++;
+            $self->{carpmessage} = Carp::longmess_heavy($self->getText());
+        };
+    };
     
     warn $self->getText();
     die $self;
@@ -33,7 +43,8 @@ sub code     { my $self = shift; return $self->{code};    };
 sub getText {
     my $exc = shift;
     
-    "Code=". $exc->code.' Message='.$exc->message."\n";
+    return $exc->{carpmessage} if $exc->{carpmessage};
+    $exc->code.": ".$exc->message."\n";
 };
 
 package NG::DBIException;
