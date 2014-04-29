@@ -876,13 +876,11 @@ sub gettemplate {
     my $eopts = shift;
     
     if ($eopts && ref $eopts ne "HASH") {
-        $self->setError("gettemplate(tmpl,eopts): eopts value is not hashref");
-        return undef;
+        NG::Exception->throw('NG.INTERNALERROR',"gettemplate(tmpl,eopts): eopts value is not hashref");
     };
 
     unless ( -f $self->{_template_dir}.$filename ) {
-        $self->setError("Could not open template '$filename': $!");
-        return undef;
+        NG::Exception->throw('NG.INTERNALERROR',"Could not open template '$filename': $!");
     };
 
     my $opts = {};
@@ -912,7 +910,7 @@ sub gettemplate {
     #defaultTemplateParams() support
     my $d = $self->defaultTemplateParams();
     unless ($d && ref $d eq "HASH") {
-        return $self->defError("gettemplate():","defaultTemplateParams() returns invalid value");
+        NG::Exception->throw('NG.INTERNALERROR',"gettemplate(): defaultTemplateParams() returns invalid value");
     };
     map {$opts->{$_} = $d->{$_}} keys %$d;
 
