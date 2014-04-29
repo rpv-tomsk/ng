@@ -80,6 +80,7 @@ sub throw {
             $message.= "\n".$rm;
         };
     };
+    $Carp::Internal{'NG::DBIException'}++;
     $class->SUPER::throw($code,$prefix.$message);
 };
 
