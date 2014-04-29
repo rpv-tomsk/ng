@@ -1,9 +1,9 @@
 package NG::Bootstrap;
-
 use strict;
 
-sub error {
+sub cgi_error {
     my $msg = shift;
+    print "Status: 500\n";
     print "Content-Type: text/plain; charset=windows-1251;\n\n";
     print $msg;
     exit;
@@ -20,85 +20,112 @@ sub importX {
     
     $class||= "NG::Application" if $param{PageModule};
     
-    error "No Application specified" if (!defined $class);  #TODO: make message 
-    eval "require $class; 1;" or error $@;                  #TODO: -//-
+    cgi_error "No Application specified" if (!defined $class);  #TODO: make message 
+    eval "require $class; 1;" or cgi_error $@;                  #TODO: -//-
     if ($dbclass) {
-        eval "require $dbclass; 1;" or error $@;            #TODO: make message
+        eval "require $dbclass; 1;" or cgi_error $@;            #TODO: make message
         $db = $dbclass->new();
-        $db->connect() or error $db->errstr();
+        $db->connect() or cgi_error $db->errstr();
     };
-	
-	if (exists $param{Debug}) {
-		eval "use CGI::Carp qw(fatalsToBrowser)";
-	};
-	
-	$SIG{'__WARN__'} = sub { print STDERR $_[0]  };
+    
+    $SIG{'__WARN__'} = sub { print STDERR $_[0]  };
     
     ### CGI/mod_perl version
     use CGI;
     $cgi = CGI->new();
-    #eval {
     
-	$NG::Bootstrap::is_cgi = 0;
-	$NG::Bootstrap::is_modperl = 0;
-	$NG::Bootstrap::is_fastcgi = 0;
-	$NG::Bootstrap::is_speedycgi = 0;
+    $NG::Bootstrap::is_cgi = 0;
+    $NG::Bootstrap::is_modperl = 0;
+    $NG::Bootstrap::is_fastcgi = 0;
+    $NG::Bootstrap::is_speedycgi = 0;
     
-	if (exists $ENV{MOD_PERL}){
-	  $NG::Bootstrap::is_modperl = 1;
-	}
-	else {
-  	  $NG::Bootstrap::is_cgi = 1;
-	};
+    if (exists $ENV{MOD_PERL}){
+        $NG::Bootstrap::is_modperl = 1;
+    }
+    else {
+        $NG::Bootstrap::is_cgi = 1;
+    };
     $param{CGIObject} = $cgi;
     $param{DBObject}  = $db;
-    my $app = $class->new(%param);
-    $app->run();  # must do $db->connect();
-    #} or error $@;
-    ###
-    
-    
-    ### CGI::Fast
-    #eval 'require CGI::Fast;';
-    #while (my $cgi = new CGI::Fast) {
-    #    $app = $class->new( %param, CGIObject => $cgi, DBObject=>$db ); #   or die $class->errstr;
-    #    #local $SIG{__WARN__} = sub { $app->trace($_[0]) };
-    #    #MT->set_instance($app);
-    #    #$app->init_request(CGIObject => $cgi);
-    #    $app->run;
-    #}
-    
+    eval {
+        my $app = $class->new(%param);
+        $app->run();  # must do $db->connect();
+    };
+    if (my $e = $@) {
+        if (NG::Exception->caught($@)) {
+            die $e->getText();
+        }
+        else {
+            die $@;
+        };
+    };
 }
+
+sub fcgi_error {
+    my $msg = shift;
+    
+    my $cgi = new CGI::Fast;
+    
+    print "Status: 500\n";
+    print "Content-Type: text/plain; charset=windows-1251;\n\n";
+    print $msg;
+    exit;
+};
 
 sub FastCGI {
     my $pkg = shift;
     my %param = @_;
     my $class = $param{App};
     my $dbclass = $param{DB};
-    my $authclass = $param{AuthClass};
-
-
-    error "No Application specified" if (!defined $class);  #TODO: make message 
-    eval "require $class; 1;" or error $@;                  #TODO: -//-
+    
+    require CGI::Fast;
+    
+    fcgi_error "No Application specified" if (!defined $class);  #TODO: make message 
+    eval "require $class; 1;" or fcgi_error $@;                  #TODO: -//-
     my $db = undef;
-    if ($dbclass) { eval "require $dbclass; 1;" or error $@; #TODO: make message
+    if ($dbclass) { eval "require $dbclass; 1;" or fcgi_error $@; #TODO: make message
         $db = $dbclass->new();
     }; 
-
-
-    require CGI::Fast;
+    
     $NG::Bootstrap::is_cgi = 0;
     $NG::Bootstrap::is_modperl = 0;
     $NG::Bootstrap::is_fastcgi = 1;
     $NG::Bootstrap::is_speedycgi = 0;
 
+    #local $SIG{__WARN__} = sub { $app->trace($_[0]) };
+    #local $SIG{__DIE__} = sub { warn "localDIE"; print @_ };
+
+    $param{DBObject} = $db if $db;
     while (my $cgi = new CGI::Fast) {
-        if ($db) {
-      	  $db->connect() or error $db->errstr();
+        eval {
+            if ($db) {
+                $db->connect() or die $db->errstr();
+            };
+            my $app = $class->new( %param, CGIObject => $cgi); #   or die $class->errstr;
+            $app->run();  # must do $db->connect();
         };
-        my $app = $class->new( %param, CGIObject => $cgi, DBObject=>$db,AuthClass=>$authclass ); #   or die $class->errstr;
-    #    #local $SIG{__WARN__} = sub { $app->trace($_[0]) };
-        $app->run;
+        if (my $e = $@) {
+            if (NG::Exception->caught($@)) {
+                if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
+                    CGI::Carp::fatalsToBrowser($e->getText());
+                }
+                else {
+                    print "Status: 500\n";
+                    print "Content-Type: text/plain; charset=windows-1251;\n\n";
+                    print $e->getText();
+                };
+            }
+            else {
+                if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
+                    CGI::Carp::fatalsToBrowser($@);
+                }
+                else {
+                    print "Status: 500\n";
+                    print "Content-Type: text/plain; charset=windows-1251;\n\n";
+                    print $@;
+                };
+            };
+        };
     };
 };
 
