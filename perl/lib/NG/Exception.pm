@@ -33,7 +33,7 @@ sub code     { my $self = shift; return $self->{code};    };
 sub getText {
     my $exc = shift;
     
-    "Got this: Code=". $exc->code.' Message='.$exc->message."\n";
+    "Code=". $exc->code.' Message='.$exc->message."\n";
 };
 
 package NG::DBIException;
