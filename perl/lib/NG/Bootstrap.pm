@@ -1,5 +1,6 @@
 package NG::Bootstrap;
 use strict;
+use NG::Exception;
 
 sub cgi_error {
     my $msg = shift;
