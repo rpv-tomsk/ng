@@ -4,7 +4,17 @@ use strict;
 use NG::Application;
 our @ISA = qw/NG::Application/;
 
+use NG::Exception;
 use NG::Cron::Task;
+use NG::Cron::Service;
+
+our $crontab = '/usr/bin/crontab';
+
+our $begin_re = qr/NG CMS 6 CRONTAB BEGIN/;
+our $end_re   = qr/NG CMS 6 CRONTAB END/;
+
+our $begin_str = "### # # # NG CMS 6 CRONTAB BEGIN # # # ###\n";
+our $end_str   = "### # # # NG CMS 6 CRONTAB END   # # # ###\n";
 
 my $OPS = {
     'runtask'       => {sub => 'doRunTask'},        #Run task specified
@@ -12,6 +22,7 @@ my $OPS = {
     'updatecrontab' => {sub => 'doUpdateCrontab'},  #Generates crontab and installs it
     'help'          => {sub => 'doShowUsage'},      #Default function
 };
+
 #HELP
 $OPS->{'runtask'}->{cmdline}= "{op} MODULECODE/TASK";
 $OPS->{'showcrontab'}->{cmdline}= "{op}";
@@ -41,17 +52,19 @@ sub run {
     
     my $method = $op->{sub};
     my $ret = eval{
-        $cms->$method(@ARGV);
+        $self->$method(@ARGV);
     };
     if (my $exc = $@) {
         if (NG::Exception->caught($exc)) {
-            print STDERR $exc->message();
+            print STDERR $exc->message()."\n";
+        }
+        else {
+            #warn "Operation '$operation' failed: $exc";
+            #if ($exc =~ /^(.*)\ at\ /) {
+            #    $exc = $1;
+            #};
+            print STDERR $exc;
         };
-        #warn "Operation '$operation' failed: $exc";
-        #if ($exc =~ /^(.*)\ at\ /) {
-        #    $exc = $1;
-        #};
-        die $exc;
     };
     exit(0);
 };
@@ -85,16 +98,18 @@ sub doRunTask {
         $moduleCode = $1;
         $task = $2;
     };
-    my $task = NG::Cron::Task->new({MODULE=>$moduleCode, TASK=>$task});
-    $task->run({startup=>'auto'});
+    NG::Cron::Task->new({MODULE=>$moduleCode, TASK=>$task})->run({startup=>'auto'});
 };
-
 
 sub doShowCrontab {
     my $self = shift;
     
-    print $self->_generateCrontab();
-}
+    my @cronstr = NG::Cron::Service::_generateCrontab($self,"runtask");
+    unshift @cronstr, $begin_str;
+    push @cronstr,    $end_str;
+    
+    print @cronstr;
+};
 
 sub doUpdateCrontab {
     my ($self,$cmd,$username) = (shift,shift,shift);
@@ -104,69 +119,80 @@ sub doUpdateCrontab {
         exit 1;
     };
     
-    #my $crontab = $self->_generateCrontab();
-    ### # # # # # NG CMS 6 CRONTAB BEGIN # # # # #
-    ### This block can be updated by cron.pl updatecrontab
-    ### # # # # #  NG CMS 6 CRONTAB END  # # # # #
-    
-    #1) Add delimiters at top and bottom of $crontab. Add comment.
-    #2) Get existing crontab content
-    #3) Find existing block by delimiters and remove it
-    #4) Place new block instead
-    #5) Update crontab
-    
-    die "Not implemented yet";
-    
-    $username = $ENV{USER} if ($< != 0 && !$username);
-    my $cronfile = $self->getSiteRoot()."/tmp/cron.tmp";
-    my @newcrontab =();
-    my $started = 0; #флаг того что найдена строка ограничитель
-    my $modifed = 0;
-    my @cronstr = $self->_generateCrontab();
-    my @oldcron = `crontab -l`; #тут хранитс€ строка крона
-    my $user = uc( $self->confParam("CRONTAB.User") || $username );
-    my $begin_str = "### # # # NG CMS 6 CRONTAB BEGIN $user # # # ###\n";
-    $begin_str .= "MAILTO=".($self->confParam("CRONTAB.DebugTo") || 'rpv@nikolas.ru')."\n";
-    my $end_str = "### # # # NG CMS 6 CRONTAB END $user  # # # ###\n";
-    unshift @cronstr, $begin_str ;
-    push @cronstr, $end_str;
-    $begin_str = qr/NG CMS 6 CRONTAB BEGIN $user/;
-    $end_str = qr/NG CMS 6 CRONTAB END $user/;
-
-    while (my $line = shift @oldcron){
-        if($started){
-            next unless ($line =~ $end_str);
-            $started = 0;
-        }else{
-            if($line =~ $begin_str){
-                $started = 1;
-                $modifed = 1;
-                push @newcrontab , @cronstr;
-                
-            }else{
-                push  @newcrontab, $line;
-            }
-        }
-    }
-    push  @newcrontab, ("\n",@cronstr) unless $modifed;
-    open FH, '>', $cronfile || die $!;
-    print FH @newcrontab;
-    close(FH);
-    my $ret = system("crontab -u $username $cronfile");
-    sleep(1);
-    unlink $cronfile;
-}
-
-sub _generateCrontab {
-    my $self = shift;
-    
-    my $iterator = $self->getModulesIterator();
-    while (my $mObj = &$iterator()) {
-print $mObj->getModuleCode()."\n";
-        my $interface = $mObj->getInterface('CRON') or next;
+    if (($< != 0) && $username) {
+        print "Incorrect usage. USERNAME requires run by root.\n";
+        exit 1;
     };
     
-    return "* * * * * /sbin/reboot\n";
+    unless ($begin_str =~ $begin_re && $end_str =~ $end_re) {
+        print 'Incorrect configuration. $begin_str must match $begin_re ; $end_str must match $end_re.\n';
+        exit 1;
+    };
+    
+    my $crontabParams = '';
+    $crontabParams = "-u $username" if $username;
+    
+    #ѕолучаем старый файл расписани€
+    my @oldcron = `$crontab $crontabParams -l`;
+    #This breaks when no any crontab exists before run.
+    #if($@ || $?){
+    #    die "Error retrieving old crontab: ".$@.$?;
+    #};
+    
+    #‘ормируем новый блок нашего расписани€
+    my @cronstr = NG::Cron::Service::_generateCrontab($self,"runtask");
+    unshift @cronstr, $begin_str;
+    push @cronstr,    $end_str;
+    
+    my $status = 0;  # 0 - init, 1 - found start, 2 - found end, updated.
+    my $error  = "";
+    my @newcrontab =();
+    while (my $line = shift @oldcron){
+        if ($line =~ $begin_re) {
+            if ($status != 0) {
+                $error = "Corrupted crontab: found duplicate BEGIN marker";
+                last;
+            };
+            $status = 1;
+            next;
+        };
+        if ($line =~ $end_re) {
+            if ($status == 0) {
+                $error = "Corrupted crontab: BEGIN marker not found before END marker";
+                last;
+            };
+            if ($status != 1) {
+                $error = "Corrupted crontab: found duplicate END marker";
+                last;
+            };
+            push @newcrontab , @cronstr;
+            $status = 2;
+            next;
+        };
+        next if $status == 1;      #Skip our lines
+        if ($line =~ /\ runtask\ /) {
+            my $txt = $line;
+            $txt =~ s/\r?\n//;
+            print STDERR "Found line \"$txt\" which looks like ours.\n";
+        }
+        push @newcrontab, $line;   #Save existing lines
+    };
+    
+    if ($error) {
+        print $error."\n";
+        return 1;
+    }
+    else { #No errors, update file
+        push  @newcrontab, ("\n\n",@cronstr) unless $status == 2;
+        eval{
+            open(HANDLER ,"|$crontab $crontabParams -") || die "can't fork: $!";
+            print HANDLER @newcrontab;
+            close HANDLER;
+        };
+        if($@ || $?){
+            die $@.$?;
+        };
+    };
 };
 
 1;
