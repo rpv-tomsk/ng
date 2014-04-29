@@ -267,8 +267,7 @@ sub getInterface {
         $class ||=  $cms->confParam("INTERFACES.".$interfaceName."_class");
         $classHash->{CLASS} = $class if $class;
     };
-    
-    return $cms->getObject($classHash,{PARENT=>$self}) if $classHash;
+    return $cms->getObject($classHash,{MODULEOBJ=>$self}) if $classHash;
     return undef;
 }
 
