@@ -30,7 +30,8 @@ sub init {
     $self->{_db} = $param{DBObject};
     $self->{_pm} = $param{PageModule};
     
-$self->{_siteroot} = $param{SiteRoot};
+    $self->{_siteroot}     = $param{SiteRoot};
+    $self->{_siteroot}     =~ s/\/$//;
     $self->{_docroot}      = (exists $param{DocRoot})?$param{DocRoot}:$self->{_siteroot}."/htdocs/";
     $self->{_template_dir} = (exists $param{TmplDir})?$param{TmplDir}:$self->{_siteroot}."/templates/";
     $self->{_template_dir}.="/" unless $self->{_template_dir} =~ /\/$/;
@@ -64,6 +65,7 @@ $self->{_siteroot} = $param{SiteRoot};
     $NG::Application::cms = $self;
     $NG::Application::pageObj = undef;
     $NG::Application::blocksController = undef;
+    $NG::Application::DEBUG = $self->{_debug};
     $self;
 };
 
@@ -113,22 +115,28 @@ sub getResource {
 
 sub getObject {
     my $cms = shift;
-    my $class = shift or return croak("getObject: No class value");
+    my $class = shift or NG::Exception->throw('NG.INTERNALERROR', "getObject: No class value");
 
     my $cname = "new";  #Constructor method name
     my $use = $class;
     if (ref $class eq "HASH") {
         $cname = $class->{METHOD} || "new";
         $use   = (exists $class->{USE}) ? $class->{USE} : $class->{CLASS};
-        $class = $class->{CLASS} or return croak("getObject(): Class hash has no CLASS key value");
+        $class = $class->{CLASS} or NG::Exception->throw('NG.INTERNALERROR',"getObject(): Class hash has no CLASS key value");
     };
     $class = $1 if ($class =~ /(.*)\s(.*)/);
     unless ($class->can("can") && $class->can($cname)) {
         eval "use $use;";
-        return $cms->error("Ошибка подключения модуля \"".$use."\": ".$@) if ($@);
+        if ($@) {
+            my $m = $@;
+            $m =~ s/ at \(eval \d+\) line \d+\.//g;
+            $m =~ s/(?:\r?\n)+$//;
+            NG::Exception->throw('NG.INTERNALERROR',"Error loading module \"$use\": ".$m) if $NG::Application::DEBUG;
+            NG::Exception->throw('NG.INTERNALERROR',"Error loading module \"$use\".");
+        };
     };
-    return $cms->error("Класс $class не содержит конструктора $cname().") unless UNIVERSAL::can($class,$cname);
-    return $class->$cname(@_) or $cms->defError("getObject():","Ошибка создания объекта класса $class");
+    NG::Exception->throw('NG.INTERNALERROR',"Class $class has no constructor $cname().") unless UNIVERSAL::can($class,$cname);
+    return $class->$cname(@_) or NG::Exception->throw('NG.INTERNALERROR',"Error creating $class object");
 };
 
 sub loadSubsite {
