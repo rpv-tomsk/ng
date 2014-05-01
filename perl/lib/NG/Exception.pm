@@ -5,7 +5,7 @@ use Scalar::Util 'blessed';
 our @specificators;
 our $specificatorProcessors = {};
 
-sub throw {
+sub new {
     my $class = shift;
     
     my $self = {};
@@ -23,13 +23,23 @@ sub throw {
             $self->{carpmessage} = Carp::longmess_heavy($self->getText());
         };
     };
-    
+    $self;
+};
+
+sub throw {
+    my $self = shift->new(@_);
     warn $self->getText();
     die $self;
 };
 
 sub caught {
     my ($class,$e,$code) = (shift,shift,shift);
+    
+    #Treat all 'die' exceptions as NG.INTERNALERROR
+    #Using this method does not provide correct backtraces.
+    #unless (blessed($e)) {
+    #    $e = NG::Exception->new('NG.INTERNALERROR',$e);
+    #};
     
     return undef unless blessed($e) && $e->isa( $class );
     return $e unless $code;

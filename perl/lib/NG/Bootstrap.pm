@@ -49,11 +49,15 @@ sub importX {
     $param{CGIObject} = $cgi;
     $param{DBObject}  = $db;
     eval {
+        #Treat all 'die' exceptions as NG.INTERNALERROR
+        local $main::SIG{__DIE__} = sub {
+            die NG::Exception->new('NG.INTERNALERROR',$_[0]);
+        };
         my $app = $class->new(%param);
         $app->run();  # must do $db->connect();
     };
-    if (my $e = $@) {
-        if (NG::Exception->caught($@)) {
+    if ($@) {
+        if (my $e = NG::Exception->caught($@)) {
             die $e->getText();
         }
         else {
@@ -99,14 +103,18 @@ sub FastCGI {
     $param{DBObject} = $db if $db;
     while (my $cgi = new CGI::Fast) {
         eval {
+            #Treat all 'die' exceptions as NG.INTERNALERROR
+            local $main::SIG{__DIE__} = sub {
+                die NG::Exception->new('NG.INTERNALERROR',$_[0]);
+            };
             if ($db) {
                 $db->connect() or die $db->errstr();
             };
             my $app = $class->new( %param, CGIObject => $cgi); #   or die $class->errstr;
             $app->run();  # must do $db->connect();
         };
-        if (my $e = $@) {
-            if (NG::Exception->caught($@)) {
+        if ($@) {
+            if (my $e = NG::Exception->caught($@)) {
                 if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
                     CGI::Carp::fatalsToBrowser($e->getText());
                 }
