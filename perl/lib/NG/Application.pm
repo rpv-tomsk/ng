@@ -493,14 +493,14 @@ sub getPageObjByRow {
 
 sub getModuleRow {
     my $cms = shift;
-    my $where = shift or return $cms->error("getModuleRow(): Отсутствует параметр where");
+    my $where = shift or NG::Exception->throw('NG.INTERNALERROR', "getModuleRow(): Отсутствует параметр where");
 
     my $dbh = $cms->dbh();
     my $fields = $cms->getModuleFields();
-    my $sth = $dbh->prepare("select $fields from ng_modules where $where") or return $cms->error($DBI::errstr);
-    $sth->execute(@_) or return $cms->error($DBI::errstr);
-    my $mRow = $sth->fetchrow_hashref() or return $cms->error("getModuleRow(): Запрошенный модуль не найден");
-    $sth->fetchrow_hashref() and return $cms->error("getModuleRow(): Условие запроса не определяет уникальной записи в ng_modules");
+    my $sth = $dbh->prepare("select $fields from ng_modules where $where") or NG::DBIException->throw();
+    $sth->execute(@_) or NG::DBIException->throw();
+    my $mRow = $sth->fetchrow_hashref();# or NG::Exception->throw('NG.INTERNALERROR', "getModuleRow(): Запрошенный модуль не найден");
+    $sth->fetchrow_hashref() and NG::Exception->throw('NG.INTERNALERROR', "getModuleRow(): Условие запроса не определяет уникальной записи в ng_modules");
     $sth->finish();
     return $mRow;
 };
@@ -871,22 +871,15 @@ sub defaultTemplateParams {
 }
 
 sub gettemplate {
-	my $self = shift;
-	my $filename = shift;
+    my $self = shift;
+    my $filename = shift;
     my $eopts = shift;
     
-    if ($eopts && ref $eopts ne "HASH") {
-        NG::Exception->throw('NG.INTERNALERROR',"gettemplate(tmpl,eopts): eopts value is not hashref");
-    };
-
-    unless ( -f $self->{_template_dir}.$filename ) {
-        NG::Exception->throw('NG.INTERNALERROR',"Could not open template '$filename': $!");
-    };
-
     my $opts = {};
     
-    #default values
+    #hard-coded default values
     $opts->{loop_context_vars}=1;
+    $opts->{case_sensitive} = 0;
     $opts->{global_vars}=1;
     
     if ($self->{_debug}) {
@@ -901,26 +894,29 @@ sub gettemplate {
         $opts->{cache} = 1;
     };
     
-    #$opts->{use_perl} = 1; # enable <TMPL_PERL>
-    #$opts->{debug}=1;
-    #$opts->{cache_dir} = $self->{_siteroot}."/htc_cache";
-    $opts->{case_sensitive} = 0;
-    
-    
     #defaultTemplateParams() support
     my $d = $self->defaultTemplateParams();
-    unless ($d && ref $d eq "HASH") {
-        NG::Exception->throw('NG.INTERNALERROR',"gettemplate(): defaultTemplateParams() returns invalid value");
-    };
+    NG::Exception->throw('NG.INTERNALERROR',"gettemplate(): defaultTemplateParams() returns invalid value") unless $d && ref $d eq "HASH";
     map {$opts->{$_} = $d->{$_}} keys %$d;
-
+    
     #eopts support
+    NG::Exception->throw('NG.INTERNALERROR',"gettemplate(tmpl,eopts): eopts value is not hashref") if $eopts && ref $eopts ne "HASH";
     map {$opts->{$_} = $eopts->{$_}} keys %$eopts;
     
-    $opts->{filename}= $filename;
-    $opts->{path} = $self->{_template_dir};
-    #$opts->{open_mode} =':utf8' if !exists $opts->{open_mode} && $self->{_charset} eq "utf-8";
-    # $opts->{utf8}= 1,
+    my $set = 0;
+    $set = 1 if exists $opts->{arrayref} or exists $opts->{scalarref} or exists $opts->{filename} or exists $opts->{filehandle};
+    
+    NG::Exception->throw('NG.INTERNALERROR',"Template specified by both parameter and option.") if $set && $filename;
+    unless ($set) {
+        NG::Exception->throw('NG.INTERNALERROR',"No template specified.") unless $filename;
+        
+        $opts->{path} = $self->{_template_dir} unless exists $opts->{path};
+        
+        NG::Exception->throw('NG.INTERNALERROR',"Could not open template '$filename': $!") unless ( -f $opts->{path}.$filename );
+        $opts->{filename}= $filename;
+        #$opts->{open_mode} =':utf8' if !exists $opts->{open_mode} && $self->{_charset} eq "utf-8";
+        # $opts->{utf8}= 1,
+    };
     return $self->getObject("HTML::Template::Compiled 0.85", %$opts);
 };
 
@@ -1351,27 +1347,26 @@ sub getModuleByCode ($$) {
 	my $opts = shift || {};
 
     my $hash = $cms->modulesHash({CODE=>$code});
-    return $cms->defError("getModuleByCode()","modulesHash() не вернул значения для CODE $code") unless $hash;
-    return $cms->defError("getModuleByCode()","возвращенное modulesHash() значение не HASHREF") if ref $hash ne "HASH";
+    NG::Exception->throw('NG.INTERNALERROR', "modulesHash() не вернул значения для CODE $code") unless $hash;
+    NG::Exception->throw('NG.INTERNALERROR', "Возвращенное modulesHash() значение не HASHREF") if ref $hash ne "HASH";
     
-    return $cms->error("getModuleCode: Хэш из modulesHash() не содержит ключа $code") unless exists $hash->{$code};
+    NG::Exception->throw('NG.INTERNALERROR', "Хэш из modulesHash() не содержит ключа $code") unless exists $hash->{$code};
     my $v  = $hash->{$code};
-    return $cms->defError("getModuleByCode()","Хэш из modulesHash() содержит не HASHREF для кода $code") if ref $v ne "HASH";
+    NG::Exception->throw('NG.INTERNALERROR', "Хэш из modulesHash() содержит не HASHREF для кода $code") if ref $v ne "HASH";
     
     #TODO: support PARAMS key?
     #TODO: перенести парсинг параметров из NG::Module->moduleParam()/_parseParams() на этот уровень?
     my $mRow = $v->{MODULEROW};
-    return $cms->defError("getModuleByCode()","MODULEROW из modulesHash() содержит не HASHREF для кода $code") if $mRow && ref $mRow ne "HASH";
+    NG::Exception->throw('NG.INTERNALERROR', "MODULEROW из modulesHash() содержит не HASHREF для кода $code") if $mRow && ref $mRow ne "HASH";
 
     my $m = $v->{MODULE};
     $m ||= $mRow->{module} if $mRow;
-    return $cms->error("getModuleByCode(): Хэш из modulesHash() не содержит значения MODULE или MODULEROW.module для кода $code") unless $m;
+    NG::Exception->throw('NG.INTERNALERROR', "Хэш из modulesHash() не содержит значения MODULE или MODULEROW.module для кода $code") unless $m;
     $mRow ||= {module=>$m,code=>$code};
     
     #getModuleByRow() is below.
     $opts->{MODULEROW} = $mRow;
-	my $mObj = $cms->getObject($m,$opts) or return $cms->defError("getModuleByCode()");
-	return $mObj;
+    return $cms->getObject($m,$opts);
 };
 
 =head
@@ -1391,14 +1386,14 @@ sub modulesHash {
     
     if ($ref->{CODE}) {
         return $cms->{_mrowC} if exists $cms->{_mrowC}->{$ref->{CODE}};
-        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or return $cms->error("Запрошенный модуль ".$ref->{CODE}." не найден");
+        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or NG::Exception->throw('NG.INTERNALERROR', "Запрошенный модуль ".$ref->{CODE}." не найден");
         $cms->{_mrowC}->{$ref->{CODE}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
     }
     elsif ($ref->{REF}) {
         return $cms->{_mrowC} if exists $cms->{_mrowR}->{$ref->{REF}};
         my $fields = $cms->getModuleFields();
-        my $sth = $cms->dbh()->prepare("select $fields from ng_modules where module=?") or return $cms->error($DBI::errstr);
-        $sth->execute($ref->{REF}) or return $cms->error($DBI::errstr);
+        my $sth = $cms->dbh()->prepare("select $fields from ng_modules where module=?") or NG::DBIException->throw();
+        $sth->execute($ref->{REF}) or NG::DBIException->throw();
         while (my $mRow = $sth->fetchrow_hashref()) {
             $cms->{_mrowC}->{$mRow->{code}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
         };
