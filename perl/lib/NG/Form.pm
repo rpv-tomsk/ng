@@ -58,6 +58,7 @@ sub init {
 	
 
     $self->{_table} = $ref{TABLE};
+    $self->{_owner} = $ref{OWNER};
     
     $self->{_structure} = undef;
     
@@ -67,6 +68,7 @@ sub init {
 sub prefix { return shift->{_prefix};};
 sub title { return shift->{_title};  };
 sub table { return shift->{_table};  };
+sub owner { return shift->{_owner};  };
 
 #sub setLang { shift->{_lang} = shift;};
 sub getLang { return shift->{_lang}; };

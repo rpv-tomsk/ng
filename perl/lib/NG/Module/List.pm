@@ -397,6 +397,7 @@ sub processForm {
         REF       => $q->param('ref') || "",
         IS_AJAX   => $is_ajax,
         PREFIX    => $aF->{PREFIX},
+        OWNER     => $self,
 	);
     
     my $aFields = undef;
@@ -849,6 +850,7 @@ sub Delete {
         CGIObject => $q,
         REF       => $q->param('ref') || "",
         IS_AJAX   => $is_ajax,
+        OWNER     => $self,
     );
     $form->addfields($self->{_fields}) or return $self->error($form->getError());
     $form->setFormValues(); # Чо за гон а кто будет параметры fkparent пихать в форму
@@ -2102,6 +2104,7 @@ sub createSearchForm {
 	        DOCROOT   => $self->getDocRoot(),
 	        CGIObject => $self->q(),
 	        DB => $self->db(),
+            OWNER     => $self,
 		);
         
         my $fs = $self->_getIntersectFields($self->{_searchfields}) or return $self->showError("_getIntersectFields(): неизвестная ошибка вызова.");
@@ -2255,6 +2258,7 @@ sub _destroyBlock {
             CGIObject => $q,
             REF       => $q->param('ref') || "",
 #            IS_AJAX   => $is_ajax,
+            OWNER     => $self,
         ) or return $self->showError("_destroyBlock(): Не могу создать форму");
         
         #NB: при конструировании формы создаваемые объекты полей развязаны с исходным конфигурационным хешем,
