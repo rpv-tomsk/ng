@@ -41,8 +41,11 @@ sub check {
             $message.= "Переменная $var не использована\n";
         };
     };
+    if ($message) {
+        $message = '<font color="red">'.$message.'</font>';
+    };
     
-    $message ||= "Шаблон абсолютно корректен";
+    $message ||= '<font color="green">Шаблон абсолютно корректен</font>';
     $message;
 };
 
@@ -94,7 +97,7 @@ sub AUTOLOAD {
     my $pkg = ref $self;
     $AUTOLOAD =~ s/$pkg\:\://;
     $self->{_used}->{$AUTOLOAD} = 1;
-    NG::Exception->throw('NG.INTERNALLERROR',"Шаблон: Переменная $AUTOLOAD не найдена") unless exists $self->{_data}->{$AUTOLOAD};
+    NG::Exception->throw('NG.INTERNALLERROR',"Переменная $AUTOLOAD не найдена") unless exists $self->{_data}->{$AUTOLOAD};
     return $self->{_data}->{$AUTOLOAD};
 };
 
@@ -111,7 +114,7 @@ sub AUTOLOAD {
     my $pkg = ref $self;
     $AUTOLOAD =~ s/$pkg\:\://;
     $self->{_used}->{$AUTOLOAD} = 1;
-    NG::Exception->throw('NG.INTERNALLERROR',"Шаблон: Метка $AUTOLOAD не найдена") unless exists $self->{_data}->{$AUTOLOAD};
+    NG::Exception->throw('NG.INTERNALLERROR',"Метка $AUTOLOAD не найдена") unless exists $self->{_data}->{$AUTOLOAD};
     return $self->{_data}->{$AUTOLOAD};
 };
 

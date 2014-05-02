@@ -61,7 +61,6 @@ sub init {
     
     $field->{IS_FAKEFIELD} = 1;
     $field->{TEMPLATE} = 'admin-side/common/mail/templatelegend.tmpl';
-    $field->{NAME} =  "Добавление трейлера";
     
     return 1;
 };
@@ -108,7 +107,7 @@ sub checkTemplate {
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
-            return '<font color="red">Subject:'.$e->message().'</font>';
+            return '<font color="red">Subject: '.$e->message().'</font>';
         };
         return '<font color="red">Internal error: '.$@.'</font>';
     };
@@ -123,14 +122,14 @@ sub checkTemplate {
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
-            return '<font color="red">HTML:'.$e->message().'</font>';
+            return '<font color="red">HTML: '.$e->message().'</font>';
         };
         return '<font color="red">Internal error: '.$@.'</font>';
     };
     unless ($ret) {
         return '<font color="red">Ошибка проверки</font>';
     };
-    return '<font color="green">'.$ret.'</font>';
+    return $ret;
 }
 
 sub prepareOutput {
