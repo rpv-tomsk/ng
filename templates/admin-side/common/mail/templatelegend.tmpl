@@ -1,0 +1,68 @@
+<script language="javascript" type="text/javascript">
+//function setCaptureTranid (e) {
+//    if (!confirm('Произвести оплату счета?')) {
+//        return false;
+//    };
+//    var o = {
+//        type     : "POST",
+//        url      : e.href,
+//        data     : {
+//            capture_tranid: $('#capture_tranid').val()
+//        },
+//        cache: false,
+//        dataType: 'html',
+//        error    : function(xhr, textStatus, errorThrown) { alert(xhr.statusText)},
+//        success  : function(msg) {
+//            $('#paySystemResultDiv').html(msg);
+//        }
+//    }; 
+//    $.ajax(o);
+//    return false;
+//};
+function checkTemplate (e,key) {
+    tinyMCE.get('html'+key).save();
+    var o = {
+        type     : "POST",
+        url      : e.href,
+        data     : {
+            _ajax   : 1,
+            formaction : 'legend_checktemplate',
+            id      : $('#id'+key).val(),
+            code    : $('#code'+key).val(),
+            subject : $('#subject'+key).val(),
+            html    : $('#html'+key).val(),
+        },
+        cache: false,
+        dataType: 'html',
+        error    : function(xhr, textStatus, errorThrown) { alert(xhr.statusText)},
+        success  : function(msg) {
+            $('#checkTemplateResult'+key).html(msg);
+        }
+    }; 
+    $.ajax(o);
+    return false;
+};
+</script> 
+
+<table border=0>
+<tr><td><p>Переменная</p></td><td><p>Описание</p></td><td><p>Пример</p></td></tr>
+<TMPL_LOOP LEGEND>
+    <tr><td>[%<TMPL_VAR VAR>%]</td><td><TMPL_VAR NAME></td><td><TMPL_VAR EXAMPLE></td></tr>
+</TMPL_LOOP LEGEND>
+
+<tr><td colspan="3">
+    <p>Действия</p>
+    <table border=0 style="width:auto;">
+    <tr>
+        
+        <td><p><a href="<TMPL_VAR FORM.URL>" onclick="return sendTestMail(this);">[Отправить тестовое письмо]</a></p></td>
+        <td><input type="text" id="capture_tranid" name="capture_tranid"></td>
+    </tr>
+    <tr>
+        <td colspan=1><p><a href="<TMPL_VAR FORM.URL>" onclick="return checkTemplate(this,'<TMPL_VAR FORM.KEY_VALUE>');">[Проверить шаблон]</a></p>
+        <td><div id="checkTemplateResult<TMPL_VAR FORM.KEY_VALUE>"></div></td>
+    </tr>
+    </table>
+    
+</td></tr>
+</table>
