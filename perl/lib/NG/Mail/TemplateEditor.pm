@@ -1,3 +1,15 @@
+####
+#### TODO
+####
+
+=head
+  * Реализовать проверку шаблонов при сохранении
+  * Переделать отображение списка, за основу брать перечень шаблонов из модуля, а не из БД
+    - Добавлять недостающие шаблоны в БД
+    - Отображать лишние и дать возможность удалять из БД
+  * Реализовать NG::Mail::TemplateEditor для редактирования шаблонов всех модулей.
+=cut
+
 package NG::Mail::TemplateEditor::Block;
 use strict;
 
@@ -5,8 +17,6 @@ use NGService;
 use NSecure;
 use NG::Module::List;
 use base qw(NG::Module::List);
-
-BEGIN {}
 
 sub config {
     my $self = shift;
@@ -45,6 +55,9 @@ sub config {
         {FIELD => 'legend'},
         {FIELD => 'code'},
     );
+    
+    $self->disableAddlink();
+    $self->disableDeletelink();
 };
 
 package NG::Mail::TemplateEditor::LegendField;
