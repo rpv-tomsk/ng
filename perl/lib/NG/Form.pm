@@ -514,15 +514,13 @@ sub print {
     $urlfa.= "?" if ($urlfa !~ /\?/);
     $urlfa.= "&" if ($urlfa !~ /[&?]$/);
 
-    my $buttons = $self->{_buttons};
-    unless ($buttons) {
+    unless ($self->{_buttons}) {
         $self->addButton({
             TITLE => "Сохранить",
-            IMG => "/admin-side/img/buttons/apply.gif",
+            IMG => "/admin-side/img/buttons/save.gif",
             VALUE => ($self->{_new}?"insert":"update"),
         });
         $self->addCloseButton();
-        $buttons = $self->{_buttons};
     };
     
     my $title = $self->{_title};
@@ -549,7 +547,7 @@ sub print {
             HIDE_BUTTONS=>$self->{_hidebuttons},
             ERRORMSG   => $globalError,
             PREFIX     => $self->{_prefix},
-            BUTTONS    => $buttons,
+            BUTTONS    => $self->{_buttons},
             HAS_ERRORS => $self->has_err_msgs()
         },
 	);

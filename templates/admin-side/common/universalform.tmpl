@@ -43,18 +43,21 @@
 <center>
 &nbsp;
 <TMPL_LOOP FORM.BUTTONS>
-<TMPL_IF BUTTON>
-    <button name="formaction" id="action" type="submit" class="styleForButtonApply" style="background: #D4E7F6 url(<TMPL_VAR BUTTON.IMG>) no-repeat top;" title="<TMPL_VAR BUTTON.TITLE>" value="<TMPL_VAR BUTTON.VALUE>"><TMPL_VAR BUTTON.VALUE></button>
-</TMPL_IF BUTTON>
-<TMPL_IF TEMPLATE><TMPL_INCLUDE_VAR NAME="TEMPLATE"></TMPL_IF TEMPLATE>
-<TMPL_IF CLOSE_BTN>
-    <TMPL_IF FORM.IS_AJAX>
-        <a href="#" title="Отменить изменения" onclick="CloseEditors('<TMPL_VAR FORM.KEY_VALUE>');clear_block('<TMPL_IF FORM.CONTAINER><TMPL_VAR FORM.CONTAINER escape=html><TMPL_ELSE FORM.CONTAINER><TMPL_IF FORM.NEW>form0<TMPL_ELSE FORM.NEW>form<TMPL_VAR FORM.KEY_VALUE></TMPL_IF FORM.NEW></TMPL_IF FORM.CONTAINER>');return false;">
-    <TMPL_ELSE FORM.IS_AJAX>
-        <a href="<TMPL_VAR FORM.REF>" title="Отменить изменения" tabindex="10">
-    </TMPL_IF FORM.IS_AJAX>
-    <img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;"></a>
-</TMPL_IF CLOSE_BTN>
+<TMPL_IF TEMPLATE>
+    <TMPL_INCLUDE_VAR NAME="TEMPLATE">
+<TMPL_ELSE TEMPLATE>
+    <TMPL_IF BUTTON>
+        <button name="formaction" id="action" type="submit" class="styleForButtonApply" style="background: #D4E7F6 url(<TMPL_VAR BUTTON.IMG>) no-repeat top;" title="<TMPL_VAR BUTTON.TITLE>" value="<TMPL_VAR BUTTON.VALUE>"><TMPL_VAR BUTTON.VALUE></button>
+    </TMPL_IF BUTTON>
+    <TMPL_IF CLOSE_BTN>
+        <TMPL_IF FORM.IS_AJAX>
+            <a href="#" title="Отменить изменения" onclick="CloseEditors('<TMPL_VAR FORM.KEY_VALUE>');clear_block('<TMPL_IF FORM.CONTAINER><TMPL_VAR FORM.CONTAINER escape=html><TMPL_ELSE FORM.CONTAINER><TMPL_IF FORM.NEW>form0<TMPL_ELSE FORM.NEW>form<TMPL_VAR FORM.KEY_VALUE></TMPL_IF FORM.NEW></TMPL_IF FORM.CONTAINER>');return false;">
+        <TMPL_ELSE FORM.IS_AJAX>
+            <a href="<TMPL_VAR FORM.REF>" title="Отменить изменения" tabindex="10">
+        </TMPL_IF FORM.IS_AJAX>
+        <img src="<TMPL_VAR CLOSE_BTN.IMG>" style="border-width: 0;"></a>
+    </TMPL_IF CLOSE_BTN>
+</TMPL_IF TEMPLATE>
 </TMPL_LOOP>
 </center>
 </td>
