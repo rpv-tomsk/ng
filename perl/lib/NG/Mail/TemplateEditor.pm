@@ -69,8 +69,16 @@ sub getFieldActions {
     my $self = shift;
     return [
         {ACTION=>"checktemplate", METHOD=>"checkTemplate"},
+        {ACTION=>"sendtestmail",  METHOD=>"sendTestMail"},
     ];
 };
+
+my $converter = undef;
+
+sub _convert {
+    $converter ||= $NG::Application::cms->getObject("Text::Iconv","utf-8","cp1251");
+    $converter->convert($_[0]);
+}; 
 
 sub _getTemplateMetadata {
     my ($field,$iface,$code) = (shift,shift,shift);
@@ -83,29 +91,85 @@ sub _getTemplateMetadata {
     $cfg->{$code};
 };
 
-sub checkTemplate {
-    my ($field,$is_ajax) = (shift,shift);
+sub _prepareTestData {
+    my $field = shift;
     
     my $q     = $field->q();
     my $form  = $field->parent();
     my $mObj  = $form->owner()->getModuleObj();
     
-    my $data = {};
-    my $labels   = undef;
+    my $subjTemplate = undef;
+    my $htmlTemplate = undef;
     
     eval {
         my $iface = $mObj->getInterface('TMAILER') or NG::Exception->throw('NG.INTERNALERROR','Module has no TMAILER interface.');
         my $metadata = $field->_getTemplateMetadata($iface,$q->param('code'));
         
+        my $labels = undef;
         if ($iface->can('mailLabels')) {
             $labels = $iface->mailLabels();
             NG::Exception->throw('NG.INTERNALERROR',"mailLabels(): incorrect value returned") unless $labels && ref $labels eq "HASH";
         };
         
         #Compose test data
+        my $data = {};
         foreach my $var (keys %{$metadata->{VARIABLES}}) {
             $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
         };
+        #
+        $subjTemplate = NG::Mail::Template->new(_convert $q->param('subject'));
+        $subjTemplate->param($data);
+        $subjTemplate->labels($labels) if $labels;
+        #
+        $htmlTemplate = NG::Mail::Template->new(_convert $q->param('html'));
+        $htmlTemplate->param($data);
+        $htmlTemplate->labels($labels) if $labels;
+    };
+    return ($subjTemplate,$htmlTemplate);
+};
+
+sub sendTestMail {
+    my ($field,$is_ajax) = (shift,shift);
+    
+    my $q     = $field->q();
+    my $cms   = $field->cms();
+    my $testaddr = $q->param('testaddr');
+    return 'Указан неверный адрес' unless is_valid_email($testaddr);
+    
+    my $subjT = undef;
+    my $htmlT = undef;
+    my $ret = eval {
+        ($subjT,$htmlT) = $field->_prepareTestData();
+        $field->_checkTemplate($subjT,$htmlT);
+    };
+    if ($@) {
+        if (my $e = NG::Exception->caught($@)) {
+            return $e->message();
+        };
+        return 'Internal error: '.$@;
+    };
+    
+    my $nMailer = $cms->getModuleByCode('MAILER') or return 'Модуль MAILER не найден';
+    $nMailer->add('Subject',$subjT->output()) if $subjT;
+    #$nMailer->addPlainPart($plainT) if $plainT;
+    
+    if ($htmlT) {
+        $nMailer->addHTMLPart(
+            Data     => $htmlT->output(),
+            BaseDir  => $cms->getDocRoot(),
+            #Encoding => 'base64'
+        );
+    };
+    $nMailer->send($testaddr) or return $cms->getError();
+    return 'Сообщение отправлено';
+};
+
+sub checkTemplate {
+    my ($field,$is_ajax) = (shift,shift);
+    
+    my $ret = eval {
+        my ($subjT,$htmlT) = $field->_prepareTestData();
+        $field->_checkTemplate($subjT,$htmlT);
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
@@ -113,38 +177,37 @@ sub checkTemplate {
         };
         return '<font color="red">Internal error: '.$@.'</font>';
     };
+    return $ret;
+};
 
+sub _checkTemplate {
+    my ($field,$subjTemplate,$htmlTemplate) = (shift,shift,shift);
+    
     #Check Subject
     my $ret = eval {
-        my $subjTemplate = NG::Mail::Template->new($q->param('subject'));
-        $subjTemplate->param($data);
-        $subjTemplate->labels($labels) if $labels;
         my $unused = $subjTemplate->output();
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
-            return '<font color="red">Subject: '.$e->message().'</font>';
+            NG::Exception->throw('NG.INTERNALERROR','Subject: '.$e->message());
         };
-        return '<font color="red">Internal error: '.$@.'</font>';
+        NG::Exception->throw('NG.INTERNALERROR','Internal error: '.$@);
     };
     unless ($ret) {
-        return '<font color="red">Ошибка проверки шаблона</font>';
+        NG::Exception->throw('NG.INTERNALERROR','Ошибка проверки шаблона');
     };
     #Check HTML
     $ret = eval {
-        my $htmlTemplate = NG::Mail::Template->new($q->param('html'));
-        $htmlTemplate->param($data);
-        $htmlTemplate->labels($labels) if $labels;
         $htmlTemplate->check();
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
-            return '<font color="red">HTML: '.$e->message().'</font>';
+            NG::Exception->throw('NG.INTERNALERROR','HTML: '.$e->message());
         };
-        return '<font color="red">Internal error: '.$@.'</font>';
+        NG::Exception->throw('NG.INTERNALERROR','Internal error: '.$@);
     };
     unless ($ret) {
-        return '<font color="red">Ошибка проверки шаблона</font>';
+        NG::Exception->throw('NG.INTERNALERROR','Ошибка проверки шаблона');
     };
     return $ret;
 };
