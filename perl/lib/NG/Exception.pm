@@ -11,8 +11,15 @@ sub new {
     my $self = {};
     bless $self,$class;
     
-    $self->{code} = shift;
-    $self->{message} = shift;
+    unless (scalar @_ == 2) {
+        $self->{code} = 'NG.INTERNALERROR';
+        $self->{message} = 'Incorrect NG::Exception->throw() call';
+    }
+    else {
+        $self->{code} = shift;
+        $self->{message} = shift;
+    };
+    
     $self->{carpmessage} = "";
     
     if ($NG::Application::DEBUG) {
