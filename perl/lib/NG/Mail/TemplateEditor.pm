@@ -73,15 +73,15 @@ sub getFieldActions {
 };
 
 sub _getTemplateMetadata {
-    my ($field,$mObj,$code) = (shift,shift,shift);
+    my ($field,$iface,$code) = (shift,shift,shift);
     
     NG::Exception->throw('NG.INTERNALERROR','Template code not specified.') unless $code;
-    my $iface = $mObj->getInterface('TMAILER') or NG::Exception->throw('NG.INTERNALERROR','Module has no TMAILER interface.');
     
-    my $cfg = $iface->configTMAILER();
+    my $cfg = $iface->mailTemplates();
+    NG::Exception->throw('NG.INTERNALERROR',"mailTemplates(): incorrect value returned") unless $cfg && ref $cfg eq "HASH";
     NG::Exception->throw('NG.INTERNALERROR',"Module has no template $code") unless exists $cfg->{$code};
     $cfg->{$code};
-}
+};
 
 sub checkTemplate {
     my ($field,$is_ajax) = (shift,shift);
@@ -90,19 +90,35 @@ sub checkTemplate {
     my $form  = $field->parent();
     my $mObj  = $form->owner()->getModuleObj();
     
-    my $metadata = $field->_getTemplateMetadata($mObj,$q->param('code'));
-    
-##TODO: add labels
-
-    #Compose test data
     my $data = {};
-    foreach my $var (keys %{$metadata->{VARIABLES}}) {
-        $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
+    my $labels   = undef;
+    
+    eval {
+        my $iface = $mObj->getInterface('TMAILER') or NG::Exception->throw('NG.INTERNALERROR','Module has no TMAILER interface.');
+        my $metadata = $field->_getTemplateMetadata($iface,$q->param('code'));
+        
+        if ($iface->can('mailLabels')) {
+            $labels = $iface->mailLabels();
+            NG::Exception->throw('NG.INTERNALERROR',"mailLabels(): incorrect value returned") unless $labels && ref $labels eq "HASH";
+        };
+        
+        #Compose test data
+        foreach my $var (keys %{$metadata->{VARIABLES}}) {
+            $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
+        };
     };
+    if ($@) {
+        if (my $e = NG::Exception->caught($@)) {
+            return '<font color="red">'.$e->message().'</font>';
+        };
+        return '<font color="red">Internal error: '.$@.'</font>';
+    };
+
     #Check Subject
     my $ret = eval {
         my $subjTemplate = NG::Mail::Template->new($q->param('subject'));
         $subjTemplate->param($data);
+        $subjTemplate->labels($labels) if $labels;
         my $unused = $subjTemplate->output();
     };
     if ($@) {
@@ -112,12 +128,13 @@ sub checkTemplate {
         return '<font color="red">Internal error: '.$@.'</font>';
     };
     unless ($ret) {
-        return '<font color="red">Ошибка проверки</font>';
+        return '<font color="red">Ошибка проверки шаблона</font>';
     };
     #Check HTML
-    my $ret = eval {
+    $ret = eval {
         my $htmlTemplate = NG::Mail::Template->new($q->param('html'));
         $htmlTemplate->param($data);
+        $htmlTemplate->labels($labels) if $labels;
         $htmlTemplate->check();
     };
     if ($@) {
@@ -127,10 +144,10 @@ sub checkTemplate {
         return '<font color="red">Internal error: '.$@.'</font>';
     };
     unless ($ret) {
-        return '<font color="red">Ошибка проверки</font>';
+        return '<font color="red">Ошибка проверки шаблона</font>';
     };
     return $ret;
-}
+};
 
 sub prepareOutput {
     my $field = shift;
@@ -152,6 +169,6 @@ sub prepareOutput {
     $field->{LEGEND} = $legend;
     
     1;
-} 
+};
 
 1;
