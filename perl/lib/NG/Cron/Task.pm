@@ -106,8 +106,17 @@ sub _run {
     $self->updateStatusRecord({status=>'run'});
     
     my $method = $self->{_config}->{METHOD};
-    $self->{_interface}->$method(NG::Cron::Logger->new($self));
-    $self->updateStatusRecord({status=>'stop'});
+    my $ret = eval {
+        $self->{_interface}->$method(NG::Cron::Logger->new($self));
+    };
+    if ($@) {
+        $self->updateStatusRecord({status=>'stop'});
+        die $@;
+    }
+    else {
+        $self->updateStatusRecord({status=>'error'});
+    };
+    $ret;
 };
 
 sub _lock {
@@ -223,7 +232,7 @@ CREATE TABLE ng_cron_status (
 
 COMMENT ON COLUMN ng_cron_status.module IS 'Код модуля';
 COMMENT ON COLUMN ng_cron_status.task IS 'Название задания';
-COMMENT ON COLUMN ng_cron_status.status IS 'Статус start/stop';
+COMMENT ON COLUMN ng_cron_status.status IS 'Статус run|stop|error';
 COMMENT ON COLUMN ng_cron_status.startup IS 'Тип запуска [auto|manual|disabled]';
 COMMENT ON COLUMN ng_cron_status."time" IS 'Время последнего запуска задания';
 COMMENT ON COLUMN ng_cron_status.status_text IS 'Текстовый статус';
