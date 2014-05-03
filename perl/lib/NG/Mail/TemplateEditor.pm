@@ -105,7 +105,7 @@ sub _prepareTestData {
     
     my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
     my $labels   = $iface->try('mailLabels');
-    my $metadata = $iface->run('getTemplateMetadata',$q->param('code'));
+    my $metadata = $iface->getTemplateMetadata($q->param('code'));
     
     #Compose test data
     my $data = {};
