@@ -239,7 +239,7 @@ sub getStash { # $mObj->getStash($key)
 
 sub getInterface {
     my $self = shift;
-    my $interfaceName = shift or die "getInterface(): No interface name specified";
+    my $interfaceName = shift or NG::Exception->throw('NG.INTERNALERROR','getInterface(): No interface specified');
     
     my $cms = $self->cms();
     
@@ -249,13 +249,27 @@ sub getInterface {
         last unless $self->can('moduleInterfaces');
         my $mInterfaces = $self->moduleInterfaces() or last;
         if (defined $mInterfaces && ref $mInterfaces ne "HASH") {
-            die "Module ".$self->getModuleCode()." moduleInterfaces() returns unsupported value";
+            NG::Exception->throw('NG.INTERNALERROR','Module '.$self->getModuleCode().' moduleInterfaces() returns unsupported value');
         };
         
         $classHash = $mInterfaces->{$interfaceName};
         if (ref($classHash)) {
-            return $classHash if UNIVERSAL::can($classHash,"can");
-            die "Module ".$self->getModuleCode()." moduleInterfaces() returns unsupported value in interfaces hash" if ref($classHash) ne "HASH";
+            #Модуль вернул ссылку на себя
+            if ($classHash eq $self) {
+                #Модуль сам реализует интерфейс
+                return $classHash if $classHash->isa($interfaceName);
+                #Модуль просит сделать интерфейс
+                return $cms->getObject($interfaceName,{MODULEOBJ=>$self});
+            };
+            #Модуль вернул объект
+            if (UNIVERSAL::can($classHash,"can")) {
+                return $classHash if $classHash->isa($interfaceName);
+                NG::Exception->throw('NG.INTERNALERROR','getInterface(): returned object is not interface '.$interfaceName);
+            };
+            #
+            if (ref($classHash) ne "HASH") {
+                NG::Exception->throw('NG.INTERNALERROR','Module '.$self->getModuleCode().' moduleInterfaces() returns unsupported value');
+            };
         };
         last;
     };
