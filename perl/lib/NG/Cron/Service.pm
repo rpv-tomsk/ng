@@ -11,9 +11,9 @@ sub _generateCrontab {
     my @items = ();
     while (my $module = &$iterator()){
         next unless $module->can('getInterface');
-        my $interface = $module->getInterface('CRON');
+        my $interface = $module->getInterface('NG::Cron::Interface');
         next unless $interface;
-        my $moduleTasks = getTasklist($interface,'');
+        my $moduleTasks = $interface->safe('configCRON');
         
         map {$_->{MODULE}=$module->{_moduleRow}->{code}} @$moduleTasks;
         push @items, @$moduleTasks;
@@ -41,32 +41,6 @@ sub _generateCrontab {
     };
     return wantarray ? @cron_str :\@cron_str;
 }
-
-sub getTasklist {
-    my ($interface,$contextDescription) = (shift,shift);
-    
-    NG::Exception->throw('NG.INTERNALERROR', $contextDescription."Class ".ref($interface)." has no configCRON() method.") unless $interface->can('configCRON');
-    
-    my $tasklist = $interface->configCRON();
-    NG::Exception->throw('NG.INTERNALERROR', $contextDescription."Class ".ref($interface)." has invalid configCRON() configuration.") unless $tasklist && ref $tasklist eq "ARRAY";
-    
-    my $tasks = {};
-    foreach(@$tasklist){
-        &_validateTaskConfig($_,$contextDescription);
-        my $task = $_->{TASK};
-        NG::Exception->throw('NG.INTERNALERROR',"Task $task specified twice at ".ref($interface)) if exists $tasks->{$task};
-        $tasks->{$task} = 1;
-    };
-    $tasklist;
-};
-
-sub _validateTaskConfig {
-    my ($config,$contextDescription) = (shift,shift);
-    NG::Exception->throw('NG.INTERNALERROR', "TASK: Missing TASK")     unless $config->{TASK};
-    NG::Exception->throw('NG.INTERNALERROR', "TASK: Invalid value: / is prohibited.") if $config->{TASK} =~ /\//;
-    NG::Exception->throw('NG.INTERNALERROR', "TASK: Missing METHOD")   unless $config->{METHOD};
-    NG::Exception->throw('NG.INTERNALERROR', "TASK: Missing FREQ_STR") unless $config->{FREQ_STR};
-};
 
 sub is_valid_cronfreq {
     my $string = shift || die "is_valid_cronfreq(): no input data";

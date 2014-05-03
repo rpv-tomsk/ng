@@ -31,13 +31,10 @@ sub _load {
     NG::Exception->throw('NG.INTERNALERROR', $cms->getError()) unless $mObj;
     
     NG::Exception->throw('NG.INTERNALERROR', "Task $params->{MODULE}/$params->{TASK}: Class ".ref($mObj)." has no getInterface() method.") unless $mObj->can('getInterface');
-    $self->{_interface} = $mObj->getInterface('CRON');
+    $self->{_interface} = $mObj->getInterface('NG::Cron::Interface');
     NG::Exception->throw('NG.INTERNALERROR', "Task $params->{MODULE}/$params->{TASK}: Class ".ref($mObj)." has no CRON interface.") unless $self->{_interface};
     
-    my $tasklist = NG::Cron::Service::getTasklist($self->{_interface},"Task $params->{MODULE}/$params->{TASK}");
-    
-    my ($config) = grep{$_->{TASK} eq $params->{TASK}}@$tasklist;
-    NG::Exception->throw('NG.INTERNALERROR', "Task $params->{MODULE}/$params->{TASK} not found in module $params->{MODULE}.") unless $config;
+    my $config = $self->{_interface}->getTaskConfig($params->{TASK});
     
     $self->{_config} = $config;
     $self->{_modulecode} = $params->{MODULE};
