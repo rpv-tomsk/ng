@@ -44,8 +44,9 @@ sub safe {
 sub try { #Really this is 'trysafe'
     my ($self,$method) = (shift,shift);
     
-    my $ret = undef;
-    $ret = $self->$method(@_) if $self->can($method);
+    return undef unless $self->can($method);
+    my $ret = $self->$method(@_);
+    return undef unless $ret;
     
     my $validateMethod = "validate_$method";
     $self->$validateMethod($ret) if UNIVERSAL::can($self,$validateMethod);
