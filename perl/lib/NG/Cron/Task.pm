@@ -110,12 +110,10 @@ sub _run {
         $self->{_interface}->$method(NG::Cron::Logger->new($self));
     };
     if ($@) {
-        $self->updateStatusRecord({status=>'stop'});
+        $self->updateStatusRecord({status=>'error'});
         die $@;
     }
-    else {
-        $self->updateStatusRecord({status=>'error'});
-    };
+    $self->updateStatusRecord({status=>'stop'});
     $ret;
 };
 
