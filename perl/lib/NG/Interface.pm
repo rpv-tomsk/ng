@@ -61,8 +61,9 @@ sub _package {
 
 sub can {
     my ($self,$method) = (shift,shift);
-    return 1 if UNIVERSAL::can($self,$method);
-    return 0 unless $self->{_mObj};
+    my $ret = UNIVERSAL::can($self,$method);
+    return $ret if $ret;
+    return undef unless $self->{_mObj};
     return UNIVERSAL::can($self->{_mObj},$method);
 };
 
