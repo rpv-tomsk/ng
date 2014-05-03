@@ -93,17 +93,6 @@ sub _convert {
     $converter->convert($_[0]);
 }; 
 
-sub _getTemplateMetadata {
-    my ($field,$iface,$code) = (shift,shift,shift);
-    
-    NG::Exception->throw('NG.INTERNALERROR','Template code not specified.') unless $code;
-    
-    my $cfg = $iface->mailTemplates();
-    NG::Exception->throw('NG.INTERNALERROR',"mailTemplates(): incorrect value returned") unless $cfg && ref $cfg eq "HASH";
-    NG::Exception->throw('NG.INTERNALERROR',"Module has no template $code") unless exists $cfg->{$code};
-    $cfg->{$code};
-};
-
 sub _prepareTestData {
     my $field = shift;
     
@@ -114,30 +103,24 @@ sub _prepareTestData {
     my $subjTemplate = undef;
     my $htmlTemplate = undef;
     
-    eval {
-        my $iface = $mObj->getInterface('TMAILER') or NG::Exception->throw('NG.INTERNALERROR','Module has no TMAILER interface.');
-        my $metadata = $field->_getTemplateMetadata($iface,$q->param('code'));
-        
-        my $labels = undef;
-        if ($iface->can('mailLabels')) {
-            $labels = $iface->mailLabels();
-            NG::Exception->throw('NG.INTERNALERROR',"mailLabels(): incorrect value returned") unless $labels && ref $labels eq "HASH";
-        };
-        
-        #Compose test data
-        my $data = {};
-        foreach my $var (keys %{$metadata->{VARIABLES}}) {
-            $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
-        };
-        #
-        $subjTemplate = NG::Mail::Template->new(_convert $q->param('subject'));
-        $subjTemplate->param($data);
-        $subjTemplate->labels($labels) if $labels;
-        #
-        $htmlTemplate = NG::Mail::Template->new(_convert $q->param('html'));
-        $htmlTemplate->param($data);
-        $htmlTemplate->labels($labels) if $labels;
+    my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
+    my $labels   = $iface->try('mailLabels');
+    my $metadata = $iface->run('getTemplateMetadata',$q->param('code'));
+    
+    #Compose test data
+    my $data = {};
+    foreach my $var (keys %{$metadata->{VARIABLES}}) {
+        $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
     };
+    #
+    $subjTemplate = NG::Mail::Template->new(_convert $q->param('subject'));
+    $subjTemplate->param($data);
+    $subjTemplate->labels($labels) if $labels;
+    #
+    $htmlTemplate = NG::Mail::Template->new(_convert $q->param('html'));
+    $htmlTemplate->param($data);
+    $htmlTemplate->labels($labels) if $labels;
+
     return ($subjTemplate,$htmlTemplate);
 };
 
@@ -231,8 +214,9 @@ sub prepareOutput {
     my $form  = $field->parent();
     my $code = $form->getParam('code');
     my $mObj  = $form->owner()->getModuleObj();
+    my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
     
-    my $metadata = $field->_getTemplateMetadata($mObj,$code);
+    my $metadata = $iface->getTemplateMetadata($code);
     
     my $legend = [];
     foreach my $var (keys %{$metadata->{VARIABLES}}) {
