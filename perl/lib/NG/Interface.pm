@@ -37,7 +37,7 @@ sub safe {
     my $ret = $self->$method(@_);
     
     my $validateMethod = "validate_$method";
-    $self->$validateMethod($ret) if $self->can($validateMethod);
+    $self->$validateMethod($ret) if UNIVERSAL::can($self,$validateMethod);
     $ret;
 };
 
@@ -47,12 +47,8 @@ sub try { #Really this is 'trysafe'
     my $ret = undef;
     $ret = $self->$method(@_) if $self->can($method);
     
-    #if ($self->{_mObj} && $self ne $self->{_mObj}) {
-    #    $ret = $self->{_mObj}->$method(@_) if $self->{_mObj}->can($method);
-    #};
-    
     my $validateMethod = "validate_$method";
-    $self->$validateMethod($ret) if $self->can($validateMethod);
+    $self->$validateMethod($ret) if UNIVERSAL::can($self,$validateMethod);
     $ret;
 };
 
@@ -61,17 +57,6 @@ sub _package {
     my $obj = $self->{_mObj};
     return 'interface "'.(ref $self).'"'.(($self ne $obj)?(' of module "'.(ref $obj).'"'):'');
 }
-
-#sub run {
-#    my ($self,$method) = (shift,shift);
-#    
-#    return $self->$method(@_) if $self->can($method);
-#    
-#    my $obj = $self->{_mObj};
-#    $obj ||= $self;
-#    croak('Can\'t locate object method "'.$method.'" via '.$self->_package()) unless $obj->can($method);
-#    return $obj->$method(@_);
-#};
 
 sub can {
     my ($self,$method) = (shift,shift);
