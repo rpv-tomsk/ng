@@ -93,15 +93,14 @@ sub _convert {
     $converter->convert($_[0]);
 }; 
 
-sub _prepareTestData {
+sub _prepareTemplate {
     my $field = shift;
     
     my $q     = $field->q();
     my $form  = $field->parent();
     my $mObj  = $form->owner()->getModuleObj();
     
-    my $subjTemplate = undef;
-    my $htmlTemplate = undef;
+    my $template = NG::Mail::Template->new();
     
     my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
     my $labels   = $iface->try('mailLabels');
@@ -113,15 +112,15 @@ sub _prepareTestData {
         $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
     };
     #
-    $subjTemplate = NG::Mail::Template->new(_convert $q->param('subject'));
-    $subjTemplate->param($data);
-    $subjTemplate->labels($labels) if $labels;
+    $template->{_subjt} = NG::Mail::TemplateElement->new(_convert $q->param('subject'));
+    $template->{_subjt}->param($data);
     #
-    $htmlTemplate = NG::Mail::Template->new(_convert $q->param('html'));
-    $htmlTemplate->param($data);
-    $htmlTemplate->labels($labels) if $labels;
-
-    return ($subjTemplate,$htmlTemplate);
+    $template->{_htmlt} = NG::Mail::TemplateElement->new(_convert $q->param('html'));
+    $template->{_htmlt}->param($data);
+    #
+    $template->setLabels($labels) if $labels;
+    
+    return $template;
 };
 
 sub sendTestMail {
@@ -132,11 +131,10 @@ sub sendTestMail {
     my $testaddr = $q->param('testaddr');
     return 'Указан неверный адрес' unless is_valid_email($testaddr);
     
-    my $subjT = undef;
-    my $htmlT = undef;
+    my $template = undef;
     my $ret = eval {
-        ($subjT,$htmlT) = $field->_prepareTestData();
-        $field->_checkTemplate($subjT,$htmlT);
+        $template = $field->_prepareTemplate();
+        $template->check();
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
@@ -145,17 +143,8 @@ sub sendTestMail {
         return 'Internal error: '.$@;
     };
     
-    my $nMailer = $cms->getModuleByCode('MAILER') or return 'Модуль MAILER не найден';
-    $nMailer->add('Subject',$subjT->output()) if $subjT;
-    #$nMailer->addPlainPart($plainT) if $plainT;
-    
-    if ($htmlT) {
-        $nMailer->addHTMLPart(
-            Data     => $htmlT->output(),
-            BaseDir  => $cms->getDocRoot(),
-            #Encoding => 'base64'
-        );
-    };
+    my $nMailer = $template->getMailer();
+    $nMailer->add('to',$testaddr);
     $nMailer->send($testaddr) or return $cms->getError();
     return 'Сообщение отправлено';
 };
@@ -164,46 +153,14 @@ sub checkTemplate {
     my ($field,$is_ajax) = (shift,shift);
     
     my $ret = eval {
-        my ($subjT,$htmlT) = $field->_prepareTestData();
-        $field->_checkTemplate($subjT,$htmlT);
+        my $template = $field->_prepareTemplate();
+        $template->check();
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
             return '<font color="red">'.$e->message().'</font>';
         };
         return '<font color="red">Internal error: '.$@.'</font>';
-    };
-    return $ret;
-};
-
-sub _checkTemplate {
-    my ($field,$subjTemplate,$htmlTemplate) = (shift,shift,shift);
-    
-    #Check Subject
-    my $ret = eval {
-        my $unused = $subjTemplate->output();
-    };
-    if ($@) {
-        if (my $e = NG::Exception->caught($@)) {
-            NG::Exception->throw('NG.INTERNALERROR','Subject: '.$e->message());
-        };
-        NG::Exception->throw('NG.INTERNALERROR','Internal error: '.$@);
-    };
-    unless ($ret) {
-        NG::Exception->throw('NG.INTERNALERROR','Ошибка проверки шаблона');
-    };
-    #Check HTML
-    $ret = eval {
-        $htmlTemplate->check();
-    };
-    if ($@) {
-        if (my $e = NG::Exception->caught($@)) {
-            NG::Exception->throw('NG.INTERNALERROR','HTML: '.$e->message());
-        };
-        NG::Exception->throw('NG.INTERNALERROR','Internal error: '.$@);
-    };
-    unless ($ret) {
-        NG::Exception->throw('NG.INTERNALERROR','Ошибка проверки шаблона');
     };
     return $ret;
 };

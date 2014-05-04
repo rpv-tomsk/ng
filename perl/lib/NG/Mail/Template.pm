@@ -4,6 +4,148 @@ use strict;
 use NG::Exception;
 
 sub new {
+    my ($class,$opts) = (shift,shift);
+    
+    my $template = {};
+    bless $template,$class;
+    
+    $opts ||= {};
+    $template->{_caller} = $opts->{CALLER}   if $opts->{CALLER};
+    $template->{_code}   = $opts->{TEMPLATE} if $opts->{TEMPLATE};
+
+    $template->_load() if $template->{_caller} && $template->{_code};
+    $template;
+};
+
+sub _load {
+    my $template = shift;
+    
+    my $templateCode = $template->{_code};
+    my $callerCode   = $template->{_caller}->getModuleCode();
+    
+    my $sql = 'select id, name, subject, html, plain from mtemplates where module = ? and code=?';
+    my $sth = $template->dbh()->prepare($sql) or NG::DBIException->throw();
+    $sth->execute($callerCode,$templateCode) or NG::DBIException->throw();
+    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw("TMailer: Данные шаблона $templateCode модуля $callerCode не найдены");
+    $sth->finish();
+    
+    $template->{_plaint} = NG::Mail::TemplateElement->new($tmplRow->{plain})   if $tmplRow->{plain};
+    $template->{_subjt}  = NG::Mail::TemplateElement->new($tmplRow->{subject}) if $tmplRow->{subject};
+    $template->{_htmlt}  = NG::Mail::TemplateElement->new($tmplRow->{html})    if $tmplRow->{html};
+    $template;
+};
+
+sub param {
+    my ($template,$data) = (shift,shift);
+    
+    my $vars = NG::Mail::TemplateElement->_createVariables($data);
+    
+    $template->{_subjt}->_setVariables($vars)  if $template->{_subjt};
+    $template->{_htmlt}->_setVariables($vars)  if $template->{_htmlt};
+    $template->{_plaint}->_setVariables($vars) if $template->{_plaint};
+    $template;
+};
+
+sub setLabelsFromInterface {
+    my $template = shift;
+    
+    my $iface = $template->{_caller}->getInterface('NG::Interface::MailTemplates');
+    return unless $iface;
+    return unless $iface->can('mailLabels');
+    my $labels = $iface->mailLabels();
+    NG::Exception->throw('NG.INTERNALERROR',"mailLabels(): incorrect value returned") unless $labels && ref $labels eq "HASH";
+    
+    my $labelsObj = NG::Mail::TemplateElement->_createLabels($labels);
+    
+    $template->{_subjt}->_setLabels($labelsObj) if $template->{_subjt};
+    $template->{_htmlt}->_setLabels($labelsObj) if $template->{_htmlt};
+    $template->{_plaint}->_setLabels($labelsObj) if $template->{_plaint};
+    $template;
+};
+
+sub setLabels {
+    my ($template,$labels) = (shift,shift);
+    
+    my $labelsObj = NG::Mail::TemplateElement->_createLabels($labels);
+    
+    $template->{_subjt}->_setLabels($labelsObj) if $template->{_subjt};
+    $template->{_htmlt}->_setLabels($labelsObj) if $template->{_htmlt};
+    $template->{_plaint}->_setLabels($labelsObj) if $template->{_plaint};
+    $template;
+}
+
+sub check {
+    my $template = shift;
+    
+    my $ret = "";
+    $template->_checkSubjectTemplate()      if $template->{_subjt};
+    $ret .= $template->_checkHTMLTemplate() if $template->{_htmlt};
+    
+    $ret;
+};
+
+sub _checkSubjectTemplate {
+    my $template = shift;
+    
+    NG::Exception->throw('NG.INTERNALERROR','No subject template') unless $template->{_subjt};
+    #Check Subject
+    my $ret = eval {
+        my $unused = $template->{_subjt}->output();
+    };
+    if ($@) {
+        if (my $e = NG::Exception->caught($@)) {
+            NG::Exception->throw('NG.INTERNALERROR','Subject: '.$e->message());
+        };
+        NG::Exception->throw('NG.INTERNALERROR','Internal error: '.$@);
+    };
+    unless ($ret) {
+        NG::Exception->throw('NG.INTERNALERROR','Ошибка проверки шаблона');
+    };
+    return "";
+};
+
+sub _checkHTMLTemplate {
+    my $template = shift;
+    
+    NG::Exception->throw('NG.INTERNALERROR','No HTML template') unless $template->{_htmlt};
+    #Check HTML
+    my $ret = eval {
+        $template->{_htmlt}->check();
+    };
+    if ($@) {
+        if (my $e = NG::Exception->caught($@)) {
+            NG::Exception->throw('NG.INTERNALERROR','HTML: '.$e->message());
+        };
+        NG::Exception->throw('NG.INTERNALERROR','Internal error: '.$@);
+    };
+    unless ($ret) {
+        NG::Exception->throw('NG.INTERNALERROR','Ошибка проверки шаблона');
+    };
+    return $ret;
+};
+
+sub getMailer {
+    my $template = shift;
+    
+    my $cms = $template->cms();
+    my $nMailer = $cms->getModuleByCode('MAILER') or NG::Exception->throw('NG.INTERNALERROR','Модуль MAILER не найден');
+    $nMailer->add('Subject',$template->{_subjt}->output()) if $template->{_subjt};
+    $nMailer->addPlainPart($template->{_plaint}->output()) if $template->{_plaint};
+    
+    if ($template->{_htmlt}) {
+        $nMailer->addHTMLPart(
+            Data     => $template->{_htmlt}->output(),
+            BaseDir  => $cms->getDocRoot(),
+            Encoding => 'base64'
+        );
+    };
+    $nMailer;
+};
+
+package NG::Mail::TemplateElement;
+use strict;
+
+sub new {
     my ($class,$content) = (shift,shift);
     
     my $self = {};
@@ -57,7 +199,7 @@ sub output {
 sub _createVariables {
     my ($unused,$data) = (shift,shift);
     my $variables = {};
-    bless $variables, "NG::Mail::Template::Variables";
+    bless $variables, "NG::Mail::TemplateElement::Variables";
     $variables->{_data} = $data;
     $variables->{_used} = {};
     $variables;
@@ -66,7 +208,7 @@ sub _createVariables {
 sub _createLabels {
     my ($unused,$data) = (shift,shift);
     my $labels = {};
-    bless $labels, "NG::Mail::Template::Labels";
+    bless $labels, "NG::Mail::TemplateElement::Labels";
     $labels->{_data} = $data;
     $labels->{_used} = {};
     $labels;
@@ -84,7 +226,7 @@ sub _setLabels {
     $self->{_labels} = $labels;
 };
 
-package NG::Mail::Template::Variables;
+package NG::Mail::TemplateElement::Variables;
 use strict;
 our $AUTOLOAD;
 
@@ -101,7 +243,7 @@ sub AUTOLOAD {
     return $self->{_data}->{$AUTOLOAD};
 };
 
-package NG::Mail::Template::Labels;
+package NG::Mail::TemplateElement::Labels;
 use strict;
 our $AUTOLOAD;
 
