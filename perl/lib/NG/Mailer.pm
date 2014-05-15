@@ -33,7 +33,7 @@ sub init {
     $self->{_gsubcode} = undef;
     $self->{_mcode} = undef;
     
-    return $self->SUPER::init();
+    return $self->SUPER::init(@_);
 };
 
 =comment
