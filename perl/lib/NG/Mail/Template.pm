@@ -26,7 +26,7 @@ sub _load {
     my $sql = 'select id, name, subject, html, plain from mtemplates where module = ? and code=?';
     my $sth = $template->dbh()->prepare($sql) or NG::DBIException->throw();
     $sth->execute($callerCode,$templateCode) or NG::DBIException->throw();
-    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw("TMailer: Данные шаблона $templateCode модуля $callerCode не найдены");
+    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw("Запись шаблона $templateCode модуля $callerCode не найдена");
     $sth->finish();
     
     $template->{_plaint} = NG::Mail::TemplateElement->new($tmplRow->{plain})   if $tmplRow->{plain};
@@ -55,12 +55,7 @@ sub setLabelsFromInterface {
     my $labels = $iface->mailLabels();
     NG::Exception->throw('NG.INTERNALERROR',"mailLabels(): incorrect value returned") unless $labels && ref $labels eq "HASH";
     
-    my $labelsObj = NG::Mail::TemplateElement->_createLabels($labels);
-    
-    $template->{_subjt}->_setLabels($labelsObj) if $template->{_subjt};
-    $template->{_htmlt}->_setLabels($labelsObj) if $template->{_htmlt};
-    $template->{_plaint}->_setLabels($labelsObj) if $template->{_plaint};
-    $template;
+    return $template->setLabels($labels); 
 };
 
 sub setLabels {
@@ -127,6 +122,7 @@ sub _checkHTMLTemplate {
 sub getMailer {
     my $template = shift;
     
+    NG::Exception->throw('NG.INTERNALERROR','No HTML or PLAIN part') unless $template->{_htmlt} or $template->{_plaint};
     my $cms = $template->cms();
     my $nMailer = $cms->getModuleByCode('MAILER') or NG::Exception->throw('NG.INTERNALERROR','Модуль MAILER не найден');
     $nMailer->add('Subject',$template->{_subjt}->output()) if $template->{_subjt};
