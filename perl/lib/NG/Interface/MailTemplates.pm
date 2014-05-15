@@ -20,7 +20,7 @@ sub validate_mailLabels {
 };
 
 sub getTemplateMetadata {
-    my ($iface,$code) = (shift,shift,shift);
+    my ($iface,$code) = (shift,shift);
     
     NG::Exception->throw('NG.INTERNALERROR','Template code not specified.') unless $code;
     
