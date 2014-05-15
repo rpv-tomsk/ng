@@ -898,7 +898,7 @@ sub loadtree {
 			if ($#level_roots) {
 				pop @level_roots;
 			} else {
-				croak "loadtree: Invalid data in table. Can`t find parent for node id=".$row->{id};
+				croak "loadtree: Invalid data in table '$table'. Can`t find parent for node id=".$row->{id};
 			}
 		}
 	};
