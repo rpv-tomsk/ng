@@ -25,6 +25,15 @@ sub _validate {
         NG::Exception->throw('NG.INTERNALERROR', "TASK: Missing METHOD at configCRON() of ".$iface->_package())   unless $config->{METHOD};
         NG::Exception->throw('NG.INTERNALERROR', "TASK: Missing FREQ_STR at configCRON() of ".$iface->_package()) unless $config->{FREQ_STR};
         
+        if (ref $config->{FREQ_STR} eq "ARRAY") {
+            foreach my $time (@{$config->{FREQ_STR}}){
+                NG::Exception->throw('NG.INTERNALERROR', "TASK: Invalid FREQ_STR at configCRON() of ".$iface->_package().": '".$time."'") unless NG::Cron::Service::is_valid_cronfreq($time);
+            };
+        }
+        else {
+            NG::Exception->throw('NG.INTERNALERROR', "TASK: Invalid FREQ_STR at configCRON() of ".$iface->_package().": '".$config->{FREQ_STR}."'") unless NG::Cron::Service::is_valid_cronfreq($config->{FREQ_STR});
+        };
+        
         my $task = $config->{TASK};
         NG::Exception->throw('NG.INTERNALERROR',"Task '$task' specified twice at ".$iface->_package()) if exists $tasks->{$task};
         $tasks->{$task} = 1;
