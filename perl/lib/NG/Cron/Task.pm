@@ -109,9 +109,9 @@ sub _run {
     my $ret = eval {
         $self->{_interface}->$method(NG::Cron::Logger->new($self));
     };
-    if ($@) {
+    if (my $e = $@) {
         $self->updateStatusRecord({status=>'error'});
-        die $@;
+        die $e;
     }
     $self->updateStatusRecord({status=>'stop'});
     $ret;
