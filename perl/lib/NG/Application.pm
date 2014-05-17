@@ -1108,6 +1108,7 @@ sub showError {
     my $h = {};
     $h->{-nocache} = 1;
     $h->{-charset} = $self->{_echarset};
+    $h->{-type} = "text/plain";
     $h->{-status}  = '500 Internal server error';
     
     $self->_header($h);
