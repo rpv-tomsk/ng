@@ -49,16 +49,12 @@ sub importX {
     $param{CGIObject} = $cgi;
     $param{DBObject}  = $db;
     eval {
-        #Treat all 'die' exceptions as NG.INTERNALERROR
-        local $main::SIG{__DIE__} = sub {
-            die NG::Exception->new('NG.INTERNALERROR',$_[0]);
-        };
         my $app = $class->new(%param);
         $app->run();  # must do $db->connect();
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
-            die $e->getText();
+            die $e->getText()."\n";
         }
         else {
             die $@;
@@ -103,10 +99,6 @@ sub FastCGI {
     $param{DBObject} = $db if $db;
     while (my $cgi = new CGI::Fast) {
         eval {
-            #Treat all 'die' exceptions as NG.INTERNALERROR
-            local $main::SIG{__DIE__} = sub {
-                die NG::Exception->new('NG.INTERNALERROR',$_[0]);
-            };
             if ($db) {
                 $db->connect() or die $db->errstr();
             };
