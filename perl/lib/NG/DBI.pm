@@ -42,7 +42,7 @@ sub password {
 sub connect {
     my $self = shift;
     if (scalar(@_)) {
-        foreach my $k qw(_ds _username _passwd _attr) {
+        foreach my $k (qw(_ds _username _passwd _attr)) {
             my $t = shift or next;
             $self->{$k} = $t;
         }
@@ -61,7 +61,7 @@ sub init {
     my $self = shift;
     $self->{_dbh} = undef;
     $self->{_errstr} = "";
-    foreach my $k qw(_ds _username _passwd _attr) {
+    foreach my $k (qw(_ds _username _passwd _attr)) {
         my $t = shift or next;
         $self->{$k} = $t;
     };
