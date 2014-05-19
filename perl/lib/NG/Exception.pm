@@ -5,6 +5,10 @@ use Scalar::Util 'blessed';
 our @specificators;
 our $specificatorProcessors = {};
 
+sub defaultCode {
+    return 'NG.INTERNALERROR';
+};
+
 sub new {
     my $class = shift;
     
@@ -12,8 +16,8 @@ sub new {
     bless $self,$class;
     
     unless (scalar @_ == 2) {
-        $self->{code} = 'NG.INTERNALERROR';
-        $self->{message} = 'Incorrect NG::Exception->throw() call';
+        $self->{code} = $class->defaultCode();
+        $self->{message} = 'Incorrect '.$class.'->throw() call';
     }
     else {
         $self->{code} = shift;
@@ -50,7 +54,14 @@ sub caught {
     
     return undef unless blessed($e) && $e->isa( $class );
     return $e unless $code;
-    return $e if $code eq $e->{code};
+    if (ref $code eq 'ARRAY') {
+        foreach (@$code) {
+            return $e if $e->{code} eq $_;
+        };
+    }
+    else {
+        return $e if $code eq $e->{code};
+    };
     return undef;
 }
 
@@ -62,6 +73,80 @@ sub getText {
     
     return $exc->{carpmessage} if $exc->{carpmessage};
     $exc->code.": ".$exc->message."\n";
+};
+
+sub notify {
+    my ($class, $exc,$opName) = (shift,shift,shift);
+    
+    my $excCode = $class->defaultCode();
+    my $excMsg  = '';
+    my $subj = '';
+    
+    if (NG::Exception->caught($exc)) {
+        $excCode = $exc->code();
+        $excMsg  = $exc->message();
+    }
+    elsif (ref $exc){
+        $excMsg = "Неизвестное исключение класса ".(ref $exc);
+    }
+    else {
+        $excMsg = $exc;
+    };
+    
+    foreach my $spec (@Pay::Exception::specificators) {
+        my $v = {};
+        my $ref = ref $spec;
+        my $parentRef = undef;
+
+        if ($ref eq 'HASH') {
+            $parentRef = $ref;
+            $ref = $spec->{type};
+            $spec = $spec->{spec};
+
+            $v->{text} = 'HASH Specificator: "type" or "spec" is missing' unless $ref && $spec;
+            $v->{text} = 'HASH Specificator: "type" has forbidden value '.$ref if $ref eq 'HASH' || $ref eq 'CODE';
+        };
+
+        if ($ref eq 'CODE') {
+            $v = eval {$spec->($exc)};
+        }
+        else {
+            my $code = $Pay::Exception::specificatorProcessors->{$ref};
+            if ($code) {
+                $v = eval {$code->($spec,$exc)};
+            }
+            else {
+                $v->{text} = "Not found CODE for specificator type $ref";
+            };
+        };
+        if (my $ee = $@) {
+            $excMsg .= "EXCEPTION $ee WHILE GETTING VALUE FROM EXCEPTION SPECIFICATOR '$ref'\n";
+            next;
+        };
+        $excMsg .= "\n".$v->{text};
+        $subj .= " ".$v->{subj} if exists $v->{subj};
+    };
+    $excMsg=~s/\r?\n$//;
+    
+    my $notifyText .= "Во время обработки операции \"$opName\" произошла ошибка:\n\n$excMsg\n\n";
+    $subj = "[Kinomax Pay Notification] $excCode $opName" . $subj;
+    
+    while (1) {
+        my $cms = $NG::Application::cms;
+        last unless $cms;
+        
+        my $supportEmail = 'support@nikolas.ru';
+        
+        my $nmailer = $cms->getModuleByCode('MAILER') or last;
+        $nmailer->setGroupCode('PAYADMINNOTIFY');
+        $nmailer->addPlainPart(Data=>$notifyText);
+        $nmailer->add(Subject=> $subj);
+        $nmailer->add(To=>$supportEmail);
+        $nmailer->send($supportEmail) or last;
+        return 1;
+    };
+    warn "Unable to notify about exception $notifyText";
+    return 0;
 };
 
 package NG::DBIException;
