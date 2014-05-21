@@ -93,7 +93,7 @@ sub notify {
         $excMsg = $exc;
     };
     
-    foreach my $spec (@Pay::Exception::specificators) {
+    foreach my $spec (@NG::Exception::specificators) {
         my $v = {};
         my $ref = ref $spec;
         my $parentRef = undef;
@@ -111,7 +111,7 @@ sub notify {
             $v = eval {$spec->($exc)};
         }
         else {
-            my $code = $Pay::Exception::specificatorProcessors->{$ref};
+            my $code = $NG::Exception::specificatorProcessors->{$ref};
             if ($code) {
                 $v = eval {$code->($spec,$exc)};
             }
@@ -120,7 +120,14 @@ sub notify {
             };
         };
         if (my $ee = $@) {
-            $excMsg .= "EXCEPTION $ee WHILE GETTING VALUE FROM EXCEPTION SPECIFICATOR '$ref'\n";
+            my $eeText = "";
+            if (NG::Exception->caught($ee)) {
+                $eeText = $ee->getText();
+            }
+            else {
+                $eeText = $ee;
+            };
+            $excMsg .= "EXCEPTION $eeText WHILE GETTING VALUE FROM EXCEPTION SPECIFICATOR '$ref'\n";
             next;
         };
         $excMsg .= "\n".$v->{text};
