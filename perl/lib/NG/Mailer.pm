@@ -297,7 +297,7 @@ sub send {
     };
     if ($opts->{To}) {
         $opts->{To} = [$opts->{To}] unless ref $opts->{To};
-        ref $opts->{To} eq "ARRAY" or return $cms->error("send(): option To has incorrect value".ref($opts->{To}));
+        ref $opts->{To} eq "ARRAY" or return $cms->error("send(): option To has incorrect type ".ref($opts->{To}));
     }
     else {
         #Scan email content for recpients...
