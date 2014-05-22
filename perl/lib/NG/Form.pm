@@ -423,9 +423,13 @@ sub print {
 
     my @elements = ();   # Массив  
     my $fHash = {};      # Hash of not hidden and not showed fields
+    my $fAll  = {};
     my $globalError = "";
     foreach my $field (@{$self->fields()}) {
         $field->prepareOutput() or return $self->error($field->error());
+        $field->{VALUE} = "" unless exists $field->{VALUE};
+        
+        $fAll->{$field->{FIELD}} = $field;
         
         if ($field->{HIDDEN_FIELD} || $field->{HIDE}) { #Перенаправляем ошибки из неотображаемых полей в глобальный контейнер
             my $em = $field->error() || "";
@@ -535,6 +539,7 @@ sub print {
 			NAME => $self->{_name},
             TITLE => $title,
             ELEMENTS   =>\@elements,
+            FIELDS     => $fAll,
             URL   =>$self->{_form_url},
             URLFA      => $urlfa,
             SELF_URL   =>$u,
