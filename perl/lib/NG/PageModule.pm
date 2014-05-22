@@ -387,7 +387,7 @@ sub updateSearchIndex {
     
     my $indexes = [];	
     foreach my $subm (@{$submodules}) {
-        my $block = $subm->{BLOCK} or return $cms->error("Модуль ".(ref $self)." в описании блоков модуля отсутствует значение ключа BLOCK");
+        $subm->{BLOCK} or return $cms->error("Модуль ".(ref $self)." в описании блоков модуля отсутствует значение ключа BLOCK");
         my $opts = $subm->{OPTS} || {};
         return $cms->error("Параметр OPTS блока не является HASHREF") unless ref $opts eq "HASH";
         
@@ -397,7 +397,10 @@ sub updateSearchIndex {
         $opts->{ADMINBASEURL} = $baseurl. $subm->{URL};
         
         $opts->{MODULEOBJ} =  $self;
-        my $bObj = $cms->getObject($block,$opts) or return $cms->error();
+        
+        my $classDef = {CLASS=>$subm->{BLOCK}};
+        $classDef->{USE}= $subm->{USE} if exists $subm->{USE};
+        my $bObj = $cms->getObject($classDef,$opts);
         
         return $cms->error("Block ".ref($bObj)." has no getBlockIndex() method") unless $bObj->can("getBlockIndex");
         
