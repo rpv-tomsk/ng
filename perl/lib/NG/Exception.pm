@@ -4,6 +4,7 @@ use Scalar::Util 'blessed';
 
 our @specificators;
 our $specificatorProcessors = {};
+our $notificationPrefix = "";
 
 sub defaultCode {
     return 'NG.INTERNALERROR';
@@ -117,6 +118,7 @@ sub notify {
             }
             else {
                 $v->{text} = "Not found CODE for specificator type $ref";
+                $@ = "";
             };
         };
         if (my $ee = $@) {
@@ -136,7 +138,7 @@ sub notify {
     $excMsg=~s/\r?\n$//;
     
     my $notifyText .= "Во время обработки операции \"$opName\" произошла ошибка:\n\n$excMsg\n\n";
-    $subj = "[Kinomax Pay Notification] $excCode $opName" . $subj;
+    $subj = "$notificationPrefix $excCode $opName" . $subj;
     
     while (1) {
         my $cms = $NG::Application::cms;
