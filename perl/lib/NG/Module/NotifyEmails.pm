@@ -46,7 +46,7 @@ sub config {
     
     my @fields = ();
     push @fields, {FIELD=>'id',    TYPE=>'id',     NAME=>'Код',IS_NOTNULL=>1};
-    push @fields, {FIELD=>'email', TYPE=>'email',   NAME=>'Заголовок',IS_NOTNULL=>1,WIDTH=>"100%"};
+    push @fields, {FIELD=>'email', TYPE=>'email',   NAME=>'E-Mail',IS_NOTNULL=>1,WIDTH=>"100%"};
     push @fields, {FIELD=>'mcode',  TYPE=>'filter', NAME=>'Filter',IS_NOTNULL=>1,WIDTH=>"100%",VALUE=>$mObj->getModuleCode()};
     #
     my @formfields = ();
@@ -118,9 +118,28 @@ sub moduleBlocks {
     my $mails = $cms->getObject({CLASS=>"NG::Module::NotifyEmails",METHOD=>"loadEmails"},$self,'ANOTIFY') or return $cms->error();
     if (scalar @$mails) {
         ...
+        #Вариант 1 - Общий заголовок To:
         $nmailer->send(@$mails) or return $cms->error();
         ...
+        #Вариант 2 - Публичный список получателей 
+        my $To = ''; $To .= '<'.$_ . '>,' foreach @$mails; $To =~ s/,$//;
+        $nmailer->add('To',$To);
+        $nmailer->send();
+        
+        #Вариант 3 - Формируем каждому отдельное письмо
     };
+    
+    
+CREATE TABLE ng_emails (
+  id SERIAL,
+  email VARCHAR(50) NOT NULL,
+  mcode VARCHAR(25) NOT NULL,
+  subcode VARCHAR(25) NOT NULL,
+  CONSTRAINT ng_emails_idx UNIQUE(email, mcode, subcode),
+  CONSTRAINT ng_emails_pkey PRIMARY KEY(id)
+) 
+WITH (oids = false);
+
 =cut
 
 1;
