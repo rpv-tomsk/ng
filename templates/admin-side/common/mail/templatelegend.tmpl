@@ -57,10 +57,12 @@ function checkTemplate (e,key) {
 </script> 
 
 <table border=0>
+<TMPL_IF LEGEND>
 <tr><td><p>Переменная</p></td><td><p>Описание</p></td><td><p>Пример</p></td></tr>
 <TMPL_LOOP LEGEND>
     <tr><td>[%<TMPL_VAR VAR>%]</td><td><TMPL_VAR NAME></td><td><TMPL_VAR EXAMPLE></td></tr>
 </TMPL_LOOP LEGEND>
+</TMPL_IF LEGEND>
 
 <tr><td colspan="3">
     <p>Действия</p>
