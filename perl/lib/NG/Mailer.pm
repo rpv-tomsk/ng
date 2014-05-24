@@ -53,6 +53,7 @@ sub add {
     
     #No object exists and type is unknown. Save headers..
     $self->{_headers} ||= $self->_newML(Top=>0);
+    die "Header 'To' already added" if lc($_[0]) eq "to" and $self->{_headers}->get('To');
     $self->{_headers}->add(@_);
     #Set headers in result set too, if exists.
     $self->{_dataObj}->add(@_) if $self->{_dataObj};
@@ -224,7 +225,8 @@ sub _getDataObj {
     
     $self->{_dataObj}->top_level(1);
     require Email::Date::Format;
-    $self->{_dataObj}->add( "date", Email::Date::Format::email_date() );
+    $self->{_dataObj}->add( 'date', Email::Date::Format::email_date() ) unless $self->{_dataObj}->get( 'date' );
+    $self->{_dataObj}->delete('X-Mailer');
     if ($self->{_headers} && $self->{_dataObj}) {
         my %hMap = map {$_->[0]=>1} @{$self->{_dataObj}->{Header}};
         foreach my $k ( @{$self->{_headers}->{Header}}) {
@@ -301,7 +303,7 @@ sub send {
     }
     else {
         #Scan email content for recpients...
-        my @hdr_to = MIME::Lite::extract_only_addrs( scalar $d->get('To') );
+        my @hdr_to = MIME::Lite::extract_only_addrs( scalar $d->get('To') ); ## Only one To: header should exist
         foreach my $field (qw/Cc Bcc/) {
             push @hdr_to, MIME::Lite::extract_only_addrs($_) for $d->get($field);
         };
