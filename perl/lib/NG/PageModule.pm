@@ -476,7 +476,7 @@ sub getPageAddVariants {
     #проверки корректности данных (корректности денормализации)
     #Один шаблон должен иметь соответствие только с одним link_id в ng_tmpllink,
     #и значение link_id должно совпадать с ng_templates.link_id
-    my $sth = $dbh->prepare("select t.id,t.name,t.modulecode, t.link_id as t_link_id, l.link_id from ng_templates t left join ng_tmpllink l on t.id = l.template_id where t.group_id=?") or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
+    my $sth = $dbh->prepare("select t.id,t.name, t.link_id as t_link_id, l.link_id from ng_templates t left join ng_tmpllink l on t.id = l.template_id where t.group_id=?") or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
     $sth->execute($pageRow->{subptmplgid}) or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
 	
     my $ttl = {}; # $ttl->{$template_id} = $link_id  -- Хеш для проверки
@@ -566,7 +566,7 @@ sub processNewSubpages {
 
 	unless (scalar keys %{$linkedTemplates}) {
 		$linkedTemplates = undef;
-		my $lsth = $dbh->prepare("select id as template_id,name as template_name,subptmplgid,template,print_template from ng_templates where id = ?") or return $cms->error($DBI::errstr); 
+		my $lsth = $dbh->prepare("select id as template_id,name as template_name,subptmplgid,template,print_template,modulecode from ng_templates where id = ?") or return $cms->error($DBI::errstr); 
 		$lsth->execute($variant->{TEMPLATE_ID}) or return $cms->error($DBI::errstr);
 		$singleTemplate = $lsth->fetchrow_hashref();
 		$lsth->finish();
