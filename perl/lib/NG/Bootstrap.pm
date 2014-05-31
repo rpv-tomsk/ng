@@ -29,7 +29,7 @@ sub importX {
         $db->connect() or cgi_error $db->errstr();
     };
     
-    $SIG{'__WARN__'} = sub { print STDERR $_[0]  };
+    $SIG{'__WARN__'} = sub { print STDERR $_[0]."\n"  };
     
     ### CGI/mod_perl version
     use CGI;

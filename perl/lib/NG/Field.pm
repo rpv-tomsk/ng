@@ -264,7 +264,7 @@ sub setError {
     };
     
     $errormsg ||= "";
-print STDERR "NG::Field($field->{FIELD})::setError(".ts($errormsg).")";
+print STDERR "NG::Field($field->{FIELD})::setError(".ts($errormsg).")\n";
     $field->{ERRORMSG} = $errormsg;
 	return 0;
 };
@@ -272,7 +272,7 @@ print STDERR "NG::Field($field->{FIELD})::setError(".ts($errormsg).")";
 sub set_err {
 	my $self = shift;
 	my $errstr = shift;
-print STDERR "NG::Field(".(ref $self?$self->{FIELD}:"").")::set_err($errstr)";
+print STDERR "NG::Field(".(ref $self?$self->{FIELD}:"").")::set_err($errstr)\n";
 	$NG::Field::errstr = $errstr;
 	$self->{ERRORMSG} = $errstr if ref $self;
 	return undef;

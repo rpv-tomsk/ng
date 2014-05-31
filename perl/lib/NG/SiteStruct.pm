@@ -1615,7 +1615,7 @@ sub processEvent {
         return unless ($opts->{NODE}->{node_id} && $opts->{PARTNER}->{node_id});
         
         unless ($opts->{ACTION} eq "before" || $opts->{ACTION} eq "after") {
-            print STDERR "Invalid ACTION ".$opts->{ACTION}. " in NG::Module::Menu::Event";
+            print STDERR "Invalid ACTION ".$opts->{ACTION}. " in NG::Module::Menu::Event\n";
             return;
         };
         
@@ -1626,11 +1626,11 @@ sub processEvent {
         $pnode->loadNode($opts->{PARTNER}->{node_id});
 
         unless ($node && $pnode) {
-            print STDERR "No node found with ID=".$opts->{NODE}->{node_id};
+            print STDERR "No node found with ID=".$opts->{NODE}->{node_id}."\n";
             return;
         };
         unless ($pnode) {
-            print STDERR "No pnode found with ID=".$opts->{PARTNER}->{node_id};
+            print STDERR "No pnode found with ID=".$opts->{PARTNER}->{node_id}."\n";
             return;
         };
         if ($node->{_parent_id} == $pnode->{_parent_id}) {

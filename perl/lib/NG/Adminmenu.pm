@@ -658,7 +658,7 @@ sub processEvent {
         return unless ($opts->{NODE}->{id} && $opts->{PARTNER}->{id});
         
         unless ($opts->{ACTION} eq "before" || $opts->{ACTION} eq "after") {
-            print STDERR "Invalid ACTION ".$opts->{ACTION}. " in NG::Sitestruct::Event";
+            print STDERR "Invalid ACTION ".$opts->{ACTION}. " in NG::Sitestruct::Event\n";
             return;
         };
 		
@@ -710,7 +710,7 @@ sub processEvent {
 		#opts->{PAGEOBJ}
 		my $elem = NG::Nodes->loadNode(node_id => $opts->{PAGEOBJ}->getPageId()) or return;
 		if ($elem->getFirstChildOrder()) {
-print STDERR "TODO: what to do for nodes with childs ?";
+print STDERR "TODO: what to do for nodes with childs ?\n";
 			return;
 		};
 		$elem->DBdelete();

@@ -128,7 +128,7 @@ sub outputTimestamps {
 
         my $write_fh;
         unless ( sysopen( $write_fh, $target, $Store_Flags ) ) {
-            print STDERR "Unable to open $target while saving Profiler data : $!";
+            print STDERR "Unable to open $target while saving Profiler data : $!\n";
             return;
         };
         seek($write_fh,0,2);
@@ -137,7 +137,7 @@ sub outputTimestamps {
         do {
             my $write_cnt = syswrite( $write_fh, $s, $size_left, $offset );
             unless ( defined $write_cnt ) {
-                print STDERR "Unable to write Profiler data to $target : $!";
+                print STDERR "Unable to write Profiler data to $target : $!\n";
                 return;
             };
             $size_left -= $write_cnt;
@@ -146,7 +146,7 @@ sub outputTimestamps {
         close ($write_fh);
     }
     else {
-        print STDERR $s;
+        print STDERR $s."\n";
     };
 };
 
