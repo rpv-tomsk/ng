@@ -231,7 +231,7 @@ sub getStash { # $mObj->getStash($key)
     my $m = ($NG::Application::cms->{_mstash}->{$c} ||= {});
     
     unless (exists $m->{$key}) {
-        warn "getStash(): key $key not found";
+        #warn "getStash(): key $key not found";
         return undef;
     };
     return $m->{$key};
