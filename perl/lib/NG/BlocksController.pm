@@ -31,6 +31,7 @@ sub init {
     $self->{_usedBCodes} = {}; # Использованные в шаблоне коды блоков
     #
     $self->{_regions} = {};
+    $self->{_tmplAttached} = 0; #Флаг для процедуры автоматической разрегистрации блока
     
     $self;
 };
@@ -485,6 +486,7 @@ sub attachTemplate {
         PLUGINS => $plugins,
         MODULES => $modules,
     );
+    $self->{_tmplAttached} = 1;
     return 1;
 };
 
@@ -492,9 +494,10 @@ sub _getTmplBlockContent {
     my $self = shift;
     my $blockCode = shift;
     my $isPlugin = shift || 0;
-   
+
+    $self->{_tmplAttached} = 0;  #Disabled block unregistration due to possible errors from new block
+
     my $block = $self->{_hblocks}->{$blockCode};
-    
     unless ($block) {
         my $e = $self->_regTmplBlock($blockCode,$isPlugin);
         return $e if $e;
@@ -621,12 +624,17 @@ sub DESTROY {
     my $self = shift;
     my $dbh = $self->dbh();
 
+    return 1 unless $self->{_tmplFile};
+    return 1 unless $self->{_tmplAttached};
     #TODO: Обработать ситуацию, когда в вызове незарегистрированного блока происходит die.
     #      Тогда часть блоков может быть не вызвана из шаблона, и она будет считаться неиспользуемой.
     #      Нужно выставлять флажок _inside если вызывается запрос контента незарегистированного блока
     #      и проверять его в этой процедуре.
     unless (scalar keys %{$self->{_usedBCodes}}) {
-print STDERR " NG::PlugCtrl - no one module used. Possible tmpl->output() not called. Skipping remove.... ";
+my $aBlock = $self->{_ablock};
+$aBlock = "AB ".$aBlock->{CODE} if $aBlock;
+$aBlock ||= "";
+print STDERR "Layout '".$self->{_tmplFile}."' $aBlock : NG::PlugCtrl - no one module used. Possible tmpl->output() not called. Skipping remove....\n";
         return 1;
     };
     
@@ -639,7 +647,7 @@ print STDERR " NG::PlugCtrl - no one module used. Possible tmpl->output() not ca
         next if $block->{fixed};
         next if $block->{disabled};
         
-        print STDERR "Block ".$block->{CODE}." is not used in template '".$self->{_tmplFile}."' and must be unregistered.";
+        print STDERR "Block ".$block->{CODE}." is not used in template '".$self->{_tmplFile}."' and must be unregistered.\n";
         #$dbh->do("delete from ng_tmpl_blocks where template=? and  block_id=?", undef, $self->{_tmplFile}, $blockId) or warn "Error unregistering block:".$DBI::errstr;
     };
     return 1;
