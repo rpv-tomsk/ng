@@ -389,7 +389,7 @@ sub error {
     my $defErr = shift;
 	$self->{_error} = $error;
     $self->{_error} ||= $defErr;
-    print STDERR $self->{_error};
+    print STDERR $self->{_error}."\n";
 	return 0;
 }
 
