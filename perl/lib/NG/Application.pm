@@ -643,7 +643,8 @@ sub buildPage {
         REGION=>$rContent,
         PAGEROW => $pageObj->getPageRow(),
         SUBSITEROW => $cms->{_subsiteRow},
-        RES => $rObj
+        RES => $rObj,
+        DEBUG => $cms->{_debug},
     );
 #NG::Profiler::saveTimestamp("pre_output","buildPage");
     return $cms->output($tObj);
