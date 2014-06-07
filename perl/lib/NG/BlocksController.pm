@@ -634,7 +634,7 @@ sub DESTROY {
 my $aBlock = $self->{_ablock};
 $aBlock = "AB ".$aBlock->{CODE} if $aBlock;
 $aBlock ||= "";
-print STDERR "Layout '".$self->{_tmplFile}."' $aBlock : NG::PlugCtrl - no one module used. Possible tmpl->output() not called. Skipping remove....\n";
+warn "Layout '".$self->{_tmplFile}."' $aBlock : NG::PlugCtrl - no one module used. Possible tmpl->output() not called. Skipping remove....";
         return 1;
     };
     
@@ -647,7 +647,7 @@ print STDERR "Layout '".$self->{_tmplFile}."' $aBlock : NG::PlugCtrl - no one mo
         next if $block->{fixed};
         next if $block->{disabled};
         
-        print STDERR "Block ".$block->{CODE}." is not used in template '".$self->{_tmplFile}."' and must be unregistered.\n";
+        warn "Block ".$block->{CODE}." is not used in template '".$self->{_tmplFile}."' and must be unregistered.";
         #$dbh->do("delete from ng_tmpl_blocks where template=? and  block_id=?", undef, $self->{_tmplFile}, $blockId) or warn "Error unregistering block:".$DBI::errstr;
     };
     return 1;

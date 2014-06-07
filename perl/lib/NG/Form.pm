@@ -77,9 +77,9 @@ sub setFieldsErrorText {
     my $form = shift;
     my $hash = shift;  #$hash->{$lang}->{$field}->{$code} = $value;
     
-    return $form->error("setFieldErrorText(): param is not HASHREF") unless ref($hash) eq "HASH";
-    return $form->error("setFieldErrorText(): default lang is not supported") if exists $hash->{""};
-    return $form->error("setFieldErrorText(): form constructor has no lang specified") unless $form->{_lang};
+    return $form->error("setFieldsErrorText(): param is not HASHREF") unless ref($hash) eq "HASH";
+    return $form->error("setFieldsErrorText(): default lang is not supported") if exists $hash->{""};
+    return $form->error("setFieldsErrorText(): form constructor has no lang specified") unless $form->{_lang};
     
     $form->{_ferrors} = $hash;
     return 1;
@@ -389,7 +389,7 @@ sub error {
     my $defErr = shift;
 	$self->{_error} = $error;
     $self->{_error} ||= $defErr;
-    print STDERR $self->{_error}."\n";
+    warn $self->{_error};
 	return 0;
 }
 

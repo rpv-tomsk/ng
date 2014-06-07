@@ -264,7 +264,7 @@ sub setError {
     };
     
     $errormsg ||= "";
-print STDERR "NG::Field($field->{FIELD})::setError(".ts($errormsg).")\n";
+warn "NG::Field($field->{FIELD})::setError(".ts($errormsg).")";
     $field->{ERRORMSG} = $errormsg;
 	return 0;
 };
