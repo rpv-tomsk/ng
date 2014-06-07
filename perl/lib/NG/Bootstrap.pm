@@ -1,6 +1,7 @@
 package NG::Bootstrap;
 use strict;
 use NG::Exception;
+use POSIX qw(strftime);
 
 sub cgi_error {
     my $msg = shift;
@@ -29,7 +30,6 @@ sub importX {
         $db->connect() or cgi_error $db->errstr();
     };
     
-    $SIG{'__WARN__'} = sub { print STDERR $_[0]."\n"  };
     
     ### CGI/mod_perl version
     use CGI;
@@ -41,9 +41,11 @@ sub importX {
     $NG::Bootstrap::is_speedycgi = 0;
     
     if (exists $ENV{MOD_PERL}){
+        $SIG{'__WARN__'} = sub { print STDERR strftime("[%a %b %d %T %Y]",localtime())." ".$_[0] };
         $NG::Bootstrap::is_modperl = 1;
     }
     else {
+        $SIG{'__WARN__'} = sub { print STDERR $_[0] };
         $NG::Bootstrap::is_cgi = 1;
     };
     $param{CGIObject} = $cgi;
