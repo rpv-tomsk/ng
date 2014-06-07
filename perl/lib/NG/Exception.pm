@@ -5,6 +5,8 @@ use Scalar::Util 'blessed';
 our @specificators;
 our $specificatorProcessors = {};
 our $notificationPrefix = "";
+our $notificationGroupCode = "";
+our $notificationRecipients = undef;
 
 sub defaultCode {
     return 'NG.INTERNALERROR';
@@ -143,15 +145,23 @@ sub notify {
     while (1) {
         my $cms = $NG::Application::cms;
         last unless $cms;
+        last unless $notificationRecipients;
+        last if (ref $notificationRecipients) && (ref $notificationRecipients ne 'ARRAY');
         
-        my $supportEmail = 'support@nikolas.ru';
+        my $To = ''; 
+        if (ref $notificationRecipients) {
+            $To .= '<'.$_ . '>,' foreach @$notificationRecipients; $To =~ s/,$//;
+        }
+        else {
+            $To = $notificationRecipients;
+        };
         
         my $nmailer = $cms->getModuleByCode('MAILER') or last;
-        $nmailer->setGroupCode('PAYADMINNOTIFY');
+        $nmailer->setGroupCode($notificationGroupCode) if $notificationGroupCode;
         $nmailer->addPlainPart(Data=>$notifyText);
         $nmailer->add(Subject=> $subj);
-        $nmailer->add(To=>$supportEmail);
-        $nmailer->send($supportEmail) or last;
+        $nmailer->add(To=>$To);
+        $nmailer->send() or last;
         return 1;
     };
     warn "Unable to notify about exception $notifyText";
