@@ -889,6 +889,13 @@ sub Delete {
             $self->_makeLogEvent({operation=>"Удаление записи",operation_param=>"KEY ".$id});
             return $self->redirect(uri_unescape($q->param("ref")));
         };
+        $form->hideButtons();
+        $form->addButton({
+             TITLE => "Сохранить",
+             IMG => "/admin-side/img/buttons/delete.gif",
+             VALUE => "delete",
+        });
+        $form->addCloseButton();
     };
     $form->print($self->tmpl()) or return $self->error($form->getError());
     return $self->output($self->tmpl()->output());
