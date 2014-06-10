@@ -891,7 +891,7 @@ sub Delete {
         };
         $form->hideButtons();
         $form->addButton({
-             TITLE => "Сохранить",
+             TITLE => "Удалить",
              IMG => "/admin-side/img/buttons/delete.gif",
              VALUE => "delete",
         });
