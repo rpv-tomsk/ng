@@ -1,6 +1,7 @@
 package NG::Exception;
 use strict;
 use Scalar::Util 'blessed';
+use POSIX qw(strftime);
 
 our @specificators;
 our $specificatorProcessors = {};
@@ -139,7 +140,9 @@ sub notify {
     };
     $excMsg=~s/\r?\n$//;
     
-    my $notifyText .= "Во время обработки операции \"$opName\" произошла ошибка:\n\n$excMsg\n\n";
+    my $notifyText = "";
+    $notifyText .= strftime("[%a %b %d %T %Y %z]",localtime())."\n\n";
+    $notifyText .= "Во время обработки операции \"$opName\" произошла ошибка:\n\n$excMsg\n\n";
     $subj = "$notificationPrefix $excCode $opName" . $subj;
     
     while (1) {
