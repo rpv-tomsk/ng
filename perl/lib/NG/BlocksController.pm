@@ -708,15 +708,18 @@ sub processBlocks {
 #- ключи, выданные активным блоком
 #- ключи, выданные блоками соседями активного блока.
     
-    foreach my $block (@{$bctrl->{_blocks}}) {
-        next unless $block->{SOURCE} eq "tmpl";
-        $self->processBlock($block) or return 0;
-    };
-
+    my ($abDescr,$abKeywords) = (0,0);
     foreach my $block (@{$bctrl->{_blocks}}) {
         next unless $block->{SOURCE} eq "push";
         $self->processBlock($block) or return 0;
         last; #Only single block can be AB
+    };
+    $abDescr = 1 if $self->{_descr};
+    $abKeywords = 1 if $self->{_keywords};
+    
+    foreach my $block (@{$bctrl->{_blocks}}) {
+        next unless $block->{SOURCE} eq "tmpl";
+        $self->processBlock($block) or return 0;
     };
     
     foreach my $block (@{$bctrl->{_blocks}}) {
@@ -730,11 +733,21 @@ sub processBlocks {
 
     if ($pRow) {
         $self->{_title} ||= $pRow->{title};
-        if ($pRow->{description}) {
-            $self->_pushMeta({name=>"description",content=>$pRow->{description}}) or return 0;
+        if ($pRow->{description} && !$abDescr) {
+            if ($self->{_descr}) {
+                $self->{_descr}->{content} .= $pRow->{description}." ".$self->{_descr}->{content};
+            }
+            else {
+                $self->_pushMeta({name=>"description",content=>$pRow->{description}}) or return 0;
+            };
         };
-        if ($pRow->{keywords}) {
-            $self->_pushMeta({name=>"keywords",content=>$pRow->{keywords}}) or return 0;
+        if ($pRow->{keywords} && !$abKeywords) {
+            if ($self->{_keywords}) {
+                $self->{_keywords}->{content} .= $pRow->{keywords}." ".$self->{_keywords}->{content};
+            }
+            else {
+                $self->_pushMeta({name=>"keywords",content=>$pRow->{keywords}}) or return 0;
+            };
         };
     };
     1;
@@ -763,7 +776,7 @@ sub _pushMeta {
     }
     elsif ($meta->{name} eq "description") {
         if ($self->{_descr}) {
-            $self->{_descr}->{content} .= $meta->{content};
+            $self->{_descr}->{content} .= " ".$meta->{content};
             return 1;
         }
         else {
