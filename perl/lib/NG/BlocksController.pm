@@ -674,6 +674,7 @@ sub AUTOLOAD {
 
 package NG::BlocksController::RegionHead;
 use strict;
+use NHtml;
 
 sub create {
     my $class = shift;
@@ -907,7 +908,7 @@ sub META_HTML {
         $html.="<meta";
         foreach my $key (qw/name content scheme http-equiv lang dir/) {
             next unless exists $s->{$key};
-            $html.=" ".$key."=\"".$s->{$key}."\"";
+            $html.=" ".$key."=\"".htmlspecialchars($s->{$key})."\"";
         };
         $html.="/>\n";
     };
