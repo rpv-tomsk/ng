@@ -363,6 +363,28 @@ sub hasValidCacheContent {
     return 1;
 };
 
+sub setBlockContent {
+    my $self = shift;
+    my $content = shift; #{CODE=>$codes->{$place_id},KEYS=>{REQUEST=>{place=>$rplaceId},MAXAGE=>300},CONTENT=>$cms->output($c->{$rplaceId})}
+    
+    die "setBlockContent(): No CODE" unless $content->{CODE};
+    die "setBlockContent(): No KEYS" unless $content->{KEYS};
+    die "setBlockContent(): No CONTENT" unless $content->{CONTENT};
+    
+    my $block = $self->{_hblocks}->{$content->{CODE}};
+    die "setBlockContent(): Block ".$content->{CODE}." not found" unless $block;
+    
+    eval "use Storable qw(freeze thaw);";
+    
+    if (freeze($block->{KEYS}) ne freeze($content->{KEYS})){
+        eval "use Data::Dumper;";
+        die "setBlockContent(): Block ".$content->{CODE}." keys mismatch: BLOCK: ".Dumper($block->{KEYS})." NEW: ".Dumper($content->{KEYS}) 
+    };
+    
+    delete $block->{CACHEKEYS};
+    $block->{CONTENT} = $content->{CONTENT};
+};
+
 sub prepareContent {
     my $self = shift;
     my $cms = $self->cms();
