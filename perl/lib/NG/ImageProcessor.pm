@@ -1,7 +1,6 @@
 package NG::ImageProcessor;
 
 use strict;
-use File::Copy;
 use Image::Magick;
 use NG::FileProcessor;
 
@@ -11,8 +10,7 @@ use vars qw(@ISA);
 sub init {
     my $self = shift;
     $self->SUPER::init(@_);
-    $self->{_iobjs} = {};   #Хеш объектов I::M изображений по коду id.
-    $self->{_ifiles} = {};  #Хеш файлов, соответствующих объекту I::M, если есть.
+    $self->{_iobjs} = {};   #Хеш объектов NG::ImageProcessor::ImageMagickImage изображений по коду id.
     $self->{_origfname} = undef; #Оригинальное имя файла
     $self;
 };
@@ -31,7 +29,6 @@ sub composite {
         'image'=>$file,
         'gravity'=>$position
     );
-    $self->_resetIFile();
     return 1;
 };
 
@@ -44,7 +41,6 @@ sub crop_height {
     if ($iheight > $height) {
         my $e = $iObj->Crop(geometry=>$iwidth.'x'.$height.'+0+0');
         return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
-        $self->_resetIFile();
     };
     return 1;
 };
@@ -59,7 +55,6 @@ sub crop_width_center {
         my $delta_width = int(($iwidth-$width)/2);
         my $e = $iObj->Crop(geometry=>$width.'x'.$iheight.'+'.$delta_width.'+0');
         return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
-        $self->_resetIFile();
     };
     return 1;
 };
@@ -77,13 +72,11 @@ sub crop_to_center {
         my $e = $iObj->Crop(geometry=>$iwidth.'x'.$height.'+0'.'+'.$delta);
         return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
         $current_height = $height;
-        $self->_resetIFile();
     };
     if ($iwidth>$width) {
         my $delta = int(($iwidth-$width)/2);
         my $e = $iObj->Crop(geometry=>$width.'x'.$current_height.'+'.$delta.'+0');
         return $pCtrl->error("Ошибка обработки изображения : $e") if $e;
-        $self->_resetIFile();
     };  
     return 1;  
 };
@@ -103,27 +96,11 @@ sub setValue {
     $self->SUPER::setValue($value) or return $pCtrl->error();
 
     return $pCtrl->error("SOURCE not defined") unless $value;
-    my $iObj = $self->{_iobjs}->{main} = Image::Magick->new;
+    my $iObj = $self->{_iobjs}->{main} = NG::ImageProcessor::ImageMagickImage->new();
     my $err = $iObj->read($value);
     return $pCtrl->error("Ошибка чтения изображения: $err") if $err;
-    $self->{_ifiles}->{main} = $value;
     1;
 };
-
-#sub _getCurrentId {
-#    my $self = shift;
-#    my $pCtrl = $self->getCtrl();
-#    
-#    return $pCtrl->param('id') || 'main';
-#};
-
-sub _resetIFile {
-    my $self = shift;
-    my $pCtrl = $self->getCtrl();
-    
-    my $toid = $pCtrl->param('toid') || $pCtrl->param('id') || 'main';
-    delete $self->{_ifiles}->{$toid};
-}
 
 sub _getIObj {
     my $self = shift;
@@ -138,10 +115,8 @@ sub _getIObj {
 
     my $toid = $pCtrl->param('toid') || $id;
     if ($id ne $toid) {
-        $self->{_iobjs}->{$toid} = $self->{_iobjs}->{$id}->Clone();
+        $self->{_iobjs}->{$toid} = NG::ImageProcessor::ImageMagickImage->new({parent=>$self->{_iobjs}->{$id}});
         return $pCtrl->error("Ошибка клонирования объекта изображения") unless $self->{_iobjs}->{$toid};
-        delete $self->{_ifiles}->{$toid};
-        $self->{_ifiles}->{$toid} = $self->{_ifiles}->{$id} if $self->{_ifiles}->{$id};
     };
     return $self->{_iobjs}->{$toid};
 };
@@ -154,8 +129,8 @@ sub _setIObj {
     my $id = $pCtrl->param('id') || 'main';
     my $toid = $pCtrl->param('toid') || $id;
     
-    $self->{_iobjs}->{$toid} = $iObj;
-    delete $self->{_ifiles}->{$toid};
+    #die "" unless $self->{_iobjs}->{$toid};
+    $self->{_iobjs}->{$toid}->_setIObj($iObj);
 };
 
 sub towidth {
@@ -170,7 +145,6 @@ sub towidth {
     my ($iwidth,$iheight) = $iObj->Get('base-columns','base-rows');
     my $koef = ($iwidth/$width);
     if ($koef>1) {
-        $self->_resetIFile();
         my $e = $iObj->Resize(width=>int($iwidth/$koef),height=>int($iheight/$koef));
         return $pCtrl->error("Ошибка обработки изображения: $e") if $e;
     };
@@ -189,7 +163,6 @@ sub toheight {
     my ($iwidth,$iheight) = $iObj->Get('base-columns','base-rows');
     my $koef = ($iheight/$height);
     if ($koef>1) {
-        $self->_resetIFile();
         my $err=$iObj->Resize(width=>int($iwidth/$koef),height=>int($iheight/$koef));
         return $pCtrl->error("Ошибка обработки изображения: $err") if $err;
     };
@@ -210,7 +183,6 @@ sub tomaximal {
     my ($iwidth,$iheight) = $iObj->Get('base-columns','base-rows');
     my $koef = ($iwidth/$width)>($iheight/$height) ? $iwidth/$width : $iheight/$height;
     if ($koef>1) {
-        $self->_resetIFile();
         my $err=$iObj->Resize(width=>int($iwidth/$koef),height=>int($iheight/$koef));
         return $pCtrl->error("Ошибка обработки изображения: $err") if $err;
     };
@@ -231,7 +203,6 @@ sub tominimal { #урезаем в рамку по минимальной стороне с сохранением пропорции.
     my ($iwidth,$iheight) = $iObj->Get('base-columns','base-rows');
     my $koef = ($iwidth/$width)<($iheight/$height) ? $iwidth/$width : $iheight/$height;
     if ($koef>1) {
-        $self->_resetIFile();
         my $err=$iObj->Resize(width=>int($iwidth/$koef),height=>int($iheight/$koef));
         return $pCtrl->error("Ошибка обработки изображения: $err") if $err;
     };
@@ -269,7 +240,7 @@ sub torectangle {
     $pp->ReadImage($bg);
     ## Compose
 #TODO: add param for gravity
-    $pp->Composite(image=>$iObj,gravity=>'Center');
+    $pp->Composite(image=>$iObj->image(),gravity=>'Center');
     
     $self->_setIObj($pp);
     $iObj = undef;
@@ -296,17 +267,11 @@ sub afterProcess {
     my $dest = shift;
 
     my $pCtrl = $self->getCtrl();
-    if ($self->{_ifiles}->{main}) {
-        copy($self->{_ifiles}->{main},$dest) or return $self->setError("Ошибка копирования изображения: ".$!);
-    }
-    else {
-        my $iObj = $self->{_iobjs}->{main} or return $pCtrl->error("No IOBJ");
-        my $err = $iObj->Write($dest);
-        return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
-    };
-    my $mask = umask();
-    $mask = 0777 &~ $mask;
-    chmod $mask, $dest;
+    
+    my $iObj = $self->{_iobjs}->{main} or return $pCtrl->error("No IOBJ");
+    my $err = $iObj->Write($dest);
+    return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
+
     return 1;
 };
 
@@ -348,22 +313,11 @@ sub saveToField {
     my $newDBV = $field->dbValue() or return $pCtrl->error("Field $fName dbValue() metod returns no data");
     $dest .= $newDBV;
     
-    
-    my $id = $pCtrl->param('id') || 'main';
-    if ($self->{_ifiles}->{$id}) {
-        copy($self->{_ifiles}->{$id},$dest) or return $self->setError("Ошибка копирования изображения: ".$!);
-    }
-    else {
-        my $iObj = $self->_getIObj(0) or return $pCtrl->error();
-        my $err = $iObj->Write($dest);
-        return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
-    };
+    my $iObj = $self->_getIObj(0) or return $pCtrl->error();
+    my $err = $iObj->Write($dest);
+    return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
     
     $field->setDBValue($newDBV);
-    
-    my $mask = umask();
-    $mask = 0777 &~ $mask;
-    chmod $mask, $dest;
     
     1;
 };
@@ -413,20 +367,10 @@ sub saveToFile {
 
     my $dest = $dir.$mask;
     
-    my $id = $pCtrl->param('id') || 'main';
-    if ($self->{_ifiles}->{$id}) {
-        copy($self->{_ifiles}->{$id},$dest) or return $self->setError("Ошибка копирования изображения: ".$!);
-    }
-    else {
-        my $iObj = $self->_getIObj(0) or return $pCtrl->error();
-        my $err = $iObj->Write($dest);
-        return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
-    };
-    
-    my $mask = umask();
-    $mask = 0777 &~ $mask;
-    chmod $mask, $dest;
-    
+    my $iObj = $self->_getIObj(0) or return $pCtrl->error();
+    my $err = $iObj->Write($dest);
+    return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
+
     1;
 };
     
@@ -466,20 +410,29 @@ sub ProcessFile {
 package NG::ImageProcessor::ImageMagickImage;
 use strict;
 use Carp;
+use File::Copy qw();
 
-my $RO_METHODS = {'Get'=>1};
+my $RO_METHODS = {'Get'=>1,'Clone'=>1};
 
 sub new {
     my $class = shift;
+    my $opts  = shift;
     
     my $self = {};
     bless $self,$class;
     
-    $self->{_iobj} = Image::Magick->new;  #Объект
-    $self->{_ifile} = undef;              #Файл на диске, соотв. объекту, если есть. Очищается при изменении объекта.
+    if ($opts->{parent}) {
+        $self->{_iobj} = $opts->{parent}->Clone();
+        return undef unless $self->{_iobj};
+        $self->{_ifile} = $opts->{parent}->{_ifile};
+    }
+    else {
+        $self->{_iobj} = Image::Magick->new;  #Объект
+        $self->{_ifile} = undef;              #Файл на диске, соотв. объекту, если есть. Очищается при изменении объекта.
+    };
     
     return $self;
-}
+};
 
 sub read {
     my $self = shift;
@@ -496,7 +449,7 @@ sub Write {
     my $dest = shift;
     
     if ($self->{_ifile}) {
-        copy($self->{_ifile},$dest) or return ("Ошибка копирования изображения: ".$!);
+        File::Copy::copy($self->{_ifile},$dest) or return "Ошибка копирования изображения: ".$!;
     }
     else {
         my $e = $self->{_iobj}->Write($dest);
@@ -507,6 +460,23 @@ sub Write {
     chmod $mask, $dest;
     0;
 };
+
+sub _setIObj {
+    my $self = shift;
+    my $iObj = shift;
+    $self->{_iobj}  = $iObj;
+    $self->{_ifile} = undef;
+};
+
+sub image {
+    my $self = shift;
+    return $self->{_iobj};
+};
+
+sub updated {
+    my $self = shift;
+    $self->{_ifile} = undef;
+}
 
 our $AUTOLOAD;
 sub AUTOLOAD {
