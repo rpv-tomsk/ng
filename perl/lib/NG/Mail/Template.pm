@@ -29,9 +29,9 @@ sub _load {
     my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw("Запись шаблона $templateCode модуля $callerCode не найдена");
     $sth->finish();
     
-    $template->{_plaint} = NG::Mail::TemplateElement->new($tmplRow->{plain})   if $tmplRow->{plain};
-    $template->{_subjt}  = NG::Mail::TemplateElement->new($tmplRow->{subject}) if $tmplRow->{subject};
-    $template->{_htmlt}  = NG::Mail::TemplateElement->new($tmplRow->{html})    if $tmplRow->{html};
+    $template->{_plaint} = NG::Mail::TemplateElement->new($tmplRow->{plain},'PLAIN')   if $tmplRow->{plain};
+    $template->{_subjt}  = NG::Mail::TemplateElement->new($tmplRow->{subject},'SUBJECT') if $tmplRow->{subject};
+    $template->{_htmlt}  = NG::Mail::TemplateElement->new($tmplRow->{html},'HTML')    if $tmplRow->{html};
     $template;
 };
 
@@ -142,13 +142,18 @@ package NG::Mail::TemplateElement;
 use strict;
 
 sub new {
-    my ($class,$content) = (shift,shift);
+    my ($class,$content,$type) = (shift,shift,shift);
     
     my $self = {};
     bless $self,$class;
     #Предобработка шаблона
     $content =~ s@\[\%(?:var\s+)?\s*(\S+?)\s*\%\]@\[\%var VARS\.$1\%\]@gm;
     $content =~ s@\[\%label\s+(\S+?)\s*\%\]@\[\%var LABELS\.$1\%\]@gm;
+    
+    if ($type eq 'HTML') {
+        $content = '<html>'.$content.'</html>' unless ($content =~ /^\s*<html>/im) || ($content =~ /<\/html>\s*$/im);
+    };
+    
     #Заполнение данными
     $self->{_template} = $self->cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$content});
     $self->{_vars} = undef;

@@ -112,10 +112,10 @@ sub _prepareTemplate {
         $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
     };
     #
-    $template->{_subjt} = NG::Mail::TemplateElement->new(_convert $q->param('subject'));
+    $template->{_subjt} = NG::Mail::TemplateElement->new(_convert($q->param('subject')),'SUBJECT');
     $template->{_subjt}->param($data);
     #
-    $template->{_htmlt} = NG::Mail::TemplateElement->new(_convert $q->param('html'));
+    $template->{_htmlt} = NG::Mail::TemplateElement->new(_convert($q->param('html')),'HTML');
     $template->{_htmlt}->param($data);
     #
     $template->setLabels($labels) if $labels;
