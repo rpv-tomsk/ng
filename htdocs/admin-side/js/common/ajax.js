@@ -139,10 +139,7 @@ function JsExecute(text,block) {
        var codearray = text.split(re);      
        if (codearray.length>=3) {
 	       for (i=1;i<codearray.length;i=i+2) {
-				var script = document.createElement('script');
-				script.type = 'text/javascript';
-				script.text = codearray[i];
-				document.body.appendChild(script);       	
+				eval(codearray[i]);
 	       };
 	   };
  };
