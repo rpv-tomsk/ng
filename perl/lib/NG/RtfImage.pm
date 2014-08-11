@@ -5,6 +5,7 @@ use NGService;
 use NHtml;
 use File::Copy;
 use File::Path;
+use URI::Escape;
 
 $NG::RtfImage::VERSION = 0.4;
 
@@ -92,7 +93,10 @@ sub cleanUploadedFile {
 
 sub getFileNameJS {
     my $self = shift;
-    return  "<script>parent.document.getElementById('src').value='".$self->getFileName()."';parent.ImageDialog.showPreviewImage('".$self->getFileName()."');</script>";
+    my $f = $self->getFileName();
+    $f = escape_js $f;
+    $f =~ s/%/%25/g;
+    return  "<script>parent.document.getElementById('src').value='$f';parent.ImageDialog.showPreviewImage('$f');</script>";
 };
 
 sub getFileName {
