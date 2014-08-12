@@ -1,0 +1,40 @@
+<style>
+.multiValue #items { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+.multiValue #items li { margin: 0 0px 2px 0px; padding: 0.4em; padding-left: 1.5em; font-size: 10px; height: 10px; }
+.multiValue #items li span { position: absolute; margin-left: -1.3em; }
+.multivalue input.autocomplete {width:90%; float:left; margin-right:5px; }
+/*.multivalue .addToBaseError {color:red; display:none;}  - not working.... */
+</style>
+
+<TMPL_UNLESS FORM.URLFA>ОШИБКА ШАБЛОНА!!!</TMPL_UNLESS>
+
+<div class="multiValue" id="field_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" data-field="<TMPL_VAR FIELD>" data-keyValue="<TMPL_VAR FORM.KEY_VALUE>">
+    <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>   
+    <div class="form-line">
+        <div class="form_contener">
+            <TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF> 
+        </div> 
+        <div class="input_info nofloat">
+            <input class="info_text autocomplete" type="text" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="" data-searchUrl="<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_autocomplete&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1"/>
+            <TMPL_IF OPTIONS.DICT.ADDITION>
+            <div style="text-align: center; width: 90%">
+            <a href="#" class="addToBase" data-addUrl="<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_addrecord&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1">Добавить в справочник</a>
+            <strong><span class="addToBaseError" style="display:none;"></span></strong>
+            </div>
+            </TMPL_IF OPTIONS.DICT.ADDITION>
+            <ul id="items">
+                <TMPL_LOOP SELECTED_OPTIONS>
+                <li class="ui-state-default" data-id="<TMPL_VAR ID>"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><TMPL_VAR NAME><a href="#" class="deleteItem">[X]</a></li>
+                </TMPL_LOOP>
+            </ul>
+            <input class="multiValueValue" type="hidden" name="<TMPL_VAR FIELD>" value="<TMPL_VAR SELECTED_ID>">
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $( "#field_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" ).multivalueWithAddToBase({
+        sortable: true,
+        addition: <TMPL_IF OPTIONS.DICT.ADDITION>true<TMPL_ELSE>false</TMPL_IF OPTIONS.DICT.ADDITION>
+    });
+</script>

@@ -42,6 +42,7 @@ sub new {
         radiobutton		=> {CLASS=>"NG::Field::Select", },
         multicheckbox	=> {CLASS=>"NG::Field::Multicheckbox"},
         multiselect		=> {CLASS=>"NG::Field::Multicheckbox"},
+        multivalue		=> {CLASS=>"NG::Field::Multicheckbox"},
         mp3file			=> {CLASS=>"NG::Field::MP3File"},
         mp3properties   => {CLASS=>"NG::Field::MP3Properties"},
 		turing			=> {CLASS=>"NG::Field::Turing"},
@@ -105,7 +106,6 @@ sub new {
     bless $field, $class;
 	$field->{_parentObj} = $parentobj;
 	$field->{ERRORMSG} = "";
-    $field->{TEMPLATE} ||= $parentobj->{_deffieldtemplate};
     $field->init(@_) or return undef;
 	$field->setValue($config->{VALUE}) if (exists $config->{VALUE});
     return $field; 
@@ -113,7 +113,8 @@ sub new {
 
 sub init {
     my $field = shift;
-    
+
+    $field->{TEMPLATE} ||= $field->{_parentObj}->{_deffieldtemplate};    
     $field->{TEMPLATE} ||= "admin-side/common/fields.tmpl";
     
     $field->{_loaded} = 0;
