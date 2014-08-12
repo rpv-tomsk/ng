@@ -1418,6 +1418,9 @@ p {
 	border: none;
 	padding: 0 10px 0 0;
 }
+.component_new_form td table td.mceIframeContainer {
+	padding: 0;
+}
 .component_new_form td.title p, .head-colunm, .row-header, #table_tree .contentTree .component_new_form td.title p {
 	color: #3583B7;
 	font-size: 12px;
