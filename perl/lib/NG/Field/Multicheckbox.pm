@@ -22,9 +22,9 @@ sub init {
     my $field = shift;
     #$field->{TEMPLATE} ||= "admin-side/common/fields/multicheckbox.tmpl";
     
-    if ($field->{type} eq 'multivalue') {
+    if ($field->{TYPE} eq 'multivalue') {
         $field->{TEMPLATE} ||= "admin-side/common/fields/multivalue.tmpl";
-    };;
+    };
     
     $field->SUPER::init(@_) or return undef;
     
