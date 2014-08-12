@@ -129,20 +129,39 @@ function putResponseToBlock(params){
 	}
 };
 
-
 function JsExecute(text,block) {
-       text = ' '+text+' ';
-       document.getElementById(block).innerHTML = text;
-       var rer = /\r|\n/gi;
-       text.replace(rer," ");
-       var re = /\<\/?script[^\>]*\>/im;
-       var codearray = text.split(re);      
-       if (codearray.length>=3) {
-	       for (i=1;i<codearray.length;i=i+2) {
-				eval(codearray[i]);
-	       };
-	   };
- };
+    text = ' '+text+' ';
+    document.getElementById(block).innerHTML = text;
+    var rer = /\r|\n/gi;
+    text.replace(rer," ");
+    var ScriptRE = /\<\/?script[^\>]*\>/im;
+    var UseEditorRE = /UseEditor\(/g;
+
+    var codearray = text.split(ScriptRE);
+    if (codearray.length<3)
+        return;
+        
+    for (i=1;i<codearray.length;i=i+2) {
+        if (UseEditorRE.test(codearray[i])) {
+            //Special dirty hack for TinyMCE in FF (Editor iframe shows only on first form opened on page)
+            //alert('byEval');
+            eval(codearray[i]);
+        }
+        else {
+            //alert('byGlobal');
+            jQuery.globalEval( codearray[i] );
+        };
+            //var head = document.getElementsByTagName("head")[0] || document.documentElement,
+            //script = document.createElement("script");
+            //script.type = 'text/javascript';
+            //script.text = codearray[i];
+            ////our variant (does not uses $head)
+            //document.body.appendChild(script);
+            //jquery variant
+            //head.insertBefore( script, head.firstChild );
+            //head.removeChild( script );
+    };
+};
 
 function zeroprefix(len,values) {
 	var str = values + "";
