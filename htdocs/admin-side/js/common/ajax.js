@@ -144,22 +144,11 @@ function JsExecute(text,block) {
     for (i=1;i<codearray.length;i=i+2) {
         if (UseEditorRE.test(codearray[i])) {
             //Special dirty hack for TinyMCE in FF (Editor iframe shows only on first form opened on page)
-            //alert('byEval');
             eval(codearray[i]);
         }
         else {
-            //alert('byGlobal');
             jQuery.globalEval( codearray[i] );
         };
-            //var head = document.getElementsByTagName("head")[0] || document.documentElement,
-            //script = document.createElement("script");
-            //script.type = 'text/javascript';
-            //script.text = codearray[i];
-            ////our variant (does not uses $head)
-            //document.body.appendChild(script);
-            //jquery variant
-            //head.insertBefore( script, head.firstChild );
-            //head.removeChild( script );
     };
 };
 
