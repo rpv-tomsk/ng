@@ -114,7 +114,7 @@ sub _loadDict {
     return $field->set_err("Отсутствует атрибут DICT") unless $options->{DICT};
     my $dict = $options->{DICT};
     
-    #return $field->set_err('DATA not loaded') unless defined $field->{_DATAH} || $field->{_new};
+    return $field->set_err('DATA not loaded') unless defined $field->{_DATAH} || $field->{_new};
     
     my $sql = $dict->{_SQL} or return $field->set_err("NG::Field::Multicheckbox::prepareOutput(): отсутствует значение запроса. Ошибка инициализации поля.");
     my @params = ();
@@ -160,8 +160,8 @@ sub prepareOutput {
         $field->{SELECTED_OPTIONS} = [];
         $field->{SELECTED_ID} = "";
         return 1 if $field->{_new};
-        #return $field->set_err('DATA(A) not loaded') unless defined $field->{_DATAA};
-return 1 unless defined $field->{_DATAA};
+        return $field->set_err('DATA(A) not loaded') unless defined $field->{_DATAA};
+#return 1 unless defined $field->{_DATAA};
         return 1 unless scalar @{$field->{_DATAA}};
         
         my $placeholders = "";
