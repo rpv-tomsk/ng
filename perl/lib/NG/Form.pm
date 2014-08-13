@@ -248,6 +248,11 @@ sub fields {
 	return $self->{_fields};
 }
 
+sub keyfields {
+	my $self = shift;
+	return $self->{_keyfields};
+}
+
 sub param {
 	my $self = shift;
 	
