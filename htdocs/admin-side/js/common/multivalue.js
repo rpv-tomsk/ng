@@ -1,5 +1,5 @@
 $.fn.multivalueWithAddToBase = function(options) {
-    var items = this.find("#items"); //Контейнер записей
+    var items = this.find(".items"); //Контейнер записей
     var values = [];                 //ID выбранных записей через запятую
     
     var addToBase = this.find(".addToBase");  //Ссылка добавления новой записи
@@ -100,7 +100,7 @@ $.fn.multivalueWithAddToBase = function(options) {
                 return;
         };
         
-        var item = items.append('<li class="ui-state-default" data-id="'+item.id+'"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>'+item.label+'<a href="#" class="deleteItem">[X]</a></li>');
+        var item = items.append('<li class="ui-state-default" data-id="'+item.id+'"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>'+item.label+' <a href="#" class="deleteItem">[X]</a></li>');
         item.find(".deleteItem").click(deleteItem);
         updateValuesFromItems();
     };
