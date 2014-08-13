@@ -135,20 +135,13 @@ function JsExecute(text,block) {
     var rer = /\r|\n/gi;
     text.replace(rer," ");
     var ScriptRE = /\<\/?script[^\>]*\>/im;
-    var UseEditorRE = /UseEditor\(/g;
 
     var codearray = text.split(ScriptRE);
     if (codearray.length<3)
         return;
-        
+
     for (i=1;i<codearray.length;i=i+2) {
-        if (UseEditorRE.test(codearray[i])) {
-            //Special dirty hack for TinyMCE in FF (Editor iframe shows only on first form opened on page)
-            eval(codearray[i]);
-        }
-        else {
             jQuery.globalEval( codearray[i] );
-        };
     };
 };
 
