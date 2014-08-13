@@ -897,7 +897,32 @@ sub Delete {
         });
         $form->addCloseButton();
     };
-    $form->print($self->tmpl()) or return $self->error($form->getError());
+    
+    #Формируем сокращенную форму из ключевых полей
+    my @elements = ();   # Массив  
+    foreach my $field (@{$form->keyfields()}) {
+        $field->prepareOutput() or return $self->error($field->error());
+        return $self->error("Не найдено значение ключевого поля ".$field->{FIELD}) if (is_empty($field->{VALUE}));
+        push @elements, $field->param();
+    };
+    
+    my $tmpl = $self->tmpl();
+    $tmpl->param(
+        FORM => {
+            ELEMENTS   =>\@elements,
+            BUTTONS    => $form->{_buttons},
+            #ERRORMSG   => $globalError,
+            URL         => $self->q()->url()."?action=deletefull",
+            KEY_VALUE  =>$form->getComposedKeyValue(),
+            KEY_PARAM  =>$form->_getKeyURLParam(),
+            #CONTAINER  =>$form->{_container},
+            REF        =>$form->{_ref},
+            IS_AJAX    =>$form->{_ajax},
+            #PREFIX     => $form->{_prefix},
+            #HAS_ERRORS => $form->has_err_msgs()
+        },
+    );
+    #$form->print($self->tmpl()) or return $self->error($form->getError());
     return $self->output($self->tmpl()->output());
 };
 
