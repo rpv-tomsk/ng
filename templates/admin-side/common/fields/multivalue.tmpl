@@ -1,9 +1,9 @@
 <style>
-.multiValue #items { list-style-type: none; margin: 0; padding: 0; width: 60%; }
-.multiValue #items li { margin: 0 0px 2px 0px; padding: 0.4em; padding-left: 1.5em; font-size: 10px; height: 10px; }
-.multiValue #items li span { position: absolute; margin-left: -1.3em; }
-.multivalue input.autocomplete {width:90%; float:left; margin-right:5px; }
-/*.multivalue .addToBaseError {color:red; display:none;}  - not working.... */
+.multiValue .items { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+.multiValue .items li { margin: 0 0px 2px 0px; padding: 0.2em 0.4em 0.7em 1.5em; font-size: 10px; height: 10px;position: relative; }
+.multiValue .items li span { position: absolute;left: 0; top: 1px; }
+.multiValue input.autocomplete { width:60%; }
+.multiValue .addToBaseError { color:red; display:none; }
 </style>
 
 <TMPL_UNLESS FORM.URLFA>ОШИБКА ШАБЛОНА!!!</TMPL_UNLESS>
@@ -17,14 +17,14 @@
         <div class="input_info nofloat">
             <input class="info_text autocomplete" type="text" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="" data-searchUrl="<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_autocomplete&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1"/>
             <TMPL_IF OPTIONS.DICT.ADDITION>
-            <div style="text-align: center; width: 90%">
+            <div style="text-align: center; width: 60%;margin: 5px;">
             <a href="#" class="addToBase" data-addUrl="<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_addrecord&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1">Добавить в справочник</a>
-            <strong><span class="addToBaseError" style="display:none;"></span></strong>
+            <strong><span class="addToBaseError">Error will be here</span></strong>
             </div>
             </TMPL_IF OPTIONS.DICT.ADDITION>
-            <ul id="items">
+            <ul class="items">
                 <TMPL_LOOP SELECTED_OPTIONS>
-                <li class="ui-state-default" data-id="<TMPL_VAR ID>"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><TMPL_VAR NAME><a href="#" class="deleteItem">[X]</a></li>
+                <li class="ui-state-default" data-id="<TMPL_VAR ID>"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><TMPL_VAR NAME> <a href="#" class="deleteItem">[X]</a></li>
                 </TMPL_LOOP>
             </ul>
             <input class="multiValueValue" type="hidden" name="<TMPL_VAR FIELD>" value="<TMPL_VAR SELECTED_ID>">
