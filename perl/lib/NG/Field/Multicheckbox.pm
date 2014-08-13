@@ -114,7 +114,7 @@ sub _loadDict {
     return $field->set_err("Отсутствует атрибут DICT") unless $options->{DICT};
     my $dict = $options->{DICT};
     
-    return $field->set_err('DATA not loaded') unless defined $field->{_DATAH};
+    return $field->set_err('DATA not loaded') unless defined $field->{_DATAH} || $field->{_new};
     
     my $sql = $dict->{_SQL} or return $field->set_err("NG::Field::Multicheckbox::prepareOutput(): отсутствует значение запроса. Ошибка инициализации поля.");
     my @params = ();
@@ -157,6 +157,12 @@ sub prepareOutput {
         my @params = ();
         @params = @{$dict->{PARAMS}} if exists $dict->{PARAMS};
         
+        if ($field->{_new}) {
+            $field->{SELECTED_OPTIONS} = [];
+            $field->{SELECTED_ID} = "";
+            return 1;
+        };
+        
         return $field->set_err('DATA(A) not loaded') unless defined $field->{_DATAA};
         
         my $placeholders = "";
@@ -172,7 +178,7 @@ sub prepareOutput {
         $sql .= " ORDER BY ".$dict->{ORDER} if $dict->{ORDER};
         
         
-        my $dbh = $field->dbh() or return $field->set_err("_loadDict(): отсутствует dbh");
+        my $dbh = $field->dbh() or return $field->set_err("prepareOutput(): отсутствует dbh");
         
         my $sth = $dbh->prepare($sql) or return $field->set_err("Ошибка загрузки значений multicheckbox: ".$DBI::errstr);
         $sth->execute(@params) or return $field->set_err($DBI::errstr);
@@ -397,7 +403,7 @@ sub doAutocomplete {
     
     push @vals,'%'.$term.'%';
     
-    my $dbh = $field->dbh() or return $field->set_err("_loadDict(): отсутствует dbh");
+    my $dbh = $field->dbh() or return $field->set_err("doAutocomplete(): отсутствует dbh");
     
     my $sth = $dbh->prepare($sql) or return $field->set_err("Ошибка загрузки значений multicheckbox: ".$DBI::errstr);
     $sth->execute(@vals,@params) or return $field->set_err($DBI::errstr);
