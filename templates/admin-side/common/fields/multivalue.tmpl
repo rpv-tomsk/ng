@@ -23,9 +23,11 @@
             </div>
             </TMPL_IF OPTIONS.DICT.ADDITION>
             <ul class="items">
+                <TMPL_IF SELECTED_OPTIONS>
                 <TMPL_LOOP SELECTED_OPTIONS>
                 <li class="ui-state-default" data-id="<TMPL_VAR ID>"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><TMPL_VAR NAME> <a href="#" class="deleteItem">[X]</a></li>
-                </TMPL_LOOP>
+                </TMPL_LOOP SELECTED_OPTIONS>
+                </TMPL_IF SELECTED_OPTIONS>
             </ul>
             <input class="multiValueValue" type="hidden" name="<TMPL_VAR FIELD>" value="<TMPL_VAR SELECTED_ID>">
         </div>
