@@ -224,13 +224,16 @@
             <div class="input_info">
 			<textarea name="<TMPL_VAR FIELD>" style="width: 100%;<TMPL_IF HEIGHT>height:<TMPL_VAR HEIGHT></TMPL_IF>" class="info_text" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR VALUE escape=html></textarea>
             </div>
-		    <TMPL_IF IS_AJAX>
+		    <TMPL_IF FORM.IS_AJAX>
 			<IFRAME SRC='' name="retext" id='richedit<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>' onload="UseEditor('<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>','<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_uploadimage&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1','<TMPL_VAR FORM.KEY_VALUE>',<TMPL_IF OPTIONS.CONFIG><TMPL_VAR OPTIONS.CONFIG><TMPL_ELSE OPTIONS.CONFIG>undefined</TMPL_IF OPTIONS.CONFIG>);" style='display: none; position: absolute; left: 0px; top: 0px; ' ></IFRAME>
-		    <TMPL_ELSE IS_AJAX>
+		    <TMPL_ELSE FORM.IS_AJAX>
 		        <script type="text/javascript">
 		            UseEditor('<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>','<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_uploadimage&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1','<TMPL_VAR FORM.KEY_VALUE>',<TMPL_IF OPTIONS.CONFIG><TMPL_VAR OPTIONS.CONFIG><TMPL_ELSE OPTIONS.CONFIG>undefined</TMPL_IF OPTIONS.CONFIG>);
 		        </script>
-		    </TMPL_IF IS_AJAX>
+		    </TMPL_IF FORM.IS_AJAX>
+            <!--<sc ript type="text/javascript">-->
+            <!--    $("#<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" ).ngActivateTinyMCE('<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>','<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_uploadimage&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1','<TMPL_VAR FORM.KEY_VALUE>',<TMPL_IF OPTIONS.CONFIG><TMPL_VAR OPTIONS.CONFIG><TMPL_ELSE OPTIONS.CONFIG>undefined</TMPL_IF OPTIONS.CONFIG>);-->
+            <!--</sc ript>-->
 	    </div>
     </div>
 </TMPL_IF IS_RTF>
