@@ -490,5 +490,6 @@ sub AUTOLOAD {
     croak('Can\'t locate object method "'.$AUTOLOAD.'" via Image::Magick');
 };
 
+sub DESTROY {};
 
 1;
