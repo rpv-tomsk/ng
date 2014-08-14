@@ -304,6 +304,7 @@ sub afterSave {
     
     return $self->set_err('DATA(H) not loaded') unless defined $self->{_DATAH}||$self->{_new};
     return $self->set_err('DATA(A) not loaded') unless defined $self->{_DATAA}||$self->{_new};
+    return $self->set_err('NEW(A) not set') unless defined $self->{_NEWA};
     
     my $options = $self->{OPTIONS};
     my $storage = $options->{STORAGE} or return $self->showError("afterSave(): отсутствует опция STORAGE");
@@ -312,9 +313,11 @@ sub afterSave {
     my $dbh = $self->dbh() or return $self->showError("afterSave(): отсутствует dbh");
     
     if ($storage->{ORDER}) {
-        return 1 if join(',',@{$self->{_DATAA}}) eq join(',',@{$self->{_NEWA}});
-        #Удаляем всё
-        $dbh->do("DELETE FROM ".$storage->{TABLE}.$h->{WHERE},undef,@{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
+        unless ($self->{_new}) {
+            return 1 if join(',',@{$self->{_DATAA}}) eq join(',',@{$self->{_NEWA}});
+            #Удаляем всё
+            $dbh->do("DELETE FROM ".$storage->{TABLE}.$h->{WHERE},undef,@{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
+        };
         #Сохраняем в нужном порядке
         my $ins_sth = $dbh->prepare("insert into ".$storage->{TABLE}." (".$storage->{FIELD}.",".$storage->{ORDER}.",".$h->{FIELDS}.") values (?,?,".$h->{PLHLDRS}.")");
         my $idx = 1;
