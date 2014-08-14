@@ -32,7 +32,8 @@ sub init {
     
     $field->{_DATAH} = undef; #Выбранные элементы, хеш (ключ = значение = id выбранного элемента)
     $field->{_DATAA} = undef; #Выбранные элементы, массив id
-    $field->{_NEWH}  = {};    #Сохраняемые  элементы (выбранные на форме)
+    $field->{_NEWH}  = undef; #Сохраняемые элементы (выбранные на форме)
+    $field->{_NEWA}  = undef; #Сохраняемые элементы (выбранные на форме), массив id
     $field->{_DICTH} = {};    #Данные словаря (ключ=значение = id элемента), хэш, для проверок значений _DATAH и _NEWH
     $field->{SELECT_OPTIONS} = [];
     
@@ -165,9 +166,11 @@ sub prepareOutput {
         return 1 unless scalar @{$field->{_DATAA}};
         
         my $placeholders = "";
+        my ($dataIdxs,$i) = ({},0);
         foreach my $id (@{$field->{_DATAA}}) {
             $placeholders.="?,";
             push @params, $id;
+            $dataIdxs->{$id} = $i++;
         };
         $placeholders =~s /,$//;
         
@@ -181,16 +184,28 @@ sub prepareOutput {
         
         my $sth = $dbh->prepare($sql) or return $field->set_err("Ошибка загрузки значений multicheckbox: ".$DBI::errstr);
         $sth->execute(@params) or return $field->set_err($DBI::errstr);
+        
+        #Порядок сортировки списка выбранных значений может быть:
+        #- соответствующий выборке из справочника (сортированного/не сортированного)
+        #- соответствующий выборке из таблицы связи (сортированной/не сортированной)
+        
+        my $orderByDict = 1;
+        $orderByDict = 0 if $options->{STORAGE} && $options->{STORAGE}->{ORDER};
+        
         my @result = ();
-        my $value  = "";
+        my @ids = ();
+        my $dictIdx = 0;
         while (my ($id,$name) = $sth->fetchrow()) {
-            push @result, {
-                ID=>$id,
-                NAME=>$name,
-            };
-            $value .= $id.',';
+            my $dataIdx = delete $dataIdxs->{$id};
+            $result[($orderByDict?$dictIdx:$dataIdx)] = {ID=>$id,NAME=>$name};
+            $dictIdx++;
         };
         $sth->finish();
+        
+        return $field->set_err("Ошибка загрузки multicheckbox: значения ".join(',', keys %$dataIdxs)." не найдены в справочнике.") if scalar keys %$dataIdxs;
+        
+        my $value = "";
+        $value .= $_->{ID}."," foreach @result;
         $value =~s /,$//;
         
         $field->{SELECTED_OPTIONS} = \@result;
@@ -239,7 +254,8 @@ sub afterLoad {
     my $storage = $options->{STORAGE} or return $field->showError("afterLoad(): отсутствует опция STORAGE");
     
     my $h = $field->_getKey($storage) or return 0;
-    my $sql="select ".$storage->{FIELD}." from ".$storage->{TABLE}.$h->{WHERE};
+    my $sql="SELECT ".$storage->{FIELD}." FROM ".$storage->{TABLE}.$h->{WHERE};
+    $sql.= " ORDER BY ".$storage->{ORDER} if $storage->{ORDER};
     my $dbh = $field->dbh() or return $field->showError("afterLoad(): отсутствует dbh");
     
     my $sth = $dbh->prepare($sql) or return $field->set_err("Ошибка загрузки значений multicheckbox: ".$DBI::errstr);
@@ -261,18 +277,20 @@ sub setFormValue {
     my $field = shift;
     
     my $q = $field->parent()->q();
+    $field->{_NEWH} = {};
+    $field->{_NEWA} = [];
     
     if ($field->{TYPE} eq 'multivalue') {
-        $field->{_NEWH} = {};
         foreach my $id (split /,/,$q->param($field->{FIELD})){
             $field->{_NEWH}->{$id} = $id;
+            push @{$field->{_NEWA}},$id;
         }
         return 1;
     };
     
-    $field->{_NEWH} = {};
     foreach my $id ($q->param($field->{FIELD})) {
         $field->{_NEWH}->{$id} = $id;
+        push @{$field->{_NEWA}},$id;
     };
     return 1;
 };
@@ -280,6 +298,7 @@ sub setFormValue {
 sub afterSave {
     my $self = shift;
 
+    #Данные в форму загружены, т.к. LIST делает $form->loadData перед сохранением $form->update()
     unless ($self->{_dict_loaded}) {
         $self->_loadDict() or return undef;
     };
@@ -292,6 +311,20 @@ sub afterSave {
     my $h = $self->_getKey($storage) or return 0;
     
     my $dbh = $self->dbh() or return $self->showError("afterSave(): отсутствует dbh");
+    
+    if ($storage->{ORDER}) {
+        return 1 if join(',',@{$self->{_DATAA}}) eq join(',',@{$self->{_NEWA}});
+        #Удаляем всё
+        $dbh->do("DELETE FROM ".$storage->{TABLE}.$h->{WHERE},undef,@{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
+        #Загружаем в нужном порядке
+        my $ins_sth = $dbh->prepare("insert into ".$storage->{TABLE}." (".$storage->{FIELD}.",".$storage->{ORDER}.",".$h->{FIELDS}.") values (?,?,".$h->{PLHLDRS}.")");
+        my $idx = 1;
+        foreach my $id (@{$self->{_NEWA}}) {
+            return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id} && $id == $self->{_DICTH}->{$id};
+            $ins_sth->execute($id, $idx++, @{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
+        };
+        return 1;
+    };
     
     my $ins_sth = $dbh->prepare("insert into ".$storage->{TABLE}." (".$storage->{FIELD}.",".$h->{FIELDS}.") values (?,".$h->{PLHLDRS}.")");
     my $del_sth = $dbh->prepare("delete from ".$storage->{TABLE}.$h->{WHERE}." and ".$storage->{FIELD}."=?");
@@ -510,7 +543,18 @@ sub addRecord{
                 storage_field1=>'record_field1',   #Поле связи => Поле основной таблицы
                 storage_field2=>'record_field2',
             },
+            ORDER => 'order_field',       #Имя поля для сохранения порядка выбранных значений в multivalue
         },
+        
+        #TODO: Сохранение выбранных значений в поля основной таблицы формы
+        STORAGE => {
+            ID_FIELD       => 'movie_actor_id'    #поле списка выбранных значений
+            ID_SEPARATOR   => ',',                #разделитель списка значений
+            NAME_FIELD     => 'movie_actor_text', #поле списка выбранных значений
+            NAME_SEPARATOR => ', ',               #разделитель списка значений
+        }
+        #COMPILED - или как-то так обозвать?
+        
         ## + Нужно добавить параметр позиции чекбоксов - слева или справа от наименования
         ## + параметр числа минимального и максимального количества выбранных значений
     },
