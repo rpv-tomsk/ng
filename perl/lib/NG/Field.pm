@@ -596,8 +596,22 @@ sub genNewFileName {
     $field->{DBVALUE} = $fname;
 };
 
+#¬озвращает список полей таблицы, необходимых дл€ выполнени€ операции формой
+#ќперации:
+# - insert - ¬ставка новой записи в таблицу
+# - update - ќбновление записи в таблице
+sub dbFields {
+    my ($field,$action) = (shift,shift);
+    return () if $field->{IS_FAKEFIELD};
+    return ($field->{FIELD});
+};
+
+#¬озвращает значение дл€ сохранени€ в таблице / дл€ использовани€ в услови€х запроса
+#
 sub dbValue {
-	my $field = shift;
+	my ($field,$dbField) = (shift,shift);
+    die "Not implemented" if $dbField && $dbField ne $field->{FIELD};
+    
 	my $type = $field->type();
 
 	if ($type eq "rtffile" || $type eq "textfile") {
@@ -613,6 +627,10 @@ sub dbValue {
 	elsif ($type eq "datetime") {
 		$field->{DBVALUE} = $field->db()->datetime_to_db($field->{VALUE});
 	}
+    elsif ($type eq "id") {
+        die("Can`t find value for key field \"$field->{FIELD}\"") if !defined $field->{VALUE};
+        $field->{DBVALUE} = $field->{VALUE};
+    }
 	else {
 		$field->{DBVALUE} = $field->{VALUE};
 	};
@@ -1131,11 +1149,13 @@ sub process {
     return 1;
 };
 
+#¬озвращает признак, было ли изменено значение пол€ таблицы
 sub changed {
-	my $self = shift;
+    my ($field,$dbField) = (shift,shift);
+    die "Not implemented" if $dbField && $dbField ne $field->{FIELD};
 
-	return 1 if $self->{_changed};
-	return 0;
+    return 1 if $field->{_changed};
+    return 0;
 };
 
 sub beforeSave {

@@ -684,19 +684,24 @@ sub _insert {
     my $dbh = $self->dbh();
 	my $table = $self->{_table} or return $self->error("Parameter \"TABLE\" not initialised");
     
+    my $fieldsH = {};  #
+    my @fields  = ();
 	my @data = ();
-    my $fields = "";
-    my $params = "";
+    
+    my $ph = "";
 	foreach my $field (@{$self->fields()}) {
-  	    next if ($field->{IS_FAKEFIELD});
-        return $self->error("Can`t find value for key field \"$field->{FIELD}\" in form::_insert") if (($field->{TYPE} eq "id") && (!defined $field->{VALUE}));
-		$params .= "?,";
-        $fields .= $field->{FIELD}.",";
-		push @data,$field->dbValue();
+        my @fieldDbFields = $field->dbFields('insert');
+        foreach my $dbField (@fieldDbFields) {
+            return $self->error("Table field $dbField specified twice for 'insert' operation: at " . $fieldsH->{$dbField}." and ".$field->{FIELD}) if $fieldsH->{$dbField};
+            $fieldsH->{$dbField} = $field->{FIELD};
+            
+            push @data,$field->dbValue($dbField);
+            push @fields, $dbField;
+            $ph .= "?,";
+        };
 	};
-	$params =~ s/\,+$//;
-    $fields =~ s/\,+$//;
-    $dbh->do("insert into ".$self->{_table}."($fields) values ($params)",undef,@data) or return $self->error($DBI::errstr);
+	$ph =~ s/\,+$//;
+    $dbh->do("INSERT INTO ".$self->{_table}."(".join(',',@fields).") VALUES ($ph)",undef,@data) or return $self->error($DBI::errstr);
     return 1;
 };
 
@@ -705,35 +710,37 @@ sub _update {
     my $afields = shift;
     
     my $dbh = $self->dbh();
-	my $table = $self->{_table} or return $self->error("Parameter \"TABLE\" not initialised");
-	
-    my @keys = ();
-    my $where  = "";
-    foreach my $field (@{$self->{_keyfields}}) {
-        $where .= " $field->{FIELD}=? and";
-        return $self->error("Can`t find value for key field \"$field->{FIELD}\" in form::_update") if(is_empty($field->{VALUE}));
-        push @keys, $field->{VALUE};
+    my $table = $self->{_table} or return $self->error("Parameter \"TABLE\" not initialised");
+    
+    my @keyfields = ();
+    my @keyvalues = ();
+    my $fieldsH   = {};  
+    my @fields    = ();
+    my @data      = ();
+    
+    foreach my $field (@{$self->fields()}) {
+        my @fieldDbFields = $field->dbFields('update');
+        foreach my $dbField (@fieldDbFields) {
+            return $self->error("Table field $dbField specified twice for 'update' operation: at " . $fieldsH->{$dbField}." and ".$field->{FIELD}) if $fieldsH->{$dbField};
+            $fieldsH->{$dbField} = $field->{FIELD};
+            
+            if (($field->{TYPE} eq "id") || ($field->{TYPE} eq "filter")) {
+                #Ключевое поле
+                push @keyfields, $dbField."=?";
+                push @keyvalues, $field->dbValue($dbField);
+            }
+            else {
+                next unless $field->changed($dbField);
+                push @fields, $dbField."=?";
+                push @data, $field->dbValue($dbField);
+            };
+        };
     };
-    return $self->error("Can`t find key fields") unless $where;
-    $where =~ s/and$//;
+    return $self->error("Can`t find key fields") unless scalar @keyfields;
+    return 1 unless scalar @fields;    #Нечего обновлять
 
-    my @data = ();
-    my $fields = "";
-	foreach my $field (@{$afields}) {
-        next if (($field->{TYPE} eq "id") || ($field->{TYPE} eq "filter"));
-        
-  	    next if ($field->{IS_FAKEFIELD});
+    $dbh->do("UPDATE $self->{_table} SET ".join(',',@fields)." WHERE ".join(' AND ',@keyfields),undef,@data,@keyvalues) or return $self->error($DBI::errstr);
 
-        next unless $field->changed();
-
-        $fields .= $field->{FIELD}."=?,";
-		push @data, $field->dbValue();
-	};
-
-    if ($fields) {
-        $fields =~ s/\,$//;
-        $dbh->do("update $self->{_table} set $fields where $where",undef,@data,@keys) or return $self->error($DBI::errstr);
-    };    
     return 1;
 };
 
