@@ -162,7 +162,6 @@ sub prepareOutput {
         $field->{SELECTED_ID} = "";
         return 1 if $field->{_new};
         return $field->set_err('DATA(A) not loaded') unless defined $field->{_DATAA};
-#return 1 unless defined $field->{_DATAA};
         return 1 unless scalar @{$field->{_DATAA}};
         
         my $placeholders = "";
@@ -316,7 +315,7 @@ sub afterSave {
         return 1 if join(',',@{$self->{_DATAA}}) eq join(',',@{$self->{_NEWA}});
         #Удаляем всё
         $dbh->do("DELETE FROM ".$storage->{TABLE}.$h->{WHERE},undef,@{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
-        #Загружаем в нужном порядке
+        #Сохраняем в нужном порядке
         my $ins_sth = $dbh->prepare("insert into ".$storage->{TABLE}." (".$storage->{FIELD}.",".$storage->{ORDER}.",".$h->{FIELDS}.") values (?,?,".$h->{PLHLDRS}.")");
         my $idx = 1;
         foreach my $id (@{$self->{_NEWA}}) {
