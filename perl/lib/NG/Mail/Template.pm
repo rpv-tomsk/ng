@@ -155,7 +155,7 @@ sub new {
     };
     
     #Заполнение данными
-    $self->{_template} = $self->cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$content});
+    $self->{_template} = $self->cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$content,debug_file=>0});
     $self->{_vars} = undef;
     $self->{_labels} = undef;
     $self;
