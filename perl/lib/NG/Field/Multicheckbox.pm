@@ -443,7 +443,7 @@ sub _process {
     $self->{_processed}   = 1;
     
     $self->{_changed} = 0;
-    $self->{_changed} = 1 if join(',',@{$self->{_DATAA}}) ne join(',',@{$self->{_NEWA}});
+    $self->{_changed} = 1 if $self->{_new} or join(',',@{$self->{_DATAA}}) ne join(',',@{$self->{_NEWA}});
 
     return 1;
 };
