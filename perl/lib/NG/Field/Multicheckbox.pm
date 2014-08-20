@@ -6,7 +6,7 @@ use strict;
 #TODO: сделать кнопку выбрать все / отменить выбор
 #TODO: добавить параметры связанные с дефолтными значениями
 #TODO: сообщение на пустой справочник
-
+#TODO: Загрузка сохраненных данных из OPTIONS.STORE_FIELD
 
 
 use NG::Field;
@@ -34,8 +34,12 @@ sub init {
     $field->{_DATAA} = undef; #Выбранные элементы, массив id
     $field->{_NEWH}  = undef; #Сохраняемые элементы (выбранные на форме)
     $field->{_NEWA}  = undef; #Сохраняемые элементы (выбранные на форме), массив id
-    $field->{_DICTH} = {};    #Данные словаря (ключ=значение = id элемента), хэш, для проверок значений _DATAH и _NEWH
+    $field->{_DICTH} = {};    #Данные словаря (ключ=значение), хэш, для проверок значений _DATAH и _NEWH
     $field->{SELECT_OPTIONS} = [];
+    
+    $field->{_value_id}    = undef;   #Выбранные элементы через запятую
+    $field->{_value_names} = undef;   #Выбранные элементы через разделитель
+    $field->{_processed}   = 0;       #Значения сформированы
     
     $field->{_dict_loaded} = 0;
     $field->{_data_loaded} = 0;
@@ -80,7 +84,7 @@ sub init {
             my $id = $p->{ID};
             return $field->set_err("В списке значений VALUES поля $field->{FIELD} отсутствует значение ключа ID ") if (!$id && $id != 0);
             $p->{NAME} || return $field->set_err("В списке значений VALUES поля $field->{FIELD} отсутствует значение ключа NAME");
-            $field->{_DICTH}->{$id} = $id;
+            $field->{_DICTH}->{$id} = $p->{NAME};
             $field->{SELECT_OPTIONS} = $options->{VALUES};
         };
         $field->{_dict_loaded} = 1;
@@ -132,7 +136,7 @@ sub _loadDict {
             NAME=>$name,
             SELECTED=>((exists $field->{_DATAH}->{$id}) && ($id eq $field->{_DATAH}->{$id}))?1:0,
         };
-        $field->{_DICTH}->{$id} = $id;
+        $field->{_DICTH}->{$id} = $name;
     };
     $sth->finish();
     
@@ -265,7 +269,7 @@ sub afterLoad {
     while (my ($id) = $sth->fetchrow()) {
         $field->{_DATAH}->{$id} = $id; #Данные (выбранные элементы), хэш
         push @{$field->{_DATAA}}, $id; 
-        #return $field->showError("Некорректное состояние БД: обнаружено значение ($id), отсутствующее в справочнике значений") unless exists $field->{_DICTH}->{$id} && $id == $field->{_DICTH}->{$id};
+        #return $field->showError("Некорректное состояние БД: обнаружено значение ($id), отсутствующее в справочнике значений") unless exists $field->{_DICTH}->{$id};
     };
     $sth->finish();
     $field->{_data_loaded} = 1;
@@ -278,6 +282,10 @@ sub setFormValue {
     my $q = $field->parent()->q();
     $field->{_NEWH} = {};
     $field->{_NEWA} = [];
+    
+    $field->{_value_id}    = undef;
+    $field->{_value_names} = undef;
+    $field->{_processed}   = 0;
     
     if ($field->{TYPE} eq 'multivalue') {
         foreach my $id (split /,/,$q->param($field->{FIELD})){
@@ -322,7 +330,7 @@ sub afterSave {
         my $ins_sth = $dbh->prepare("insert into ".$storage->{TABLE}." (".$storage->{FIELD}.",".$storage->{ORDER}.",".$h->{FIELDS}.") values (?,?,".$h->{PLHLDRS}.")");
         my $idx = 1;
         foreach my $id (@{$self->{_NEWA}}) {
-            return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id} && $id == $self->{_DICTH}->{$id};
+            return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id};
             $ins_sth->execute($id, $idx++, @{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
         };
         return 1;
@@ -332,13 +340,13 @@ sub afterSave {
     my $del_sth = $dbh->prepare("delete from ".$storage->{TABLE}.$h->{WHERE}." and ".$storage->{FIELD}."=?");
     #TODO: выводить ошибки по кодам ?
     foreach my $id (@{$self->{_DATAA}}) {
-        return $self->showError("Некорректное состояние: в БД обнаружено значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id} && $id == $self->{_DICTH}->{$id};
+        return $self->showError("Некорректное состояние: в БД обнаружено значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id};
         unless (exists $self->{_NEWH}->{$id} && $self->{_NEWH}->{$id} == $id) {
             $del_sth->execute(@{$h->{PARAMS}},$id) or return $self->showError($DBI::errstr);
         };
     };
-    foreach my $id (keys %{$self->{_NEWH}}) {
-        return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id} && $id == $self->{_DICTH}->{$id};
+    foreach my $id (@{$self->{_NEWA}}) {
+        return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id};
         unless (exists $self->{_DATAH}->{$id} && $self->{_DATAH}->{$id} == $id) {
             $ins_sth->execute($id, @{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
         };
@@ -369,16 +377,81 @@ sub value {
 	return [];          # Array of values
 };
 
+sub dbFields {
+    my ($field,$action) = (shift,shift);
+    
+    my $options = $field->{OPTIONS};
+    
+    my @fields = ();
+    push @fields, $options->{STORE_FIELD} if $options->{STORE_FIELD};
+    push @fields, $options->{STORE_NAME}  if $options->{STORE_NAME};
+    return @fields;
+};
+
 sub dbValue {
-    croak "mchbx: dbValue();"
+    my ($self,$dbField) = (shift,shift);
+    
+    my $options = $self->{OPTIONS};
+    return $self->{_value_id}    if defined $self->{_value_id}    && $options->{STORE_FIELD} && $options->{STORE_FIELD} eq $dbField;
+    return $self->{_value_names} if defined $self->{_value_names} && $options->{STORE_NAME}  && $options->{STORE_NAME}  eq $dbField;
+    
+    die "mchbx: dbValue(): - do not know how to get dbValue for $dbField";
 };
 
 sub check {
     my $self = shift;
     
-    return 1 unless $self->{IS_NOTNULL};
-    return 1 if scalar keys %{$self->{_NEWH}};
-    return $self->setErrorByCode("NOTHING_CHOOSEN");
+    return $self->setErrorByCode("NOTHING_CHOOSEN") if $self->{IS_NOTNULL} && ! scalar @{$self->{_NEWA}};
+    
+    return $self->_process();
+};
+
+sub process {
+    my $self = shift;
+    return 1 if $self->{_processed};
+    return $self->_process();
+};
+
+sub _process {
+    my $self = shift;
+    
+    unless (@{$self->{_NEWA}}) {
+        $self->{_value_id}    = '';
+        $self->{_value_names} = '';
+        $self->{_processed}   = 1;
+        $self->{_changed}     = 1;
+        $self->{_changed}     = 0 if $self->{_new};
+        return 1;
+    };
+    
+    unless ($self->{_dict_loaded}) {
+        $self->_loadDict() or return undef;
+    };
+    
+    my @names;
+    foreach my $id (@{$self->{_NEWA}}) {
+        return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id};
+        push @names, $self->{_DICTH}->{$id};
+    };
+    
+    my $options = $self->{OPTIONS};
+    my $ns = $options->{STORE_NAME_SEPARATOR};
+    $ns = ',' unless defined $ns;
+    
+    $self->{_value_id}    = join(',',@{$self->{_NEWA}});
+    $self->{_value_names} = join($ns,@names);
+    $self->{_processed}   = 1;
+    
+    $self->{_changed} = 0;
+    $self->{_changed} = 1 if join(',',@{$self->{_DATAA}}) ne join(',',@{$self->{_NEWA}});
+
+    return 1;
+};
+
+sub changed {
+    my $self = shift;
+    die '_changed value is undefined' unless defined $self->{_changed};
+    $self->{_changed};
 };
 
 sub clean {
@@ -471,7 +544,7 @@ sub addRecord{
     $text = Encode::encode("windows-1251", $text);
     $text =~s/\s$//;
     $text =~s/^\s//;
-    $text =~ s/ +/ /;
+    $text =~ s/ +/ /g;
     
     return create_json({error=>'Добавляемое значение не указано'}) unless $text && !is_empty($text);
     
@@ -547,15 +620,12 @@ sub addRecord{
             },
             ORDER => 'order_field',       #Имя поля для сохранения порядка выбранных значений в multivalue
         },
+        #Сохранение выбранных значений в поле основной таблицы, в виде строки кодов, разделенных запятой
+        STORE_FIELD => "movie_actor_id",   #Имя поля в основной таблице
         
-        #TODO: Сохранение выбранных значений в поля основной таблицы формы
-        STORAGE => {
-            ID_FIELD       => 'movie_actor_id'    #поле списка выбранных значений
-            ID_SEPARATOR   => ',',                #разделитель списка значений
-            NAME_FIELD     => 'movie_actor_text', #поле списка выбранных значений
-            NAME_SEPARATOR => ', ',               #разделитель списка значений
-        }
-        #COMPILED - или как-то так обозвать?
+        #Сохранение выбранных значений в поле основной таблицы, в виде строки значений с разделителем
+        STORE_NAME  => "movie_actor_text", #Имя поля в основной таблице
+        STORE_NAME_SEPARATOR => ", "       #Разделитель сохраняемых значений
         
         ## + Нужно добавить параметр позиции чекбоксов - слева или справа от наименования
         ## + параметр числа минимального и максимального количества выбранных значений
