@@ -1073,6 +1073,10 @@ sub _header {
     };
     
     print $self->q()->header(%{$params});
+    my $r = $self->q()->r();
+    if ($r) {
+       $r->rflush();
+    };
     $self->{_headerssent} = 1;
     return 1;
 };
