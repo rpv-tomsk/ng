@@ -1073,8 +1073,19 @@ sub _header {
     };
     
     print $self->q()->header(%{$params});
+
+#If you are here, please see also:
+#http://foertsch.name/ModPerl-Tricks/custom-content_type-with-custom_response.shtml
+#http://git.661346.n2.nabble.com/gitweb-in-page-errors-don-t-work-with-mod-perl-td7035367.html
+#mod_deflate + mod_perl
+#http://osdir.com/ml/modperl.perl.apache.org/2009-08/msg00005.html
+
     my $r = $self->q()->r();
-    if ($r) {
+    if ($r && $params->{-status} =~ /^404/) {
+       #ErrorDocument directive, mod_perl2 and 404 status and mod_deflate does not like each other. Disable mod_deflate.
+       $r->subprocess_env('no-gzip' => 1);
+       #Without rflush we got a 200 status instead of 404 on pages with weight equal or more than 8kb and print CGI::headers().
+       #So we using mod_perl, ErrorDocument 404 " " and  rflush();
        $r->rflush();
     };
     $self->{_headerssent} = 1;

@@ -1,0 +1,115 @@
+Index: Application.pm
+===================================================================
+--- Application.pm	(revision 2140)
++++ Application.pm	(working copy)
+@@ -1073,8 +1073,19 @@
+     };
+     
+     print $self->q()->header(%{$params});
++
++#If you are here, please see also:
++#http://foertsch.name/ModPerl-Tricks/custom-content_type-with-custom_response.shtml
++#http://git.661346.n2.nabble.com/gitweb-in-page-errors-don-t-work-with-mod-perl-td7035367.html
++#mod_deflate + mod_perl
++#http://osdir.com/ml/modperl.perl.apache.org/2009-08/msg00005.html
++
+     my $r = $self->q()->r();
+-    if ($r) {
++    if ($r && $params->{-status} =~ /^404/) {
++       #ErrorDocument directive, mod_perl2 and 404 status and mod_deflate does not like each other. Disable mod_deflate.
++       $r->subprocess_env('no-gzip' => 1);
++       #Without rflush we got a 200 status instead of 404 on pages with weight equal or more than 8kb and print CGI::headers().
++       #So we using mod_perl, ErrorDocument 404 " " and  rflush();
+        $r->rflush();
+     };
+     $self->{_headerssent} = 1;
+@@ -1170,7 +1181,89 @@
+         $ret = $cms->output("Страница не найдена. При обработке страницы 404 произошла ошибка: ".$cms->getError());
+     };
+     $ret->{_headers}->{-status} = "404 Not Found";
++#    my $r = $cms->q()->r();
++#    if ($r) {
++#        $r->status_line('404 Not Found');
++#        $r->status(200);
++#    };
++#    local $CGI::MOD_PERL=0;
+ 	return $cms->_doOutput($ret);
++
++#use Apache2::Filter ();
++#use Data::Dumper;
++#
++#use Apache2::Connection ();
++#use Apache2::RequestRec ();
++#
++#my $r = $cms->q->r();
++#my $c = $r->connection;
++#my $filters = $r->proto_output_filters();
++#my $filters = $r->output_filters();
++#my $filters = $c->output_filters();
++#
++#use Apache2::Filter;
++#use Apache2::FilterRec ();
++#while (1) {
++#  warn $filters->frec->name;
++#  $filters = $filters->next;
++#  last unless $filters;
++#}
++
++#warn "detect deflate...";
++#use Apache2::Module;
++#warn "deflate detected" if (Apache2::Module::loaded('mod_deflate.c'));
++    #return $cms->_doOutput($ret);
++
++#    my $msg = $ret->getOutput();
++#    my $l   = length($msg);
++#warn $l;
++#    my $cookies = $ret->cookies();
++#    my $r = $cms->q()->r();
++#    if ($r) {
++#        $r->set_content_length($l);
++#    }
++#    if ($r) {
++#        $r->status_line('404 Not Found');
++#    };
++#    $ret->{_headers}->{-cookie} = $cookies;
++#    $ret->{_headers}->{-Content_length} = $l; 
++#    #local $CGI::MOD_PERL=0;
++#    $cms->_header($ret->{_headers});
++#    if ($r) {
++#        $r->rflush;
++#    };
++#    print $msg;
++#    #print $ret->getOutput();
++#    return 1;
++    
++    
++=comment
++    my $msg = $ret->getOutput();
++    my $l   = length($msg);
++    my $cookies = $ret->cookies();
++    $ret->{_headers}->{-cookie} = $cookies;
++    $ret->{_headers}->{-Content_length} = $l;
++    my $r = $cms->q()->r();
++    if ($r) {
++        $ret->{_headers}->{-type} = $cms->{_type} unless exists $ret->{_headers}->{-type};
++        $ret->{_headers}->{-charset} = $cms->{_charset} unless exists $ret->{_headers}->{-charset};
++        
++        $ret->{_headers}->{-cookie} ||= [];
++        push @{$ret->{_headers}->{-cookie}}, @{$cms->{_cookies}} if $cms->{_cookies};
++        
++        if ($cms->{_nocache} || $ret->{_headers}->{-nocache}) {
++            delete $ret->{_headers}->{-nocache};
++            $ret->{_headers}->{-Pragma}="no-cache";
++            $ret->{_headers}->{-expires}="-1d" unless exists $ret->{_headers}->{-expires};
++            $ret->{_headers}->{-Cache_Control}="no-store, no-cache, must-revalidate";
++        };
++        
++        $msg = $cms->q()->header(%{$ret->{_headers}},-nph=>1).$msg;
++        $r->assbackwards(1);
++        $r->custom_response( 404, $msg );
++        return 404;
++    };
++=cut
+ };
+ 
+ =head
