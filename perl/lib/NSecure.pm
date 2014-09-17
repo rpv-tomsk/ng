@@ -57,7 +57,7 @@ sub is_valid_id {
 sub is_valid_email {
 	my $email = shift;
 	$email = "" if !defined $email;
-	return $email =~ /^(?:[_a-z0-9]+(?:[-.]?[_a-z0-9]+)*@[a-z0-9][a-z0-9\-]*(?:\.?[a-z0-9][a-z0-9\-]*)?\.[a-z]{2,5})$/i;
+	return $email =~ /^(?:[_A-Za-z0-9]+(?:[-.]?[_A-Za-z0-9]+)*@[A-Za-z0-9][A-Za-z0-9\-]*(?:\.?[A-Za-z0-9][A-Za-z0-9\-]*)?\.[A-Za-z]{2,5})$/i;
 }
 
 sub is_valid_link {
