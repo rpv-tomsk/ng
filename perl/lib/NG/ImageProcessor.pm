@@ -251,13 +251,13 @@ sub savesize {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(0) or return $pCtrl->error();
-    my $field = $pCtrl->paramOrOption('field','FIELD');
-    return $pCtrl->error("Отсутствует опция FIELD для исполнения метода savesize") unless defined $field;
+    my $fieldName = $pCtrl->paramOrOption('field','FIELD');
+    return $pCtrl->error("Отсутствует опция FIELD для исполнения метода savesize") unless defined $fieldName;
     my $mask = $pCtrl->paramOrOption('mask','MASK') || "{w}x{h}";
     my ($iwidth,$iheight) = $iObj->Get('columns','rows');
     $mask =~ s/\{w\}/$iwidth/gi;
     $mask =~ s/\{h\}/$iheight/gi;
-    my $field = $pCtrl->getField($field) or return $pCtrl->error("no field $field");
+    my $field = $pCtrl->getField($fieldName) or return $pCtrl->error("no field $fieldName");
     $field->setValue($mask);
     return 1;
 }
@@ -447,6 +447,8 @@ sub read {
 sub Write {
     my $self = shift;
     my $dest = shift;
+    
+    return "Не указано имя файла для сохранения " unless $dest;
     
     if ($self->{_ifile}) {
         File::Copy::copy($self->{_ifile},$dest) or return "Ошибка копирования изображения: ".$!;
