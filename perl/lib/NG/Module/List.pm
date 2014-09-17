@@ -2053,6 +2053,7 @@ sub getSearchWhere {
 	if ($form) {
 		$form->setFormValues();
 		foreach my $field (@{$form->{_fields}}) {
+			next unless $field->{VALUE};
 			my $type = $field->{TYPE};
 			if ($type eq "datetime" && is_valid_date($field->{VALUE})) {
 				$self->pushSearchCondition($field->{FIELD}." between ? and ?",[$self->db()->date_to_db($field->{VALUE})." 00:00:00",$self->db()->date_to_db($field->{VALUE})." 23:59:59"]);
