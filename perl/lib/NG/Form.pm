@@ -240,7 +240,7 @@ sub deletefield {
             }
         };    
     };
-    die "NG::Form::deletefield(): field $fieldname not found" unless $found;
+    croak "NG::Form::deletefield(): field $fieldname not found" unless $found;
 };
 
 sub fields {
@@ -824,17 +824,16 @@ sub getField {
 
 sub getParam {
     my ($self,$f) = (shift,shift);
-    my $field = $self->_getfieldhash($f) or die "NG::Form::getParam(): field \"$f\" is not found";
+    my $field = $self->_getfieldhash($f) or croak "NG::Form::getParam(): field \"$f\" is not found";
 	return $field->value();
 };
 *getValue = \&getParam;
 
-sub setParam
-{
- my ($self, $fn, $p) = @_;
- 
- my $field = $self->_getfieldhash($fn) or die "NG::Form::setParam(): field \"$fn\" is not found";
- $field->setValue($p);
+sub setParam {
+    my ($self, $fn, $p) = @_;
+
+    my $field = $self->_getfieldhash($fn) or croak "NG::Form::setParam(): field \"$fn\" is not found";
+    $field->setValue($p);
 };
 
 sub cleanField {
