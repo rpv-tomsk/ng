@@ -99,8 +99,11 @@ $.fn.multivalueWithAddToBase = function(options) {
             if (values[key] == item.id)
                 return;
         };
-        
-        var item = items.append('<li class="ui-state-default" data-id="'+item.id+'"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>'+item.label+' <a href="#" class="deleteItem">[X]</a></li>');
+        var itemHTML = '<li class="ui-state-default" data-id="'+item.id+'">';
+        if (options.sortable)
+            itemHTML = itemHTML + '<span class="ui-icon ui-icon-arrowthick-2-n-s"></span>';
+        itemHTML = itemHTML + item.label + ' <a href="#" class="deleteItem">[X]</a></li>';
+        var item = items.append(itemHTML);
         item.find(".deleteItem").click(deleteItem);
         updateValuesFromItems();
     };
