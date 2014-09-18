@@ -6,8 +6,7 @@ use strict;
 #TODO: сделать кнопку выбрать все / отменить выбор
 #TODO: добавить параметры связанные с дефолтными значениями
 #TODO: сообщение на пустой справочник
-#TODO: Загрузка сохраненных данных из OPTIONS.STORE_FIELD
-
+#TODO: Загрузка сохраненных данных из OPTIONS.STORE_FIELD (работа БЕЗ опции OPTIONS.STORAGE)
 
 use NG::Field;
 use NGService;
@@ -46,6 +45,11 @@ sub init {
     
     my $options = $field->{OPTIONS} || return $field->set_err("Для поля $field->{FIELD} типа multicheckbox не указаны дополнительные параметры");
     return $field->set_err("Параметр OPTIONS не является HASHREF") if ref $options ne "HASH";
+    
+    my $storage = $options->{STORAGE};
+
+        return $field->set_err("Значение атрибута STORAGE конфигурации поля $field->{FIELD} типа multicheckbox не является ссылкой на хэш") if ref $options->{STORAGE} ne "HASH";
+
     
     if ($options->{DICT}) {
         return $field->set_err("Значение атрибута DICT конфигурации поля $field->{FIELD} типа multicheckbox не является ссылкой на хэш") if ref $options->{DICT} ne "HASH";
@@ -94,9 +98,7 @@ sub init {
     };
     
     unless ($field->{NOLOADDICT}) {
-        return $field->set_err("Значение атрибута STORAGE конфигурации поля $field->{FIELD} типа multicheckbox не является ссылкой на хэш") if ref $options->{STORAGE} ne "HASH";
-        my $storage = $options->{STORAGE};
-        
+        return $field->set_err("Отсутствует атрибут STORAGE поля $field->{FIELD}") unless $storage && (ref $storage eq "HASH");
         return $field->set_err("Не указано имя таблицы (TABLE) в атрибуте STORAGE поля $field->{FIELD}") unless $storage->{TABLE};
         return $field->set_err("Не указано имя поля данных (FIELD) в атрибуте STORAGE поля $field->{FIELD}") unless $storage->{FIELD};
         return $field->set_err("Не указан хэш связи полей основной таблицы и хранилища выбранных вариантов (FIELDS_MAP) в атрибуте STORAGE поля $field->{FIELD}") unless $storage->{FIELDS_MAP};
@@ -107,6 +109,11 @@ sub init {
     $field->pushErrorTexts({
         NOTHING_CHOOSEN       => "Не выбраны значения.",
     });
+    
+    $field->{HAS_ORDERING} = 0;
+    if ($options->{STORE_FIELD} || ($storage && $storage->{ORDER})) {
+        $field->{HAS_ORDERING} = (exists $options->{ORDERING})?$options->{ORDERING}:1;
+    };
     
     $field->{IS_FAKEFIELD}=1;
     return 1;
@@ -353,6 +360,17 @@ sub afterSave {
     };
     return 1;
 };
+
+#sub HAS_ORDERING {
+#    my $field = shift;
+#    
+#    my $options = $field->{OPTIONS} || {};
+#    my $storage = $options->{STORAGE} || {};
+#    
+#    return 0 unless ($options->{STORE_FIELD} || $storage->{ORDER});
+#    return $options->{ORDERING} if exists $options->{ORDERING};
+#    return 1;
+#};
 
 sub getJSSetValue {
     #TODO: implement this method
@@ -626,6 +644,7 @@ sub addRecord{
         #Сохранение выбранных значений в поле основной таблицы, в виде строки значений с разделителем
         STORE_NAME  => "movie_actor_text", #Имя поля в основной таблице
         STORE_NAME_SEPARATOR => ", "       #Разделитель сохраняемых значений
+        ORDERING => (0|1),                 #Разрешает/запрещает ручную сортировку при использовании STORE_FIELD или STORAGE.ORDER. Default=1
         
         ## + Нужно добавить параметр позиции чекбоксов - слева или справа от наименования
         ## + параметр числа минимального и максимального количества выбранных значений
