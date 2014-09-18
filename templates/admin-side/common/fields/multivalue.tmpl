@@ -25,7 +25,7 @@
             <ul class="items">
                 <TMPL_IF SELECTED_OPTIONS>
                 <TMPL_LOOP SELECTED_OPTIONS>
-                <li class="ui-state-default" data-id="<TMPL_VAR ID>"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><TMPL_VAR NAME> <a href="#" class="deleteItem">[X]</a></li>
+                <li class="ui-state-default" data-id="<TMPL_VAR ID>"><TMPL_IF HAS_ORDERING><span class="ui-icon ui-icon-arrowthick-2-n-s"></span></TMPL_IF HAS_ORDERING><TMPL_VAR NAME> <a href="#" class="deleteItem">[X]</a></li>
                 </TMPL_LOOP SELECTED_OPTIONS>
                 </TMPL_IF SELECTED_OPTIONS>
             </ul>
@@ -36,7 +36,7 @@
 
 <script type="text/javascript">
     $( "#field_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" ).multivalueWithAddToBase({
-        sortable: true,
+        sortable: <TMPL_IF HAS_ORDERING>true<TMPL_ELSE>false</TMPL_IF HAS_ORDERING>,
         addition: <TMPL_IF OPTIONS.DICT.ADDITION>true<TMPL_ELSE>false</TMPL_IF OPTIONS.DICT.ADDITION>
     });
 </script>
