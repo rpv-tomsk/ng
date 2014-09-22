@@ -214,7 +214,7 @@ sub getABRelated {
     
     unless ($abKeys->{HASRELATED}) {
         #Если включить кеширование, будет ой. Причем не сразу =)
-        return $self->cms->error("Active Block does not set HASRELATED key. This can lead to floating errors on production site.");
+        return $self->cms->error("Active Block ".$aBlock->{CODE}." does not set HASRELATED key. This can lead to floating errors on production site.");
     };
     return $aBlock->{CACHEKEYS}->{RELATED} if exists $aBlock->{CACHEKEYS} && $aBlock->{CACHEKEYS}->{RELATED};
     return $aBlock->{KEYS}->{RELATED} || return $self->cms->error("Active Block does not set value to RELATED key");
