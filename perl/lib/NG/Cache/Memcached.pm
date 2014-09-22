@@ -112,17 +112,29 @@ print STDERR "MISMATCH $key != $k2".Dumper($block,$r, $key, thaw($r)) if $key ne
     return 1;
 };
 
-BEGIN {
-    if ($NG::Application::Cache and ref $NG::Application::Cache ne "NG::Cache::Stub") {
-        warn "MEMCACHED: Another cache is already setup.";
+sub initialize {
+    my ($class,$params) = (shift,shift);
+    
+    die "NG::Cache::Memcached->initialize(): No parameters passed" unless $params && ref $params eq "HASH";
+    die "NG::Cache::Memcached->initialize(): Another cache is already set up." if $NG::Application::Cache and ref $NG::Application::Cache ne "NG::Cache::Stub";
+    
+    if ($params->{MEMCACHED}) {
+        $NG::Application::Cache = {};
+        bless $NG::Application::Cache,__PACKAGE__;
+
+        $MEMCACHED = $params->{MEMCACHED};
         return;
     };
+    
+    die "NG::Cache::Memcached->initialize(): Namespace not specified" unless defined $params->{namespace};
 
     $NG::Application::Cache = {};
     bless $NG::Application::Cache,__PACKAGE__;
 
-    use Cache::Memcached::Fast;
-    $MEMCACHED = new Cache::Memcached::Fast({
+    eval "use Cache::Memcached::Fast;";
+    die $@ if $@;
+    
+    my $default = {
         servers => ['localhost:11211'],
         namespace => 'prod_cache_:',
         connect_timeout => 0.2,
@@ -132,7 +144,12 @@ BEGIN {
         failure_timeout => 2,
         nowait => 1,
         hash_namespace => 1,
-    });
+    };
+    foreach my $key (keys %$default) {
+        next if exists $params->{$key};
+        $params->{$key} = $default->{$key};
+    };
+    $MEMCACHED = new Cache::Memcached::Fast($params);
 };
 
 return 1;
