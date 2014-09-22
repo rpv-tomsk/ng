@@ -133,6 +133,7 @@ sub _setIObj {
     $self->{_iobjs}->{$toid}->_setIObj($iObj);
 };
 
+#Пропорциональное сжатие в целевую ширину. Высота произвольная.
 sub towidth {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
@@ -151,6 +152,7 @@ sub towidth {
     1;
 };
 
+#Пропорциональное сжатие в целевую высоту. Ширина произвольная.
 sub toheight {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
@@ -169,6 +171,8 @@ sub toheight {
     1;
 };
 
+#Сжатие по максимальной стороне с сохранением пропорции, цель - сжать, чтобы вписать в прямоугольник заданного размера
+#Размер картинки не обязательно будет width x height.
 sub tomaximal {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
@@ -189,7 +193,8 @@ sub tomaximal {
     1;
 };
 
-sub tominimal { #урезаем в рамку по минимальной стороне с сохранением пропорции. Т.е. дальше надо делать crop по максимальной стороне.
+#урезаем в рамку по минимальной стороне с сохранением пропорции. Т.е. дальше надо делать crop по максимальной стороне.
+sub tominimal {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     
