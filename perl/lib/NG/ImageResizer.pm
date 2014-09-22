@@ -47,7 +47,7 @@ sub run {
     my $sourceFile = $cms->getDocRoot().$group->{SOURCE}.$url;
     my $targetFile   = $cms->getDocRoot().$baseUrl.$groupName.'/'.$sizeName.'/'.$url;
     
-    return $cms->exit("Source image $group->{SOURCE}$url was not found.",{-status=>'404 Not found'}) unless -f $sourceFile;
+    return $cms->exit("Source image ".($NG::Application::DEBUG?$group->{SOURCE}.$url:'')." was not found.",{-status=>'404 Not found'}) unless -f $sourceFile;
     return $cms->exit('', {-location=>'/'.$baseUrl.$groupName.'/'.$sizeName.'/'.$url}) if -f $targetFile;
     
     #Файла нет, будем делать.
