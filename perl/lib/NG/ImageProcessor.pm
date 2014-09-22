@@ -3,6 +3,7 @@ package NG::ImageProcessor;
 use strict;
 use Image::Magick;
 use NG::FileProcessor;
+use File::Copy qw();
 
 use vars qw(@ISA);
 @ISA = qw(NG::FileProcessor); 
@@ -274,9 +275,10 @@ sub afterProcess {
     my $pCtrl = $self->getCtrl();
     
     my $iObj = $self->{_iobjs}->{main} or return $pCtrl->error("No IOBJ");
-    my $err = $iObj->Write($dest);
+    my $err = $iObj->Write($dest.".tmp");
     return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
 
+    File::Copy::move($dest.".tmp",$dest) or return $pCtrl->error("Error on move file in afterProcess: ".$!);
     return 1;
 };
 

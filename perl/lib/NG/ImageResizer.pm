@@ -1,4 +1,4 @@
-package NG::ImgResizer;
+package NG::ImageResizer;
 use strict;
 use NG::PageModule;
 our @ISA = qw(NG::PageModule);
@@ -69,7 +69,7 @@ sub run {
     unless ( sysopen( $lock_fh, $targetFile.'.lock', O_WRONLY | O_CREAT) ) {
         NG::Exception->throw('NG.INTERNALERROR',"Unable to create lock file: '$!'");
     };
-    flock($lock_fh, LOCK_SH) or NG::Exception->throw('NG.INTERNALERROR',"Cannot lock file: '$!'");
+    flock($lock_fh, LOCK_EX) or NG::Exception->throw('NG.INTERNALERROR',"Cannot lock file: '$!'");
     
     if (-f $targetFile) {
         close($lock_fh);
