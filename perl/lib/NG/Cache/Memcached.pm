@@ -115,6 +115,7 @@ print STDERR "MISMATCH $key != $k2".Dumper($block,$r, $key, thaw($r)) if $key ne
 sub initialize {
     my ($class,$params) = (shift,shift);
     
+    die "NG::Cache::Memcached->initialize(): initialize() must be called only from BEGIN {} blocks" unless ${^GLOBAL_PHASE} ne "START";
     die "NG::Cache::Memcached->initialize(): No parameters passed" unless $params && ref $params eq "HASH";
     die "NG::Cache::Memcached->initialize(): Another cache is already set up." if $NG::Application::Cache and ref $NG::Application::Cache ne "NG::Cache::Stub";
     
