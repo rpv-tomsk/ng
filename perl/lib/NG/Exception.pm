@@ -8,6 +8,7 @@ our $specificatorProcessors = {};
 our $notificationPrefix = "";
 our $notificationGroupCode = "";
 our $notificationRecipients = undef;
+our @messagePrepend;
 
 sub defaultCode {
     return 'NG.INTERNALERROR';
@@ -27,7 +28,7 @@ sub new {
         $self->{code} = shift;
         $self->{message} = shift;
     };
-    
+    $self->{message} = join(': ',@messagePrepend,$self->{message});
     $self->{carpmessage} = "";
     
     if ($NG::Application::DEBUG) {
