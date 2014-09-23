@@ -344,26 +344,6 @@ sub getResult {
     return ('blob', $type);
 };
 
-=head
-
-sub ... {
-    ...
-    if ($field && $field->isFileField()) {
-        $pObj->AFTER($field->dbValue());
-    }
-    else {
-        my $v = $pObj->AFTER();
-        
-        if ($field) {
-            $field->setValue($v);
-        };
-        
-    };
-    ...
-};
-=cut
-
-
 sub saveToField {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
