@@ -8,9 +8,8 @@ use File::Copy qw();
 use vars qw(@ISA);
 @ISA = qw(NG::FileProcessor);
 
-# You can set default config by using:
-# $NG::ImageProcessor::config::default = {quality => {jpg=>90, png=>7}};
-our $config = undef;
+# You can set compression quality:
+# $NG::ImageProcessor::config::quality = {jpg=>90, png=>7};
 
 sub init {
     my $self = shift;
@@ -20,31 +19,6 @@ sub init {
     $self;
 };
 
-sub getDefaultConfig {
-    return $NG::ImageProcessor::config::default;
-};
-
-sub _setDefaultAttributes {
-    my ($self,$iObj) = (shift,shift);
-    
-    my $config = $self->getDefaultConfig();
-    $config||={};
-    #$config->{quality} ||= {jpg=>90, png=>7}; #default-default.
-
-    my $pCtrl = $self->getCtrl();
-    
-    if ($config->{quality}) {
-        ($self->{_origfname} =~ /.*\.([^\.]*?)$/) or NG::Exception->throw('NG.INTERNALERROR', '_setDefaultAttributes(): unable to get extension from original filename');
-        my $ext = lc($1);
-        if (($ext eq 'jpg' || $ext eq 'jpeg') && exists $config->{quality}->{jpg}) {
-            $iObj->Set(quality=>$config->{quality}->{jpg});
-        }
-        elsif ($ext eq 'png' && exists $config->{quality}->{png}) {
-            $iObj->Set(quality=>$config->{quality}->{png});
-        };
-    };
-};
-
 #  Usage:
 #  {METHOD => "setquality",   PARAMS => {jpg=>90, png=>7 }}
 sub setquality {
@@ -52,17 +26,7 @@ sub setquality {
     my $pCtrl = $self->getCtrl();
     my $iObj  = $self->_getIObj(0) or return $pCtrl->error();
     
-    my $params = $pCtrl->param();
-    
-    ($self->{_origfname} =~ /.*\.([^\.]*?)$/) or return $pCtrl->error("setquality(): unable to get extension from original filename");
-    my $ext = lc($1);
-    
-    if (($ext eq 'jpg' || $ext eq 'jpeg') && exists $params->{jpg}) {
-        $iObj->Set(quality=>$params->{jpg});
-    }
-    elsif ($ext eq 'png' && exists $params->{png}) {
-        $iObj->Set(quality=>$params->{png});
-    };
+    $iObj->_setQuality($pCtrl->param());
     return 1;
 };
 
@@ -175,7 +139,6 @@ sub setValue {
     my $iObj = $self->{_iobjs}->{main} = NG::ImageProcessor::ImageMagickImage->new();
     my $err = $iObj->read($value);
     return $pCtrl->error("Ошибка чтения изображения: $err") if $err;
-    $self->_setDefaultAttributes($iObj);
     1;
 };
 
@@ -316,7 +279,6 @@ sub torectangle {
 
     ## Blank image
     my $pp = Image::Magick->new;
-    $self->_setDefaultAttributes($pp);
     $pp->Set(size=>$width.'x'.$height);
     my $bg = $pCtrl->param('background');
     $bg ||= 'xc:white';
@@ -479,10 +441,12 @@ sub new {
         $self->{_iobj} = $opts->{parent}->Clone();
         return undef unless $self->{_iobj};
         $self->{_ifile} = $opts->{parent}->{_ifile};
+        $self->{_quality} = $opts->{parent}->{_quality};
     }
     else {
         $self->{_iobj} = Image::Magick->new;  #Объект
         $self->{_ifile} = undef;              #Файл на диске, соотв. объекту, если есть. Очищается при изменении объекта.
+        $self->{_quality} = $NG::ImageProcessor::config::quality;   #Хеш коэффициентов, ключи: jpg,png
     };
     
     return $self;
@@ -508,7 +472,19 @@ sub Write {
         File::Copy::copy($self->{_ifile},$dest) or return "Ошибка копирования изображения: ".$!;
     }
     else {
-        my $e = $self->{_iobj}->Write($dest);
+        my %p;
+        $p{filename} = $dest;
+        if ($self->{_quality}) {
+            ($dest =~ /.*\.([^\.]*?)$/) or NG::Exception->throw('NG.INTERNALERROR', 'Write(): unable to get extension from filename');
+            my $ext = lc($1);
+            if (($ext eq 'jpg' || $ext eq 'jpeg') && exists $self->{_quality}->{jpg}) {
+                $p{quality}=$self->{_quality}->{jpg};
+            }
+            elsif ($ext eq 'png' && exists $self->{_quality}->{png}) {
+                $p{quality}=$self->{_quality}->{png};
+            };
+        };
+        my $e = $self->{_iobj}->Write(%p);
         return $e if $e;
     };
     my $mask = umask();
@@ -522,6 +498,11 @@ sub _setIObj {
     my $iObj = shift;
     $self->{_iobj}  = $iObj;
     $self->{_ifile} = undef;
+};
+
+sub _setQuality {
+    my ($self, $quality) = (shift,shift);
+    $self->{_quality} = $quality;
 };
 
 sub image {
