@@ -4,25 +4,18 @@ use strict;
 
 =head
     $pCtrl = $cms->new("NG::Controller",{
+        PCLASS  => 'NG::ImageProcessor',
         STEPS   => [
             {METHOD=>"towidth",     PARAMS=>{width=>"100",toid=>"small"}},
             {METHOD=>"toGray",      PARAMS=>{id=>"small"}},
             {METHOD=>"saveToField", PARAMS=>{id=>"small", field=>"small"}},
             {METHOD=>"saveToFile",  PARAMS=>{id=>"small", dir=>"{siteroot}/htdocs/images", mask=>""}},
         ],
-        PCLASS  =>
-        OPTIONS =>
-        
-        OPTIONS => {
-            METHOD=> "",
-        },
-        
         FORM => $form,
         FIELD => $field,
     });
     
     PCLASS  = FIELD.PROCESSOR
-    OPTIONS = FIELD.OPTIONS
     STEPS   = FIELD.OPTIONS.STEPS
     
     $pCtrl->processField($field);
@@ -59,14 +52,16 @@ sub init {
     my $self = shift;
     my $args = shift;
     
-    $self->{_steps} = undef;
-    $self->{_steps} = $args->{STEPS} if exists $args->{STEPS};
-    $self->{_pclass} = $args->{PCLASS};
+    $self->{_pclass} = $args->{PCLASS} or NG::Exception->throw('NG.INTERNALERROR',"NG::Controller->new(): PCLASS argument is missing");
+    $self->{_steps}  = $args->{STEPS}  or NG::Exception->throw('NG.INTERNALERROR',"NG::Controller->new(): STEPS argument is missing");
+
+    NG::Exception->throw('NG.INTERNALERROR',"NG::Controller->new(): STEPS is not ARRAYREF") unless ref $self->{_steps} eq "ARRAY";
+
     $self->{_pObj}  = undef;
-    $self->{_options} = $args->{OPTIONS};
-    $self->{_form} = $args->{FORM};
+    $self->{_form}  = $args->{FORM};
     $self->{_field} = $args->{FIELD};
     
+    $self->_fillStepsFromConfig() if (scalar @{$self->{_steps}} == 1) && !exists $self->{_steps}[0]->{PARAMS};
     $self;
 };
 
@@ -74,15 +69,19 @@ sub _fillStepsFromConfig {
     my $self = shift;
     
     my $cms = $self->cms();
-    my $cobj = $cms->{_confObj};
-    return $cms->error("No config object exists") unless $cobj;
-    return $cms->error("No OPTIONS.METHOD") unless $self->{_options} && $self->{_options}->{METHOD};
+    my $cobj = $cms->{_confObj} or NG::Exception->throw('NG.INTERNALERROR','NG::Controller->_fillStepsFromConfig(): No cms config object exists');
+    my $method = $self->{_steps}[0]->{METHOD} or NG::Exception->throw('NG.INTERNALERROR',"NG::Controller->_fillStepsFromConfig(): Unable to get METHOD (OPTIONS.METHOD)");
     
     #Site::Field::Processor_OptionsMethod.stepX_yyy 
-    my $hash = $cobj->get_block($self->{_pclass}."_".$self->{_options}->{METHOD});
+    
+    #[Site::Field::Processor_OptionsMethod]
+    #step0=torectangle
+    #step0_width=100
+    #step0_height=200
+    #
+    my $hash = $cobj->get_block($self->{_pclass}."_".$method);
     
     my $steps = {}; 
-    
     foreach my $key (keys %$hash) {
         if ($key =~ /^step(\d+)$/) {
             $steps->{$1}->{METHOD} = $hash->{$key};
@@ -98,23 +97,13 @@ sub _fillStepsFromConfig {
         push @{$self->{_steps}}, $steps->{$step};
         $step++;
     };
-    1;
 };
 
 sub param { # getStepParam
     my $self = shift;
+    return $self->{_stepParams} unless scalar @_;
     my $param = shift;
-    
-    return $self->{_stepParams} unless $param;
     return $self->{_stepParams}->{$param};
-};
-
-sub paramOrOption {
-    my $self = shift;
-    my $param = shift;
-    my $option = shift;
-    my $o = $self->{_options} || {};
-    return $self->param($param) || $o->{$option};
 };
 
 sub doStep {
@@ -140,25 +129,12 @@ sub process {
     my $dest  = shift;
     
     my $cms = $self->cms();
-    
-    return $cms->error("PCLASS is not configured") unless $self->{_pclass};
-    my $pObj = $self->{_pObj} = $cms->getObject($self->{_pclass},$self) or return $cms->error();
-    
-    return $cms->error("STEPS is not ARRAYREF") if $self->{_steps} && ref $self->{_steps} ne "ARRAY";
-    return $cms->error("OPTIONS is not HASHREF") if $self->{_options} && ref $self->{_options} ne "HASH";
-    return $cms->error("No STEPS or OPTIONS.METHOD") unless $self->{_steps} || ($self->{_options} && $self->{_options}->{METHOD});
+    my $pObj = $self->{_pObj} = $cms->getObject($self->{_pclass},$self);
     
     $pObj->setValue($value) or return $cms->error($self->{_pclass}."->setValue() failed:".$self->{_error});
     
-    unless ($self->{_steps}) {
-        $self->_fillStepsFromConfig() or return $cms->error();
-    };
-    
-    push @{$self->{_steps}}, {METHOD=>$self->{_options}->{METHOD}, PARAMS=>{}} unless (scalar @{$self->{_steps}});
-    
     foreach my $step (@{$self->{_steps}}) {
-        my $method = $step->{METHOD};
-        $method or return $cms->error("No METHOD configured");
+        my $method = $step->{METHOD} or return $cms->error("No METHOD configured");
         return $cms->error("Class ".$self->{_pclass}." has no method $method") unless ($pObj->can($method));
         
         $self->doStep($method,$step->{PARAMS}) or return $cms->error($self->{_error});

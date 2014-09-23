@@ -1120,8 +1120,7 @@ sub process {
     my $cms = $self->cms();
     my $pCtrl = $cms->getObject("NG::Controller",{
         PCLASS  => $procClass,
-        OPTIONS => $options,
-        STEPS   => $options->{STEPS},
+        STEPS   => $options->{STEPS} || [{METHOD=>$options->{METHOD},PARAMS=>$options->{PARAMS}}],
         FIELD   => $self,
         FORM    => $self->parent(),
     });

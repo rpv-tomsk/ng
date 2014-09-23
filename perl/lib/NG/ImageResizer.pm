@@ -42,7 +42,7 @@ sub run {
     NG::Exception->throw('NG.INTERNALERROR',"Size not found")  unless $size;
     NG::Exception->throw('NG.INTERNALERROR',"Security error")  if  $url =~ /\.\./ || $url =~ /\<|\>/;
     NG::Exception->throw('NG.INTERNALERROR',"SOURCE not configured") unless $group->{SOURCE};
-    NG::Exception->throw('NG.INTERNALERROR',"METHOD not configured") unless $size->{METHOD};
+    NG::Exception->throw('NG.INTERNALERROR',"STEPS or METHOD not configured") unless $size->{METHOD} || $size->{STEPS};
     
     my $sourceFile = $cms->getDocRoot().$group->{SOURCE}.$url;
     my $targetFile   = $cms->getDocRoot().$baseUrl.$groupName.'/'.$sizeName.'/'.$url;
@@ -82,8 +82,7 @@ sub run {
     
     my $pCtrl = $cms->getObject("NG::Controller",{
         PCLASS  => $procClass,
-        OPTIONS => $size,
-        STEPS   => $size->{STEPS} || [$size],
+        STEPS   => $size->{STEPS} || [{METHOD=>$size->{METHOD},PARAMS=>$size->{PARAMS}}],
     });
     $pCtrl->process($sourceFile,$targetFile) or NG::Exception->throw('NG.INTERNALERROR',$cms->getError());
     

@@ -6,7 +6,11 @@ use NG::FileProcessor;
 use File::Copy qw();
 
 use vars qw(@ISA);
-@ISA = qw(NG::FileProcessor); 
+@ISA = qw(NG::FileProcessor);
+
+# You can set default config by using:
+# $NG::ImageProcessor::config::default = {quality => {jpg=>90, png=>7}};
+our $config = undef;
 
 sub init {
     my $self = shift;
@@ -16,12 +20,78 @@ sub init {
     $self;
 };
 
+sub getDefaultConfig {
+    return $NG::ImageProcessor::config::default;
+};
+
+sub _setDefaultAttributes {
+    my ($self,$iObj) = (shift,shift);
+    
+    my $config = $self->getDefaultConfig();
+    $config||={};
+    #$config->{quality} ||= {jpg=>90, png=>7}; #default-default.
+
+    my $pCtrl = $self->getCtrl();
+    
+    if ($config->{quality}) {
+        ($self->{_origfname} =~ /.*\.([^\.]*?)$/) or NG::Exception->throw('NG.INTERNALERROR', '_setDefaultAttributes(): unable to get extension from original filename');
+        my $ext = lc($1);
+        if (($ext eq 'jpg' || $ext eq 'jpeg') && exists $config->{quality}->{jpg}) {
+            $iObj->Set(quality=>$config->{quality}->{jpg});
+        }
+        elsif ($ext eq 'png' && exists $config->{quality}->{png}) {
+            $iObj->Set(quality=>$config->{quality}->{png});
+        };
+    };
+};
+
+sub setquality {
+    my $self = shift;
+    my $pCtrl = $self->getCtrl();
+    my $iObj  = $self->_getIObj(0) or return $pCtrl->error();
+    
+    my $params = $pCtrl->param();
+    
+    ($self->{_origfname} =~ /.*\.([^\.]*?)$/) or return $pCtrl->error("setquality(): unable to get extension from original filename");
+    my $ext = lc($1);
+    
+    if (($ext eq 'jpg' || $ext eq 'jpeg') && exists $params->{jpg}) {
+        $iObj->Set(quality=>$params->{jpg});
+    }
+    elsif ($ext eq 'png' && exists $params->{png}) {
+        $iObj->Set(quality=>$params->{png});
+    };
+    return 1;
+};
+
+sub im_method {
+    my $self = shift;
+    my $pCtrl = $self->getCtrl();
+    my $iObj  = $self->_getIObj(1) or return $pCtrl->error();
+    
+    my $_params = $pCtrl->param();
+    
+    my $params = {};
+    %{$params} = %{$_params};
+    
+    delete $params->{id};
+    delete $params->{todid};
+    my $im_method = delete $params->{im_method};
+    
+    #$iObj->can($im_method) or NG::Exception->throw('NG.INTERNALERROR', "im_method(): ImageMagick has no $im_method method.");
+    my $e = $iObj->$im_method(%$params);
+    NG::Exception->throw('NG.INTERNALERROR', "im_method(): Error $e running $im_method method.") if $e;
+    
+    1;
+};
+
+=comment
 sub composite {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
-    my $image = $pCtrl->paramOrOption('image','IMAGE');
-    my $position = $pCtrl->paramOrOption('position','POSITION');
+    my $image = $pCtrl->param('image');
+    my $position = $pCtrl->param('position');
     return $pCtrl->error('Can\'t find file '.$image) unless (-e $image);
     my $file = Image::Magick->new();
     $file->Read($image);
@@ -37,7 +107,7 @@ sub crop_height {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
-    my $height = $pCtrl->paramOrOption("height","HEIGHT");
+    my $height = $pCtrl->param("height");
     my ($iwidth,$iheight) = $iObj->Get('columns','rows');
     if ($iheight > $height) {
         my $e = $iObj->Crop(geometry=>$iwidth.'x'.$height.'+0+0');
@@ -50,7 +120,7 @@ sub crop_width_center {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
-    my $width = $pCtrl->paramOrOption("width","WIDTH");
+    my $width = $pCtrl->param("width");
     my ($iwidth,$iheight) = $iObj->Get('columns','rows');
     if ($iwidth > $width) {
         my $delta_width = int(($iwidth-$width)/2);
@@ -64,8 +134,8 @@ sub crop_to_center {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
-    my $width = $pCtrl->paramOrOption("width","WIDTH");
-    my $height = $pCtrl->paramOrOption("height","HEIGHT");
+    my $width = $pCtrl->param("width");
+    my $height = $pCtrl->param("height");
     my ($iwidth,$iheight) = $iObj->Get('columns','rows');
     my $current_height = $iheight;
     if ($iheight>$height) {
@@ -81,6 +151,7 @@ sub crop_to_center {
     };  
     return 1;  
 };
+=cut
 
 sub setValue {
     my $self = shift;
@@ -100,6 +171,7 @@ sub setValue {
     my $iObj = $self->{_iobjs}->{main} = NG::ImageProcessor::ImageMagickImage->new();
     my $err = $iObj->read($value);
     return $pCtrl->error("Ошибка чтения изображения: $err") if $err;
+    $self->_setDefaultAttributes($iObj);
     1;
 };
 
@@ -139,7 +211,7 @@ sub towidth {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     
-    my $width = $pCtrl->paramOrOption('width','WIDTH');
+    my $width = $pCtrl->param('width');
     return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода towidth") unless defined $width;
     
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
@@ -158,7 +230,7 @@ sub toheight {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
 
-    my $height = $pCtrl->paramOrOption('height','HEIGHT');
+    my $height = $pCtrl->param('height');
     return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода toheight") unless defined $height;
     
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
@@ -178,9 +250,9 @@ sub tomaximal {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
 
-    my $width = $pCtrl->paramOrOption('width','WIDTH');
+    my $width = $pCtrl->param('width');
     return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода tomaximal") unless defined $width;
-    my $height = $pCtrl->paramOrOption('height','HEIGHT');
+    my $height = $pCtrl->param('height');
     return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода tomaximal") unless defined $height;
     
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
@@ -199,9 +271,9 @@ sub tominimal {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     
-    my $width = $pCtrl->paramOrOption('width','WIDTH');
+    my $width = $pCtrl->param('width');
     return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода tominimal") unless defined $width;
-    my $height = $pCtrl->paramOrOption('height','HEIGHT');
+    my $height = $pCtrl->param('height');
     return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода tominimal") unless defined $height;
 
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
@@ -219,9 +291,9 @@ sub torectangle {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
 
-    my $width = $pCtrl->paramOrOption('width','WIDTH');
+    my $width = $pCtrl->param('width');
     return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода torectangle") unless defined $width;
-    my $height = $pCtrl->paramOrOption('height','HEIGHT');
+    my $height = $pCtrl->param('height');
     return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода torectangle") unless defined $height;
 
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
@@ -229,7 +301,7 @@ sub torectangle {
     my ($iwidth,$iheight) = $iObj->Get('base-columns','base-rows');
     return 1 if ($iwidth == $width) && ($iheight == $height);
     my $koef = undef;
-    if ($pCtrl->paramOrOption('crop','CROP')) {
+    if ($pCtrl->param('crop')) {
         $koef = ($iwidth/$width)<($iheight/$height) ? $iwidth/$width : $iheight/$height;
     }
     else {
@@ -240,8 +312,9 @@ sub torectangle {
 
     ## Blank image
     my $pp = Image::Magick->new;
+    $self->_setDefaultAttributes($pp);
     $pp->Set(size=>$width.'x'.$height);
-    my $bg = $pCtrl->paramOrOption('background','BACKGROUND');
+    my $bg = $pCtrl->param('background');
     $bg ||= 'xc:white';
     $pp->ReadImage($bg);
     ## Compose
@@ -257,9 +330,9 @@ sub savesize {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(0) or return $pCtrl->error();
-    my $fieldName = $pCtrl->paramOrOption('field','FIELD');
+    my $fieldName = $pCtrl->param('field');
     return $pCtrl->error("Отсутствует опция FIELD для исполнения метода savesize") unless defined $fieldName;
-    my $mask = $pCtrl->paramOrOption('mask','MASK') || "{w}x{h}";
+    my $mask = $pCtrl->param('mask') || "{w}x{h}";
     my ($iwidth,$iheight) = $iObj->Get('columns','rows');
     $mask =~ s/\{w\}/$iwidth/gi;
     $mask =~ s/\{h\}/$iheight/gi;
@@ -497,7 +570,11 @@ sub AUTOLOAD {
     my $pkg = ref $self;
     $AUTOLOAD =~ s/$pkg\:\://;
     
-    $self->{_ifile} = undef unless $RO_METHODS->{$AUTOLOAD};
+    my $rw = 1;
+    $rw = 0 if $RO_METHODS->{$AUTOLOAD};
+    $rw = 0 if ($AUTOLOAD eq "Set") && ($_[0] eq "quality");
+    
+    $self->{_ifile} = undef if $rw;
     
     return $self->{_iobj}->$AUTOLOAD(@_) if $self->{_iobj}->can($AUTOLOAD);
     croak('Can\'t locate object method "'.$AUTOLOAD.'" via Image::Magick');
