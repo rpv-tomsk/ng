@@ -87,10 +87,11 @@ sub copyFileName {
     return 1;
 };
 
-sub afterProcess {
-    my $self = shift;
-    my $dest = shift;
+sub afterProcess { return 1; };
 
+sub saveResult {
+    my ($self,$dest) = (shift,shift);
+    
     my $pCtrl = $self->getCtrl();
     if ($self->{_value} ne $dest) {
         move($self->{_value},$dest) or return $pCtrl->error("Error on move file in afterProcess: ".$!);

@@ -345,9 +345,8 @@ sub savesize {
     return 1;
 }
 
-sub afterProcess {
-    my $self = shift;
-    my $dest = shift;
+sub saveResult {
+    my ($self,$dest) = (shift,shift);
 
     my $pCtrl = $self->getCtrl();
     

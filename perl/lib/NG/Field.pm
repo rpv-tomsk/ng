@@ -947,12 +947,12 @@ sub getChilds {
     my $self = shift;
     
     return [] unless exists $self->{CHILDS};
-    return $self->setError("Параметр CHILDS не является ссылкой на массив") unless (ref $self->{CHILDS} eq "ARRAY");
+    NG::Exception->throw('NG.INTERNALERROR','Параметр CHILDS не является ссылкой на массив') unless ref $self->{CHILDS} eq "ARRAY";
     
     my $childs = [];
     foreach my $ch (@{$self->{CHILDS}}) {
         if (ref $ch eq "HASH") {
-            return $self->setError("Отсутствует параметр FIELD в описании подчиненного поля") unless exists $ch->{FIELD};
+            NG::Exception->throw('NG.INTERNALERROR','Отсутствует параметр FIELD в описании подчиненного поля') unless exists $ch->{FIELD};
             push @{$childs}, $ch;
         }
         else {
@@ -977,22 +977,21 @@ sub processChilds {
     
     my $childs = $self->getChilds();
     return $self->showError() unless $childs;
-
     
     foreach my $ch (@{$childs}) {
         my $convMethod;
         $convMethod = $ch->{METHOD} if exists $ch->{METHOD};
         my $chName = $ch->{FIELD};
         
-        my $child = $self->parent()->getField($chName) or return $self->setError("Подчиненное поле $chName не найдено");
+        my $child = $self->parent()->getField($chName) or NG::Exception->throw('NG.INTERNALERROR', "Подчиненное поле $chName не найдено");
         
         #Ищем подходящий метод конвертации поля в поле
         $convMethod ||= $convMethods->{$self->type()."_".$child->type()} if exists $convMethods->{$self->type()."_".$child->type()};
         $convMethod ||= $defConvMethod;
         
-        return $self->setError("Класс ".ref($child)." поля ".$child->{FIELD}." не содержит метода ".$convMethod." для копирования данных из поля ".$self."(".ref($self).")") unless $child->can($convMethod);
+        NG::Exception->throw('NG.INTERNALERROR', "Класс ".ref($child)." поля ".$child->{FIELD}." не содержит метода ".$convMethod." для копирования данных из поля ".$self."(".ref($self).")") unless $child->can($convMethod);
         
-        $child->$convMethod($self,$ch) or return $self->setError("Ошибка выставления значения из ".$self->{FIELD}." подчиненному полю ".$child->{FIELD}." :".$child->error());
+        $child->$convMethod($self,$ch) or NG::Exception->throw('NG.INTERNALERROR',"Ошибка выставления значения из ".$self->{FIELD}." подчиненному полю ".$child->{FIELD}." :".$child->error());
     };
     return 1;
 };
@@ -1124,7 +1123,6 @@ sub process {
         FIELD   => $self,
         FORM    => $self->parent(),
     });
-    $pCtrl or return $self->showError($cms->getError());
     
     if ($self->isFileField()) {
         my $source = $self->value();
@@ -1136,14 +1134,14 @@ sub process {
             return $self->setError("Ошибка при создании директории: $1");
         };
                
-        $pCtrl->process($source,$dest) or return $self->showError($cms->getError());
+        $pCtrl->process($source);
+        $pCtrl->saveResult($dest);
         $self->setDBValue($newDBV);
     }
     else {
         my $value = $self->value();
-        $pCtrl->process($value) or return $cms->error();
-        my $result = $pCtrl->getResult();
-        $self->setValue($result);
+        $pCtrl->process($value);
+        $self->setValue($pCtrl->getResult());
     };
     return 1;
 };

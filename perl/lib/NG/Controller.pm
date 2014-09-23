@@ -44,7 +44,7 @@ sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->init(@_);    
+    $self->init(@_);
     $self; 
 };
 
@@ -57,7 +57,7 @@ sub init {
 
     NG::Exception->throw('NG.INTERNALERROR',"NG::Controller->new(): STEPS is not ARRAYREF") unless ref $self->{_steps} eq "ARRAY";
 
-    $self->{_pObj}  = undef;
+    $self->{_pObj}  = $self->cms->getObject($self->{_pclass},$self);
     $self->{_form}  = $args->{FORM};
     $self->{_field} = $args->{FIELD};
     
@@ -107,41 +107,30 @@ sub param { # getStepParam
 };
 
 sub doStep {
-    my $self = shift;
-    my $method = shift;
-    my $params = shift;
+    my ($self,$method,$params) = (shift,shift,shift);
     
-    my $cms = $self->cms();
-    my $pObj = $self->{_pObj};
-    
-    return $cms->error("Class ".$self->{_pclass}." has no method $method") unless ($pObj->can($method));
-    
+    NG::Exception->throw('NG.INTERNALERROR', 'No METHOD specified') unless $method;
+    NG::Exception->throw('NG.INTERNALERROR', "Class ".ref($self->{_pObj})." has no method $method") unless $self->{_pObj}->can($method);
     $self->{_stepParams} = $params;
-    
-    $pObj->$method() or return $cms->error("Step method $method failed: ".$self->{_error});
-    
-    1;
+    $self->{_pObj}->$method() or NG::Exception->throw('NG.INTERNALERROR', "Step method $method failed: ".$self->{_error});
+    $self->{_stepParams} = undef;
 };
 
 sub process {
-    my $self = shift;
-    my $value = shift;
-    my $dest  = shift;
+    my ($self,$value) = (shift,shift);
     
-    my $cms = $self->cms();
-    my $pObj = $self->{_pObj} = $cms->getObject($self->{_pclass},$self);
-    
-    $pObj->setValue($value) or return $cms->error($self->{_pclass}."->setValue() failed:".$self->{_error});
+    $self->{_pObj}->setValue($value) or NG::Exception->throw('NG.INTERNALERROR',$self->{_pclass}."->setValue() failed:".$self->{_error});
     
     foreach my $step (@{$self->{_steps}}) {
-        my $method = $step->{METHOD} or return $cms->error("No METHOD configured");
-        return $cms->error("Class ".$self->{_pclass}." has no method $method") unless ($pObj->can($method));
-        
-        $self->doStep($method,$step->{PARAMS}) or return $cms->error($self->{_error});
+        $self->doStep($step->{METHOD},$step->{PARAMS});
     };
-    $self->{_stepParams} = undef;
-    $pObj->afterProcess($dest) or return $cms->error($self->{_pclass}."->afterProcess() failed: ".$self->{_error});
+    $self->{_pObj}->afterProcess() or NG::Exception->throw('NG.INTERNALERROR',$self->{_pclass}."->afterProcess() failed: ".$self->{_error});
     1;
+};
+
+sub saveResult {
+    my ($self,$destFile) = (shift,shift);
+    $self->{_pObj}->saveResult($destFile);
 };
 
 sub getResult {

@@ -84,7 +84,8 @@ sub run {
         PCLASS  => $procClass,
         STEPS   => $size->{STEPS} || [{METHOD=>$size->{METHOD},PARAMS=>$size->{PARAMS}}],
     });
-    $pCtrl->process($sourceFile,$targetFile) or NG::Exception->throw('NG.INTERNALERROR',$cms->getError());
+    $pCtrl->process($sourceFile) or NG::Exception->throw('NG.INTERNALERROR',$cms->getError());
+    $pCtrl->saveResult($targetFile);
     
     close($lock_fh);
     unlink($targetFile.'.lock');

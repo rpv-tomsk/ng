@@ -634,24 +634,30 @@ sub StandartCheck {
 };
 
 
-sub _saveData {
+sub __saveData {
     my $self = shift;
     my $action = shift;
 
     my $fields = $self->fields();
-   
+    
     foreach my $field (@{$fields}) {
         next unless $field->changed();
-        $field->processChilds() or return $self->error("Ошибка вызова processChilds() поля ".$field->{FIELD}." :".$field->error());
+        local @NG::Exception::messagePrepend = @NG::Exception::messagePrepend;
+        push  @NG::Exception::messagePrepend, "Ошибка вызова processChilds() поля ".$field->{FIELD};
+        $field->processChilds() or NG::Exception->throw('NG.INTERNALERROR', $field->error());
     };
 
     foreach my $field (@{$fields}) {
         next unless $field->changed();
-        $field->process() or return $self->error("Ошибка вызова process() поля ".$field->{FIELD}.": ".$field->error());
+        local @NG::Exception::messagePrepend = @NG::Exception::messagePrepend;
+        push  @NG::Exception::messagePrepend, "Ошибка вызова process() поля ".$field->{FIELD};
+        $field->process() or NG::Exception->throw('NG.INTERNALERROR', $field->error());
     };
   
     foreach my $field (@{$fields}) {
-		$field->beforeSave($action) or return $self->error("Ошибка вызова beforeSave() поля ".$field->{FIELD}.": ".$field->error());
+        local @NG::Exception::messagePrepend = @NG::Exception::messagePrepend;
+        push  @NG::Exception::messagePrepend, "Ошибка вызова beforeSave() поля ".$field->{FIELD};
+        $field->beforeSave($action) or NG::Exception->throw('NG.INTERNALERROR', $field->error());
     };
 	my $ret = "";
 	if ($action eq "insert") {
@@ -662,10 +668,36 @@ sub _saveData {
 	};
     if ($ret) {
         foreach my $field (@{$fields}) {
-    		$field->afterSave() or return $self->error("Ошибка вызова afterSave() поля ".$field->{FIELD}.": ".$field->error());
+            local @NG::Exception::messagePrepend = @NG::Exception::messagePrepend;
+            push  @NG::Exception::messagePrepend, "Ошибка вызова afterSave() поля ".$field->{FIELD};
+            $field->afterSave() or NG::Exception->throw('NG.INTERNALERROR', $field->error());
         };
     }
     $self->cleanUploadedFiles();
+    return $ret;
+};
+
+#Эту прослойку необходимо убрать, когда все $form->insert/updateData() в юзерсайде будут уметь обрабатывать исключения
+sub _saveData {
+    my $self = shift;
+    
+    my $ret = eval {
+        return $self->__saveData(@_);
+    };
+    if (my $exc = $@) {
+        my $excMsg  = "";
+        if (NG::Exception->caught($exc)) {
+            my $excCode = $exc->code();
+            $excMsg  = $exc->message()." (".$excCode.")";
+        }
+        elsif (ref $exc){
+            $excMsg = "Неизвестное исключение класса ".(ref $exc);
+        }
+        else {
+            $excMsg = $exc;
+        };
+        return $self->error($excMsg);
+    };
     return $ret;
 };
 
