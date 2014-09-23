@@ -194,9 +194,7 @@ sub getProcessorClass {
     my $self = shift;
     
     # если указан конкретный класс, то возмем его
-    if (exists $self->{PROCESSOR}) {
-        return $self->{PROCESSOR};
-    };
+    return $self->{PROCESSOR} if exists $self->{PROCESSOR};
     
     # если в конфиге есть информация о том что тип поля перекрыт\расширен, возмем этот класс
     my $class = NG::Field->confParam('types', $self->{TYPE}."_processor");
@@ -1133,7 +1131,7 @@ sub process {
             $@ =~ /(.*)at/s;
             return $self->setError("Ошибка при создании директории: $1");
         };
-               
+        
         $pCtrl->process($source);
         $pCtrl->saveResult($dest);
         $self->setDBValue($newDBV);

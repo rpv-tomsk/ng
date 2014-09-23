@@ -18,22 +18,15 @@ use strict;
     PCLASS  = FIELD.PROCESSOR
     STEPS   = FIELD.OPTIONS.STEPS
     
-    $pCtrl->processField($field);
-    
-    ...
-        Файловое поле, класс NG::Field:
-        my $pCtrl = ....
+        Обработка файлов
         
-        $source = $field->value();
-        $dest   = $field->dbValue();
+        $pCtrl->process($source);
+        $pCtrl->saveResult($dest);
         
-        $pCtrl->processFile($source,$dest) or return $cms->error();
+        Обработка значений
         
-        
-        Не файловое поле.
-        
-        my $value = $field->value()
-        $pCtrl->process($value) or return $cms->error();
+        my $value = $field->value();
+        $pCtrl->process($value);
         my $result = $pCtrl->getResult();
         $field->setValue($result);
         
@@ -124,8 +117,8 @@ sub process {
     foreach my $step (@{$self->{_steps}}) {
         $self->doStep($step->{METHOD},$step->{PARAMS});
     };
+    
     $self->{_pObj}->afterProcess() or NG::Exception->throw('NG.INTERNALERROR',$self->{_pclass}."->afterProcess() failed: ".$self->{_error});
-    1;
 };
 
 sub saveResult {
@@ -137,22 +130,6 @@ sub getResult {
     my $self = shift;
     return $self->{_pObj}->getResult();
 };
-
-=head
-sub processFile { # SourceFile, DestFile
-    my $self = shift;
-    $self->{_value} = shift;
-    
-
-    return $self->process();
-};
-sub processField {
-    my $self = shift;
-    $self->{_field} = shift;
-    $self->{_value} = $self->{_field}->value();
-    return $self->process();
-};
-=cut
 
 sub getField {
     my $self = shift;
@@ -175,11 +152,6 @@ sub error {
     my $self = shift;
     $self->{_error} ||= shift;
     0;
-};
-
-sub getSourceValue {
-    my $self = shift;
-    return $self->{_value};
 };
 
 1;
