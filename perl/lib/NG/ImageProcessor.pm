@@ -45,6 +45,8 @@ sub _setDefaultAttributes {
     };
 };
 
+#  Usage:
+#  {METHOD => "setquality",   PARAMS => {jpg=>90, png=>7 }}
 sub setquality {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
@@ -64,6 +66,8 @@ sub setquality {
     return 1;
 };
 
+# Usage:
+# {METHOD => "im_method",    PARAMS => {im_method=>'OilPaint', radius=>.02}},
 sub im_method {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
@@ -76,7 +80,7 @@ sub im_method {
     
     delete $params->{id};
     delete $params->{todid};
-    my $im_method = delete $params->{im_method};
+    my $im_method = delete $params->{im_method} or NG::Exception->throw('NG.INTERNALERROR', "im_method(): I::M method not specified in 'im_method' parameter.");;
     
     #$iObj->can($im_method) or NG::Exception->throw('NG.INTERNALERROR', "im_method(): ImageMagick has no $im_method method.");
     my $e = $iObj->$im_method(%$params);
@@ -212,7 +216,7 @@ sub towidth {
     my $pCtrl = $self->getCtrl();
     
     my $width = $pCtrl->param('width');
-    return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода towidth") unless defined $width;
+    return $pCtrl->error("towidth(): Отсутствует параметр width") unless defined $width;
     
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
     
@@ -231,7 +235,7 @@ sub toheight {
     my $pCtrl = $self->getCtrl();
 
     my $height = $pCtrl->param('height');
-    return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода toheight") unless defined $height;
+    return $pCtrl->error("toheight(): Отсутствует параметр height") unless defined $height;
     
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
     
@@ -251,9 +255,9 @@ sub tomaximal {
     my $pCtrl = $self->getCtrl();
 
     my $width = $pCtrl->param('width');
-    return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода tomaximal") unless defined $width;
+    return $pCtrl->error("tomaximal(): Отсутствует параметр width") unless defined $width;
     my $height = $pCtrl->param('height');
-    return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода tomaximal") unless defined $height;
+    return $pCtrl->error("tomaximal(): Отсутствует параметр height") unless defined $height;
     
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
 
@@ -272,9 +276,9 @@ sub tominimal {
     my $pCtrl = $self->getCtrl();
     
     my $width = $pCtrl->param('width');
-    return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода tominimal") unless defined $width;
+    return $pCtrl->error("tominimal(): Отсутствует параметр width") unless defined $width;
     my $height = $pCtrl->param('height');
-    return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода tominimal") unless defined $height;
+    return $pCtrl->error("tominimal(): Отсутствует параметр height") unless defined $height;
 
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
     
@@ -292,9 +296,9 @@ sub torectangle {
     my $pCtrl = $self->getCtrl();
 
     my $width = $pCtrl->param('width');
-    return $pCtrl->error("Отсутствует опция WIDTH для исполнения метода torectangle") unless defined $width;
+    return $pCtrl->error("torectangle(): Отсутствует параметр width") unless defined $width;
     my $height = $pCtrl->param('height');
-    return $pCtrl->error("Отсутствует опция HEIGHT для исполнения метода torectangle") unless defined $height;
+    return $pCtrl->error("torectangle(): Отсутствует параметр height") unless defined $height;
 
     my $iObj = $self->_getIObj(1) or return $pCtrl->error();
 
@@ -331,7 +335,7 @@ sub savesize {
     my $pCtrl = $self->getCtrl();
     my $iObj = $self->_getIObj(0) or return $pCtrl->error();
     my $fieldName = $pCtrl->param('field');
-    return $pCtrl->error("Отсутствует опция FIELD для исполнения метода savesize") unless defined $fieldName;
+    return $pCtrl->error("savesize(): Отсутствует параметр field") unless defined $fieldName;
     my $mask = $pCtrl->param('mask') || "{w}x{h}";
     my ($iwidth,$iheight) = $iObj->Get('columns','rows');
     $mask =~ s/\{w\}/$iwidth/gi;
@@ -457,39 +461,6 @@ sub saveToFile {
 
     1;
 };
-    
-=head
-
-    my $options = $self->{OPTIONS};
-    
-    my $method = $options->{METHOD};
-    my $e = "";
-    
-    elsif ($method){
-        return $self->setError("Неизвестный метод $method в опциях обработки поля");
-    }
-    else {
-        return $self->ProcessFile();
-    };
-    
-
-    return 1;
-
-
-sub ProcessFile {
-    my $self = shift;
-    
-    my $mask = umask();
-    $mask = 0777 &~ $mask;
-    my $dirfile = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$self->dbValue();
-    #TODO: хм, а что будет если $self->value() вернет путь к несуществующему файлу, равный $dirfile ?
-    if ($self->value() ne $dirfile) {
-        copy($self->value(),$dirfile) or return $self->setError("Ошибка копирования файла: ".$!);
-    };
-    chmod $mask, $dirfile;
-    return 1;
-    };
-=cut
 
 package NG::ImageProcessor::ImageMagickImage;
 use strict;
