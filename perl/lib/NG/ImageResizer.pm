@@ -84,7 +84,16 @@ sub run {
         PCLASS  => $procClass,
         STEPS   => $size->{STEPS} || [{METHOD=>$size->{METHOD},PARAMS=>$size->{PARAMS}}],
     });
-    $pCtrl->process($sourceFile) or NG::Exception->throw('NG.INTERNALERROR',$cms->getError());
+    $pCtrl->process($sourceFile);
+    if ($group->{DEBUG} || $size->{DEBUG}) {
+        close($lock_fh);
+        ($targetFile =~ /.*\.([^\.]*?)$/) or NG::Exception->throw('NG.INTERNALERROR', 'Unable to get image extension url');
+        my $ext = lc($1);
+        $ext = 'jpeg' if $ext eq 'jpg';
+        my ($blob,$type) = $pCtrl->getResult(force=>$ext);
+        binmode STDOUT;
+        return $self->cms()->exit($blob,{-type=>"image/$type"});
+    };
     $pCtrl->saveResult($targetFile);
     
     close($lock_fh);

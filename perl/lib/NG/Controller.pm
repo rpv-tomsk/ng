@@ -128,7 +128,7 @@ sub saveResult {
 
 sub getResult {
     my $self = shift;
-    return $self->{_pObj}->getResult();
+    return $self->{_pObj}->getResult(@_);
 };
 
 sub getField {

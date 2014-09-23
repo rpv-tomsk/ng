@@ -324,6 +324,25 @@ sub saveResult {
     return 1;
 };
 
+sub getResult {
+    my($self, @args) = @_;
+    my %opt  = @args % 2 ? () : @args;
+    
+    my $iObj = $self->{_iobjs}->{main} or NG::Exception->throw('NG.INTERNALERROR', 'Unable to get IOBJ');
+    $iObj->{_iobj}->Set(magick=>$opt{force}) if $opt{force};
+    
+    my $type = $iObj->{_iobj}->Get('magick') or NG::Exception->throw('NG.INTERNALERROR', 'Unable to determine image type');
+    if ($iObj->{_quality}) {
+        if ($type eq 'jpeg' && exists $iObj->{_quality}->{jpg}) {
+            $iObj->{_iobj}->Set(quality=>$iObj->{_quality}->{jpg});
+        }
+        elsif ($type eq 'png' && exists $iObj->{_quality}->{png}) {
+            $iObj->{_iobj}->Set(quality=>$iObj->{_quality}->{png});
+        };
+    };
+    return $iObj->{_iobj}->ImageToBlob,$type;
+    return ('blob', $type);
+};
 
 =head
 
