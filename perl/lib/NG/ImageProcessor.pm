@@ -275,10 +275,14 @@ sub afterProcess {
     my $pCtrl = $self->getCtrl();
     
     my $iObj = $self->{_iobjs}->{main} or return $pCtrl->error("No IOBJ");
-    my $err = $iObj->Write($dest.".tmp");
+    
+    $dest =~ /.*\.([^\.]*?)$/;
+    my $ext = $1;
+
+    my $err = $iObj->Write($dest.'.tmp.'.$ext);
     return $pCtrl->error("Ошибка записи изображения $dest: $err") if $err;
 
-    File::Copy::move($dest.".tmp",$dest) or return $pCtrl->error("Error on move file in afterProcess: ".$!);
+    File::Copy::move($dest.".tmp.".$ext,$dest) or return $pCtrl->error("Error on move file in afterProcess: ".$!);
     return 1;
 };
 
