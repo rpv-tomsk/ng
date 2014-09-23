@@ -10,7 +10,7 @@ sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->init(@_);    
+    $self->init(@_);
     $self; 
 };
 
@@ -20,7 +20,6 @@ sub init {
     $self->{_value} = undef;
     $self;
 };
- 
 
 sub getCtrl {
     my $self = shift;
@@ -50,10 +49,10 @@ sub copyFileExtension {
 sub copyFileSize {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
-        
+    
     my $fName = $pCtrl->param('field') or return $pCtrl->error("saveToField(): no field param configured");
-    my $field = $pCtrl->getField($fName) or return $pCtrl->error();        
-        
+    my $field = $pCtrl->getField($fName) or return $pCtrl->error();
+    
     my $file = $self->{_value};
     my $size = 0;
     $size = -s $file if $file;
@@ -65,10 +64,10 @@ sub copyFileSize {
 sub copyFileSizeText {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
-        
+    
     my $fName = $pCtrl->param('field') or return $pCtrl->error("saveToField(): no field param configured");
-    my $field = $pCtrl->getField($fName) or return $pCtrl->error();        
-        
+    my $field = $pCtrl->getField($fName) or return $pCtrl->error();
+    
     my $file = $self->{_value};
     my $size = 0;
     $size = -s $file if $file;
@@ -79,10 +78,10 @@ sub copyFileSizeText {
 sub copyFileName {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
-        
+    
     my $fName = $pCtrl->param('field') or return $pCtrl->error("saveToField(): no field param configured");
-    my $field = $pCtrl->getField($fName) or return $pCtrl->error();        
-        
+    my $field = $pCtrl->getField($fName) or return $pCtrl->error();
+    
     my $filename = $pCtrl->getCurrentField()->{TMP_FILENAME} || "";
     $field->setValue($filename);
     return 1;
