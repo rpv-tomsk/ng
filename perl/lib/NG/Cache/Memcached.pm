@@ -12,12 +12,6 @@ use vars qw($MEMCACHED);
 
 #use Digest::SHA1 qw( sha1_hex );
 
-sub getSerializedKey {
-    my $self = shift;
-    my $block = shift;
-    return freeze $block;
-};
-
 sub getCacheContentKeys {
     my $self = shift;
 #warn "getCacheContentKeys()";
