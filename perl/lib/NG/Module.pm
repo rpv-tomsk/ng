@@ -40,12 +40,10 @@ sub getPageObj {
 };
 
 
-sub gettemplate
-{
-    my $self = shift;
-    my $template_file = shift;
-    my $template =$self->cms->gettemplate($template_file) or return $self->cms->error();
-    $self->bindResource($template);    
+sub gettemplate {
+    my ($self,$file,$opts) = (shift,shift,shift);
+    my $template = $self->cms->gettemplate($file,$opts);
+    $self->bindResource($template);
     return $template;
 };
 
