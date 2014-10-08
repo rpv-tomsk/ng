@@ -31,7 +31,13 @@ sub setquality {
 };
 
 # Usage:
-# {METHOD => "im_method",    PARAMS => {im_method=>'OilPaint', radius=>.02}},
+# {METHOD => "im_method", PARAMS => {im_method=>'OilPaint', radius=>.02}},
+# {METHOD => "im_method", PARAMS => {im_method=>'Quantize', colorspace=>'gray', colors => 50}},
+# {METHOD => "im_method", PARAMS => {im_method=>'Rotate', degrees=>10, background=>'white'}},
+# {METHOD => "im_method", PARAMS => {im_method=>'AddNoise',noise=>'Gaussian'}},
+# {METHOD => "im_method", PARAMS => {im_method=>'Negate'}},
+# {METHOD => "im_method", PARAMS => {im_method=>'Flip'}},
+# {METHOD => "im_method", PARAMS => {im_method=>'Flop'}},
 sub im_method {
     my $self = shift;
     my $pCtrl = $self->getCtrl();
