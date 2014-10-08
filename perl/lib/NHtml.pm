@@ -40,7 +40,7 @@ $quote_end_tag="";
 sub strip_tags {
 	my $text = shift;
 	return "" if (!defined $text || $text eq "");
-	$text =~ s/\<.*?\>//gi;
+	$text =~ s/\<\S.*?\>//gi;
 	return $text;
 };
 
