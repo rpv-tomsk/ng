@@ -363,6 +363,12 @@ sub hasValidCacheContent {
     return 1;
 };
 
+=head
+  Метод принудительного выставления контента.
+  Применяется, если на странице много однотипных блоков, и процедура построения
+  одного блока может сразу подготовить контент для всех блоков.
+  Пример: Модуль "Баннера"
+=cut
 sub setBlockContent {
     my $self = shift;
     my $content = shift; #{CODE=>$codes->{$place_id},KEYS=>{REQUEST=>{place=>$rplaceId},MAXAGE=>300},CONTENT=>$cms->output($c->{$rplaceId})}
