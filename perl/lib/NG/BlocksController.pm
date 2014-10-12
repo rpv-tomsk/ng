@@ -610,7 +610,6 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
     my @newContent = ();
     foreach my $block (@{$self->{_blocks}}) {
         my $blockCode = $block->{CODE};
-#warn "CHECK IS WE Will STORE content for :".$block->{CODE}." ?";
         my $c = $self->getBlockContent($block);
         
         return $c if $c eq 0 || $c->is_error();
@@ -622,7 +621,6 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
         next unless $block->{KEYS}->{REQUEST};      #Could be cached
         next if $block->{CACHEKEYS};                #Next if already cached
         
-warn "Will STORE content for: ".$block->{CODE};
         push @newContent, $self->_prepareCacheContent($block);
     };
 #NG::Profiler::saveTimestamp("getBlockContent","prepareContent");
