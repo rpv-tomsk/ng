@@ -24,7 +24,7 @@ $mnames->{"meta_".$key} = $id->{CODE};
     
     my $response = [];
     foreach my $key (@mkeys) {
-warn "getCacheContentMetadata(): ".$mnames->{$key}." $key ".((exists $metadata->{$key})?"":" not ")."found";
+warn "getCacheContentMetadata(): ".$mnames->{$key}." $key ".((exists $metadata->{$key})?"":"not ")."found";
         push @$response,$metadata->{$key};
     };
     return $response;
@@ -70,7 +70,7 @@ sub storeCacheContent {
     
     foreach my $row (@$data) {
         my $key = $self->cms->getCacheId('content',$row->[0]);
-        warn "storeCacheContent(): ".$row->[0]->{CODE}." Stored data/metadata key ".$key." exp ".$row->[3];
+        warn "storeCacheContent(): ".$row->[0]->{CODE}." Stored data/metadata ".$key." exp ".$row->[3];
         $MEMCACHED->set("meta_".$key, $row->[1], $row->[3]-2);
         $MEMCACHED->set("data_".$key, $row->[2], $row->[3]);
     };
@@ -139,7 +139,7 @@ sub getKeysVersion {
     
     my $versions = [];
     foreach my $key (@mkeys) {
-        warn "getKeysVersion(): $key ".((exists $mversions->{$key})?"":" not ")."found: ".((exists $mversions->{$key})?$mversions->{$key}:""); #unless exists $mversions->{$key};
+        warn "getKeysVersion(): $key ".((exists $mversions->{$key})?"":"not ")."found: ".((exists $mversions->{$key})?$mversions->{$key}:""); #unless exists $mversions->{$key};
         unless (exists $mversions->{$key}) {
             $mversions->{$key} = $self->_createVersionKey($key);
         };
