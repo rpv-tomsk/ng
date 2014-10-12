@@ -76,6 +76,19 @@ sub getCacheContent {
     return $ret;
 };
 
+=head
+->storeCacheContent([
+    {
+        CODE    => $code,      - Код блока, чей контент кешируется
+        REQUEST => $request,   - Идентификатор контента
+        KEYS    => $keys       - Метаданные кешируемого контента
+        DATA    => $data       - Содержимое кешируемого контента
+        MAXAGE  => $maxage,    - Максимальное время жизни элемента кеша, секунд
+    },
+    ...
+]);
+=cut
+
 sub storeCacheContent {
 #warn "storeCacheContent()";
 
