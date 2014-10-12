@@ -7,6 +7,20 @@ use constant M_REDIRECT => 2;
 use constant M_404      => 3;
 use constant M_EXIT     => 4;
 
+
+=head
+    Переменные:
+    
+    _type
+    _error          (_type == 0)
+    _output_data    (_type == 1/4)
+    _redirect_url   (_type == 2)
+    
+    _headers
+    _cookies
+    _headkeys
+=cut
+
 ## Setters: error
 ## Getters: getError
 ## Checker: is_error
