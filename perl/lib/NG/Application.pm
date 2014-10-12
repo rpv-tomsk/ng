@@ -415,7 +415,7 @@ sub processRequest {
     
     my $dbh = $cms->dbh();
     
-    
+#NG::Profiler::saveTimestamp("begin","processRequest");    
     my $row = $cms->findPageRowByURL($url,$ssId);
     return $cms->error() if defined $row && !$row;
 #NG::Profiler::saveTimestamp("findPRbURL","processRequest");
@@ -616,7 +616,7 @@ sub buildPage {
      
     # Сборка страницы.
 #NG::Profiler::saveTimestamp("b_reqCacheKeys","buildPage");
-    $bctrl->requestCacheKeys() or return $cms->error(); #Запрашиваем ключи всех блоков страницы, чтобы сравнить
+    $bctrl->requestCacheKeys() or return $cms->defError('requestCacheKeys()'); #Запрашиваем ключи всех блоков страницы, чтобы сравнить
 #NG::Profiler::saveTimestamp("requestCacheKeys","buildPage");
     
 #NG::Profiler::saveTimestamp("b_prepCont","buildPage");
@@ -1561,6 +1561,59 @@ sub getNeighbourBlocks {
 };
 
 =head
+    $cms->updateKeysVersion($moduleObj,
+        [
+            {key1=>value1, key2=>value2},
+            {MODULECODE => $moduleCode, key1=>value1, key2=>value2},
+        ];                    - массив хешей, определяющих модуль и ключи, по которым необходимо проверять устаревание кешированного контента
+    );
+    
+    Метод предназначен для использования в коде модулей, поэтому имеет первым параметром $moduleObj
+=cut
+
+sub updateKeysVersion {
+    my ($cms,$module,$keys) = (shift,shift,shift);
+    
+    $keys = [$keys] if (ref $keys eq "HASH");
+    
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    
+    die "NG::BlocksController->updateKeysVersion(): \$keys not HASH or ARRAYREF" unless ref $keys eq "ARRAY";
+    
+    my @allCacheId = ();
+    foreach my $key (@$keys) {
+        $key->{MODULECODE} ||= $mcode or die "updateKeysVersion(): Unable to get MODULECODE";
+        push @allCacheId, $cms->getCacheId('version',$key);
+    };
+    $NG::Application::Cache->updateKeysVersion(\@allCacheId);
+};
+
+my $digesterInitialized = 0;
+
+sub getCacheId {
+    my ($self,$type,$data) = (shift,shift,shift);
+    
+    return undef if ref $NG::Application::Cache eq "NG::Cache::Stub";
+    
+    unless ($digesterInitialized) {
+        eval "use Storable qw(freeze thaw);";
+        eval "use Digest::MD5 qw(md5_hex);";
+        $digesterInitialized = 1;
+    };
+    
+    local $Storable::canonical = 1;
+    
+    my $r = freeze($data);
+    my $key = md5_hex($r);
+    
+my $k2 = md5_hex(freeze(thaw($r)));
+print STDERR "getCacheId(): MISMATCH DETECTED $key != $k2".Dumper($r, $key, thaw($r)) if $key ne $k2;
+    
+    return $key;
+};
+
+=head
 =cut
 
 {
@@ -1640,17 +1693,25 @@ sub DESTROY {};
 package NG::Cache::Stub;
 use strict;
 
-sub getCacheContentKeys {
-    return {};
+sub getCacheContentMetadata {
+    return undef;
 };
 
 sub getCacheContent {
-    return {};
+    return undef;
 };
 
 sub storeCacheContent {
     return 1;
 };
+
+sub updateKeysVersion {
+    return 1;
+};
+
+sub getKeysVersion {
+    return undef;
+}
 
 BEGIN {
     return if $NG::Application::Cache;

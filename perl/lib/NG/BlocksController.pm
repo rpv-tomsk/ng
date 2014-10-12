@@ -1,9 +1,12 @@
 package NG::BlocksController;
 use strict;
 
+use Data::Dumper;
+
 our $CACHE;
 
-our $MAX_CACHE_TIME = 300;
+our $MAX_CACHE_TIME = 300;            #  5 min
+our $MAX_CACHE_TIME_VERSIONS = 900;   # 15 min
 
 BEGIN {
     $CACHE = $NG::Application::Cache;
@@ -13,7 +16,7 @@ sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->init(@_);    
+    $self->init(@_);
     #$self->config();
     return $self; 
 };
@@ -25,8 +28,6 @@ sub init {
     $self->{_blocks} = [];
     $self->{_hblocks} = {};
     $self->{_pObj} = shift;
-    #$self->{_modulesContent} = {}; # Содержимое блоков.
-    #$self->{_pluginsContent} = {}; # Ключ: аналогично ключу в шаблоне
     #
     $self->{_usedBCodes} = {}; # Использованные в шаблоне коды блоков
     #
@@ -105,9 +106,20 @@ sub _pushBlock {
 
      SOURCE      - Одно из значений: push/tmpl/neigh
      KEYS        - ключи, полученные из вызова getBlockKeys()
-     CACHEKEYS   - ключи, полученные из кеша, при их наличии.
+     CACHEKEYS   - метаданные, полученные из кеша, при их наличии.
+        Состав метаданных:
+            HEADERS          - заголовки, возвращенные функцией построения контента
+            HEADKEYS         - ключи, возвращенные функцией построения контента
+            RELATED          - ключи, выставленные в функции построения контента
+            VERSIONS         - хеш значений, соответствующих элементам из VERSION_KEYS
+            
+            USED_VERSIONS    - Хеш: $MD5(MODULECODE+KEYS) => $VERSION /// NOT IMPLEMENTED!
+            ETAG             - Ключи проверки устаревания закешированного контента
+            LM               - 
+        
      CONTENT
-
+     VERSIONS    - хеш значений, соответствующих элементам из VERSION_KEYS
+     
     #Блок модуля
       CODE = {MODULECODE}_{ACTION}. ACTION - имя блока, который мы запрашиваем построить у модуля
       TYPE = 0 или отсутствует
@@ -169,41 +181,75 @@ sub pushABlock {
     $block->{SOURCE} = "push";
     $self->{_ablock} = $block;
     
-    ## Запрашиваем из кэша метаданные АБ т.к. в них могут быть данные нужные для ключей прочих блоков
-    my $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
+#NG::Profiler::saveTimestamp("pushABlock begin: ".ref($block->{MODULEOBJ})."_".$block->{ACTION},"pushABlock");
     
+    #Проверяем возможность кеширования.
+    my $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
     if (!$abKeys->{REQUEST}) {
         #Если нет REQUEST значит кэширование невозможно.
         #Сделаем вызов getBlockContent() до построения списка блоков, на случай редиректа и т д  - оптимизация.
         return $self->getBlockContent($block);
     };
-    #Сделаем возврат без получения реального контента. 
+    #Кеширование возможно, подчиненные блоки отсутствуют.
+    #Сделаем возврат без получения реального контента.
     #Контент и его ключи будут запрошены в общем вызове, вместе со всеми остальными (не АБ) блоками
     return NG::BlockContent->output("DUMMY") unless $abKeys->{HASRELATED};
-    #Кеширование возможно, но у нас есть подчиненные блоки, необходимо запросить метаданные.
+    
+    #Кеширование возможно, но есть подчиненные блоки. Необходимо запросить метаданные.
     #Для надежности, сразу запрашиваем и контент, для обработки случая его отсутствия в кеше.
+    my $cacheId = $self->cms->getCacheId('content',{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}});
+    my $keys = $CACHE->getCacheContentMetadata([$cacheId]);
+    if ($keys) {
+        scalar @$keys == 1 or die "getCacheContentMetadata(): Incorrect ARRAY returned";
+        $block->{CACHEKEYS} = $keys->[0] if $keys->[0];
+    };
+#NG::Profiler::saveTimestamp("getCacheContentMetadata for AB","pushABlock");
     
-    my $keys = $CACHE->getCacheContentKeys([{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}}]) or die; #return $self->cms->error();
-    $block->{CACHEKEYS} = $keys->{$block->{CODE}} if exists $keys->{$block->{CODE}};
+    #$keys показывает, что кеш доступен
+    if ($keys && $abKeys->{VERSION_KEYS}) {
+        #Версии надо запрашивать даже если контент в кеше отсуствует. VERSIONS будет использовано в сохраняемых метаданных.
+        my $vKeys = $abKeys->{VERSION_KEYS};
+        $vKeys = [$vKeys] if ref $vKeys eq "HASH";
+        die "VERSION_KEYS of active block is not ARRAYREF" unless ref $vKeys eq "ARRAY";
+        
+        my @allCacheId = ();
+        foreach my $vKey (@$vKeys) {
+            $vKey->{MODULECODE} ||= $block->{MODULECODE} or die "Unable to get MODULECODE while processing VERSION_KEYS of active block";
+            push @allCacheId, $self->cms->getCacheId('version',$vKey);
+        };
+        $block->{VERSIONS} = $CACHE->getKeysVersion(\@allCacheId);
+        scalar(@{$block->{VERSIONS}}) == scalar(@allCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
+#NG::Profiler::saveTimestamp("getKeysVersion for AB","pushABlock");
+    };
     
+    #Проверим, не устарел ли контент АБ.
     if ($self->hasValidCacheContent($block)) {
-        #В кэше найдены метаданные. Запросим соответствующий контент.
-        my $content = $CACHE->getCacheContent([{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}}]) or return $self->cms->error();
-        if (defined $content->{$block->{CODE}}) {
+        #В кэше найдены метаданные. Контент не устарел. Запросим содержимое.
+        my $cacheId = $self->cms->getCacheId('content',{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}});
+        my $content = $CACHE->getCacheContent([$cacheId]) or return $self->cms->error();
+#NG::Profiler::saveTimestamp("getCacheContent for AB","pushABlock");
+        scalar @$content == 1 or die "getCacheContent(): Incorrect ARRAY returned";
+        if (defined $content->[0]) {
             #Ура, контент получен
-            $block->{CONTENT} = NG::BlockContent->output(
-                    $content->{$block->{CODE}},
-                    $block->{CACHEKEYS}->{HEADERS},
-                    $block->{CACHEKEYS}->{HEADKEYS},
-            );
+            $self->_setContentFromCache($block,$content->[0]);
             return $block->{CONTENT};
         };
 warn "not found cache data: $block->{CODE} ".Dumper($block->{KEYS},$block->{CACHEKEYS});
     };
     #Контент или метаданые отсутствуют.
+    #Очистим ключ, что будет сигнализировать об отсутствии актуального кеша.
     delete $block->{CACHEKEYS};
+
     #Вызовет $block->getBlockContent() что выставит RELATED-значения для подчиненных блоков
-    return $self->getBlockContent($block);
+    my $c = $self->getBlockContent($block);
+#NG::Profiler::saveTimestamp("getBlockContent for AB","pushABlock");
+    return $c if $c eq 0;
+    #
+    if ($c->is_exit()) {
+        $CACHE->storeCacheContent([$self->_prepareCacheContent($block)]) or return $self->cms->error();
+#NG::Profiler::saveTimestamp("storeCacheContent for AB","pushABlock");
+    };
+    return $c;
 };
 
 sub getABRelated {
@@ -247,7 +293,7 @@ sub _getBlockObj {
         $block->{MODULEOBJ} = $cms->getModuleByCode($block->{MODULECODE},$opts) or return $cms->error();
         return $block->{MODULEOBJ};
     };
-    die "_getBlockObj(): No MODULECODE or MODULEROW.module";
+    die "_getBlockObj(): No MODULECODE or MODULEROW.module ".Dumper($block);
 };
 
 sub _getBlockKeys {
@@ -324,25 +370,44 @@ sub requestCacheKeys {
     my $cms = $self->cms();
 #NG::Profiler::saveTimestamp("start","requestCacheKeys");
     
-    my @allBlocks = ();
+    my @allCacheId = ();
+    my @cachedBlocks = ();
     foreach my $block (@{$self->{_blocks}}) {
         my $keys = $self->_getBlockKeys($block) or return $cms->error();
         
         next unless exists $keys->{REQUEST};
         next if exists $block->{CACHEKEYS}; #AB with RELATED
+        next if exists $block->{CONTENT};   #AB with invalid cache
         
-        my $a = {};
-        $a->{REQUEST} = $keys->{REQUEST};
-        $a->{CODE} = $block->{CODE};
-        
-        push @allBlocks, $a;
+        push @allCacheId, $self->cms->getCacheId('content',{REQUEST=>$keys->{REQUEST},CODE=>$block->{CODE}});
+        if ($keys->{VERSION_KEYS}) {
+            #Версии надо запрашивать даже если контент в кеше отсуствует. VERSIONS будет использовано в сохраняемых метаданных.
+            my $vKeys = $keys->{VERSION_KEYS};
+            $vKeys = [$vKeys] if ref $vKeys eq "HASH";
+            die "VERSION_KEYS of block ".$block->{CODE}." is not ARRAYREF" unless ref $vKeys eq "ARRAY";
+            
+            my @allCacheId = ();
+            foreach my $vKey (@$vKeys) {
+                $vKey->{MODULECODE} ||= $block->{MODULECODE} or die "Unable to get MODULECODE while processing VERSION_KEYS of block";
+                push @allCacheId, $self->cms->getCacheId('version',$vKey);
+            };
+            $block->{VERSIONS} = $CACHE->getKeysVersion(\@allCacheId);
+            if (defined $block->{VERSIONS}) {
+                scalar(@{$block->{VERSIONS}}) == scalar(@allCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
+            };
+        };
+        push @cachedBlocks,$block;
     };
     
 #NG::Profiler::saveTimestamp("look cache","requestCacheKeys");
-    my $keys = $CACHE->getCacheContentKeys(\@allBlocks) or return $cms->error();
-    foreach my $code (keys %$keys) {
-        my $block = $self->{_hblocks}->{$code} or return $cms->error("No block found for block $code in getCacheContentKeys() response");
-        $block->{CACHEKEYS} = $keys->{$code};
+    my $allMetadata = $CACHE->getCacheContentMetadata(\@allCacheId);
+    if (defined $allMetadata) {
+        scalar(@$allMetadata) == scalar(@cachedBlocks) or die "getCacheContentMetadata(): Incorrect ARRAY returned";
+        foreach my $block (@cachedBlocks) {
+            my $metadata = shift @$allMetadata;
+            next unless $metadata;
+            $block->{CACHEKEYS} = $metadata;
+        };
     };
 #NG::Profiler::saveTimestamp("done","requestCacheKeys");
     return 1;
@@ -358,6 +423,24 @@ sub hasValidCacheContent {
     
     return 0 unless exists $keys->{REQUEST};
     return 0 unless $ckeys && ref $ckeys;
+    
+    if ($ckeys->{VERSIONS} || $block->{VERSIONS}) {
+        $ckeys->{VERSIONS} ||= [];
+        $block->{VERSIONS} ||= [];
+warn "VERSIONS length mismatch: ".scalar(@{$ckeys->{VERSIONS}}) ." != ". scalar(@{$block->{VERSIONS}}) if scalar(@{$block->{VERSIONS}}) != scalar(@{$ckeys->{VERSIONS}});
+        return 0 if scalar(@{$block->{VERSIONS}}) != scalar(@{$ckeys->{VERSIONS}});
+        
+        my $i = -1;
+        while (1) {
+            $i++;
+            last if !defined $ckeys->{VERSIONS}->[$i] && !defined $block->{VERSIONS}->[$i];
+warn "Compare VERSIONS : ". $ckeys->{VERSIONS}->[$i] . " and " . $block->{VERSIONS}->[$i]. " for ".$block->{CODE};
+            return 0 unless $ckeys->{VERSIONS}->[$i] && $block->{VERSIONS}->[$i];
+            next if $ckeys->{VERSIONS}->[$i] == $block->{VERSIONS}->[$i];
+            return 0;
+        };
+    };
+    
     return 0 if (exists $keys->{LM} && (!exists $ckeys->{LM} || $keys->{LM} > $ckeys->{LM}));
     return 0 if (exists $keys->{ETAG} && (!exists $ckeys->{ETAG} || $keys->{ETAG} ne $ckeys->{ETAG}));
     return 1;
@@ -379,6 +462,9 @@ sub setBlockContent {
     
     my $block = $self->{_hblocks}->{$content->{CODE}};
     die "setBlockContent(): Block ".$content->{CODE}." not found" unless $block;
+    die "setBlockContent(): Block ".$content->{CODE}." has VERSIONS. This is unsupported." if $block->{VERSIONS};
+    die "setBlockContent(): Block ".$content->{CODE}." has no KEYS. This is unsupported." unless $block->{KEYS};
+    die "setBlockContent(): Block ".$content->{CODE}." has VERSION_KEYS. This is unsupported." if $block->{KEYS}->{VERSION_KEYS};
     
     eval "use Storable qw(freeze thaw);";
     
@@ -391,19 +477,107 @@ sub setBlockContent {
     $block->{CONTENT} = $content->{CONTENT};
 };
 
+sub _prepareCacheContent {
+    my ($self,$block) = (shift,shift);
+    
+    my $c = $self->getBlockContent($block);
+    
+    die "Block ".$block->{CODE}." has content unsupported by cache, type ".$c->{_type} unless $c->is_output() || (($block eq $self->{_ablock}) && $c->is_exit());
+    die "Block ".$block->{CODE}." has no REQUEST" unless $block->{KEYS}->{REQUEST};
+
+    #Подготовим метаданные
+    my $metadata = {};
+    
+    #Сохраняемые заголовки контента блока
+    my $h = $c->headers();
+    $metadata->{HEADERS} = $h if $h;
+    my $hk = $c->headkeys();
+    $metadata->{HEADKEYS} = $hk if $hk;
+    $metadata->{TYPE} = 4 if $c->is_exit();
+    
+    #Сохраняемые параметры для подчиненных блоков
+    $metadata->{RELATED} = $block->{KEYS}->{RELATED} if exists $block->{KEYS}->{RELATED};
+    #Сохраняемые параметры для проверки устаревания
+    #$metadata->{VERSIONS} = $block->{VERSIONS} if exists $block->{VERSIONS};
+    $metadata->{ETAG}    = $block->{KEYS}->{ETAG} if exists $block->{KEYS}->{ETAG};
+    $metadata->{LM}      = $block->{KEYS}->{LM}   if exists $block->{KEYS}->{LM};
+    
+    #Параметр максимального времени жизни кэшируемых данных
+    my $maxage = $MAX_CACHE_TIME;
+    $maxage    = $MAX_CACHE_TIME_VERSIONS if $block->{VERSIONS};
+    
+    my $expire = $block->{KEYS}->{MAXAGE} || $maxage;
+    $expire = $maxage if $expire > $maxage;
+
+    return [
+        $self->cms->getCacheId('content',{REQUEST=>$block->{KEYS}->{REQUEST},CODE=>$block->{CODE}}), #cacheId
+        $metadata,          #metadata
+        $c->getOutput(),    #data
+        $expire             #expire
+    ];
+};
+
+sub _setContentFromCache {
+    my ($self, $block,$content) = (shift,shift,shift);
+    
+    $block->{CONTENT} = NG::BlockContent->output(
+            $content,
+            $block->{CACHEKEYS}->{HEADERS},
+            $block->{CACHEKEYS}->{HEADKEYS},
+    );
+    
+    my $type = $block->{CACHEKEYS}->{TYPE};
+    $type = 1 unless defined $type;
+    $type ||= 0;
+    
+    die "_setContentFromCache(): Unsupported content type $type" unless ($type == 1) || ($block eq $self->{_ablock});
+    die "_setContentFromCache(): Unsupported content type $type" unless ($type == 1) || ($type == 4);
+    
+    if ($type == 4) {
+        $block->{CONTENT} = NG::BlockContent->exit(
+                $content,
+                $block->{CACHEKEYS}->{HEADERS},
+                $block->{CACHEKEYS}->{HEADKEYS},
+        );
+    }
+    else {
+        $block->{CONTENT} = NG::BlockContent->output(
+                $content,
+                $block->{CACHEKEYS}->{HEADERS},
+                $block->{CACHEKEYS}->{HEADKEYS},
+        );
+    };
+};
+
 sub prepareContent {
     my $self = shift;
     my $cms = $self->cms();
 #NG::Profiler::saveTimestamp("start","prepareContent");
     
+    #Если в метаданных АБ указан is_exit() то проходить общую цепочку не имеет смысла.
+    if ($self->{_ablock} && (
+        ($self->{_ablock}->{CACHEKEYS} && ($self->{_ablock}->{CACHEKEYS}->{TYPE}||1) == 4)
+        || $self->{_ablock}->{KEYS}->{ABFIRST}
+       ))
+    {
+        my $cacheId = $self->cms->getCacheId('content',{REQUEST=>$self->{_ablock}->{KEYS}->{REQUEST},CODE=>$self->{_ablock}->{CODE}});
+        my $content = $CACHE->getCacheContent([$cacheId]) or return $self->cms->error();
+        scalar @$content == 1 or die "getCacheContent(): Incorrect ARRAY returned";
+        
+        if (defined $content->[0]) {
+            $self->_setContentFromCache($self->{_ablock},$content->[0]);
+            return $self->{_ablock}->{CONTENT};
+        };
+        delete $self->{_ablock}->{CACHEKEYS};
+    };
+    
     my @cachedBlocks = ();
+    my @allCacheId   = ();
     foreach my $block (@{$self->{_blocks}}) {
         next if $block->{CONTENT};
         if ($self->hasValidCacheContent($block)) {
-            my $a = {};
-            $a->{REQUEST} = $block->{KEYS}->{REQUEST};
-            $a->{CODE} = $block->{CODE};
-            push @cachedBlocks, $a;
+            push @allCacheId, $self->cms->getCacheId('content',{REQUEST=>$block->{KEYS}->{REQUEST},CODE=>$block->{CODE}});
+            push @cachedBlocks, $block;
             next;
         };
         delete $block->{CACHEKEYS};
@@ -413,87 +587,52 @@ sub prepareContent {
     #Active block. Find it first.
     if ($self->{_ablock} && !$self->{_ablock}->{CONTENT} && !$self->{_ablock}->{CACHEKEYS}) {
         my $c = $self->getBlockContent($self->{_ablock});
-        return $c if ($c eq 0 || !$c->is_output());
+        return $c if $c eq 0;
+        if ($c->is_exit()) {
+            $CACHE->storeCacheContent([$self->_prepareCacheContent($self->{_ablock})]) or return $cms->error();
+        };
+        return $c if !$c->is_output();
 #NG::Profiler::saveTimestamp("getABContent","prepareContent");
     };
 
-    my $content = $CACHE->getCacheContent(\@cachedBlocks) or return $cms->error();
-    foreach my $code (keys %$content) {
-        my $block = $self->{_hblocks}->{$code};
-        unless (defined $content->{$code}) {
-warn "not found cache data: $code ".Dumper($block->{KEYS},$block->{CACHEKEYS});
-            delete $block->{CACHEKEYS};
-            next;
+    my $allContent = $CACHE->getCacheContent(\@allCacheId);
+    if (defined $allContent) {
+        scalar(@$allContent) == scalar(@cachedBlocks) or die "getCacheContent(): Incorrect ARRAY returned";
+        foreach my $block (@cachedBlocks) {
+            my $content = shift @$allContent;
+            my $cacheId = shift @allCacheId;
+            unless (defined $content) {
+warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$block->{CACHEKEYS});
+                delete $block->{CACHEKEYS};
+                next;
+            };
+            $self->_setContentFromCache($block,$content);
         };
-        $block->{CONTENT} = NG::BlockContent->output(
-                $content->{$code},
-                $block->{CACHEKEYS}->{HEADERS},
-                $block->{CACHEKEYS}->{HEADKEYS},
-        );
     };
 #NG::Profiler::saveTimestamp("getCachedContent","prepareContent");
-
     my @newContent = ();
     foreach my $block (@{$self->{_blocks}}) {
         my $blockCode = $block->{CODE};
+#warn "CHECK IS WE Will STORE content for :".$block->{CODE}." ?";
         my $c = $self->getBlockContent($block);
         
         return $c if $c eq 0 || $c->is_error();
         return $cms->error("Block $blockCode return unsupported response type ".$c->{_type}) unless $c->is_output();
         
-        #Упс, куки ?
+        #Упс, куки ? Нереальный сценарий, т.к. куки выставляются через $cms->addCookie() и в блоке недоступны.
         my $cc = $c->cookies();
         next if $cc && scalar @{$cc}; #Skip cookies cacheing.
-        
         next unless $block->{KEYS}->{REQUEST};      #Could be cached
         next if $block->{CACHEKEYS};                #Next if already cached
         
-        #Сохраняем в кэш
-        my $new = {};
-        #Код блока (идентификатор, часть ключа, значение в кэш не сохраняется)
-        $new->{CODE} = $block->{CODE};
-        
-        #Параметры контента блока (идентификатор, часть ключа, значение в кэш не сохраняется)
-        $new->{REQUEST} = $block->{KEYS}->{REQUEST};
-        
-        #Сохраняемые заголовки контента блока
-        my $h = $c->headers();
-        $new->{KEYS}->{HEADERS} = $h if $h;
-        my $hk = $c->headkeys();
-        $new->{KEYS}->{HEADKEYS} = $hk if $hk;
-        
-        #Сохраняемые параметры для подчиненных блоков
-        $new->{KEYS}->{RELATED} = $block->{KEYS}->{RELATED} if exists $block->{KEYS}->{RELATED};
-        $new->{KEYS}->{ETAG}    = $block->{KEYS}->{ETAG} if exists $block->{KEYS}->{ETAG};
-        $new->{KEYS}->{LM}      = $block->{KEYS}->{LM}   if exists $block->{KEYS}->{LM};
-        
-        #Параметр максимального времени жизни кэшируемых данных
-        my $ma = $block->{KEYS}->{MAXAGE} || $MAX_CACHE_TIME;
-        $ma = $MAX_CACHE_TIME if $ma > $MAX_CACHE_TIME;
-        $new->{MAXAGE} = $ma;   ### DIRTY HACK!!!
-        
-        #Сохраняемый контент блока
-        $new->{DATA} = $c->getOutput();
-        push @newContent, $new;
+warn "Will STORE content for :".$block->{CODE};
+        push @newContent, $self->_prepareCacheContent($block);
     };
 #NG::Profiler::saveTimestamp("getBlockContent","prepareContent");
     $CACHE->storeCacheContent(\@newContent) or return $cms->error();
 #NG::Profiler::saveTimestamp("storeCacheContent","prepareContent");
     return 1;
 };
-
-=comment runPlugins
-        $block->{active} = 1 unless exists $block->{active};
-        if ($block->{disabled} || !$block->{active}) {
-            if ($block->{type}) {
-                $self->{_pluginsContent}->{$block->{code}} = "";
-            }
-            else {
-                $self->{_modulesContent}->{$block->{code}} = "";
-            };
-            next;
-        };
-=cut
 
 sub attachTemplate {
     my $self = shift;

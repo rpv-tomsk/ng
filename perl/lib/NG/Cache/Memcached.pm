@@ -3,120 +3,140 @@ use strict;
 
 use Data::Dumper;
 
-use Storable qw(freeze thaw);
-$Storable::canonical = 1;
+use vars qw($MEMCACHED $VERSION_EXPIRATION);
 
-use Digest::MD5 qw(md5_hex);
+$VERSION_EXPIRATION = 3600;  # 1 hour
 
-use vars qw($MEMCACHED);
 
-#use Digest::SHA1 qw( sha1_hex );
-
-sub getCacheContentKeys {
-    my $self = shift;
-#warn "getCacheContentKeys()";
-    my $blocks = shift;
-
-    my @keys = ();
-    foreach my $block (@$blocks) {
-        my $code = $block->{CODE};
-        my $req  = $block->{REQUEST};
-
-        my $r = freeze({CODE=>$code,REQUEST=>$req});
-        my $key = md5_hex($r);
-#print STDERR Dumper($block,$r, $key);
-        push @keys,"meta_".$key;
-#warn "get $code meta for $key";
-        $block->{___MEMCKEY} = "meta_".$key;
+sub getCacheContentMetadata {
+#warn "getCacheContentMetadata()";
+    my ($self,$keys) = (shift,shift);
+    
+    my @mkeys = ();
+    foreach my $key (@$keys) {
+        push @mkeys, "meta_".$key;
     };
-    my $keys = $MEMCACHED->get_multi(@keys);
-
-    my $ret = {};
-    foreach my $block (@$blocks) {
-        my $key = delete $block->{___MEMCKEY};
-        unless (exists $keys->{$key}) {
-#warn "getCacheContentKeys: $block->{CODE} data $key ".((exists $keys->{$key})?"":" not ")."found";
-            next;
-        };
-#if (exists $keys->{$key}) {
-#warn "getCacheContentKeys: empty META for ".Dumper($block,$keys->{$key}) unless scalar(keys %{$keys->{$key}});
-#}
-        $ret->{$block->{CODE}} = $keys->{$key};
+    
+    my $metadata = $MEMCACHED->get_multi(@mkeys);
+    
+    my $response = [];
+    foreach my $key (@$keys) {
+warn "getCacheContentMetadata(): meta_$key ".((exists $metadata->{"meta_".$key})?"":" not ")."found";
+        push @$response,$metadata->{"meta_".$key};
     };
-    return $ret;
+    return $response;
 };
 
 sub getCacheContent {
-    my $self = shift;
-    my $blocks = shift;
 #warn "getCacheContent()";
-
-    my @keys = ();
-    foreach my $block (@$blocks) {
-        my $code = $block->{CODE};
-        my $req  = $block->{REQUEST};
-
-        my $r = freeze({CODE=>$code,REQUEST=>$req});
-        my $key = md5_hex($r);
-        push @keys,"data_".$key;
-        
-#print STDERR "GET:".Dumper({CODE=>$code, REQUEST=>$req},$r, $key, thaw($r)) if $code =~ /NEWS/;
-#warn "store all $code data for $key"  if $code =~ /NEWS/;;
-        
-        $block->{___MEMCKEY} = "data_".$key;
+    my ($self,$keys) = (shift,shift);
+    
+    my @mkeys = ();
+    foreach my $key (@$keys) {
+        push @mkeys, "data_".$key;
     };
-    my $keys = $MEMCACHED->get_multi(@keys);
-
-    my $ret = {};
-    foreach my $block (@$blocks) {
-        my $key = delete $block->{___MEMCKEY};
-#warn "getCacheContent: $block->{CODE} data $key ".((exists $keys->{$key})?"":" not ")."found" unless exists $keys->{$key};
-        $ret->{$block->{CODE}} = $keys->{$key};
+    
+    my $mcontent = $MEMCACHED->get_multi(@mkeys);
+    
+    my $content = [];
+    foreach my $key (@$keys) {
+        warn "getCacheContent(): data_$key ".((exists $mcontent->{"data_".$key})?"":" not ")."found"; #unless exists $mcontent->{"data_".$key};
+        push @$content,$mcontent->{"data_".$key};
     };
-    return $ret;
+    return $content;
 };
 
 =head
-->storeCacheContent([
-    {
-        CODE    => $code,      - Код блока, чей контент кешируется (MODULECODE_ACTION)
-        REQUEST => $request,   - Идентификатор контента, хеш
-        KEYS    => $keys       - Метаданные кешируемого контента, хеш
-        DATA    => $data       - Содержимое кешируемого контента, скаляр
-        MAXAGE  => $maxage,    - Максимальное время жизни элемента кеша, секунды
-    },
-    ...
-]);
+    $CACHE->storeCacheContent([
+        [$ID,$METADATA,$DATA,$EXPIRE],
+        [$ID,$METADATA,$DATA,$EXPIRE],
+        ...
+    ]);
+    
+    ID       - Хеш идентификатор контента (ключи CODE + REQUEST)
+    METADATA - Метаданные кешируемого контента
+    DATA     - Содержимое кешируемого контента
+    EXPIRE   - Максимальное время жизни элемента кеша, секунды
 =cut
 
 sub storeCacheContent {
-#warn "storeCacheContent()";
-
-    my $self = shift;
-    my $blocks = shift;
-
-    foreach my $block (@$blocks) {
-        my $code = $block->{CODE};
-        my $req  = $block->{REQUEST};       #meta data
-        # $block->{KEYS}->{HEADERS} ???      #meta data
-        # $block->{DATA}                     #real data
-
-
-        my $r = freeze({CODE=>$code, REQUEST=>$req});
-        my $key = md5_hex($r);
-#print STDERR Dumper($block,$r, $key, thaw($r));
-#print STDERR "STORE:".Dumper({CODE=>$code, REQUEST=>$req},$r, $key, thaw($r)) if $code =~ /NEWS_NEWS(LIST|FULL)/;
-#warn "store all $code data for $key"  if $code =~ /NEWS_NEWS(LIST|FULL)/;;
-
-        my $k2 = md5_hex(freeze(thaw($r)));
-print STDERR "MISMATCH $key != $k2".Dumper($block,$r, $key, thaw($r)) if $key ne $k2;
-
-        my $expire = $block->{MAXAGE}; ### DIRTY HACK!!!
-        $MEMCACHED->set("meta_".$key, $block->{KEYS}, $expire-2);
-        $MEMCACHED->set("data_".$key, $block->{DATA}, $expire);
+    my ($self,$data) = (shift,shift);
+    
+    foreach my $row (@$data) {
+        warn "storeCacheContent(): Stored data/metadata key ".$row->[0]." exp ".$row->[3];
+        $MEMCACHED->set("meta_".$row->[0], $row->[1], $row->[3]-2);
+        $MEMCACHED->set("data_".$row->[0], $row->[2], $row->[3]);
     };
-
     return 1;
+};
+
+
+sub _createVersionKey {
+    my ($self,$key) = (shift,shift);
+    
+    my $ret = $MEMCACHED->add("version_".$key,1,$VERSION_EXPIRATION);
+    if (!defined $ret) {
+        warn "Error MEMCACHED::add(version_$key)";
+        return 0;
+    };
+    unless ($ret) {
+        warn "ELEMENT ALREADY EXISTS while creating new element (version_$key)";
+        return 1;
+    };
+    warn "Created new element (version_$key)";
+    return 1;
+};
+
+=head
+    $CACHE->updateKeysVersion($moduleObj,
+        [
+            {key1=>value1, key2=>value2},
+            {MODULECODE => $moduleCode, key1=>value1, key2=>value2},
+        ];                    - массив хешей, определяющих модуль и ключи, по которым необходимо проверять устаревание кешированного контента
+    );
+    
+    
+    Метод предназначен для использования в коде модулей, поэтому имеет первым параметром $moduleObj
+=cut
+
+sub updateKeysVersion {
+    my ($self,$keys) = (shift,shift);
+    
+    foreach my $key (@$keys) {
+        my $ret = $MEMCACHED->incr("version_".$key);
+        if (!defined $ret) {
+            warn "Error MEMCACHED::incr(version_$key)";
+            next;
+        };
+        if ($ret) {
+            warn "Set new value on (version_$key): $ret";
+            next;
+        };
+        $self->_createVersionKey($key);
+    };
+    return 1;
+};
+
+sub getKeysVersion {
+#warn "getKeysVersion()";
+    my ($self,$keys) = (shift,shift);
+    
+    my @mkeys = ();
+    foreach my $key (@$keys) {
+        push @mkeys, "version_".$key;
+    };
+    
+    my $mversions = $MEMCACHED->get_multi(@mkeys);
+    
+    my $versions = [];
+    foreach my $key (@$keys) {
+        warn "getKeysVersion(): version_$key ".((exists $mversions->{"version_".$key})?"":" not ")."found: ".((exists $mversions->{"version_".$key})?$mversions->{"version_".$key}:""); #unless exists $mversions->{"version_".$key};
+        unless (exists $mversions->{"version_".$key}) {
+            $mversions->{"version_".$key} = $self->_createVersionKey($key);
+        };
+        push @$versions,$mversions->{"version_".$key};
+    };
+    return $versions;
 };
 
 sub initialize {
