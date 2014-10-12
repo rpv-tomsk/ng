@@ -13,16 +13,19 @@ sub getCacheContentMetadata {
     my ($self,$keys) = (shift,shift);
     
     my @mkeys = ();
-    foreach my $key (@$keys) {
+my $mnames = {};
+    foreach my $id (@$keys) {
+        my $key = $self->cms->getCacheId('content',$id);
         push @mkeys, "meta_".$key;
+$mnames->{"meta_".$key} = $id->{CODE};
     };
     
     my $metadata = $MEMCACHED->get_multi(@mkeys);
     
     my $response = [];
-    foreach my $key (@$keys) {
-warn "getCacheContentMetadata(): meta_$key ".((exists $metadata->{"meta_".$key})?"":" not ")."found";
-        push @$response,$metadata->{"meta_".$key};
+    foreach my $key (@mkeys) {
+warn "getCacheContentMetadata(): ".$mnames->{$key}." $key ".((exists $metadata->{$key})?"":" not ")."found";
+        push @$response,$metadata->{$key};
     };
     return $response;
 };
@@ -32,16 +35,19 @@ sub getCacheContent {
     my ($self,$keys) = (shift,shift);
     
     my @mkeys = ();
-    foreach my $key (@$keys) {
+my $mnames = {};
+    foreach my $id (@$keys) {
+        my $key = $self->cms->getCacheId('content',$id);
         push @mkeys, "data_".$key;
+$mnames->{"data_".$key} = $id->{CODE};
     };
     
     my $mcontent = $MEMCACHED->get_multi(@mkeys);
     
     my $content = [];
-    foreach my $key (@$keys) {
-        warn "getCacheContent(): data_$key ".((exists $mcontent->{"data_".$key})?"":" not ")."found"; #unless exists $mcontent->{"data_".$key};
-        push @$content,$mcontent->{"data_".$key};
+    foreach my $key (@mkeys) {
+        warn "getCacheContent(): ".$mnames->{$key}." $key ".((exists $mcontent->{$key})?"":" not ")."found"; #unless exists $mcontent->{$key};
+        push @$content,$mcontent->{$key};
     };
     return $content;
 };
@@ -63,9 +69,10 @@ sub storeCacheContent {
     my ($self,$data) = (shift,shift);
     
     foreach my $row (@$data) {
-        warn "storeCacheContent(): Stored data/metadata key ".$row->[0]." exp ".$row->[3];
-        $MEMCACHED->set("meta_".$row->[0], $row->[1], $row->[3]-2);
-        $MEMCACHED->set("data_".$row->[0], $row->[2], $row->[3]);
+        my $key = $self->cms->getCacheId('content',$row->[0]);
+        warn "storeCacheContent(): ".$row->[0]->{CODE}." Stored data/metadata key ".$key." exp ".$row->[3];
+        $MEMCACHED->set("meta_".$key, $row->[1], $row->[3]-2);
+        $MEMCACHED->set("data_".$key, $row->[2], $row->[3]);
     };
     return 1;
 };
@@ -74,16 +81,16 @@ sub storeCacheContent {
 sub _createVersionKey {
     my ($self,$key) = (shift,shift);
     
-    my $ret = $MEMCACHED->add("version_".$key,1,$VERSION_EXPIRATION);
+    my $ret = $MEMCACHED->add($key,1,$VERSION_EXPIRATION);
     if (!defined $ret) {
-        warn "Error MEMCACHED::add(version_$key)";
+        warn "Error MEMCACHED::add($key)";
         return 0;
     };
     unless ($ret) {
-        warn "ELEMENT ALREADY EXISTS while creating new element (version_$key)";
+        warn "ELEMENT ALREADY EXISTS while creating new element ($key)";
         return 1;
     };
-    warn "Created new element (version_$key)";
+    warn "Created new element ($key)";
     return 1;
 };
 
@@ -102,7 +109,8 @@ sub _createVersionKey {
 sub updateKeysVersion {
     my ($self,$keys) = (shift,shift);
     
-    foreach my $key (@$keys) {
+    foreach my $id (@$keys) {
+        my $key = $self->cms->getCacheId('version',$id);
         my $ret = $MEMCACHED->incr("version_".$key);
         if (!defined $ret) {
             warn "Error MEMCACHED::incr(version_$key)";
@@ -112,7 +120,7 @@ sub updateKeysVersion {
             warn "Set new value on (version_$key): $ret";
             next;
         };
-        $self->_createVersionKey($key);
+        $self->_createVersionKey("version_".$key);
     };
     return 1;
 };
@@ -122,19 +130,20 @@ sub getKeysVersion {
     my ($self,$keys) = (shift,shift);
     
     my @mkeys = ();
-    foreach my $key (@$keys) {
+    foreach my $id (@$keys) {
+        my $key = $self->cms->getCacheId('version',$id);
         push @mkeys, "version_".$key;
     };
     
     my $mversions = $MEMCACHED->get_multi(@mkeys);
     
     my $versions = [];
-    foreach my $key (@$keys) {
-        warn "getKeysVersion(): version_$key ".((exists $mversions->{"version_".$key})?"":" not ")."found: ".((exists $mversions->{"version_".$key})?$mversions->{"version_".$key}:""); #unless exists $mversions->{"version_".$key};
-        unless (exists $mversions->{"version_".$key}) {
-            $mversions->{"version_".$key} = $self->_createVersionKey($key);
+    foreach my $key (@mkeys) {
+        warn "getKeysVersion(): $key ".((exists $mversions->{$key})?"":" not ")."found: ".((exists $mversions->{$key})?$mversions->{$key}:""); #unless exists $mversions->{$key};
+        unless (exists $mversions->{$key}) {
+            $mversions->{$key} = $self->_createVersionKey($key);
         };
-        push @$versions,$mversions->{"version_".$key};
+        push @$versions,$mversions->{$key};
     };
     return $versions;
 };

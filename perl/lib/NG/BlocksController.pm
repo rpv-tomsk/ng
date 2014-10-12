@@ -197,8 +197,7 @@ sub pushABlock {
     
     #Кеширование возможно, но есть подчиненные блоки. Необходимо запросить метаданные.
     #Для надежности, сразу запрашиваем и контент, для обработки случая его отсутствия в кеше.
-    my $cacheId = $self->cms->getCacheId('content',{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}});
-    my $keys = $CACHE->getCacheContentMetadata([$cacheId]);
+    my $keys = $CACHE->getCacheContentMetadata([{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}}]);
     if ($keys) {
         scalar @$keys == 1 or die "getCacheContentMetadata(): Incorrect ARRAY returned";
         $block->{CACHEKEYS} = $keys->[0] if $keys->[0];
@@ -215,7 +214,7 @@ sub pushABlock {
         my @allCacheId = ();
         foreach my $vKey (@$vKeys) {
             $vKey->{MODULECODE} ||= $block->{MODULECODE} or die "Unable to get MODULECODE while processing VERSION_KEYS of active block";
-            push @allCacheId, $self->cms->getCacheId('version',$vKey);
+            push @allCacheId, $vKey;
         };
         $block->{VERSIONS} = $CACHE->getKeysVersion(\@allCacheId);
         scalar(@{$block->{VERSIONS}}) == scalar(@allCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
@@ -225,8 +224,7 @@ sub pushABlock {
     #Проверим, не устарел ли контент АБ.
     if ($self->hasValidCacheContent($block)) {
         #В кэше найдены метаданные. Контент не устарел. Запросим содержимое.
-        my $cacheId = $self->cms->getCacheId('content',{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}});
-        my $content = $CACHE->getCacheContent([$cacheId]) or return $self->cms->error();
+        my $content = $CACHE->getCacheContent([{REQUEST=>$abKeys->{REQUEST},CODE=>$block->{CODE}}]) or return $self->cms->error();
 #NG::Profiler::saveTimestamp("getCacheContent for AB","pushABlock");
         scalar @$content == 1 or die "getCacheContent(): Incorrect ARRAY returned";
         if (defined $content->[0]) {
@@ -379,21 +377,21 @@ sub requestCacheKeys {
         next if exists $block->{CACHEKEYS}; #AB with RELATED
         next if exists $block->{CONTENT};   #AB with invalid cache
         
-        push @allCacheId, $self->cms->getCacheId('content',{REQUEST=>$keys->{REQUEST},CODE=>$block->{CODE}});
+        push @allCacheId, {REQUEST=>$keys->{REQUEST},CODE=>$block->{CODE}};
         if ($keys->{VERSION_KEYS}) {
             #Версии надо запрашивать даже если контент в кеше отсуствует. VERSIONS будет использовано в сохраняемых метаданных.
             my $vKeys = $keys->{VERSION_KEYS};
             $vKeys = [$vKeys] if ref $vKeys eq "HASH";
             die "VERSION_KEYS of block ".$block->{CODE}." is not ARRAYREF" unless ref $vKeys eq "ARRAY";
             
-            my @allCacheId = ();
+            my @allVersionCacheId = ();
             foreach my $vKey (@$vKeys) {
                 $vKey->{MODULECODE} ||= $block->{MODULECODE} or die "Unable to get MODULECODE while processing VERSION_KEYS of block";
-                push @allCacheId, $self->cms->getCacheId('version',$vKey);
+                push @allVersionCacheId, $vKey;
             };
-            $block->{VERSIONS} = $CACHE->getKeysVersion(\@allCacheId);
+            $block->{VERSIONS} = $CACHE->getKeysVersion(\@allVersionCacheId);
             if (defined $block->{VERSIONS}) {
-                scalar(@{$block->{VERSIONS}}) == scalar(@allCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
+                scalar(@{$block->{VERSIONS}}) == scalar(@allVersionCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
             };
         };
         push @cachedBlocks,$block;
@@ -427,7 +425,7 @@ sub hasValidCacheContent {
     if ($ckeys->{VERSIONS} || $block->{VERSIONS}) {
         $ckeys->{VERSIONS} ||= [];
         $block->{VERSIONS} ||= [];
-warn "VERSIONS length mismatch: ".scalar(@{$ckeys->{VERSIONS}}) ." != ". scalar(@{$block->{VERSIONS}}) if scalar(@{$block->{VERSIONS}}) != scalar(@{$ckeys->{VERSIONS}});
+warn "VERSIONS length mismatch, ".$block->{CODE}.": ".scalar(@{$ckeys->{VERSIONS}}) ." != ". scalar(@{$block->{VERSIONS}}) if scalar(@{$block->{VERSIONS}}) != scalar(@{$ckeys->{VERSIONS}});
         return 0 if scalar(@{$block->{VERSIONS}}) != scalar(@{$ckeys->{VERSIONS}});
         
         my $i = -1;
@@ -498,7 +496,7 @@ sub _prepareCacheContent {
     #Сохраняемые параметры для подчиненных блоков
     $metadata->{RELATED} = $block->{KEYS}->{RELATED} if exists $block->{KEYS}->{RELATED};
     #Сохраняемые параметры для проверки устаревания
-    #$metadata->{VERSIONS} = $block->{VERSIONS} if exists $block->{VERSIONS};
+    $metadata->{VERSIONS} = $block->{VERSIONS} if exists $block->{VERSIONS};
     $metadata->{ETAG}    = $block->{KEYS}->{ETAG} if exists $block->{KEYS}->{ETAG};
     $metadata->{LM}      = $block->{KEYS}->{LM}   if exists $block->{KEYS}->{LM};
     
@@ -510,7 +508,7 @@ sub _prepareCacheContent {
     $expire = $maxage if $expire > $maxage;
 
     return [
-        $self->cms->getCacheId('content',{REQUEST=>$block->{KEYS}->{REQUEST},CODE=>$block->{CODE}}), #cacheId
+        {REQUEST=>$block->{KEYS}->{REQUEST},CODE=>$block->{CODE}}, #cacheId
         $metadata,          #metadata
         $c->getOutput(),    #data
         $expire             #expire
@@ -560,8 +558,7 @@ sub prepareContent {
         || $self->{_ablock}->{KEYS}->{ABFIRST}
        ))
     {
-        my $cacheId = $self->cms->getCacheId('content',{REQUEST=>$self->{_ablock}->{KEYS}->{REQUEST},CODE=>$self->{_ablock}->{CODE}});
-        my $content = $CACHE->getCacheContent([$cacheId]) or return $self->cms->error();
+        my $content = $CACHE->getCacheContent([{REQUEST=>$self->{_ablock}->{KEYS}->{REQUEST},CODE=>$self->{_ablock}->{CODE}}]);
         scalar @$content == 1 or die "getCacheContent(): Incorrect ARRAY returned";
         
         if (defined $content->[0]) {
@@ -576,7 +573,7 @@ sub prepareContent {
     foreach my $block (@{$self->{_blocks}}) {
         next if $block->{CONTENT};
         if ($self->hasValidCacheContent($block)) {
-            push @allCacheId, $self->cms->getCacheId('content',{REQUEST=>$block->{KEYS}->{REQUEST},CODE=>$block->{CODE}});
+            push @allCacheId, {REQUEST=>$block->{KEYS}->{REQUEST},CODE=>$block->{CODE}};
             push @cachedBlocks, $block;
             next;
         };
@@ -625,7 +622,7 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
         next unless $block->{KEYS}->{REQUEST};      #Could be cached
         next if $block->{CACHEKEYS};                #Next if already cached
         
-warn "Will STORE content for :".$block->{CODE};
+warn "Will STORE content for: ".$block->{CODE};
         push @newContent, $self->_prepareCacheContent($block);
     };
 #NG::Profiler::saveTimestamp("getBlockContent","prepareContent");
