@@ -432,7 +432,7 @@ warn "VERSIONS length mismatch, ".$block->{CODE}.": ".scalar(@{$ckeys->{VERSIONS
         while (1) {
             $i++;
             last if !defined $ckeys->{VERSIONS}->[$i] && !defined $block->{VERSIONS}->[$i];
-warn "Compare VERSIONS : ". $ckeys->{VERSIONS}->[$i] . " and " . $block->{VERSIONS}->[$i]. " for ".$block->{CODE};
+#warn "Compare VERSIONS : ". $ckeys->{VERSIONS}->[$i] . " and " . $block->{VERSIONS}->[$i]. " for ".$block->{CODE};
             return 0 unless $ckeys->{VERSIONS}->[$i] && $block->{VERSIONS}->[$i];
             next if $ckeys->{VERSIONS}->[$i] == $block->{VERSIONS}->[$i];
             return 0;
