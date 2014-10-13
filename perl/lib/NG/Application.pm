@@ -1579,14 +1579,47 @@ sub updateKeysVersion {
     my $mcode = undef;
     $mcode = $module->getModuleCode() if $module;
     
-    die "NG::BlocksController->updateKeysVersion(): \$keys not HASH or ARRAYREF" unless ref $keys eq "ARRAY";
+    die "cms->updateKeysVersion(): \$keys not HASH or ARRAYREF" unless ref $keys eq "ARRAY";
     
     my @allCacheId = ();
     foreach my $key (@$keys) {
-        $key->{MODULECODE} ||= $mcode or die "updateKeysVersion(): Unable to get MODULECODE";
+        $key->{MODULECODE} ||= $mcode or die "cms->updateKeysVersion(): Unable to get MODULECODE";
         push @allCacheId, $key;
     };
     $NG::Application::Cache->updateKeysVersion(\@allCacheId);
+};
+
+sub getKeysVersion {
+    my ($cms,$module,$keys) = (shift,shift,shift);
+    $keys = [$keys] if (ref $keys eq "HASH");
+    
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    
+    die "cms->getKeysVersion(): \$keys not HASH or ARRAYREF" unless ref $keys eq "ARRAY";
+    
+    my @allCacheId = ();
+    foreach my $key (@$keys) {
+        $key->{MODULECODE} ||= $mcode or die "cms->updateKeysVersion(): Unable to get MODULECODE";
+        push @allCacheId, $key;
+    };
+    $NG::Application::Cache->getKeysVersion(\@allCacheId);
+};
+
+sub getCacheData {
+    my ($cms,$module,$key) = (shift,shift,shift);
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    $key->{MODULECODE} ||= $mcode or die "cms->getCacheData(): Unable to get MODULECODE";
+    $NG::Application::Cache->getCacheData($key);
+};
+
+sub setCacheData {
+    my ($cms,$module,$key,$data,$expire) = (shift,shift,shift,shift,shift);
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    $key->{MODULECODE} ||= $mcode or die "cms->setCacheData(): Unable to get MODULECODE";
+    $NG::Application::Cache->setCacheData($key,$data,$expire);
 };
 
 my $digesterInitialized = 0;
@@ -1709,7 +1742,15 @@ sub updateKeysVersion {
 
 sub getKeysVersion {
     return undef;
-}
+};
+
+sub getCacheData {
+    return undef;
+};
+
+sub setCacheData {
+    return undef;
+};
 
 BEGIN {
     return if $NG::Application::Cache;

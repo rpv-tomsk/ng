@@ -3,9 +3,10 @@ use strict;
 
 use Data::Dumper;
 
-use vars qw($MEMCACHED $VERSION_EXPIRATION);
+use vars qw($MEMCACHED $VERSION_EXPIRATION $DATA_EXPIRATION);
 
 $VERSION_EXPIRATION = 3600;  # 1 hour
+$DATA_EXPIRATION    = 3600;  # 1 hour
 
 
 sub getCacheContentMetadata {
@@ -38,8 +39,8 @@ sub getCacheContent {
 #my $mnames = {};
     foreach my $id (@$keys) {
         my $key = $self->cms->getCacheId('content',$id);
-        push @mkeys, "data_".$key;
-#$mnames->{"data_".$key} = $id->{CODE};
+        push @mkeys, "content_".$key;
+#$mnames->{"content_".$key} = $id->{CODE};
     };
     
     my $mcontent = $MEMCACHED->get_multi(@mkeys);
@@ -70,9 +71,9 @@ sub storeCacheContent {
     
     foreach my $row (@$data) {
         my $key = $self->cms->getCacheId('content',$row->[0]);
-        #warn "storeCacheContent(): ".$row->[0]->{CODE}." Stored data/metadata ".$key." exp ".$row->[3];
+        #warn "storeCacheContent(): ".$row->[0]->{CODE}." Stored content/metadata ".$key." exp ".$row->[3];
         $MEMCACHED->set("meta_".$key, $row->[1], $row->[3]-2);
-        $MEMCACHED->set("data_".$key, $row->[2], $row->[3]);
+        $MEMCACHED->set("content_".$key, $row->[2], $row->[3]);
     };
     return 1;
 };
@@ -146,6 +147,25 @@ sub getKeysVersion {
         push @$versions,$mversions->{$key};
     };
     return $versions;
+};
+
+sub setCacheData {
+    my ($self,$id,$data,$expire) = (shift,shift,shift,shift);
+    
+    $expire ||= $DATA_EXPIRATION;
+    
+    my $key = $self->cms->getCacheId('data',$id);
+    warn "setCacheData():  Stored data_".$key." exp ".$expire;
+    $MEMCACHED->set("data_".$key, $data, $expire);
+};
+
+sub getCacheData {
+    my ($self,$id) = (shift,shift);
+    
+    my $key = $self->cms->getCacheId('data',$id);
+    my $ret = $MEMCACHED->get("data_".$key);
+    warn "getCacheData(): data_$key ".((defined $ret)?"":" not ")."found"; #unless exists $mcontent->{$key};
+    $ret;
 };
 
 sub initialize {
