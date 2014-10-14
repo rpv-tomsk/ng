@@ -1204,9 +1204,11 @@ sub exit {
 };
 
 sub outputJSON {
-	my $self = shift;
-	my $json = shift;
-	return NG::BlockContent->exit(create_json($json),-type=>"application/json");
+    my ($self,$data,$headers) = (shift,shift,shift);
+    die "cms->outputJSON(): headers is not HASHREF" if $headers and ref $headers ne "HASH";
+    $headers ||= {};
+    $headers->{-type} ||= "application/json";
+    return NG::BlockContent->exit(create_json($data),$headers);
 };
 
 sub _doOutput {
