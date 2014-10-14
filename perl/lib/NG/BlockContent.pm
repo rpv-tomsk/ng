@@ -221,9 +221,14 @@ sub _error {
     $self;
 };
 
+sub _error0 {
+    _error(@_);
+    0;
+};
+
 sub _caller {
     my $self = shift;
-    my @call  = caller(2);
+    my @call  = caller(3);
     
     return $call[3];
 };
@@ -251,17 +256,16 @@ sub _setheaders {
             $param->{$singleKey} = $v;
         }
         else {
-            return $self->_error("NG::BlockContent->".$self->_caller()."(): invalid parameters count");
+            return $self->_error0("NG::BlockContent->".$self->_caller()."(): invalid parameters count");
         };
-        
-        return $self->_error("NG::BlockContent->".$self->_caller()."(): invalid parameters count") if scalar @_ > 1;
+        return $self->_error0("NG::BlockContent->".$self->_caller()."(): invalid parameters count") if scalar @_ > 1;
         last unless scalar @_;
         $v = shift;
-        return $self->_error("NG::BlockContent->".$self->_caller()."(): KEY parameter is not hashref") if ref $v ne "HASH";
+        return $self->_error0("NG::BlockContent->".$self->_caller()."(): KEY parameter is not hashref") if ref $v ne "HASH";
         $self->{_headkeys} = $v;
     };
     
-    return $self->_error("NG::BlockContent->".$self->_caller()."(): invalid parameters count") if scalar @_ % 2;
+    return $self->_error0("NG::BlockContent->".$self->_caller()."(): invalid parameters count") if scalar @_ % 2;
     
     $param = {@_} if scalar @_;
     if (exists $param->{-cookie}) {
