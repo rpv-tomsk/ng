@@ -518,12 +518,6 @@ sub _prepareCacheContent {
 sub _setContentFromCache {
     my ($self, $block,$content) = (shift,shift,shift);
     
-    $block->{CONTENT} = NG::BlockContent->output(
-            $content,
-            $block->{CACHEKEYS}->{HEADERS},
-            $block->{CACHEKEYS}->{HEADKEYS},
-    );
-    
     my $type = $block->{CACHEKEYS}->{TYPE};
     $type = 1 unless defined $type;
     $type ||= 0;
@@ -531,19 +525,17 @@ sub _setContentFromCache {
     die "_setContentFromCache(): Unsupported content type $type" unless ($type == 1) || ($block eq $self->{_ablock});
     die "_setContentFromCache(): Unsupported content type $type" unless ($type == 1) || ($type == 4);
     
+    my @args = (
+        $content,
+        $block->{CACHEKEYS}->{HEADERS},
+    );
+    push @args, $block->{CACHEKEYS}->{HEADKEYS} if $block->{CACHEKEYS}->{HEADKEYS};
+    
     if ($type == 4) {
-        $block->{CONTENT} = NG::BlockContent->exit(
-                $content,
-                $block->{CACHEKEYS}->{HEADERS},
-                $block->{CACHEKEYS}->{HEADKEYS},
-        );
+        $block->{CONTENT} = NG::BlockContent->exit(@args);
     }
     else {
-        $block->{CONTENT} = NG::BlockContent->output(
-                $content,
-                $block->{CACHEKEYS}->{HEADERS},
-                $block->{CACHEKEYS}->{HEADKEYS},
-        );
+        $block->{CONTENT} = NG::BlockContent->output(@args);
     };
 };
 
