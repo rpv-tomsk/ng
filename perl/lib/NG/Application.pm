@@ -1600,7 +1600,7 @@ sub getKeysVersion {
     
     my @allCacheId = ();
     foreach my $key (@$keys) {
-        $key->{MODULECODE} ||= $mcode or die "cms->updateKeysVersion(): Unable to get MODULECODE";
+        $key->{MODULECODE} ||= $mcode or die "cms->getKeysVersion(): Unable to get MODULECODE";
         push @allCacheId, $key;
     };
     $NG::Application::Cache->getKeysVersion(\@allCacheId);
@@ -1626,6 +1626,8 @@ my $digesterInitialized = 0;
 
 sub getCacheId {
     my ($self,$type,$data) = (shift,shift,shift);
+    
+    die "cms->getCacheId(): No data passed" unless defined $data;
     
     unless ($digesterInitialized) {
         eval "use Storable qw(freeze thaw);";
