@@ -174,6 +174,25 @@ sub pushABlock {
     $block->{SOURCE} = "push";
     $self->{_ablock} = $block;
     
+    delete $block->{BLOCK};
+=head
+    Экспериментальная фича. Статус: Готово к тестированию.
+=cut
+    my $neigh = delete $block->{NEIGHBOURS};
+    if ($neigh) {
+        return $self->cms->error("getActiveBlock() модуля ".(ref $self->{_pObj})." вернул некорректное значение. NEIGHBOURS не является массивом)") unless ref $neigh eq "ARRAY";
+        my $mName = undef;
+        foreach my $nb (@$neigh) {
+            return $self->cms->error("getActiveBlock() модуля ".(ref $self->{_pObj})." вернул некорректное значение. В элементе массива NEIGHBOURS отсутствует значение BLOCK)") unless $nb->{BLOCK};
+            unless ($nb->{CODE}) {
+                $mName ||= $self->{_pObj}->getModuleCode() or return $self->cms->error();
+                $nb->{CODE} = $mName."_".$nb->{BLOCK};
+            };
+            my $b = $self->_pushBlock($nb) or return $self->cms->error();
+            $b->{SOURCE}="neigh";
+        };
+    };
+    
 #NG::Profiler::saveTimestamp("pushABlock begin: ".ref($block->{MODULEOBJ})."_".$block->{ACTION},"pushABlock");
     
     #Проверяем возможность кеширования.
