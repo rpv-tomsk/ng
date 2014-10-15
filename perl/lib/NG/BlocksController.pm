@@ -950,8 +950,9 @@ sub processBlock {
     my $c = $self->{_bctrl}->getBlockContent($block);
     my $hk = $c->headkeys() or return 1;
     if (exists $hk->{title}) {
-        #warn "We already have title" if defined $self->{_title}; #TODO: discuss - need this??
         return $cms->error("Invalid value for key title in headkeys()") if (ref $hk->{title});
+        return $cms->error("Invalid value for key title in headkeys()") unless defined $hk->{title};
+        return $cms->error("Title already set! Unable to set title from ".$block->{CODE}) if defined $self->{_title};
         $self->{_title} = $hk->{title};
     };
     if (exists $hk->{link}) {
