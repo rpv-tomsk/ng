@@ -523,7 +523,7 @@ sub getPageActiveBlock {
     #≈сли нет активного блока, или нет метода getActiveBlock, пытаемс€ вывести "статическую" страницу с использованием плагинов.
     return undef unless $pageObj->can("getActiveBlock");
     
-    my $ab = $pageObj->getActiveBlock();    # BLOCK + LAYOUT + PRIO + DISABLE_NEIGHBOURS + DISABLE_BLOCKPARAMS
+    my $ab = $pageObj->getActiveBlock();    # BLOCK + LAYOUT + PRIO + DISABLE_NEIGHBOURS
 #NG::Profiler::saveTimestamp("getP_AB-getAB","buildPage");
     
     return $cms->notFound unless defined $ab;
@@ -533,16 +533,14 @@ sub getPageActiveBlock {
     return $cms->error("getActiveBlock() модул€ ".(ref $pageObj)." вернул некорректное значение (отсутствует код BLOCK)") unless $ab->{BLOCK};
     
     my $mName = $pageObj->getModuleCode() or return $cms->error();
-    
-    my $aBlock = {};
-    #TODO: сделать возврат блока тем же самым хешем, т.е. сквозное прохождение результата getActiveBlock() в следующие вызовы, убрать _новый_ хеш $aBlock={};
-    $aBlock->{CODE} = $mName."_".$ab->{BLOCK};
-    $aBlock->{ACTION} = $ab->{ACTION} || $ab->{BLOCK}; ## Backward compatability
-    $aBlock->{LAYOUT} = $ab->{LAYOUT};
-    $aBlock->{PRINTLAYOUT} = $ab->{PRINTLAYOUT};
-    $aBlock->{MODULEOBJ} = $pageObj;
-    
-    return $aBlock;
+    if ($ab->{CODE}) {
+        $ab->{MODULEOBJ} = $pageObj if $ab->{CODE} =~ /^$mName\_/;
+    }
+    else {
+        $ab->{CODE} = $mName."_".$ab->{BLOCK};
+        $ab->{MODULEOBJ} = $pageObj;
+    };
+    return $ab;
 };
 
 sub buildPage {

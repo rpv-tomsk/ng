@@ -111,6 +111,8 @@ sub _pushBlock {
      CONTENT
      VERSIONS    - хеш значений, соответствующих элементам из VERSION_KEYS
      
+     MODULEOBJ   - Объект модуля блока
+     
     #Блок модуля
       CODE = {MODULECODE}_{ACTION}. ACTION - имя блока, который мы запрашиваем построить у модуля
       TYPE = 0 или отсутствует
