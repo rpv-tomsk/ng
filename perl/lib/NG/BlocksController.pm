@@ -44,24 +44,17 @@ sub loadTemplateBlocks {
     my $cms = $self->cms();
 
     $self->{_tmplFile} = $tmplFile;
-    my $tBlocks = $cms->getTemplateBlocks($tmplFile); # [] of {}.
+    my $tBlocks = $cms->getTemplateBlocks($tmplFile);
     
     return $cms->error("cms->getTemplateBlocks() returns undef") unless defined $tBlocks;
     return $cms->defError("cms->getTemplateBlocks(): ") if $tBlocks eq 0;
     return $cms->error("cms->getTemplateBlocks() result is not ARRAYREF ") unless ref $tBlocks eq "ARRAY";
     
-    #foreach my $bCode (keys %$tBlocks) {
-    #    my $block = $tBlocks->{$bCode};
-    #    $block->{CODE} = $bCode;
-    #    $self->pushBlock($block) or return $cms->error();
-    #};
-    my $r = {};
     foreach my $block (@$tBlocks) {
         my $b = $self->_pushBlock($block) or return $cms->error();
         $b->{SOURCE}="tmpl";
-        $r->{$b->{CODE}} = $b;
     };
-    return $r;
+    return 1;
 };
 
 sub currentLayout {
@@ -81,13 +74,11 @@ sub loadNeighbourBlocks {
     return $cms->defError("cms->getNeighbourBlocks(): ") if $tBlocks eq 0;
     return $cms->error("cms->getNeighbourBlocks() result is not ARRAYREF ") unless ref $tBlocks eq "ARRAY";
     
-    my $r = {};
     foreach my $block (@$tBlocks) {
         my $b = $self->_pushBlock($block) or return $cms->error();
         $b->{SOURCE}="neigh";
-        $r->{$b->{CODE}} = $b;
     };
-    return $r;
+    return 1;
 };
 
 sub _pushBlock {
