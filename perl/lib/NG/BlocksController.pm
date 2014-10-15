@@ -88,7 +88,7 @@ sub _pushBlock {
     my $cms = $self->cms();
     
     return $cms->error("pushBlock(): Отсутствует имя блока CODE") unless $block->{CODE};
-    return $cms->error("Block already exists") if exists $self->{_hblocks}->{$block->{CODE}};
+    return $cms->error("Block ".$block->{CODE}." already exists, source: ".$self->{_hblocks}->{$block->{CODE}}->{SOURCE}) if exists $self->{_hblocks}->{$block->{CODE}};
     
 =comment Ключи хэша $block
     Ключи хэша
