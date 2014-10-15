@@ -379,7 +379,7 @@ sub requestCacheKeys {
         
         push @allCacheId, {REQUEST=>$keys->{REQUEST},CODE=>$block->{CODE}};
         if ($keys->{VERSION_KEYS}) {
-            #Версии надо запрашивать даже если контент в кеше отсуствует. VERSIONS будет использовано в сохраняемых метаданных.
+            #Версии надо запрашивать даже если контент в кеше отсутствует. VERSIONS будет использовано в сохраняемых метаданных.
             my $vKeys = $keys->{VERSION_KEYS};
             $vKeys = [$vKeys] if ref $vKeys eq "HASH";
             die "VERSION_KEYS of block ".$block->{CODE}." is not ARRAYREF" unless ref $vKeys eq "ARRAY";
@@ -544,19 +544,22 @@ sub prepareContent {
     my $cms = $self->cms();
 #NG::Profiler::saveTimestamp("start","prepareContent");
     
-    #Если в метаданных АБ указан is_exit() то проходить общую цепочку не имеет смысла.
-    if ($self->{_ablock} && (
-        ($self->{_ablock}->{CACHEKEYS} && ($self->{_ablock}->{CACHEKEYS}->{TYPE}||1) == 4)
-        || $self->{_ablock}->{KEYS}->{ABFIRST}
-       ))
-    {
-        my $content = $CACHE->getCacheContent([{REQUEST=>$self->{_ablock}->{KEYS}->{REQUEST},CODE=>$self->{_ablock}->{CODE}}]);
-        scalar @$content == 1 or die "getCacheContent(): Incorrect ARRAY returned";
-        
-        if (defined $content->[0]) {
-            $self->_setContentFromCache($self->{_ablock},$content->[0]);
-            return $self->{_ablock}->{CONTENT};
+    #Если в метаданных АБ указан is_exit() то запрашивать кеши всех блоков не имеет смысла.
+    if  (  $self->{_ablock}
+        && !exists $self->{_ablock}->{CONTENT}
+        && $self->{_ablock}->{CACHEKEYS} && ($self->{_ablock}->{CACHEKEYS}->{TYPE}||1) == 4
+        ) {
+        #Если контент в кеше валидный, запросим его отдельным запросом
+        if ($self->hasValidCacheContent($self->{_ablock})) {
+            my $content = $CACHE->getCacheContent([{REQUEST=>$self->{_ablock}->{KEYS}->{REQUEST},CODE=>$self->{_ablock}->{CODE}}]);
+            scalar @$content == 1 or die "getCacheContent(): Incorrect ARRAY returned";
+            
+            if (defined $content->[0]) {
+                $self->_setContentFromCache($self->{_ablock},$content->[0]);
+                return $self->{_ablock}->{CONTENT};
+            };
         };
+        #Данные АБ в кеше невалидны, либо контент не найден.
         delete $self->{_ablock}->{CACHEKEYS};
     };
     
@@ -574,6 +577,7 @@ sub prepareContent {
 #NG::Profiler::saveTimestamp("checkMetadata","prepareContent");
     
     #Active block. Find it first.
+    #АБ не имеет валидного контента в кеше, сформируем контент
     if ($self->{_ablock} && !$self->{_ablock}->{CONTENT} && !$self->{_ablock}->{CACHEKEYS}) {
         my $c = $self->getBlockContent($self->{_ablock});
         return $c if $c eq 0;
@@ -598,8 +602,20 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
             $self->_setContentFromCache($block,$content);
         };
     };
+    #Проверим контент АБ полученный из кеша, в том числе ситуацию отсутствия контента в кеше
+    if ($self->{_ablock}) {
+        my $c = $self->getBlockContent($self->{_ablock});
+        return $c if $c eq 0 || $c->is_error();
+        if ($c->is_exit() && !$self->{_ablock}->{CACHEKEYS}) {
+            $CACHE->storeCacheContent([$self->_prepareCacheContent($self->{_ablock})]) or return $cms->error();
+        };
+        return $c if !$c->is_output();
+    };
+
 #NG::Profiler::saveTimestamp("getCachedContent","prepareContent");
     my @newContent = ();
+    #Запрашиваем контент всех блоков, которые не нашлись в кеше.
+    #Сохраняем новый контент в кеш.
     foreach my $block (@{$self->{_blocks}}) {
         my $blockCode = $block->{CODE};
         my $c = $self->getBlockContent($block);
