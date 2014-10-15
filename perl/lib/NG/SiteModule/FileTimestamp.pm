@@ -3,6 +3,24 @@ use strict;
 use NG::Module;
 our @ISA = qw(NG::Module);
 
+=comment
+    Использование:
+    
+    1) Использование как плагина
+        Регистрируем модуль (например, с кодом TIMESTAMP)
+        Заносим в блоки запись плагина, обязательно action=FILETIMESTAMP, значение code произвольно
+        В параметры записи плагина пишем параметр требуемого файла относительно siteroot, пример: file: /htdocs/js/script.js
+        В шаблоне обращаемся примерно так: <TMPL_VAR PLUGINS.TIMESTAMP_JS> - TIMESTAMP_JS - значение code из записи плагина
+      
+    2) Использование как модуля
+        Регистрируем модуль (например, с кодом TIMESTAMP)
+        В шаблоне обращаемся примерно так: <TMPL_VAR MODULES.TIMESTAMP_JS1>
+        
+        Имя файла будет взято из конфига:
+        [MODULE_TIMESTAMP]
+        File_JS1="/htdocs/js/combined.min.js"
+=cut
+
 sub getBlockContent {
     my ($self,$action,$keys,$params) = (shift,shift,shift,shift);
     
