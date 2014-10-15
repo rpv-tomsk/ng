@@ -582,28 +582,18 @@ sub buildPage {
         return $abContent if ($abContent eq 0 || !$abContent->is_output());
     };
     
-    my $lBlocks = undef;  # {Хэш, с ключами = код блоков шаблона}
-    my $nBlocks = undef;  # {Хэш, с ключами = код блоков шаблона}
-    
     if ($layout) {
         #получаем список блоков шаблона.
-        $lBlocks = $bctrl->loadTemplateBlocks($layout) or return $cms->error();
+        $bctrl->loadTemplateBlocks($layout) or return $cms->error();
 #NG::Profiler::saveTimestamp("loadTemplateBlocks","buildPage");
     };
     
-    my $hasNeighbours = 1;
+    my $hasNeighbours = $cms->confParam("CMS.hasNeighbours",0);
     $hasNeighbours = 0 unless $aBlock;
-    if ($aBlock && !$aBlock->{DISABLE_BLOCKPARAMS}) {
-        #select from ng_blocks, ng_modules ....
-        
-        #$bParams = {};
-        #$hasNeighbours = $row->{ng_blocks.hasNeighbours};
-    };
-    
     $hasNeighbours = 0 if $aBlock && $aBlock->{DISABLE_NEIGHBOURS};
     
     if ($hasNeighbours) {
-        $nBlocks = $bctrl->loadNeighbourBlocks($aBlock->{CODE}) or return $cms->error();
+        $bctrl->loadNeighbourBlocks($aBlock->{CODE}) or return $cms->error();
     };
     
     # $bctrl - накачан всеми нужными блоками.
