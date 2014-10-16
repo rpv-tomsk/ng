@@ -85,14 +85,14 @@ sub _createVersionKey {
     my $ret = $MEMCACHED->add($key,$value,$VERSION_EXPIRATION);
     if (!defined $ret) {
         warn "Error MEMCACHED::add($key)";
-        return 0;
+        return undef;
     };
     unless ($ret) {
         warn "ELEMENT ALREADY EXISTS while creating new element ($key)";
-        return 1;
+        return 0;
     };
     #warn "Created new element ($key)";
-    return 1;
+    return $value;
 };
 
 =head
@@ -113,16 +113,23 @@ sub updateKeysVersion {
     my $ret = undef;
     foreach my $id (@$keys) {
         my $key = $self->cms->getCacheId('version',$id);
-        $ret = $MEMCACHED->incr("version_".$key);
-        if (!defined $ret) {
-            warn "Error MEMCACHED::incr(version_$key)";
-            next;
+        my $try = 0;
+        while (1)
+            $ret = $MEMCACHED->incr("version_".$key);
+            if (!defined $ret) {
+                warn "Error MEMCACHED::incr(version_$key). Try $try.";
+                last;
+            };
+            if ($ret) {
+                warn "Set new value on (version_$key): $ret Try $try";# if $try;
+                last;
+            };
+            $ret = $self->_createVersionKey("version_".$key,2);
+            last unless defined $ret;
+            last if $ret;
+            last if $try >= 1;
+            $try++;
         };
-        if ($ret) {
-            warn "Set new value on (version_$key): $ret";
-            next;
-        };
-        $ret = $self->_createVersionKey("version_".$key,2);
     };
     return $ret;
 };
