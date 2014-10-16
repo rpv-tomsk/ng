@@ -114,7 +114,7 @@ sub updateKeysVersion {
     foreach my $id (@$keys) {
         my $key = $self->cms->getCacheId('version',$id);
         my $try = 0;
-        while (1)
+        while (1) {
             $ret = $MEMCACHED->incr("version_".$key);
             if (!defined $ret) {
                 warn "Error MEMCACHED::incr(version_$key). Try $try.";
