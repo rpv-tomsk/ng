@@ -1,0 +1,373 @@
+Index: SiteStruct.pm
+===================================================================
+--- SiteStruct.pm	(revision 15)
++++ SiteStruct.pm	(revision 16)
+@@ -1236,55 +1236,78 @@
+     my $is_ajax = shift;
+ 
+     my $cms = $self->cms();
+-	my $dbh = $cms->dbh();
+-	my $q = $cms->q();
++    my $dbh = $cms->dbh();
++    my $q = $cms->q();
+ 
+     my $pageId = $q->param('id');
+     $pageId = $self->{_pageId} unless defined $pageId;
+     is_valid_id($pageId) or return $cms->error("Некорректный код страницы");
+-	
+-	NG::Nodes->initdbparams(
++    
++    my $node = NG::Nodes->new();
++    $node->initdbparams(
+         db     => $self->db(),
+         table  => "ng_sitestruct",
+         fields => $cms->getPageFields(),
+     );
+-	
+-	while (1) {
+-		my $node = NG::Nodes->loadNode($pageId) or last;
+-		my $v = $node->getNodeValue();
+-		my $pNode = NG::Nodes->loadNode($v->{parent_id});
+-		
+-		return $cms->error("Parent node not found") unless $pNode;
+-		last if $pNode->getNodeValue()->{disabled};
+-		
+-		my $where = "";
+-		my @params = ();
+-		
+-		my $bOrder = $node->getSubtreeBorderOrder();
+-		if ($bOrder) {
+-			$where .= " tree_order>=? and tree_order<?";
+-			push @params, $node->getNodeValue()->{tree_order};;
+-			push @params, $bOrder;
+-		} else {
+-			$where .= " tree_order>=?";
+-			push @params, $node->getNodeValue()->{tree_order};
+-		};
+-		
+-		$dbh->do("UPDATE ng_sitestruct set disabled = 0 where $where and disabled = ?", undef, @params, $pageId) or return $cms->error($DBI::errstr);
+-		
+-		my $pageFields = $cms->getPageFields();
+-		my $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = 0 order by tree_order") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
+-		$sth->execute(@params) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
+-		while (my $pRow = $sth->fetchrow_hashref()) {
+-			my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
+-			$self->_makeEvent('enablenode',{PAGEOBJ=>$pageObj});
+-			$self->_makeLogEvent({page_id=>$pRow->{id},operation=>"Включение страницы",operation_param=>sprintf("%s (%s) id %s",$pRow->{name},$pRow->{url},$pRow->{id})});
+-		}
+-		$sth->finish();    
+-		
+-		last;
+-	};
++    $node->loadNode($pageId);
++    my $nodeValue = $node->getNodeValue();
+     
++    return $cms->error("Node already enabled")    if $nodeValue->{disabled} == 0;
++    return $cms->error("Node disabled by parent") if $nodeValue->{disabled} != $pageId;
++    
++    my $where = "";
++    my @params = ();
++    
++    my $bOrder = $node->getSubtreeBorderOrder();
++    if ($bOrder) {
++        $where .= " tree_order>=? and tree_order<?";
++        push @params, $nodeValue->{tree_order};
++        push @params, $bOrder;
++    } else {
++        $where .= " tree_order>=?";
++        push @params, $nodeValue->{tree_order};
++    };
++    
++    #Запрашиваем наличие включенных страниц с link_id страниц, подлежащих включению
++    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id in (select link_id from ng_sitestruct where $where and disabled = ?)") or return $cms->error($DBI::errstr);
++    $sth->execute($nodeValue->{subsite_id},@params,$pageId) or return $cms->error($DBI::errstr);
++    my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
++    $sth->finish();
++    
++    #Запрашиваем список страниц, подлежащих включению, для проведения операций
++    my $pageFields = $cms->getPageFields();
++    $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
++    $sth->execute(@params,$pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
++    while (my $pRow = $sth->fetchrow_hashref()) {
++        #warn "Enabling: ".$pRow->{id} ." LI ".$pRow->{link_id}." LA ".$pRow->{lang_id};
++        my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
++        #$pageObj->enablePage(); #TODO: extend $pageObj API
++        $self->_makeEvent('enablenode',{PAGEOBJ=>$pageObj});
++        $self->_makeLogEvent({page_id=>$pRow->{id},operation=>"Включение страницы",operation_param=>sprintf("%s (%s) id %s",$pRow->{name},$pRow->{url},$pRow->{id})});
++        NGPlugins->invoke('NG::SiteStruct','onEnableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
++        
++        my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
++        #Если есть включенные страницы с LINK_ID + LANG_ID - не делаем ничего
++        #Если есть LINK_ID, но LANG_ID нет, то посылаем LINK_ID + LANG_ID
++        #Если нет  LINK_ID, то посылаем LINK_ID а потом LINK_ID + LANG_ID (два события)
++        if ($enabledLinkedPages) {
++            unless ($enabledLinkedPages->{$pRow->{lang_id}}) {
++                #warn "ENABLING LINKID ".$pRow->{link_id}." LANGID ".$pRow->{lang_id};
++                NGPlugins->invoke('NG::SiteStruct','onEnableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
++            }
++        }
++        else {
++            #warn "ENABLING (1) FULL LINKID ".$pRow->{link_id};
++            #warn "ENABLING (2) LANG LINKID ".$pRow->{link_id}." LANGID ".$pRow->{lang_id};
++            NGPlugins->invoke('NG::SiteStruct','onEnableNodeLink',{LINKID=> $pRow->{link_id}});
++            NGPlugins->invoke('NG::SiteStruct','onEnableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
++        };
++    };
++    $sth->finish();
++    
++    #Включаем страницы в структуре сайта
++    $dbh->do("UPDATE ng_sitestruct set disabled = 0 where $where and disabled = ?", undef, @params, $pageId) or return $cms->error($DBI::errstr);
++    
+     return $self->_redirect($pageId,0);
+ };
+ 
+@@ -1294,46 +1317,78 @@
+     my $is_ajax = shift;
+     
+     my $cms = $self->cms();
+-	my $dbh = $cms->dbh();
+-	my $q = $cms->q();
++    my $dbh = $cms->dbh();
++    my $q = $cms->q();
+ 
+     my $pageId = $q->param('id');
+     $pageId = $self->{_pageId} unless defined $pageId;
+     is_valid_id($pageId) or return $cms->error("Некорректный код страницы");
+ 
+-    my $tree = NG::Nodes->new();
+-	$tree->initdbparams(
++    my $node = NG::Nodes->new();
++    $node->initdbparams(
+         db     => $self->db(),
+         table  => "ng_sitestruct",
+         fields => $cms->getPageFields(),
+     );
+-    $tree->loadNode($pageId);
+-	
+-	my $where = "";
+-	my @params = ();
+-	
+-	my $bOrder = $tree->getSubtreeBorderOrder();
+-	if ($bOrder) {
+-		$where .= " tree_order>=? and tree_order<?";
+-		push @params, $tree->getNodeValue()->{tree_order};;
+-		push @params, $bOrder;
+-	} else {
+-		$where .= " tree_order>=?";
+-		push @params, $tree->getNodeValue()->{tree_order};
+-	};
+-	
+-	$dbh->do("UPDATE ng_sitestruct set disabled = ? where $where and disabled = 0", undef, $pageId, @params) or return $cms->error($DBI::errstr);
+-	
+-	my $pageFields = $cms->getPageFields();
+-	my $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order desc") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
+-	$sth->execute(@params,$pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
+-	while (my $pRow = $sth->fetchrow_hashref()) {
+-		my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
+-		$self->_makeEvent('disablenode',{PAGEOBJ=>$pageObj});
+-		$self->_makeLogEvent({page_id=>$pRow->{id},operation=>"Выключение страницы",operation_param=>sprintf("%s (%s) id %s",$pRow->{name},$pRow->{url},$pRow->{id})});
+-	}
+-	$sth->finish();
+-	
++    $node->loadNode($pageId);
++    my $nodeValue = $node->getNodeValue();
++    
++    return $cms->error("Node already disabled")   if $nodeValue->{disabled} != 0;
++    
++    my $where = "";
++    my @params = ();
++    
++    my $bOrder = $node->getSubtreeBorderOrder();
++    if ($bOrder) {
++        $where .= " tree_order>=? and tree_order<?";
++        push @params, $nodeValue->{tree_order};
++        push @params, $bOrder;
++    } else {
++        $where .= " tree_order>=?";
++        push @params, $nodeValue->{tree_order};
++    };
++
++    #Запрашиваем наличие cвязанных включенных страниц с link_id страниц, подлежащих выключению
++    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id in (select link_id from ng_sitestruct where $where and disabled = 0)") or return $cms->error($DBI::errstr);
++    $sth->execute($nodeValue->{subsite_id},@params) or return $cms->error($DBI::errstr);
++    my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
++    $sth->finish();
++    
++    #Выключаем страницы в структуре сайта
++    $dbh->do("UPDATE ng_sitestruct set disabled = ? where $where and disabled = 0", undef, $pageId, @params) or return $cms->error($DBI::errstr);
++    
++    #Запрашиваем список страниц, подлежащих выключению, для проведения операций
++    my $pageFields = $cms->getPageFields();
++    $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order desc") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
++    $sth->execute(@params,$pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
++    while (my $pRow = $sth->fetchrow_hashref()) {
++        #warn "Disabling: ".$pRow->{id} ." LI ".$pRow->{link_id}." LA ".$pRow->{lang_id};
++        my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
++        #$pageObj->disablePage(); #TODO: extend $pageObj API
++        $self->_makeEvent('disablenode',{PAGEOBJ=>$pageObj});
++        $self->_makeLogEvent({page_id=>$pRow->{id},operation=>"Выключение страницы",operation_param=>sprintf("%s (%s) id %s",$pRow->{name},$pRow->{url},$pRow->{id})});
++        NGPlugins->invoke('NG::SiteStruct','onDisableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
++        
++        my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
++        if ($enabledLinkedPages) {
++            #Есть включенные связанные страницы, проверим язык
++            unless ($enabledLinkedPages->{$pRow->{lang_id}}) {
++                #Больше не осталось связанных страниц с таким языком 
++                #warn "DISABLING LINKID ".$pRow->{link_id}." LANG ".$pRow->{lang_id};
++                NGPlugins->invoke('NG::SiteStruct','onDisableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
++            }
++            #Есть связанные страницы, линк целиком не отключаем.
++        }
++        else {
++            #Отключаем линк целиком и языковой линк отдельно
++            #warn "DISABLING (1) FULL LINKID ".$pRow->{link_id};
++            #warn "DISABLING (2) LANG LINKID ".$pRow->{link_id}." LANG ".$pRow->{lang_id};
++            NGPlugins->invoke('NG::SiteStruct','onDisableNodeLink',{LINKID=> $pRow->{link_id}});
++            NGPlugins->invoke('NG::SiteStruct','onDisableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
++        };
++    };
++    $sth->finish();
++    
+     return $self->_redirect($pageId,0);
+ };
+ 
+@@ -1446,23 +1501,24 @@
+ 				return $self->error("При удалении страницы $dpageId возникла ошибка вызова destroyPage(). Возможно, не все удаляемые страницы были удалены. $e");
+ 			};
+ 			$self->_deleteNode($dpageId);
+-			$db->deleteFTSIndex({PAGEID=>$dpageId});
+-            $self->_makeEvent('deletenode',{PAGEOBJ=>$dpageObj,PAGE_ID=>$dpageId});
++            $self->_makeEvent('deletenode',{PAGEOBJ=>$dpageObj,PAGEID=>$dpageId});
++            NGPlugins->invoke('NG::SiteStruct','onDeleteNode',{PAGEID=>$dpageId,PAGEOBJ=>$dpageObj});
++            #Logging event
+             my $page_row = $dpageObj->getPageRow();
+             $self->_makeLogEvent({page_id=>$page_row->{id},operation=>"Удаление страницы",operation_param=>sprintf("%s (%s) id %s",$page_row->{name},$page_row->{url},$page_row->{id})});
+ 		};
+ 
+ 		#Если не осталось страниц в линке, делаем финальную подчистку
+ 		unless (scalar keys %{$lpageObjs}) {
+-			$db->deleteFTSIndex({LINKID=>$linkId});
+ 			$self->_makeEvent('deletelink',{LINKID=>$linkId});
++			NGPlugins->invoke('NG::SiteStruct','onDeleteNodeLink',{LINKID=>$linkId});
+ 		}
+ 		else {
+ 			#Если не осталось страниц в некотором языке линка, делаем подчистку
+ 			foreach my $langId (keys %{$linkLang}) {
+ 				next if scalar(keys %{$linkLang->{$langId}});
+-				$db->deleteFTSIndex({LINKID=>$linkId,LANGID=>$langId});
+ 				$self->_makeEvent('deletelink',{LINKID=>$linkId,LANGID=>$langId});
++				NGPlugins->invoke('NG::SiteStruct','onDeleteNodeLink',{LINKID=>$linkId, LANGID=>$langId});
+ 			};
+ 		};
+         return $self->_redirect($pageObj->getParentPageId(),$is_ajax);
+Index: DBI.pm
+===================================================================
+--- DBI.pm	(revision 15)
++++ DBI.pm	(revision 16)
+@@ -42,10 +42,10 @@
+ sub connect {
+     my $self = shift;
+     if (scalar(@_)) {
+-	foreach my $k qw(_ds _username _passwd _attr) {
+-	    my $t = shift or next;
+-	    $self->{$k} = $t;
+-	}
++        foreach my $k qw(_ds _username _passwd _attr) {
++            my $t = shift or next;
++            $self->{$k} = $t;
++        };
+     }
+     $self->{_dbh} = DBI->connect_cached($self->{_ds},$self->{_username},$self->{_passwd},$self->{_attr});#,{'pg_enable_utf8'=>1}
+     if (!defined $self->{_dbh}) {
+@@ -61,11 +61,11 @@
+     my $self = shift;
+     $self->{_dbh} = undef;
+     $self->{_errstr} = "";
+-	foreach my $k qw(_ds _username _passwd _attr) {
+-	    my $t = shift or next;
+-	    $self->{$k} = $t;
+-	};
+-	1;
++    foreach my $k qw(_ds _username _passwd _attr) {
++        my $t = shift or next;
++        $self->{$k} = $t;
++    };
++    1;
+ }
+ 
+ sub dbh {
+@@ -155,5 +155,72 @@
+     
+ }
+ 
++#SiteStruct plugin events
++
++sub onEnableNodeLink {
++    my $class = shift;
++    my $link = shift;
++    
++    if ($link->{LINKID} && $link->{LANGID}) {
++        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 0 WHERE link_id=? and lang_id = ?",undef,$link->{LINKID},$link->{LANGID}) or warn "onEnableNodeLink(): ".$DBI::errstr;
++    }
++    elsif ($link->{LINKID}) {
++        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 0 WHERE link_id=? and lang_id = 0",undef,$link->{LINKID}) or warn "onEnableNodeLink(): ".$DBI::errstr;
++    }
++    else {
++        warn "onEnableNodeLink(): Missing LINKID value"
++    };
++    return 1;
++};
++
++sub onDisableNodeLink {
++    my $class = shift;
++    my $link = shift;
++    
++    if ($link->{LINKID} && $link->{LANGID}) {
++        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 1 WHERE link_id=? and lang_id = ?",undef,$link->{LINKID},$link->{LANGID}) or warn "onDisableNodeLink(): ".$DBI::errstr;
++    }
++    elsif ($link->{LINKID}) {
++        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 1 WHERE link_id=? and lang_id = 0",undef,$link->{LINKID}) or warn "onDisableNodeLink(): ".$DBI::errstr;
++    }
++    else {
++        warn "onDisableNodeLink(): Missing LINKID value"
++    };
++    return 1;
++};
++
++sub onEnableNode {
++    my $class = shift;
++    my $link = shift;
++    
++    if ($link->{PAGEID}) {
++        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 0 WHERE page_id=?",undef,$link->{PAGEID}) or warn "onEnableNode(): ".$DBI::errstr;
++    }
++    else {
++        warn "onEnableNode(): Missing PAGEID value"
++    };
++    return 1;
++};
++
++sub onDisableNode {
++    my $class = shift;
++    my $link = shift;
++    
++    if ($link->{PAGEID}) {
++        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 1 WHERE page_id=?",undef,$link->{PAGEID}) or warn "onDisableNode(): ".$DBI::errstr;
++    }
++    else {
++        warn "onDisableNode(): Missing PAGEID value"
++    };
++    return 1;
++};
++
++sub onDeleteNodeLink {
++    my $class = shift;
++    my $link = shift;
++    
++    $class->cms()->db()->deleteFTSIndex($link);
++};
++
+ return 1;
+-END{};
+\ No newline at end of file
++END{};
