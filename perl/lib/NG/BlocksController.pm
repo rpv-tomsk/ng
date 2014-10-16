@@ -97,6 +97,16 @@ sub _pushBlock {
 
      SOURCE      - Одно из значений: push/tmpl/neigh
      KEYS        - ключи, полученные из вызова getBlockKeys()
+       Обрабатываемые ключи:
+            REQUEST          - Ключи, идентифицирующие контент блока.
+            VERSION_KEYS     - От каких ключей зависит контент блока.
+            NOCACHE          - флаг запрета сохранения контента блока в кеш.
+            MAXAGE           - Максимальный срок жизни контента в кеше.
+            ETAG             -
+            LM               -
+            RELATED          - Данные для подчиненных блоков, выставляются при формировании контента.
+            HASRELATED       - выставляется в getBlockKeys(), признак, что в getBlockContent() или из кеша в RELATED будут выставлены данные.
+    
      CACHEKEYS   - метаданные, полученные из кеша, при их наличии.
         Состав метаданных:
             HEADERS          - заголовки, возвращенные функцией построения контента
@@ -445,7 +455,10 @@ warn "VERSIONS length mismatch, ".$block->{CODE}.": ".scalar(@{$ckeys->{VERSIONS
             $i++;
             last if !defined $ckeys->{VERSIONS}->[$i] && !defined $block->{VERSIONS}->[$i];
 #warn "Compare VERSIONS : ". $ckeys->{VERSIONS}->[$i] . " and " . $block->{VERSIONS}->[$i]. " for ".$block->{CODE};
-            return 0 unless $ckeys->{VERSIONS}->[$i] && $block->{VERSIONS}->[$i];
+            unless ($ckeys->{VERSIONS}->[$i] && $block->{VERSIONS}->[$i]) {
+                $keys->{NOCACHE} = 1; #Версия является некорректной (значение 0);
+                return 0;
+            };
             next if $ckeys->{VERSIONS}->[$i] == $block->{VERSIONS}->[$i];
             return 0;
         };
@@ -640,6 +653,7 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
         next if $cc && scalar @{$cc}; #Skip cookies cacheing.
         next unless $block->{KEYS}->{REQUEST};      #Could be cached
         next if $block->{CACHEKEYS};                #Next if already cached
+        next if $block->{KEYS}->{NOCACHE};
         
         push @newContent, $self->_prepareCacheContent($block);
     };
