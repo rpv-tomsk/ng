@@ -109,6 +109,7 @@ sub _pushBlock {
           Для АБ:
             RELATED          - Данные для подчиненных блоков, выставляются при формировании контента.
             HASRELATED       - выставляется в getBlockKeys(), признак, что в getBlockContent() или из кеша в RELATED будут выставлены данные.
+            REDIRECT         - АБ говорит что его строить не надо, а нужен редирект.
     
      CACHEKEYS   - метаданные, полученные из кеша, при их наличии.
         Состав метаданных:
@@ -208,8 +209,11 @@ sub pushABlock {
     
 #NG::Profiler::saveTimestamp("pushABlock begin: ".ref($block->{MODULEOBJ})."_".$block->{ACTION},"pushABlock");
     
-    #Проверяем возможность кеширования.
+    #Запросим ключи АБ для дальнейших действий
     my $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
+    #Специальный костылек для удобного возврата перенаправлений из АБ
+    return $self->cms->redirect($abKeys->{REDIRECT}) if $abKeys->{REDIRECT};
+    #Проверяем возможность кеширования.
     if (!$abKeys->{REQUEST}) {
         #Если нет REQUEST значит кэширование невозможно.
         #Сделаем вызов getBlockContent() до построения списка блоков, на случай редиректа и т д  - оптимизация.
