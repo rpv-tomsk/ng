@@ -80,9 +80,9 @@ sub storeCacheContent {
 
 
 sub _createVersionKey {
-    my ($self,$key) = (shift,shift);
+    my ($self,$key,$value) = (shift,shift);
     
-    my $ret = $MEMCACHED->add($key,1,$VERSION_EXPIRATION);
+    my $ret = $MEMCACHED->add($key,$value,$VERSION_EXPIRATION);
     if (!defined $ret) {
         warn "Error MEMCACHED::add($key)";
         return 0;
@@ -110,9 +110,10 @@ sub _createVersionKey {
 sub updateKeysVersion {
     my ($self,$keys) = (shift,shift);
     
+    my $ret = undef;
     foreach my $id (@$keys) {
         my $key = $self->cms->getCacheId('version',$id);
-        my $ret = $MEMCACHED->incr("version_".$key);
+        $ret = $MEMCACHED->incr("version_".$key);
         if (!defined $ret) {
             warn "Error MEMCACHED::incr(version_$key)";
             next;
@@ -121,9 +122,9 @@ sub updateKeysVersion {
             warn "Set new value on (version_$key): $ret";
             next;
         };
-        $self->_createVersionKey("version_".$key);
+        $ret = $self->_createVersionKey("version_".$key,2);
     };
-    return 1;
+    return $ret;
 };
 
 sub getKeysVersion {
@@ -142,7 +143,7 @@ sub getKeysVersion {
     foreach my $key (@mkeys) {
         #warn "getKeysVersion(): $key ".((exists $mversions->{$key})?"":"not ")."found: ".((exists $mversions->{$key})?$mversions->{$key}:""); #unless exists $mversions->{$key};
         unless (exists $mversions->{$key}) {
-            $mversions->{$key} = $self->_createVersionKey($key);
+            $mversions->{$key} = $self->_createVersionKey($key,1);
         };
         push @$versions,$mversions->{$key};
     };
