@@ -104,6 +104,9 @@ sub _pushBlock {
             MAXAGE           - Максимальный срок жизни контента в кеше.
             ETAG             -
             LM               -
+            ALLOWREDIRECT    - Разрешает не-АБ блоку страницы возвращать редирект
+          
+          Для АБ:
             RELATED          - Данные для подчиненных блоков, выставляются при формировании контента.
             HASRELATED       - выставляется в getBlockKeys(), признак, что в getBlockContent() или из кеша в RELATED будут выставлены данные.
     
@@ -646,7 +649,10 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
         my $c = $self->getBlockContent($block);
         
         return $c if $c eq 0 || $c->is_error();
-        return $cms->error("Block $blockCode return unsupported response type ".$c->{_type}) unless $c->is_output();
+        unless ($c->is_output()) {
+            return $c if $block->{KEYS}->{ALLOWREDIRECT} && $c->is_redirect();
+            return $cms->error("Block $blockCode return unsupported response type ".$c->{_type});
+        };
         
         #Упс, куки ? Нереальный сценарий, т.к. куки выставляются через $cms->addCookie() и в блоке недоступны.
         my $cc = $c->cookies();
