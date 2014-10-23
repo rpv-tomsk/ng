@@ -78,9 +78,8 @@ sub storeCacheContent {
     return 1;
 };
 
-
 sub _createVersionKey {
-    my ($self,$key,$value) = (shift,shift);
+    my ($self,$key,$value) = (shift,shift,shift);
     
     my $ret = $MEMCACHED->add($key,$value,$VERSION_EXPIRATION);
     if (!defined $ret) {
@@ -176,28 +175,8 @@ sub getCacheData {
     $ret;
 };
 
-sub initialize {
+sub _initMemcached {
     my ($class,$params) = (shift,shift);
-    
-    die "NG::Cache::Memcached->initialize(): initialize() must be called only from BEGIN {} blocks" unless ${^GLOBAL_PHASE} eq "START" || exists $ENV{MOD_PERL};
-    die "NG::Cache::Memcached->initialize(): No parameters passed" unless $params && ref $params eq "HASH";
-    die "NG::Cache::Memcached->initialize(): Another cache is already set up." if $NG::Application::Cache and ref $NG::Application::Cache ne "NG::Cache::Stub";
-    
-    if ($params->{MEMCACHED}) {
-        $NG::Application::Cache = {};
-        bless $NG::Application::Cache,__PACKAGE__;
-
-        $MEMCACHED = $params->{MEMCACHED};
-        return;
-    };
-    
-    die "NG::Cache::Memcached->initialize(): Namespace not specified" unless defined $params->{namespace};
-
-    $NG::Application::Cache = {};
-    bless $NG::Application::Cache,__PACKAGE__;
-
-    eval "use Cache::Memcached::Fast;";
-    die $@ if $@;
     
     my $default = {
         servers => ['localhost:11211'],
@@ -214,7 +193,34 @@ sub initialize {
         next if exists $params->{$key};
         $params->{$key} = $default->{$key};
     };
-    $MEMCACHED = new Cache::Memcached::Fast($params);
+    new Cache::Memcached::Fast($params);
+};
+
+sub initialize {
+    my ($class,$params) = (shift,shift);
+    
+    die "NG::Cache::Memcached->initialize(): initialize() must be called only from BEGIN {} blocks" unless ${^GLOBAL_PHASE} eq "START" || exists $ENV{MOD_PERL};
+    die "NG::Cache::Memcached->initialize(): No parameters passed" unless $params && ref $params eq "HASH";
+    die "NG::Cache::Memcached->initialize(): Another cache is already set up." if $NG::Application::Cache and ref $NG::Application::Cache ne "NG::Cache::Stub";
+    
+    if ($params->{MEMCACHED}) {
+        $NG::Application::Cache = {};
+        bless $NG::Application::Cache,__PACKAGE__;
+
+        $MEMCACHED = $params->{MEMCACHED};
+        return;
+    };
+    
+    die "NG::Cache::Memcached->initialize(): Namespace not specified" unless defined $params->{namespace};
+    
+    eval "use Cache::Memcached::Fast;";
+    die $@ if $@;
+
+    $NG::Application::Cache = {};
+    bless $NG::Application::Cache,__PACKAGE__;
+    
+    $MEMCACHED = $class->_initMemcached($params);
+    warn $MEMCACHED;
 };
 
 return 1;
