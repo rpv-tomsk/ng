@@ -1613,6 +1613,32 @@ sub setCacheData {
 };
 
 my $digesterInitialized = 0;
+my $fix;
+$fix = sub {
+    my ($h,$p) = (shift,shift);
+    my $ref = ref $h;
+    return if $ref eq '';
+    
+    my $id = pack "J", Scalar::Util::refaddr($h);
+    return if exists $p->{$id};
+    $p->{$id} = 1;
+    
+    if ($ref eq "HASH") {
+        foreach my $k (keys $h) {
+            &$fix($h->{$k},$p) if ref $h->{$k};
+            $h->{$k} = "$h->{$k}" if Scalar::Util::looks_like_number($h->{$k});
+        };
+    }
+    elsif ($ref eq "ARRAY") {
+        foreach my $e (@$h) {
+            &$fix($e,$p) if ref $e;
+            $e = "$e" if Scalar::Util::looks_like_number($e);
+        };
+    }
+    else {
+        die "Unsupported value $ref";
+    };
+};
 
 sub getCacheId {
     my ($self,$type,$data) = (shift,shift,shift);
@@ -1622,11 +1648,13 @@ sub getCacheId {
     unless ($digesterInitialized) {
         eval "use Storable qw(freeze thaw);";
         eval "use Digest::MD5 qw(md5_hex);";
+        eval "use Scalar::Util qw();";
         $digesterInitialized = 1;
     };
     
     local $Storable::canonical = 1;
     
+    &$fix($data,{});
     my $r = freeze($data);
     my $key = md5_hex($r);
     
