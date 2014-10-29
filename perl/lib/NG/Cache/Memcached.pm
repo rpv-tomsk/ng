@@ -171,7 +171,7 @@ sub getCacheData {
     
     my $key = $self->cms->getCacheId('data',$id);
     my $ret = $MEMCACHED->get("data_".$key);
-    warn "getCacheData(): data_$key ".((defined $ret)?"":" not ")."found"; #unless exists $mcontent->{$key};
+    #warn "getCacheData(): data_$key ".((defined $ret)?"":" not ")."found"; #unless exists $mcontent->{$key};
     $ret;
 };
 
@@ -220,7 +220,6 @@ sub initialize {
     bless $NG::Application::Cache,__PACKAGE__;
     
     $MEMCACHED = $class->_initMemcached($params);
-    warn $MEMCACHED;
 };
 
 return 1;
