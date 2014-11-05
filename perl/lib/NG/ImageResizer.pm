@@ -32,7 +32,7 @@ sub run {
     NG::Exception->throw('NG.INTERNALERROR','Module not configured') unless $cfg;
     NG::Exception->throw('NG.INTERNALERROR','URL request does not match base') unless $url =~ s/^\/$baseUrl//;
     
-    NG::Exception->throw('NG.INTERNALERROR','Unable to split reques URL') unless $url =~ s/^([^\/]+)\/([^\/]+)\///;
+    NG::Exception->throw('NG.INTERNALERROR','Unable to split request URL') unless $url =~ s/^([^\/]+)\/([^\/]+)\///;
     my ($groupName,$sizeName) = ($1,$2);
     
     my $group = $cfg->{$groupName};
