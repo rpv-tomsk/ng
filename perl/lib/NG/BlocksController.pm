@@ -254,6 +254,8 @@ sub pushABlock {
         scalar(@{$block->{VERSIONS}}) == scalar(@allCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
 #NG::Profiler::saveTimestamp("getKeysVersion for AB","pushABlock");
     };
+    #Теоретически, мы можем валидировать контент по VERSION_KEYS и он может оказаться устаревшим.
+    #Тогда проверять USED_VERSIONS вроде как уже и не надо, но мы не будем заморачиваться.
     #Запросим версии, соответствующие использованным при построении контента (USED_VERSIONS)
     if ($block->{CACHEKEYS} && $block->{CACHEKEYS}->{USED_VERSIONS}) {
         my $CUV = $block->{CACHEKEYS}->{USED_VERSIONS};
