@@ -105,6 +105,10 @@ sub _pushBlock {
             ETAG             -
             LM               -
             ALLOWREDIRECT    - Разрешает не-АБ блоку страницы возвращать редирект
+            USED_VERSIONS    - Массив из двух элементов для перечисления использованных версий.
+                                Первый элемент (индекс 0) - массив значений версий, использованных при построении блока
+                                Второй элемент (индекс 1) - массив "прямых ключей", по которым из кеша можно получить текущее значение версии.
+                                Значение выставляется при формировании контента блока, используется для сохранения в кеш (сохраняется напрямую).
           
           Для АБ:
             RELATED          - Данные для подчиненных блоков, выставляются при формировании контента.
@@ -118,12 +122,13 @@ sub _pushBlock {
             RELATED          - ключи, выставленные в функции построения контента
             VERSIONS         - хеш значений, соответствующих элементам из VERSION_KEYS
             
-            USED_VERSIONS    - Хеш: $MD5(MODULECODE+KEYS) => $VERSION /// NOT IMPLEMENTED!
+            USED_VERSIONS    - Значение, выставленное в функции построения контента
             ETAG             - Ключи проверки устаревания закешированного контента
             LM               - 
         
      CONTENT
-     VERSIONS    - хеш значений, соответствующих элементам из VERSION_KEYS
+     VERSIONS    - массив значений, соответствующих элементам из VERSION_KEYS
+     USED_VERSIONS    - массив значений, соответствующих элементам из CACHEKEYS.USED_VERSIONS
      
      MODULEOBJ   - Объект модуля блока
      
@@ -245,9 +250,19 @@ sub pushABlock {
             $vKey->{MODULECODE} ||= $block->{MODULECODE} or die "Unable to get MODULECODE while processing VERSION_KEYS of active block";
             push @allCacheId, $vKey;
         };
-        $block->{VERSIONS} = $CACHE->getKeysVersion(\@allCacheId);
+        $block->{VERSIONS} = $CACHE->getKeysVersion(\@allCacheId)->[0];
         scalar(@{$block->{VERSIONS}}) == scalar(@allCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
 #NG::Profiler::saveTimestamp("getKeysVersion for AB","pushABlock");
+    };
+    #Запросим версии, соответствующие использованным при построении контента (USED_VERSIONS)
+    if ($block->{CACHEKEYS} && $block->{CACHEKEYS}->{USED_VERSIONS}) {
+        my $CUV = $block->{CACHEKEYS}->{USED_VERSIONS};
+        die "Invalid USED_VERSIONS value got from cache." if ref $CUV ne "ARRAY" || scalar(@$CUV) != 2;
+        die "Invalid USED_VERSIONS value got from cache. Elements are not arrays"  unless $CUV->[0] && $CUV->[1] && ref $CUV->[0] eq "ARRAY" && ref $CUV->[1] eq "ARRAY";
+        die "Invalid USED_VERSIONS value got from cache. Subarray length mismatch" unless scalar(@{$CUV->[0]}) == scalar(@{$CUV->[1]});
+        
+        $block->{USED_VERSIONS} = $CACHE->getKeysVersion($CUV->[1],1)->[0];
+        scalar(@{$block->{USED_VERSIONS}}) == scalar(@{$CUV->[1]}) or die "getKeysVersion(USED_VERSIONS): Incorrect ARRAY returned";
     };
     
     #Проверим, не устарел ли контент АБ.
@@ -418,7 +433,7 @@ sub requestCacheKeys {
                 $vKey->{MODULECODE} ||= $block->{MODULECODE} or die "Unable to get MODULECODE while processing VERSION_KEYS of block";
                 push @allVersionCacheId, $vKey;
             };
-            $block->{VERSIONS} = $CACHE->getKeysVersion(\@allVersionCacheId);
+            $block->{VERSIONS} = $CACHE->getKeysVersion(\@allVersionCacheId)->[0];
             if (defined $block->{VERSIONS}) {
                 scalar(@{$block->{VERSIONS}}) == scalar(@allVersionCacheId) or die "getKeysVersion(): Incorrect ARRAY returned";
             };
@@ -434,6 +449,16 @@ sub requestCacheKeys {
             my $metadata = shift @$allMetadata;
             next unless $metadata;
             $block->{CACHEKEYS} = $metadata;
+            
+            #Запросим версии, соответствующие использованным при построении контента (USED_VERSIONS)
+            if ($metadata->{USED_VERSIONS}) {
+                my $CUV = $metadata->{USED_VERSIONS};
+                die "Invalid USED_VERSIONS value got from cache." if ref $CUV ne "ARRAY" || scalar(@$CUV) != 2;
+                die "Invalid USED_VERSIONS value got from cache. Elements are not arrays"  unless $CUV->[0] && $CUV->[1] && ref $CUV->[0] eq "ARRAY" && ref $CUV->[1] eq "ARRAY";
+                die "Invalid USED_VERSIONS value got from cache. Subarray length mismatch" unless scalar(@{$CUV->[0]}) == scalar(@{$CUV->[1]});
+                $block->{USED_VERSIONS} = $CACHE->getKeysVersion($CUV->[1],1)->[0];
+                scalar(@{$block->{USED_VERSIONS}}) == scalar(@{$CUV->[1]}) or die "getKeysVersion(USED_VERSIONS): Incorrect ARRAY returned";
+            };
         };
     };
 #NG::Profiler::saveTimestamp("done","requestCacheKeys");
@@ -467,6 +492,24 @@ warn "VERSIONS length mismatch, ".$block->{CODE}.": ".scalar(@{$ckeys->{VERSIONS
                 return 0;
             };
             next if $ckeys->{VERSIONS}->[$i] == $block->{VERSIONS}->[$i];
+            return 0;
+        };
+    };
+    
+    if ($ckeys->{USED_VERSIONS}) {
+        my $CUV = $ckeys->{USED_VERSIONS}->[0]; #Массив версий, соответствующих кешированному контенту
+        my $BUV = $block->{USED_VERSIONS};      #Массив актуальных версий
+        
+        my $i = -1;
+        while (1) {
+            $i++;
+            last if !defined $CUV->[$i] && !defined $BUV->[$i];
+#warn "Compare USED_VERSIONS : ". $CUV->[$i] . " and " . $BUV->[$i]. " for ".$block->{CODE};
+            unless ($CUV->[$i] && $BUV->[$i]) {
+                $keys->{NOCACHE} = 1; #Версия является некорректной (значение 0);
+                return 0;
+            };
+            next if $CUV->[$i] == $BUV->[$i];
             return 0;
         };
     };
@@ -525,6 +568,15 @@ sub _prepareCacheContent {
     $metadata->{HEADKEYS} = $hk if $hk;
     $metadata->{TYPE} = 4 if $c->is_exit();
     
+    #Сохраняемые параметры результата построения блока
+    my $UV = $block->{KEYS}->{USED_VERSIONS};
+    die "Invalid USED_VERSIONS value." if $UV && (ref $UV ne "ARRAY" || scalar(@$UV) != 2);
+    if ($UV && defined $UV->[0]) {
+        die "Invalid USED_VERSIONS value. Elements are not arrays"  unless $UV->[0] && $UV->[1] && ref $UV->[0] eq "ARRAY" && ref $UV->[1] eq "ARRAY";
+        die "Invalid USED_VERSIONS value. Subarray length mismatch" unless scalar(@{$UV->[0]}) == scalar(@{$UV->[1]});
+        #Сохраняем если есть элементы
+        $metadata->{USED_VERSIONS} = $UV if scalar(@{$UV->[0]});
+    };
     #Сохраняемые параметры для подчиненных блоков
     $metadata->{RELATED} = $block->{KEYS}->{RELATED} if exists $block->{KEYS}->{RELATED};
     #Сохраняемые параметры для проверки устаревания

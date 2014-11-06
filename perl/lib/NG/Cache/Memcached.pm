@@ -135,12 +135,22 @@ sub updateKeysVersion {
 
 sub getKeysVersion {
 #warn "getKeysVersion()";
-    my ($self,$keys) = (shift,shift);
+    my ($self,$keys,$direct) = (shift,shift,shift);
     
     my @mkeys = ();
-    foreach my $id (@$keys) {
-        my $key = $self->cms->getCacheId('version',$id);
-        push @mkeys, "version_".$key;
+    my @directKeys = ();
+    unless ($direct) {
+        foreach my $id (@$keys) {
+            my $key = (ref $id)?$self->cms->getCacheId('version',$id):$id;
+            push @directKeys, $key;
+            push @mkeys, "version_".$key;
+        };
+    }
+    else {
+        foreach my $key (@$keys) {
+            push @directKeys, $key;
+            push @mkeys, "version_".$key;
+        };
     };
     
     my $mversions = $MEMCACHED->get_multi(@mkeys);
@@ -153,7 +163,9 @@ sub getKeysVersion {
         };
         push @$versions,$mversions->{$key};
     };
-    return $versions;
+    #Массив значений версий + массив внутренних ключей.
+    #Функция должна возвращать требуемые значения, если ей передан массив внутренних ключей в качестве $keys и выставлен флаг $direct
+    return [$versions,\@directKeys];
 };
 
 sub setCacheData {

@@ -1593,6 +1593,23 @@ sub getKeysVersion {
         $key->{MODULECODE} ||= $mcode or die "cms->getKeysVersion(): Unable to get MODULECODE";
         push @allCacheId, $key;
     };
+    $NG::Application::Cache->getKeysVersion(\@allCacheId)->[0];
+};
+
+sub getUsedVersions {
+    my ($cms,$module,$keys) = (shift,shift,shift);
+    $keys = [$keys] if (ref $keys eq "HASH");
+    
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    
+    die "cms->getKeysVersion(): \$keys not HASH or ARRAYREF" unless ref $keys eq "ARRAY";
+    
+    my @allCacheId = ();
+    foreach my $key (@$keys) {
+        $key->{MODULECODE} ||= $mcode or die "cms->getKeysVersion(): Unable to get MODULECODE";
+        push @allCacheId, $key;
+    };
     $NG::Application::Cache->getKeysVersion(\@allCacheId);
 };
 
@@ -1761,7 +1778,7 @@ sub updateKeysVersion {
 };
 
 sub getKeysVersion {
-    return undef;
+    return [undef,undef];
 };
 
 sub getCacheData {
