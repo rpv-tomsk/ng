@@ -135,11 +135,11 @@ sub updateKeysVersion {
 
 sub getKeysVersion {
 #warn "getKeysVersion()";
-    my ($self,$keys,$direct) = (shift,shift,shift);
+    my ($self,$keys,$_direct) = (shift,shift,shift);
     
     my @mkeys = ();
     my @directKeys = ();
-    unless ($direct) {
+    unless ($_direct) {
         foreach my $id (@$keys) {
             my $key = (ref $id)?$self->cms->getCacheId('version',$id):$id;
             push @directKeys, $key;
@@ -164,7 +164,8 @@ sub getKeysVersion {
         push @$versions,$mversions->{$key};
     };
     #Массив значений версий + массив внутренних ключей.
-    #Функция должна возвращать требуемые значения, если ей передан массив внутренних ключей в качестве $keys и выставлен флаг $direct
+    #Функция должна возвращать требуемые значения, если ей передан массив внутренних ключей в качестве $keys и выставлен флаг $_direct
+    #Флаг $_direct может быть выставлен только в BlocksController, коду сайтов флаг недоступен.
     return [$versions,\@directKeys];
 };
 
