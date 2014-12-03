@@ -255,6 +255,25 @@ sub afterUpdate  { my $self = shift; my $form = shift; return NG::Block::M_OK; }
 sub afterFormLoadData  { return NG::Block::M_OK; };
 sub afterSetFormValues { return NG::Block::M_OK; };
 
+sub getReference {
+    my $self = shift;
+    my $form = shift;
+    my $q = $self->q();
+    my $ref = $q->param('ref');
+    
+    my ($u, $p) = split /\?/, $ref;
+    my @params = ();
+    foreach my $pair (split /&/, $p) {
+        my ($n, $v) = split /=/, $pair;
+        next if ($n eq 'rand');
+        push @params, $n.'='.$v;
+    };
+    push @params, 'rand='.int(rand(1000));
+    $ref = $u.'?'.join('&', @params);
+    return $ref;
+};
+
+
 sub _pushFields {
     my $self = shift;
     my $array = shift;
