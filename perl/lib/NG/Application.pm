@@ -1636,7 +1636,7 @@ $fix = sub {
     $p->{$id} = 1;
     
     if ($ref eq "HASH") {
-        foreach my $k (keys $h) {
+        foreach my $k (keys %$h) {
             &$fix($h->{$k},$p) if ref $h->{$k};
             $h->{$k} = "$h->{$k}" if Scalar::Util::looks_like_number($h->{$k});
         };
