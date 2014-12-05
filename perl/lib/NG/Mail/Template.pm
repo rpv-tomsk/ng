@@ -26,7 +26,7 @@ sub _load {
     my $sql = 'select id, name, subject, html, plain from mtemplates where module = ? and code=?';
     my $sth = $template->dbh()->prepare($sql) or NG::DBIException->throw();
     $sth->execute($callerCode,$templateCode) or NG::DBIException->throw();
-    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw("Запись шаблона $templateCode модуля $callerCode не найдена");
+    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw('NG.INTERNALERROR',"Запись шаблона $templateCode модуля $callerCode не найдена");
     $sth->finish();
     
     $template->{_plaint} = NG::Mail::TemplateElement->new($tmplRow->{plain},'PLAIN')   if $tmplRow->{plain};
