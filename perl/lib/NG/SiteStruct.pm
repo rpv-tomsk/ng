@@ -1474,6 +1474,7 @@ sub action_updateNode {
     $form->setTitle('Редактирование свойств страницы: "'.$oldValue->{name}.'"') unless $is_ajax;
     
     my $newUrlSuffix = undef;
+    my $nodeUrl = $oldValue->{url};
     if ($action eq "editnodeform") {
         my $oldUrl = $oldValue->{url};
         $oldUrl =~ /([^\/]*)\/$/;
@@ -1498,7 +1499,37 @@ sub action_updateNode {
         $newUrlSuffix =~ s/^\///;
         $newUrlSuffix =~ s/\/$//;
         
-        $form->pusherror("url","Значение должно содержать только латинские символы и цифры") if($newUrlSuffix =~/[^a-zA-Z0-9\_\-]/);
+        my $siteRootPageId = undef;
+        my $subsiteId = $pageObj->getSubsiteId();
+        if ($cms->confParam("CMS.hasSubsites")) {
+            my $row = $dbh->selectrow_hashref("select root_node_id from ng_subsites where id = ?",undef,$subsiteId) or return $cms->error($DBI::errstr);
+            defined $row->{root_node_id} or return $cms->error("Не могу найти значение root_node_id для подсайта");
+            $siteRootPageId = $row->{root_node_id};
+        };
+        
+        my $canChangeURL = 1;
+        $canChangeURL = 0 if (defined $siteRootPageId && $siteRootPageId == $pageId) || ($oldValue->{url} eq "/");
+        
+        if ($newUrlSuffix =~/[^a-zA-Z0-9\_\-]/) {
+            $form->pusherror("url","Значение должно содержать только латинские символы и цифры");
+            $canChangeURL = 0;
+        };
+        
+        if ($canChangeURL) {
+            $nodeUrl =~ s@([^\/]*)\/$@$newUrlSuffix\/@;
+        };
+        if ($oldValue->{url} ne $nodeUrl) {
+            #проверка конфликтов URL в пределах одного подсайта.
+            my $checkSth = $dbh->prepare("select id,name from ng_sitestruct where url = ? and subsite_id = ?") or return $self->error($DBI::errstr);
+            $checkSth->execute($nodeUrl,$subsiteId) or return $self->error($DBI::errstr);
+            my $foundPage = $checkSth->fetchrow_hashref();
+            $checkSth->finish();
+            
+            if ($foundPage && $foundPage->{id} != $pageId) {
+                $form->pusherror("url", "Укажите другое значение URL suffix. Указанный suffix ($newUrlSuffix) уже есть в этом разделе - страница '".$foundPage->{name}."'.")
+            };
+        };
+        
         $form->StandartCheck();
         if ($form->has_err_msgs()) {
             $form->cleanUploadedFiles();
@@ -1515,29 +1546,18 @@ sub action_updateNode {
         return $self->output($tmpl->output());
     };
     
-    my $siteRootPageId = undef;
-    if ($cms->confParam("CMS.hasSubsites")) {
-        my $row = $dbh->selectrow_hashref("select root_node_id from ng_subsites where id = ?",undef,$pageObj->getSubsiteId()) or return $cms->error($DBI::errstr);
-        defined $row->{root_node_id} or return $cms->error("Не могу найти значение root_node_id для подсайта");
-        $siteRootPageId = $row->{root_node_id};
-    };
-    
-    my $canChangeURL = 1;
-    $canChangeURL = 0 if (defined $siteRootPageId && $siteRootPageId == $pageId) || ($oldValue->{url} eq "/");
-    
-    my $newPageUrl = $oldValue->{url};
-    $newPageUrl =~ s@([^\/]*)\/$@$newUrlSuffix\/@ if ($canChangeURL);
-    $form->param("url",$newPageUrl);
+    #rest: $action eq "updatenode", $form has no error msgs
+
+    $form->param("url",$nodeUrl);
     $form->updateData() or return $self->error("Не удалось обновить данные: ".$form->getError());
     
     my $newValue = undef;
-    
-    if ($canChangeURL && ($oldValue->{url} ne $newPageUrl)) {
+    if ($oldValue->{url} ne $nodeUrl) {
         my $tree = $self->_create_tree_object();
         $tree->loadtree($pageId);
         $newValue = $tree->getChild(0)->getNodeValue();
         
-        NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$pageId, OLDURL=>$oldValue->{url},NEWURL=>$newPageUrl});
+        NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$pageId, OLDURL=>$oldValue->{url},NEWURL=>$nodeUrl});
         
         my $sth = $dbh->prepare("update ".$tree->{_dbtable}." set url=? where id=?") or die $DBI::errstr;
         my $res = $tree->traverseWithCheck(
