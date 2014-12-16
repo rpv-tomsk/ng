@@ -545,7 +545,7 @@ $canAddLinkedSubnode = 1;
                 $page->{PAGEROW}->{$f->{FIELD}} = $form->getParam($f->{FIELD});
             };
             
-            $page->{PAGEROW}->{url} = $page->{PARENTROW}->{url}.$url;
+            $page->{PAGEROW}->{url} = $url;
             
             push @newPages, $page->{PAGEROW};
             push @np, $page;
@@ -640,17 +640,49 @@ sub addLinkedPages {
     
     my $idx = 0;
     my $subSites = {};
+    my @newPagesInt;
     #Делаем проверки
     foreach my $newPage (@$newPages) {
         my $subsiteId = $newPage->{subsite_id};
         
         NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Duplicated subsite') if exists $subSites->{subsiteId};
         $subSites->{subsiteId} = $subsiteId;
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Forbidden field found (id/tree_order/level)') if exists $newPage->{id} || exists $newPage->{tree_order} || exists $newPage->{level};
         
-        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Missing url') unless $newPage->{url};
-        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Wrong \'url\' value') unless $newPage->{url} =~ /\/$/;
-    
-        #проверка конфликтов суффиксов в пределах одного подсайта.
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Missing parent_id') unless $newPage->{parent_id};
+        
+        #Загружаем ноду-родителя
+        my $tree = $self->_create_tree_object();
+        $tree->loadNode($newPage->{parent_id}) or NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'No parent node found');
+        my $parentRow = $tree->getNodeValue();
+        my $parentURL = $parentRow->{url} || '';
+        
+        $newPage->{url} ||= '';
+        unless ($newPage->{url} eq '/') {
+            #URL может быть задан в абсолютном пути, приведем к относительному
+            
+            $newPage->{url} =~ s/^$parentURL// if $parentURL && $newPage->{url} =~ /^\//;
+            
+            $newPage->{url} =~ s/^\///;
+            $newPage->{url} =~ s/\/$//;
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Missing url') unless $newPage->{url};
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Wrong \'url\' value') if $newPage->{url} =~ /\//;
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Wrong (non-latin) \'url\' value') if $newPage->{url} =~ /[^a-zA-Z0-9\_\-]/;
+            $newPage->{url} .= '/';
+        };
+        
+        my $int = {
+            PAGEROW => $newPage,
+            TREE    => $tree,
+            #PARENTROW => $parentRow, #Not used.
+            #PREV_SIBLING_ID => ...   #Assigned on later steps.
+            #PAGEOBJ         => ...   #Assigned on later steps.
+        };
+        push @newPagesInt, $int;
+        
+        $newPage->{url} = $parentURL.$newPage->{url} unless $newPage->{url} eq '/';
+        
+        #проверка конфликтов URL в пределах одного подсайта.
         my $checkSth = $dbh->prepare("select id,name from ng_sitestruct where url = ? and subsite_id = ?") or return $self->error($DBI::errstr);
         $checkSth->execute($newPage->{url},$subsiteId) or return $self->error($DBI::errstr);
         my $foundPage = $checkSth->fetchrow_hashref();
@@ -667,34 +699,28 @@ sub addLinkedPages {
     return $self->error($self->db()->errstr()) unless $linkId;
     
     my @initialisedPObj = ();
-    my @prevSiblingId = ();
     my @linkedPages = ();
     my $ret = eval {
         #Создаем записи в структуре сайта
         $idx = 0;
-        foreach my $newPage (@$newPages) {
-            my $subsiteId = $newPage->{subsite_id};
+        foreach my $int (@newPagesInt) {
+            my $newPage = $int->{PAGEROW};
+            my $tree    = $int->{TREE};
             
             $newPage->{link_id} = $linkId;
             $newPage->{subptmplgid} ||= "0";
             $newPage->{catch}       ||= "0";
-            
-            my $tree = $self->_create_tree_object();
-            $tree->loadNode($newPage->{parent_id}) or NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'No parent node found');
-            
-            #$ppage->{PARENTROW} = $tree->getNodeValue();
             
             #Ищем, ноду, после которой будет добавлена наша новая страница. Посылаем её параметры в event для синхронизации деревьев
             my $lastChild = undef;
             my $lastChildOrd = $tree->getLastChildOrder();
             if ($lastChildOrd) {
                 $lastChild = $self->_create_tree_object();
-                $lastChild = $lastChild->loadNode(tree_order => $lastChildOrd );
+                $lastChild = $lastChild->loadNode(tree_order => $lastChildOrd);
             };
                 
             if ($lastChild) {
-                $prevSiblingId[$idx] = $lastChild->{_id};
-                #$ppage->{PREV_SIBLING_ID} = $lastChild->{_id};
+                $int->{PREV_SIBLING_ID} = $lastChild->{_id};
             };
         
             #NG::Nodes не умеет возвращать ошибки, делает die().
@@ -704,29 +730,32 @@ sub addLinkedPages {
         #Создаем объекты новых страниц
         my @newPObj = ();
         $idx = 0;
-        foreach my $newPage (@$newPages) {
-            my $nPObj = $cms->getPageObjById($newPage->{id}); #Загружаем значение из БД заново, актуальное значение (дефолтные значения полей и прочее).
+        
+        #foreach my $newPage (@$newPages) {
+        foreach my $int (@newPagesInt) {
+            my $nPObj = $cms->getPageObjById($int->{PAGEROW}->{id}); #Загружаем значение из БД заново, актуальное значение (дефолтные значения полей и прочее).
             NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка создания объекта страницы: '.$cms->getError()) unless $nPObj;
-            push @newPObj, $nPObj;
+            $int->{PAGEOBJ} = $nPObj;
             $idx++;
         };
 
         #Инициализируем их.
         $idx = 0;
-        foreach my $nPObj (@newPObj) {
-            my $res = $nPObj->initialisePage();
+        foreach my $int (@newPagesInt) {
+            my $res = $int->{PAGEOBJ}->initialisePage();
             NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка инициализации страницы: '.$cms->getError()) unless $res;
-            push @initialisedPObj, $nPObj;
+            push @initialisedPObj, $int->{PAGEOBJ};
             $idx++;
         };
         
         #Повызываем плагины (бывшие Events)
         $idx = 0;
-        foreach my $nPObj (@newPObj) {
-            NGPlugins->invoke('NG::Application','afterNodeAdded',{PAGEOBJ=>$nPObj,PREV_SIBLING_ID=>$prevSiblingId[$idx]});
+        foreach my $int (@newPagesInt) {
+            next unless $int->{PAGEOBJ};
+            NGPlugins->invoke('NG::Application','afterNodeAdded',{PAGEOBJ=>$int->{PAGEOBJ},PREV_SIBLING_ID=>$int->{PREV_SIBLING_ID}});
             push @linkedPages, {
-                PAGEOBJ=>$nPObj,
-                PREV_SIBLING_ID=>$prevSiblingId[$idx],
+                PAGEOBJ         => $int->{PAGEOBJ},
+                PREV_SIBLING_ID => $int->{PREV_SIBLING_ID},
             };
             $idx++;
         };
@@ -744,14 +773,12 @@ sub addLinkedPages {
         };
         
         #Делаем откат вставленных в структуру записей.
-        my $tmpIdx = 0;
         foreach my $newPage (@$newPages) {
-            last if $tmpIdx >= $idx;
+            last unless $newPage->{id};
             $dbh->do("delete from ng_sitestruct where id = ?",undef,$newPage->{id}) or warn $DBI::errstr;
-            $tmpIdx++;
         };
         
-        #Повызываем плагины еще раз. В обратную сторону
+        #Повызываем плагины еще раз. В обратную сторону.
         if (scalar @linkedPages) {
             eval {
                 foreach my $elem (@linkedPages) {
