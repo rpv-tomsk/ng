@@ -928,7 +928,7 @@ sub enablePage {
     };
     
     #Запрашиваем наличие включенных страниц с link_id страниц, подлежащих включению
-    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id in (select link_id from ng_sitestruct where $where and disabled = ?)") or return $cms->error($DBI::errstr);
+    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id <> 0 and link_id in (select link_id from ng_sitestruct where $where and disabled = ?)") or return $cms->error($DBI::errstr);
     $sth->execute($nodeValue->{subsite_id},@params,$pageId) or return $cms->error($DBI::errstr);
     my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
     $sth->finish();
@@ -943,6 +943,7 @@ sub enablePage {
         #$pageObj->enablePage(); #TODO: extend $pageObj API
         
         NGPlugins->invoke('NG::Application','beforeEnableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
+        next unless $pRow->{link_id};
         
         my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
         #Если есть включенные страницы с LINK_ID + LANG_ID - не делаем ничего
@@ -999,7 +1000,7 @@ sub disablePage {
     };
 
     #Запрашиваем наличие cвязанных включенных страниц с link_id страниц, подлежащих выключению
-    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id in (select link_id from ng_sitestruct where $where and disabled = 0)") or return $cms->error($DBI::errstr);
+    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id <> 0 and link_id in (select link_id from ng_sitestruct where $where and disabled = 0)") or return $cms->error($DBI::errstr);
     $sth->execute($nodeValue->{subsite_id},@params) or return $cms->error($DBI::errstr);
     my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
     $sth->finish();
@@ -1017,6 +1018,7 @@ sub disablePage {
         #$pageObj->disablePage(); #TODO: extend $pageObj API
         
         NGPlugins->invoke('NG::Application','afterDisableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
+        next unless $pRow->{link_id};
         
         my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
         if ($enabledLinkedPages) {
