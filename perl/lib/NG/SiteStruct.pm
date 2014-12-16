@@ -1559,17 +1559,28 @@ sub action_updateNode {
         
         NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$pageId, OLDURL=>$oldValue->{url},NEWURL=>$nodeUrl});
         
-        my $sth = $dbh->prepare("update ".$tree->{_dbtable}." set url=? where id=?") or die $DBI::errstr;
+        my $sth  = $dbh->prepare("UPDATE ng_sitestruct SET url=? WHERE id=?") or die $DBI::errstr;
+        my $mSth = $dbh->prepare("UPDATE ng_modules SET base=? WHERE id=? AND base=?") or die $DBI::errstr;
+        
+        my $oldBase = $oldValue->{url};
+        
+        if ($oldValue->{module_id}) {
+            $mSth->execute($nodeUrl,$oldValue->{module_id},$oldBase) or warn $DBI::errstr;
+        };
+        
         my $res = $tree->traverseWithCheck(
             sub {
                 my $_tree = shift;
                 my $value = $_tree->getNodeValue();
-                my $parent = $_tree->getParent();
+                
+                my $oldUrl=$value->{'url'};
+                $value->{url} =~ s@^$oldBase(.*)$@$nodeUrl$1@;
+                
                 if ($_tree->{_id} != $pageId) {
-                    my $parent_value = $parent->getNodeValue();
-                    my $parent_url = $parent_value->{url};
-                    my $oldUrl=$value->{'url'};
-                    $value->{url} =~ s@.*\/([^\/]+\/)$@$parent_url$1@;
+                    if ($value->{module_id}) {
+                        $mSth->execute($value->{url},$value->{module_id},$oldUrl) or warn $DBI::errstr;
+                    };
+                    
                     $sth->execute($value->{url},$_tree->{_id}) or return $cms->error($DBI::errstr." БД находится в поврежденном состоянии") + 1;
                     
                     NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$_tree->{_id}, OLDURL=>$oldUrl, NEWURL=>$value->{url}});
@@ -1579,6 +1590,7 @@ sub action_updateNode {
         );
         return $cms->error() if $res;
         $sth->finish();
+        $mSth->finish();
     }
     else {
         my $newNode = $self->_create_tree_object();
