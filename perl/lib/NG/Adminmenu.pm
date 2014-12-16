@@ -18,16 +18,101 @@ sub moduleBlocks {
 	]
 };
 
-sub processEvent {
-    my $self = shift;
-    my $cms = $self->cms();
+sub afterLinkedNodesAdded {
+    my ($self,$data) = (shift,shift);
     
-    my $obj = $cms->getObject("NG::Adminmenu::Block",{MODULEOBJ=>$self}) or die "NG::Adminmenu::processEvent() can't create NG::Adminmenu::Block object (".$cms->getError().")";
-    return $obj->processEvent(@_);
+    #data: PAGES => [{PAGEOBJ=>...,PREV_SIBLING_ID=>...},...]
+    return unless ref $data->{PAGES} eq "ARRAY";
+    
+    my $cms = $self->cms();
+    NG::Nodes->initdbparams(
+        db     => $cms->db(),
+        table  => 'ng_admin_menu',
+        fields => "node_id,name,subsite_id,link_id",
+    );
+    
+    my $linkId = $self->db()->get_id('ng_admin_menu.link_id') or die "Can`t get id for ng_admin_menu.link_id";
+    
+    foreach my $node (@{$data->{PAGES}}) {
+        #»щем св€зь ноды родител€ новой ноды с элементом меню или выходим
+        my $parent = NG::Nodes->loadNode(node_id => $node->{PAGEOBJ}->getParentPageId()) or next;
+        my $nodeRow = $node->{PAGEOBJ}->getPageRow();
+        my $newMenuElem = {
+            name => $nodeRow->{name},
+            node_id => $node->{PAGEOBJ}->getPageId(),
+            subsite_id => $node->{PAGEOBJ}->getSubsiteId(),
+            link_id => $linkId,
+        };
+        
+        my $afterNode = undef;
+        if ($node->{PREV_SIBLING_ID}) {
+            $afterNode = NG::Nodes->loadNode(node_id=>$node->{PREV_SIBLING_ID});
+            unless ($afterNode && $afterNode->{_parent_id} == $parent->{_id}) {
+                #последн€€ нода ветки в структуре имеет соответствие в дереве меню в другой ветке.
+                $afterNode = undef;
+            };
+        };
+        if ($afterNode) {
+            $parent->DBaddChild($newMenuElem,{AFTER=>$afterNode});
+        }
+        else {
+            $parent->DBaddChild($newMenuElem);
+        };
+    };
+    1;
 };
 
-1;
+sub afterDeleteNode {
+    my ($self,$data) = (shift,shift);
+    
+    my $cms = $self->cms();
+    NG::Nodes->initdbparams(
+        db     => $cms->db(),
+        table  => 'ng_admin_menu',
+        fields => "node_id,name,subsite_id,link_id",
+    );
+    
+    my $elem = NG::Nodes->loadNode(node_id => $data->{PAGEID}) or return;
+    if ($elem->getFirstChildOrder()) {
+        $cms->dbh->do("UPDATE ng_admin_menu SET node_id = NULL WHERE id = ?",undef,$elem->{_id}) or warn $DBI::errstr;
+        return 1;
+    };
+    $elem->DBdelete();
+    1;
+};
 
+sub afterSwapNodes {
+    my ($self,$data) = (shift,shift);
+    
+    my $cms = $self->cms();
+    NG::Nodes->initdbparams(
+        db     => $cms->db(),
+        table  => 'ng_admin_menu',
+        fields => "node_id,name,subsite_id,link_id",
+    );
+    
+    return unless ($data->{NODE}->{id} && $data->{PARTNER}->{id});
+    unless ($data->{ACTION} eq "before" || $data->{ACTION} eq "after") {
+        print STDERR "afterSwapNodes(): Invalid ACTION ".$data->{ACTION}. "\n";
+        return;
+    };
+    
+    my $node = NG::Nodes->loadNode(node_id => $data->{NODE}->{id}) or return ;
+    my $pnode= NG::Nodes->loadNode(node_id => $data->{PARTNER}->{id}) or return;
+    
+    if ($node->{_parent_id} == $pnode->{_parent_id}) {
+        $node->DBmoveNode($data->{ACTION} => $pnode) ;
+    };
+    1;
+};
+
+sub afterUpdateNode {
+    my ($self,$data) = (shift,shift);
+    
+    my $dbh = $self->cms->dbh();
+    $dbh->do("UPDATE ng_admin_menu SET name=? WHERE node_id = ?",undef, $data->{NEWVALUE}->{name}, $data->{PAGEID});
+    1;
+};
 
 package NG::Adminmenu::Block;
 use strict;
@@ -635,90 +720,6 @@ sub blockAction {
 	my $self    = shift;
 	my $is_ajax = shift;
 	return $self->run_actions($is_ajax);
-};
-
-sub processEvent {
-    my $self = shift;
-    my $event = shift;
-
-    my $cms = $self->cms();
-    
-    my $opts = $event->options();
-    
-    return unless ($event->isa("NG::SiteStruct::Event"));
-
-	NG::Nodes->initdbparams(
-		db     => $cms->db(),
-		table  => $self->{_table},
-		fields => "node_id,name,subsite_id,link_id",
-	);
-
-
-	if ($event->name() eq "swapNode") {
-        return unless ($opts->{NODE}->{id} && $opts->{PARTNER}->{id});
-        
-        unless ($opts->{ACTION} eq "before" || $opts->{ACTION} eq "after") {
-            print STDERR "Invalid ACTION ".$opts->{ACTION}. " in NG::Sitestruct::Event\n";
-            return;
-        };
-		
-        my $node = NG::Nodes->loadNode(node_id => $opts->{NODE}->{id}) or return ;
-        my $pnode= NG::Nodes->loadNode(node_id => $opts->{PARTNER}->{id}) or return;
-
-        if ($node->{_parent_id} == $pnode->{_parent_id}) {
-            $node->DBmoveNode($opts->{ACTION} => $pnode) ;
-        };
-    }
-	elsif ($event->name() eq "addlinkednodes") {
-		#opts->VARIANT
-		#opts->NODES = [{PAGEOBJ=> ... , PREV_SIBLING_ID=> ... }]
-		
-		return unless ref $opts->{NODES} eq "ARRAY";
-		
-		my $linkId = $self->db()->get_id($self->{_table}.'.link_id') or die "Can`t get id for ".$self->{_table}." (link_id)";
-		
-		foreach my $node (@{$opts->{NODES}}) {
-			#»щем св€зь ноды родител€ новой ноды с элементом меню или выходим
-	        my $parent = NG::Nodes->loadNode(node_id => $node->{PAGEOBJ}->getParentPageId()) or next;
-			my $nodeRow = $node->{PAGEOBJ}->getPageRow();
-			my $newMenuElem = {
-				name => $nodeRow->{name},
-				node_id => $node->{PAGEOBJ}->getPageId(),
-				subsite_id => $node->{PAGEOBJ}->getSubsiteId(),
-				link_id => $linkId,
-			};
-			my $afterNode = undef;
-			if ($node->{PREV_SIBLING_ID}) {
-#print STDERR "Found PREV_SIBLING_ID = ".$node->{PREV_SIBLING_ID};
-				$afterNode = NG::Nodes->loadNode(node_id=>$node->{PREV_SIBLING_ID});
-#print STDERR "Node by PREV_SIBLING_ID: ".$afterNode;
-                                unless ($afterNode && $afterNode->{_parent_id} == $parent->{_id}) {
-#print STDERR "Node by PREV_SIBLING_ID has another parent";
-                                        #последн€€ нода ветки в структуре имеет соответствие в дереве меню в другой ветке.
-                                        $afterNode = undef;
-                                };
-			};
-			if ($afterNode) {
-				$parent->DBaddChild($newMenuElem,{AFTER=>$afterNode});
-			}
-			else {
-				$parent->DBaddChild($newMenuElem);
-			};
-		};
-	}
-	elsif ($event->name() eq "deletenode") {
-		#opts->{PAGEOBJ}
-		my $elem = NG::Nodes->loadNode(node_id => $opts->{PAGEOBJ}->getPageId()) or return;
-		if ($elem->getFirstChildOrder()) {
-print STDERR "TODO: what to do for nodes with childs ?\n";
-			return;
-		};
-		$elem->DBdelete();
-	}
-	elsif ($event->name() eq "updatenode") {
-		my $dbh = $cms->dbh();
-		$dbh->do("UPDATE ".$self->{_table}." SET name=? WHERE node_id = ?",undef, $opts->{NEWVALUE}->{name}, $opts->{NEWVALUE}->{id});
-	};
 };
 
 return 1;

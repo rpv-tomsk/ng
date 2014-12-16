@@ -56,16 +56,16 @@ sub init {
 
     $self->{_pstructtemplate} = "admin-side/common/pagestructure.tmpl";
     
-    $self->register_ajaxaction("","structPage");
-    $self->register_ajaxaction("movenodedown","moveNodeDown");
-    $self->register_ajaxaction("movenodeup","moveNodeUp");
-    $self->register_ajaxaction("addsubnodeform","showAddForm");
-    $self->register_ajaxaction("editnodeform","updateNodeAction");
-    $self->register_ajaxaction("updatenode","updateNodeAction");
-    $self->register_ajaxaction("deletenode","deleteNodeAction");
-    $self->register_ajaxaction("enablepage","enablePage");
-    $self->register_ajaxaction("disablepage","disablePage");
-    $self->register_ajaxaction("switchsubsite","switchSubsite");
+    $self->register_ajaxaction("","action_structPage");
+    $self->register_ajaxaction("movenodedown","action_moveNodeDown");
+    $self->register_ajaxaction("movenodeup","action_moveNodeUp");
+    $self->register_ajaxaction("addsubnodeform","action_showAddForm");
+    $self->register_ajaxaction("editnodeform","action_updateNode");
+    $self->register_ajaxaction("updatenode","action_updateNode");
+    $self->register_ajaxaction("deletenode","action_deleteNode");
+    $self->register_ajaxaction("enablepage","action_enablePage");
+    $self->register_ajaxaction("disablepage","action_disablePage");
+    $self->register_ajaxaction("switchsubsite","action_switchSubsite");
     
     $self->{_pageId} = undef;
     $self->{_showAll} = 0;
@@ -155,15 +155,23 @@ sub _canAddSubpage {
 };
 
 sub _getLinkedPages {
-	my $self = shift;
-	my $pageObj = shift;
+	my ($self,$req) = (shift,shift);
 	
 	my $cms = $self->cms();
-	my $dbh = $cms->db()->dbh();
+	my $dbh = $cms->dbh();
+    
+    my $pRow;
+    if (ref $req) { #$pageObj
+        $pRow = $req->getPageRow();
+    }
+    else {
+        $pRow = $cms->getPageRowById($req);
+        return $self->error("Страница не найдена") unless $pRow;
+    };
 	
-	my $linkedPages = {};
 	if ($cms->confParam("CMS.hasSubsites")) {
-		my $pageLinkId = $pageObj->getPageLinkId();
+        my $pageLinkId = $pRow->{link_id};
+		
 		return $self->error("Обнаружено недопустимое значение link_id страницы") unless $pageLinkId;
 		
 		## Загружаем список подсайтов, на которых есть связанные страницы
@@ -174,6 +182,7 @@ sub _getLinkedPages {
 				ng_lang.name as lang_name,
 				ng_lang.img as lang_img,
 				ng_sitestruct.id as node_id,
+				ng_sitestruct.link_id as link_id,
 				ng_sitestruct.name as node_name,
 				ng_sitestruct.disabled as node_disabled,
 				ng_sitestruct.url as node_url
@@ -188,22 +197,23 @@ sub _getLinkedPages {
 				and ng_sitestruct.link_id = ?";
 		my $sth=$dbh->prepare($sql) or return $self->error($DBI::errstr);    
 		$sth->execute($pageLinkId) or return $self->error($DBI::errstr);
-		$linkedPages = $sth->fetchall_hashref(['subsite_id']) or return $self->error($DBI::errstr);
+		my $linkedPages = $sth->fetchall_hashref(['subsite_id']) or return $self->error($DBI::errstr);
 		$sth->finish();
 		return $self->error("_getLinkedPages(): Нарушение структуры данных в БД (несовпадают link_id,lang_id), страница - родитель не найдена") unless scalar keys %{$linkedPages};
+		return $linkedPages;
 	}
 	else {
         my $lp = {};
-        my $pRow = $pageObj->getPageRow();
+        
         $lp->{subsite_id} = $pRow->{subsite_id};
+        $lp->{link_id} = $pRow->{link_id};
         $lp->{lang_id} = $pRow->{lang_id};
         $lp->{node_id} = $pRow->{id};
         $lp->{node_disabled} = $pRow->{disabled};
         $lp->{node_url} = $pRow->{url};
         $lp->{node_name} = $pRow->{name};
-		$linkedPages->{$pageObj->getSubsiteId()}= $lp;
+        return {$pRow->{subsite_id} => $lp};
 	};
-	return $linkedPages;
 };
 
 sub getBaseFields {
@@ -224,7 +234,7 @@ sub getDescrFields {
 	];
 };
 
-sub showAddForm {
+sub action_showAddForm {
 	my $self = shift;
 	my $action = shift;
 	my $is_ajax = shift;
@@ -488,61 +498,31 @@ $canAddLinkedSubnode = 1;
 		return $cms->error("Отсутствует код шаблона или название модуля для новой страницы варианта '".$variant->{NAME}."' (subsite_id=$subsiteId)") unless ($page->{PAGEROW}->{template} || $page->{PAGEROW}->{module_id});
 	};
     
-    #$variant->{ID} = $app->getVariantId(MODULE=>(ref $npageObj), CODE=> $variant->{CODE}); 
+    #$variant->{ID} = $app->getVariantId(MODULE=>(ref $npageObj), CODE=> $variant->{CODE});
     
-	my $hasSelectedPPage = 0; ## Как будет раздел по английски ? # Section, part
-	my $hasPPageErrors = 0;
-	
-	if ($doitAction) {
-		foreach my $subsiteId (keys %{$newSubpages}) {
-			my $page = $newSubpages->{$subsiteId};
-			$page->{CHECKED} = 0;
-
-			my $enabled = $q->param("doit_".$subsiteId) || 0;
-			$enabled = 0 if ($enabled != 1);
-			$enabled = 0 if $page->{READONLY};
-			$enabled = 0 unless $page->{ACTIVE};
-			if ($page->{ERRORMSG}) {
-				$hasPPageErrors = 1;
-				$enabled = 0;
-			};
-			
-			#return $self->error("$enabled $url ".$page->{PARENTROW}->{url}.$url);
-			
-			if ($enabled == 1) {
-				$hasSelectedPPage = 1;
-				$page->{CHECKED} = 1;
-
-				if ($url ne "") {
-					#проверка конфликтов суффиксов в пределах одного подсайта.
-					$page->{PAGEROW}->{url} = $page->{PARENTROW}->{url}.$url;
-					my $checkSth = $dbh->prepare("select id,name from ng_sitestruct where url = ? and subsite_id = ?") or return $self->error($DBI::errstr);
-					$checkSth->execute($page->{PAGEROW}->{url},$subsiteId) or return $self->error($DBI::errstr);
-					my $foundPage = $checkSth->fetchrow_hashref();
-					if ($foundPage) {
-						$page->{ERRORMSG} ||= "Укажите другое значение URL suffix. Указанный suffix ($url) уже есть в этом разделе - страница '".$foundPage->{name}."'.";
-						$hasPPageErrors = 1;
-					};
-					$checkSth->finish();
-					
-				};
-			};
-		};
-	};
-	
-	if (scalar keys %{$newSubpages} == 1) {
-		my ($subsiteId) = keys %{$newSubpages};
-		my $page = $newSubpages->{$subsiteId};
-		$linkedPartsField->{SUBSITE_ID} = $subsiteId;
-		$form->pusherror("url",$page->{ERRORMSG}) if !is_empty($page->{ERRORMSG});
-	}
-	else {
-		my @lp = ();
-		foreach my $subsiteId (keys %{$newSubpages}) {
-			my $page = $newSubpages->{$subsiteId};
-			push @lp,$page;
-		};
-		
+    my $hasSelectedPPage = 0;
+    my $hasPPageErrors = 0;
+    my @lp = ();
+    foreach my $subsiteId (keys %{$newSubpages}) {
+        my $page = $newSubpages->{$subsiteId};
+        push @lp,$page;
+        
+        $page->{CHECKED} = 0;
+        
+        my $enabled = $q->param("doit_".$subsiteId) || 0;
+        $enabled = 0 if ($enabled != 1);
+        $enabled = 0 if $page->{READONLY};
+        $enabled = 0 unless $page->{ACTIVE};
+        if ($page->{ERRORMSG}) {
+            $hasPPageErrors = 1;
+            $enabled = 0;
+        };
+        next unless $enabled;
+        $hasSelectedPPage = 1;
+        $page->{CHECKED} = 1;
+    };
+    
+    if (scalar keys %{$newSubpages} > 1) {
 		$linkedPartsField->{LINKED_PAGES} = \@lp;
 		#Проверяем, не сменил ли хитрый пользователь шаблон, забыв нажать волшебную кнопку ?
 		if (($prevVariantId ne $variantId) && ($selVariantAction != 1)) {
@@ -551,121 +531,71 @@ $canAddLinkedSubnode = 1;
 		$linkedPartsField->setError("Не выбран ни один раздел для добавления.") unless ($hasSelectedPPage || $doitAction == 0);
 		$variantSelectField->{HIDE_BUTTON} = 0;
 	};
-
-	#Если $selTmplAction - выводим вторую часть формы
-	#Если $doitAction -
-	#  ---- если есть ошибки - выводим ошибки ( Аякс - аяксом, не аякс - формой)
-	#  ---- если нет ошибок - добавляем страницы
-
-	my $hasErrors = ($form->has_err_msgs() || $hasPPageErrors);
-
-	## Если ошибок нет - добавляем страницы и делаем редирект
-	if (!$hasErrors && $doitAction) {
-		my $linkId = $self->db()->get_id('ng_sitestruct.link_id');
-		return $self->error($self->db()->errstr()) unless $linkId;
-		$hasErrors = 0;
-		my $error = "";
-		my @addedPageObjs;
-        
-		foreach my $subsiteId (keys %{$newSubpages}) {
-            my $ppage = $newSubpages->{$subsiteId};
-			next unless $ppage->{CHECKED};
-
-
+    
+    ## Если ошибок нет - добавляем страницы и делаем редирект
+    if (!$hasPPageErrors && !$form->has_err_msgs() && $doitAction && $hasSelectedPPage) {
+        my @newPages = ();
+        my @np = ();
+        foreach my $page (@lp) {
+            next unless $page->{CHECKED};
+            
             foreach my $f (@{$form->fields()}) {
                 next if ($f->{FIELD} eq "id");
                 next if ($f->{FIELD} eq "url");
-                $ppage->{PAGEROW}->{$f->{FIELD}} = $form->getParam($f->{FIELD});
+                $page->{PAGEROW}->{$f->{FIELD}} = $form->getParam($f->{FIELD});
             };
-			
-			$ppage->{PAGEROW}->{link_id} = $linkId;
-			$ppage->{PAGEROW}->{subptmplgid} ||= "0";
-			$ppage->{PAGEROW}->{catch} ||= "0";
-			
-			my $tree = $self->_create_tree_object();
-			$tree->loadNode($ppage->{PAGEROW}->{parent_id});
             
-            $ppage->{PARENTROW} = $tree->getNodeValue();
-			
-			#Ищем, ноду, после которой будет добавлена наша новая страница. Посылаем её параметры в event для синхронизации деревьев
-			my $lastChild = undef;
-			my $lastChildOrd = $tree->getLastChildOrder();
-			if ($lastChildOrd) {
-				$lastChild = $self->_create_tree_object();
-				$lastChild = $lastChild->loadNode(tree_order => $lastChildOrd );
-			};
-			
-			if ($lastChild) {
-				$ppage->{PREV_SIBLING_ID} = $lastChild->{_id};
-			};
-	
-			#TODO: проверять ошибки вставки новой строки. //NG::Nodes не умеет возвращать ошибки.
-			$ppage->{PAGEROW}->{id} = $tree->DBaddChild($ppage->{PAGEROW});
-			
-			my $npageObj = $cms->getPageObjById($ppage->{PAGEROW}->{id});
-			unless ($npageObj) {
-				$hasErrors = 1;
-				$error = $cms->getError();
-				last;
-			};
-            $ppage->{PAGEROW} = $npageObj->getPageRow();
+            $page->{PAGEROW}->{url} = $page->{PARENTROW}->{url}.$url;
             
-			$ppage->{PAGEOBJ} = $npageObj;
-			push @addedPageObjs,$npageObj;
-			
-			my $res = $npageObj->initialisePage();
-			unless ($res) {
-				$hasErrors = 1;
-				$error = $npageObj->getError();
-				last;
-			};
-		};
-		
-		if ($hasErrors != 0) {
-			while (scalar (@addedPageObjs)) {
-				my $npageObj = shift @addedPageObjs;
-				$npageObj->destroyPage(\@addedPageObjs);
-				$self->_deleteNode($npageObj->getPageId());
-			};
-			return $self->error($error);
-		};
-		
-		
-		my @newNodes = ();
-		foreach my $subsiteId (keys %{$newSubpages}) {
-            my $ppage = $newSubpages->{$subsiteId};
-			next unless $ppage->{CHECKED};
-			
-			$self->_makeEvent('addnode',{
-				PAGEOBJ=>$ppage->{PAGEOBJ},
-				VARIANT=>$variant,
-				PREV_SIBLING_ID=>$ppage->{PREV_SIBLING_ID}
-			});
-			
-            $self->_makeLogEvent({page_id=>$ppage->{PAGEROW}->{id},operation=>"Добавление страницы ",operation_param=>sprintf("%s (%s) id %s",$ppage->{PAGEROW}->{name},$ppage->{PAGEROW}->{url},$ppage->{PAGEROW}->{id})});
-			push @newNodes, {
-				PAGEOBJ=>$ppage->{PAGEOBJ},
-				PREV_SIBLING_ID=>$ppage->{PREV_SIBLING_ID},
-			};
-		};
-
-		$self->_makeEvent('addlinkednodes',{
-			VARIANT => $variant,
-			NODES   => \@newNodes,
-		});
+            push @newPages, $page->{PAGEROW};
+            push @np, $page;
+        };
         
-        NGPlugins->invoke('NG::SiteStruct','afterAllNodesAdded',$self,{VARIANT=>$variant, NODES=>\@newNodes, FORM=>$form}) or return $cms->error();
-		
-		#TODO: делать перенаправление на страницу "текущего" подсайта
-		#my $newPage = $newSubpages->{$self->getSubsiteId()};
-		#if ($newPage->{CHECKED}) {
-		#	return $self->fullredirect("/admin-side/pages/".$newPage->{PAGEROW}->{id}."/");
-		#};
-		return $self->fullredirect("/admin-side/pages/".$addedPageObjs[0]->getPageId()."/",$is_ajax);
-	};
-	
+        my $ret = eval {
+            $self->addLinkedPages(\@newPages);
+        };
+        if (my $exc = $@) {
+            if (NG::SiteStruct::Exception->caught($exc)) {
+                my $idx = $exc->params()->{PAGEIDX};
+                $np[$idx]->{ERRORMSG} = $exc->message();
+                $hasPPageErrors = 1;
+            }
+            else {
+                return $cms->error($exc) unless ref $exc;
+                return $cms->error($exc->code.": ".$exc->message);
+            };
+        }
+        else {
+            #afterNodeAdded вызывается от NG::Application. Вызов от NG::SiteStruct может отличаться наличием FORM, VARIANT и т д
+            #foreach my $pObj (@{$ret->{PAGES}) {
+            #    NGPlugins->invoke('NG::SiteStruct','afterNodeAdded',{PAGEOBJ=>$pObj->{PAGEOBJ}, VARIANT=>$variant, PREV_SIBLING_ID=>$pObj->{PREV_SIBLING_ID}});
+            #};
+            
+            NGPlugins->invoke('NG::SiteStruct','afterAllNodesAdded',{VARIANT=>$variant, NODES=>$ret->{PAGES}, FORM=>$form});
+            
+            #TODO: делать перенаправление на страницу "текущего" подсайта
+            #my $newPage = $newSubpages->{$self->getSubsiteId()};
+            #if ($newPage->{CHECKED}) {
+            #	return $self->fullredirect("/admin-side/pages/".$newPage->{PAGEROW}->{id}."/");
+            #};
+            return $self->fullredirect("/admin-side/pages/".$ret->{PAGES}[0]->{PAGEOBJ}->getPageId()."/",$is_ajax);
+        };
+    };
+    
+    if (scalar keys %{$newSubpages} == 1) {
+        my ($subsiteId) = keys %{$newSubpages};
+        my $page = $newSubpages->{$subsiteId};
+        $linkedPartsField->{SUBSITE_ID} = $subsiteId;
+        $form->pusherror("url",$page->{ERRORMSG}) if !is_empty($page->{ERRORMSG});
+    };
+
+    #Если $selTmplAction - выводим вторую часть формы
+    #Если $doitAction -
+    #  ---- если есть ошибки - выводим ошибки ( Аякс - аяксом, не аякс - формой)
+    #  ---- если нет ошибок - добавляем страницы
+
 	## Если есть ошибки и Аякс - выводим 
-	if ($is_ajax && ($selVariantAction != 1) && $hasErrors) {
+	if ($is_ajax && ($selVariantAction != 1) && ($form->has_err_msgs() || $hasPPageErrors)) {
 		my $error = "";
 		if (scalar keys %{$newSubpages} > 1) {
 		    $error .= "<script type='text/javascript'>";
@@ -700,10 +630,390 @@ $canAddLinkedSubnode = 1;
 	else {
 		return $self->output($tmpl->output());
 	};
-	die("Not Reachable");
 };
 
-sub structPage {
+sub addLinkedPages {
+    my ($self, $newPages) = (shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $self->dbh();
+    
+    my $idx = 0;
+    my $subSites = {};
+    #Делаем проверки
+    foreach my $newPage (@$newPages) {
+        my $subsiteId = $newPage->{subsite_id};
+        
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Duplicated subsite') if exists $subSites->{subsiteId};
+        $subSites->{subsiteId} = $subsiteId;
+        
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Missing url') unless $newPage->{url};
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Wrong \'url\' value') unless $newPage->{url} =~ /\/$/;
+    
+        #проверка конфликтов суффиксов в пределах одного подсайта.
+        my $checkSth = $dbh->prepare("select id,name from ng_sitestruct where url = ? and subsite_id = ?") or return $self->error($DBI::errstr);
+        $checkSth->execute($newPage->{url},$subsiteId) or return $self->error($DBI::errstr);
+        my $foundPage = $checkSth->fetchrow_hashref();
+        $checkSth->finish();
+        
+        if ($foundPage) {
+            $newPage->{url} =~ m/([^\/]+)\/$/;
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx}, "Укажите другое значение URL suffix. Указанный suffix ($1) уже есть в этом разделе - страница '".$foundPage->{name}."'.")
+        };
+        $idx++;
+    };
+    
+    my $linkId = $self->db()->get_id('ng_sitestruct.link_id');
+    return $self->error($self->db()->errstr()) unless $linkId;
+    
+    my @initialisedPObj = ();
+    my @prevSiblingId = ();
+    my @linkedPages = ();
+    my $ret = eval {
+        #Создаем записи в структуре сайта
+        $idx = 0;
+        foreach my $newPage (@$newPages) {
+            my $subsiteId = $newPage->{subsite_id};
+            
+            $newPage->{link_id} = $linkId;
+            $newPage->{subptmplgid} ||= "0";
+            $newPage->{catch}       ||= "0";
+            
+            my $tree = $self->_create_tree_object();
+            $tree->loadNode($newPage->{parent_id}) or NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'No parent node found');
+            
+            #$ppage->{PARENTROW} = $tree->getNodeValue();
+            
+            #Ищем, ноду, после которой будет добавлена наша новая страница. Посылаем её параметры в event для синхронизации деревьев
+            my $lastChild = undef;
+            my $lastChildOrd = $tree->getLastChildOrder();
+            if ($lastChildOrd) {
+                $lastChild = $self->_create_tree_object();
+                $lastChild = $lastChild->loadNode(tree_order => $lastChildOrd );
+            };
+                
+            if ($lastChild) {
+                $prevSiblingId[$idx] = $lastChild->{_id};
+                #$ppage->{PREV_SIBLING_ID} = $lastChild->{_id};
+            };
+        
+            #NG::Nodes не умеет возвращать ошибки, делает die().
+            $newPage->{id} = $tree->DBaddChild($newPage);
+            $idx++;
+        };
+        #Создаем объекты новых страниц
+        my @newPObj = ();
+        $idx = 0;
+        foreach my $newPage (@$newPages) {
+            my $nPObj = $cms->getPageObjById($newPage->{id}); #Загружаем значение из БД заново, актуальное значение (дефолтные значения полей и прочее).
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка создания объекта страницы: '.$cms->getError()) unless $nPObj;
+            push @newPObj, $nPObj;
+            $idx++;
+        };
+
+        #Инициализируем их.
+        $idx = 0;
+        foreach my $nPObj (@newPObj) {
+            my $res = $nPObj->initialisePage();
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка инициализации страницы: '.$cms->getError()) unless $res;
+            push @initialisedPObj, $nPObj;
+            $idx++;
+        };
+        
+        #Повызываем плагины (бывшие Events)
+        $idx = 0;
+        foreach my $nPObj (@newPObj) {
+            NGPlugins->invoke('NG::Application','afterNodeAdded',{PAGEOBJ=>$nPObj,PREV_SIBLING_ID=>$prevSiblingId[$idx]});
+            push @linkedPages, {
+                PAGEOBJ=>$nPObj,
+                PREV_SIBLING_ID=>$prevSiblingId[$idx],
+            };
+            $idx++;
+        };
+        NGPlugins->invokeWhileTrue('NG::Application','afterLinkedNodesAdded',{PAGES=>\@linkedPages}) or NG::Exception->throw('NG.INTERNALERROR','Ошибка выполнения обработчиков afterLinkedPagesAdded(): '.$cms->getError());
+        return {PAGES=>\@linkedPages};
+    };
+    if (my $exc = $@) {
+        #Произошла ошибка. Возвращаем всё взад.
+        
+        #Деинициализируем инициализированные объекты
+        eval {
+            foreach my $nPObj (@initialisedPObj) {
+                $nPObj->destroyPage(\@initialisedPObj);
+            };
+        };
+        
+        #Делаем откат вставленных в структуру записей.
+        my $tmpIdx = 0;
+        foreach my $newPage (@$newPages) {
+            last if $tmpIdx >= $idx;
+            $dbh->do("delete from ng_sitestruct where id = ?",undef,$newPage->{id}) or warn $DBI::errstr;
+            $tmpIdx++;
+        };
+        
+        #Повызываем плагины еще раз. В обратную сторону
+        if (scalar @linkedPages) {
+            eval {
+                foreach my $elem (@linkedPages) {
+                    NGPlugins->invoke('NG::Application','afterDeleteNode',{PAGEID=>$elem->{PAGEOBJ}->getPageId(),PAGEOBJ=>$elem->{PAGEOBJ}});
+                };
+            };
+        };
+        
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},$exc) unless ref $exc;
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Exception: '.$exc->message.' Code: '.$exc->code) unless NG::SiteStruct::Exception->caught($exc);
+        die $exc; #Raise up.
+    };
+    return $ret;
+};
+
+sub deleteLinkedPages {
+    my ($self, $deletePages) = (shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $self->dbh();
+    
+    NG::Exception->throw('NG.INTERNALERROR','deleteLinkedPages(): Неверный параметр') unless ref $deletePages eq "ARRAY" && scalar @$deletePages;
+    
+    my $idx = 0;
+    my $indexes = {};
+    foreach my $pageId (@$deletePages) {
+        $indexes->{$pageId} = $idx++;
+    };
+    
+    #Получаем все страницы связки
+    my $linkedPages = $self->_getLinkedPages($deletePages->[0]) or return $cms->error("_getLinkedPages(): method returns unknown error");
+    #
+    my $linkId;
+    #Хэш объектов связанных страниц (все страницы, в т.ч. не удаляемые)
+    my $lpageObjs = {};
+    #Хэш контроля за линковкой по языку
+    my $linkLang = {};
+    #Создаем все объекты страниц связки
+    foreach my $subsiteId (keys %{$linkedPages}) {
+        my $p = $linkedPages->{$subsiteId};
+        
+        my $lpageObj;
+        eval {
+            $lpageObj = $cms->getPageObjById($p->{node_id});
+        };
+        if (my $exc = $@) {
+            my $idx = $indexes->{$p->{node_id}};
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},$exc) unless ref $exc;
+            NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Exception: '.$exc->message.' Code: '.$exc->code);
+        };
+        $lpageObjs->{$p->{node_id}} = $lpageObj;
+        $linkLang->{$p->{lang_id}}->{$p->{node_id}} = 1;
+        $linkId ||= $p->{link_id};
+    };
+
+    #Делаем проверку, что запрошено удаление именно связанных страниц.
+    #Делаем проверку отсутствия потомков
+    $idx = 0;
+    foreach my $pageId (@$deletePages) {
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Удаляемая страница не принадлежит общей группе с другими удаляемыми страницами') unless exists $lpageObjs->{$pageId};
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Обнаружено несовпадение link_id') unless $lpageObjs->{$pageId}->getPageLinkId() == $linkId;
+        
+        my $childsSth = $dbh->prepare('select id from ng_sitestruct where parent_id = ?') or return $cms->error($DBI::errstr);
+        $childsSth->execute($pageId) or return $self->error($DBI::errstr);
+        my $child = $childsSth->fetchrow_hashref();
+        $childsSth->finish();
+        
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Невозможно удалить страницу, у которой есть вложенные страницы.') if $child;
+        $idx++;
+    };
+    #Отключаем удаляемые страницы
+    foreach my $dpageId (@$deletePages) {
+        $dbh->do("update ng_sitestruct set disabled=? where id=?",undef,$dpageId,$dpageId) or return $self->error($DBI::errstr);
+    };
+    
+    #Вызываем обработчики destroyPage()
+    foreach my $dpageId (@$deletePages) {
+        my $dpageObj = $lpageObjs->{$dpageId};
+        
+        delete $lpageObjs->{$dpageId};
+        delete $linkLang->{$dpageObj->getPageLangId()}->{$dpageId};
+        
+        my @lpages =();
+        foreach my $lnodeId (keys %{$lpageObjs}){
+            push @lpages, $lpageObjs->{$lnodeId};
+        };
+        
+        my $res = $dpageObj->destroyPage(\@lpages);
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},"При удалении страницы $dpageId возникла ошибка вызова destroyPage(). Страницы не были удалены. Текст ошибки: ".$cms->getError("Вызов не вернул текст ошибки.")) unless $res;
+    };
+    
+    #Удаляем страницы из структуры сайта...
+    foreach my $dpageId (@$deletePages) {
+        $dbh->do("delete from ng_sitestruct where id = ?",undef,$dpageId) or return $self->error($DBI::errstr);
+    };
+    
+    #Вызываем обработчики уведомлений
+    foreach my $dpageId (@$deletePages) {
+        my $dpageObj = $lpageObjs->{$dpageId};
+        NGPlugins->invoke('NG::Application','afterDeleteNode',{PAGEID=>$dpageId,PAGEOBJ=>$dpageObj});
+    };
+    
+    #Если не осталось страниц в линке, делаем финальную подчистку
+    unless (scalar keys %{$lpageObjs}) {
+        NGPlugins->invoke('NG::Application','afterDeleteNodeLink',{LINKID=>$linkId});
+    }
+    else {
+        #Если не осталось страниц в некотором языке линка, делаем подчистку
+        foreach my $langId (keys %{$linkLang}) {
+            next if scalar(keys %{$linkLang->{$langId}});
+            NGPlugins->invoke('NG::Application','afterDeleteNodeLink',{LINKID=>$linkId, LANGID=>$langId});
+        };
+    };
+    1;
+};
+
+sub enablePage {
+    my ($self,$pageId) = (shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $cms->dbh();
+    
+    my $node = NG::Nodes->new();
+    $node->initdbparams(
+        db     => $self->db(),
+        table  => "ng_sitestruct",
+        fields => $cms->getPageFields(),
+    );
+    
+    $node->loadNode($pageId);
+    my $nodeValue = $node->getNodeValue();
+    
+    return $cms->error("Node already enabled")    if $nodeValue->{disabled} == 0;
+    return $cms->error("Node disabled by parent") if $nodeValue->{disabled} != $pageId;
+    
+    my $where = "";
+    my @params = ();
+    
+    my $bOrder = $node->getSubtreeBorderOrder();
+    if ($bOrder) {
+        $where .= " tree_order>=? and tree_order<?";
+        push @params, $nodeValue->{tree_order};
+        push @params, $bOrder;
+    } else {
+        $where .= " tree_order>=?";
+        push @params, $nodeValue->{tree_order};
+    };
+    
+    #Запрашиваем наличие включенных страниц с link_id страниц, подлежащих включению
+    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id in (select link_id from ng_sitestruct where $where and disabled = ?)") or return $cms->error($DBI::errstr);
+    $sth->execute($nodeValue->{subsite_id},@params,$pageId) or return $cms->error($DBI::errstr);
+    my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
+    $sth->finish();
+    
+    #Запрашиваем список страниц, подлежащих включению, для проведения операций
+    my $pageFields = $cms->getPageFields();
+    $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
+    $sth->execute(@params,$pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
+    while (my $pRow = $sth->fetchrow_hashref()) {
+        #warn "Enabling: ".$pRow->{id} ." LI ".$pRow->{link_id}." LA ".$pRow->{lang_id};
+        my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
+        #$pageObj->enablePage(); #TODO: extend $pageObj API
+        
+        NGPlugins->invoke('NG::Application','beforeEnableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
+        
+        my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
+        #Если есть включенные страницы с LINK_ID + LANG_ID - не делаем ничего
+        #Если есть LINK_ID, но LANG_ID нет, то посылаем LINK_ID + LANG_ID
+        #Если нет  LINK_ID, то посылаем LINK_ID а потом LINK_ID + LANG_ID (два события)
+        if ($enabledLinkedPages) {
+            unless ($enabledLinkedPages->{$pRow->{lang_id}}) {
+                #warn "ENABLING LINKID ".$pRow->{link_id}." LANGID ".$pRow->{lang_id};
+                NGPlugins->invoke('NG::Application','beforeEnableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+            }
+        }
+        else {
+            #warn "ENABLING (1) FULL LINKID ".$pRow->{link_id};
+            #warn "ENABLING (2) LANG LINKID ".$pRow->{link_id}." LANGID ".$pRow->{lang_id};
+            NGPlugins->invoke('NG::Application','beforeEnableNodeLink',{LINKID=> $pRow->{link_id}});
+            NGPlugins->invoke('NG::Application','beforeEnableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+        };
+    };
+    $sth->finish();
+    
+    #Включаем страницы в структуре сайта
+    $dbh->do("UPDATE ng_sitestruct set disabled = 0 where $where and disabled = ?", undef, @params, $pageId) or return $cms->error($DBI::errstr);
+    1;
+};
+
+sub disablePage {
+    my ($self,$pageId) = (shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $cms->dbh();
+    
+    my $node = NG::Nodes->new();
+    $node->initdbparams(
+        db     => $self->db(),
+        table  => "ng_sitestruct",
+        fields => $cms->getPageFields(),
+    );
+    $node->loadNode($pageId);
+    my $nodeValue = $node->getNodeValue();
+    
+    return $cms->error("Node already disabled") if $nodeValue->{disabled} != 0;
+    
+    my $where = "";
+    my @params = ();
+    
+    my $bOrder = $node->getSubtreeBorderOrder();
+    if ($bOrder) {
+        $where .= " tree_order>=? and tree_order<?";
+        push @params, $nodeValue->{tree_order};
+        push @params, $bOrder;
+    } else {
+        $where .= " tree_order>=?";
+        push @params, $nodeValue->{tree_order};
+    };
+
+    #Запрашиваем наличие cвязанных включенных страниц с link_id страниц, подлежащих выключению
+    my $sth = $dbh->prepare("select link_id,lang_id from ng_sitestruct where disabled = 0 and subsite_id <> ? and link_id in (select link_id from ng_sitestruct where $where and disabled = 0)") or return $cms->error($DBI::errstr);
+    $sth->execute($nodeValue->{subsite_id},@params) or return $cms->error($DBI::errstr);
+    my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
+    $sth->finish();
+    
+    #Выключаем страницы в структуре сайта
+    $dbh->do("UPDATE ng_sitestruct set disabled = ? where $where and disabled = 0", undef, $pageId, @params) or return $cms->error($DBI::errstr);
+    
+    #Запрашиваем список страниц, подлежащих выключению, для проведения операций
+    my $pageFields = $cms->getPageFields();
+    $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order desc") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
+    $sth->execute(@params,$pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
+    while (my $pRow = $sth->fetchrow_hashref()) {
+        #warn "Disabling: ".$pRow->{id} ." LI ".$pRow->{link_id}." LA ".$pRow->{lang_id};
+        my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
+        #$pageObj->disablePage(); #TODO: extend $pageObj API
+        
+        NGPlugins->invoke('NG::Application','afterDisableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
+        
+        my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
+        if ($enabledLinkedPages) {
+            #Есть включенные связанные страницы, проверим язык
+            unless ($enabledLinkedPages->{$pRow->{lang_id}}) {
+                #Больше не осталось связанных страниц с таким языком 
+                #warn "DISABLING LINKID ".$pRow->{link_id}." LANG ".$pRow->{lang_id};
+                NGPlugins->invoke('NG::Application','afterDisableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+            }
+            #Есть связанные страницы, линк целиком не отключаем.
+        }
+        else {
+            #Отключаем линк целиком и языковой линк отдельно
+            #warn "DISABLING (1) FULL LINKID ".$pRow->{link_id};
+            #warn "DISABLING (2) LANG LINKID ".$pRow->{link_id}." LANG ".$pRow->{lang_id};
+            NGPlugins->invoke('NG::Application','afterDisableNodeLink',{LINKID=> $pRow->{link_id}});
+            NGPlugins->invoke('NG::Application','afterDisableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+        };
+    };
+    $sth->finish();
+    1;
+};
+
+sub action_structPage {
 	my $self = shift;
 	my $action = shift;
 	my $is_ajax = shift;
@@ -1041,8 +1351,8 @@ sub _moveNode {
         if ($prevso) {
             $partner->loadNode(tree_order=>$prevso);
             $tree->DBmoveNode(before => $partner);
-            $self->_makeEvent("swapNode",{NODE=> $tree->getNodeValue(), ACTION=> "before", PARTNER=> $partner->getNodeValue() });
-            $self->_makeLogEvent({page_id=>$pageId,operation=>"Перемещение страницы ",operation_param=>sprintf("%s(%s) id %s вверх ",$value->{name},$value->{url},$pageId)});
+            
+            NGPlugins->invoke('NG::Application','afterSwapNodes',{NODE=> $tree->getNodeValue(), ACTION=> "before", PARTNER=> $partner->getNodeValue()});
         };
     }
     elsif ($dir eq "down") {
@@ -1050,22 +1360,20 @@ sub _moveNode {
         if ($nextso) {
             $partner->loadNode(tree_order=>$nextso);
             $tree->DBmoveNode(after => $partner);
-            $self->_makeEvent("swapNode",{NODE=> $tree->getNodeValue(), ACTION=> "after", PARTNER=> $partner->getNodeValue() });
-            $self->_makeLogEvent({page_id=>$pageId,operation=>"Перемещение страницы",operation_param=>sprintf("%s(%s) id %s вниз ",$value->{name},$value->{url},$pageId)});
+            
+            NGPlugins->invoke('NG::Application','afterSwapNodes',{NODE=> $tree->getNodeValue(), ACTION=> "after", PARTNER=> $partner->getNodeValue()});
         };
     };
-    my $pageObj = $cms->getPageObjByRow($value) or return $cms->error();
-    $self->_makeEvent('movenode',{DIR=>$dir, PAGEOBJ=>$pageObj});
     
     return $self->_redirect($parent_pageId,0);
 };
 
-sub moveNodeUp {
+sub action_moveNodeUp {
     my $self = shift;
     return $self->_moveNode("up",@_);
 };
 
-sub moveNodeDown {
+sub action_moveNodeDown {
     my $self = shift;
     return $self->_moveNode("down",@_);
 };
@@ -1117,7 +1425,7 @@ sub _getUpdateNodeForm {
 	return $form;
 };
 
-sub updateNodeAction {
+sub action_updateNode {
 	my $self = shift;
 	my $action = shift;
 	my $is_ajax = shift;
@@ -1201,8 +1509,8 @@ sub updateNodeAction {
         my $tree = $self->_create_tree_object();
         $tree->loadtree($pageId);
         $newValue = $tree->getChild(0)->getNodeValue();
-
-        $self->_makeEvent('updatenodeurl',{ID=>$pageId,OLDURL=>$oldValue->{url},NEWURL=>$newPageUrl});
+        
+        NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$pageId, OLDURL=>$oldValue->{url},NEWURL=>$newPageUrl});
         
         my $sth = $dbh->prepare("update ".$tree->{_dbtable}." set url=? where id=?") or die $DBI::errstr;
         my $res = $tree->traverseWithCheck(
@@ -1216,7 +1524,8 @@ sub updateNodeAction {
                     my $oldUrl=$value->{'url'};
                     $value->{url} =~ s@.*\/([^\/]+\/)$@$parent_url$1@;
                     $sth->execute($value->{url},$_tree->{_id}) or return $cms->error($DBI::errstr." БД находится в поврежденном состоянии") + 1;
-                    $self->_makeEvent('updatenodeurl',{ID=>$_tree->{'_id'},OLDURL=>$oldUrl,NEWURL=>$value->{'url'}});
+                    
+                    NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$_tree->{_id}, OLDURL=>$oldUrl, NEWURL=>$value->{url}});
                 };
                 return 0;
             }
@@ -1230,121 +1539,45 @@ sub updateNodeAction {
         $newValue = $newNode->getNodeValue();
     };
     #TODO: передается старый $pageObj
-    $self->_makeEvent('updatenode',{PAGEOBJ=>$pageObj, OLDVALUE=>$oldValue, NEWVALUE=>$newValue});
-    $self->_makeLogEvent({page_id=>$oldValue->{id},operation=>"Редактирование страницы",operation_param=>sprintf("%s (%s) id %s",$oldValue->{name},$oldValue->{url},$oldValue->{id})});
+    NGPlugins->invoke('NG::Application','afterUpdateNode',{PAGEID=>$pageId, PAGEOBJ=>$pageObj, OLDVALUE=>$oldValue, NEWVALUE=>$newValue});
     return $self->_redirect($pageId,$is_ajax);
 }; 
 
-sub enablePage {
+sub action_enablePage {
     my $self = shift;
     my $action = shift;
     my $is_ajax = shift;
 
     my $cms = $self->cms();
-	my $dbh = $cms->dbh();
-	my $q = $cms->q();
+    my $q = $cms->q();
 
     my $pageId = $q->param('id');
     $pageId = $self->{_pageId} unless defined $pageId;
     is_valid_id($pageId) or return $cms->error("Некорректный код страницы");
-	
-	NG::Nodes->initdbparams(
-        db     => $self->db(),
-        table  => "ng_sitestruct",
-        fields => $cms->getPageFields(),
-    );
-	
-	while (1) {
-		my $node = NG::Nodes->loadNode($pageId) or last;
-		my $v = $node->getNodeValue();
-		
-        if ($v->{parent_id}) {
-            my $pNode = NG::Nodes->loadNode($v->{parent_id});
-            return $cms->error("Parent node not found") unless $pNode;
-            last if $pNode->getNodeValue()->{disabled};
-        };
-		
-		my $where = "";
-		my @params = ();
-		
-		my $bOrder = $node->getSubtreeBorderOrder();
-		if ($bOrder) {
-			$where .= " tree_order>=? and tree_order<?";
-			push @params, $node->getNodeValue()->{tree_order};;
-			push @params, $bOrder;
-		} else {
-			$where .= " tree_order>=?";
-			push @params, $node->getNodeValue()->{tree_order};
-		};
-		
-		$dbh->do("UPDATE ng_sitestruct set disabled = 0 where $where and disabled = ?", undef, @params, $pageId) or return $cms->error($DBI::errstr);
-		
-		my $pageFields = $cms->getPageFields();
-		my $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = 0 order by tree_order") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
-		$sth->execute(@params) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
-		while (my $pRow = $sth->fetchrow_hashref()) {
-			my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
-			$self->_makeEvent('enablenode',{PAGEOBJ=>$pageObj});
-			$self->_makeLogEvent({page_id=>$pRow->{id},operation=>"Включение страницы",operation_param=>sprintf("%s (%s) id %s",$pRow->{name},$pRow->{url},$pRow->{id})});
-		}
-		$sth->finish();    
-		
-		last;
-	};
     
+    $self->enablePage($pageId) or return $cms->error();
+
     return $self->_redirect($pageId,0);
 };
 
-sub disablePage {
+sub action_disablePage {
     my $self = shift;
     my $action = shift;
     my $is_ajax = shift;
     
     my $cms = $self->cms();
-	my $dbh = $cms->dbh();
-	my $q = $cms->q();
+    my $q = $cms->q();
 
     my $pageId = $q->param('id');
     $pageId = $self->{_pageId} unless defined $pageId;
     is_valid_id($pageId) or return $cms->error("Некорректный код страницы");
 
-    my $tree = NG::Nodes->new();
-	$tree->initdbparams(
-        db     => $self->db(),
-        table  => "ng_sitestruct",
-        fields => $cms->getPageFields(),
-    );
-    $tree->loadNode($pageId);
-	
-	my $where = "";
-	my @params = ();
-	
-	my $bOrder = $tree->getSubtreeBorderOrder();
-	if ($bOrder) {
-		$where .= " tree_order>=? and tree_order<?";
-		push @params, $tree->getNodeValue()->{tree_order};;
-		push @params, $bOrder;
-	} else {
-		$where .= " tree_order>=?";
-		push @params, $tree->getNodeValue()->{tree_order};
-	};
-	
-	$dbh->do("UPDATE ng_sitestruct set disabled = ? where $where and disabled = 0", undef, $pageId, @params) or return $cms->error($DBI::errstr);
-	
-	my $pageFields = $cms->getPageFields();
-	my $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order desc") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
-	$sth->execute(@params,$pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
-	while (my $pRow = $sth->fetchrow_hashref()) {
-		my $pageObj = $cms->getPageObjByRow($pRow,{}) or return $cms->error();
-		$self->_makeEvent('disablenode',{PAGEOBJ=>$pageObj});
-		$self->_makeLogEvent({page_id=>$pRow->{id},operation=>"Выключение страницы",operation_param=>sprintf("%s (%s) id %s",$pRow->{name},$pRow->{url},$pRow->{id})});
-	}
-	$sth->finish();
-	
+    $self->disablePage($pageId) or return $cms->error();
+    
     return $self->_redirect($pageId,0);
 };
 
-sub deleteNodeAction {
+sub action_deleteNode {
     my $self = shift;
     my $action = shift;
     my $is_ajax = shift;
@@ -1369,8 +1602,8 @@ sub deleteNodeAction {
     #TODO: привилегия на удаление - DELPAGE
     #my $allSubsitesPrivileges = $dbh->selectall_hashref("select subsite_id,privilege from ng_subsite_privs where admin_id = ? and (privilege='ACCESS' or privilege='NEWPAGE')",["subsite_id","privilege"],undef,$adminId);
 
-    my $pages2Kill = {};
     my @lp;
+    my @deleteLinkedPages;
     foreach my $subsiteId (keys %{$linkedPages}) {
         my $page = $linkedPages->{$subsiteId};
         
@@ -1403,7 +1636,7 @@ $canDelThisPage = 1;
         if ($doDelAction) {
             if ($q->param("dodelnode_".$page->{node_id}) eq "1") {
                 return $self->error("Отсутствуют привилегии на запрошенное удаление страниц") unless $canDelThisPage;
-                $pages2Kill->{$page->{node_id}} = 1;
+                push @deleteLinkedPages, $page;
             };
         }
         else {
@@ -1418,68 +1651,41 @@ $canDelThisPage = 1;
         push @lp,$page;
     };
     if ($doDelAction) {
-		#Формируем хэш объектов связанных страниц
-		my $lpageObjs = {};
-		#Хэш контроля за линковкой по языку
-		my $linkLang = {};
-		foreach my $p (@lp) {
-			my $lpageObj = $cms->getPageObjById($p->{node_id}) or return $cms->error();
-			
-			$lpageObjs->{$p->{node_id}} = $lpageObj;
-			$pages2Kill->{$p->{node_id}} = $lpageObj if exists $pages2Kill->{$p->{node_id}};
-			
-			$linkLang->{$p->{lang_id}}->{$p->{node_id}} = 1;
-		};
-	
-		#Удаляем страницы по одной...
-		foreach my $dpageId (keys %{$pages2Kill}) {
-			my $dpageObj = $pages2Kill->{$dpageId};
-			
-			$dbh->do("update ng_sitestruct set disabled=? where id=?",undef,$dpageId,$dpageId) or return $self->error($DBI::errstr);
-			
-			delete $lpageObjs->{$dpageId};
-			delete $linkLang->{$dpageObj->getPageLangId()}->{$dpageId};
-			
-			my @lpages =();
-			foreach my $lnodeId (keys %{$lpageObjs}){
-				push @lpages, $lpageObjs->{$lnodeId};
-			};
-			
-			my $res = $dpageObj->destroyPage(\@lpages);
-			unless ($res) {
-				my $e = $dpageObj->getError();
-				$e = "Текст ошибки: $e" if $e;
-				$e ||= "Вызов не вернул текст ошибки.";
-				return $self->error("При удалении страницы $dpageId возникла ошибка вызова destroyPage(). Возможно, не все удаляемые страницы были удалены. $e");
-			};
-			$self->_deleteNode($dpageId);
-			$db->deleteFTSIndex({PAGEID=>$dpageId});
-            $self->_makeEvent('deletenode',{PAGEOBJ=>$dpageObj,PAGE_ID=>$dpageId});
-            my $page_row = $dpageObj->getPageRow();
-            $self->_makeLogEvent({page_id=>$page_row->{id},operation=>"Удаление страницы",operation_param=>sprintf("%s (%s) id %s",$page_row->{name},$page_row->{url},$page_row->{id})});
-		};
-
-		#Если не осталось страниц в линке, делаем финальную подчистку
-		unless (scalar keys %{$lpageObjs}) {
-			$db->deleteFTSIndex({LINKID=>$linkId});
-			$self->_makeEvent('deletelink',{LINKID=>$linkId});
-		}
-		else {
-			#Если не осталось страниц в некотором языке линка, делаем подчистку
-			foreach my $langId (keys %{$linkLang}) {
-				next if scalar(keys %{$linkLang->{$langId}});
-				$db->deleteFTSIndex({LINKID=>$linkId,LANGID=>$langId});
-				$self->_makeEvent('deletelink',{LINKID=>$linkId,LANGID=>$langId});
-			};
-		};
-        return $self->_redirect($pageObj->getParentPageId(),$is_ajax);
-	};
+        my @deletePageId = ();
+        foreach my $page (@deleteLinkedPages) {
+            push @deletePageId, $page->{node_id};
+        };
+        
+        eval {
+            $self->deleteLinkedPages(\@deletePageId);
+        };
+        if (my $exc = $@) {
+            #TODO: УВЫ, через MESSAGE ошибки не отображаются.
+            if (NG::SiteStruct::Exception->caught($exc)) {
+                my $idx = $exc->params()->{PAGEIDX} || 0;
+                $deleteLinkedPages[$idx]->{MESSAGE} = $exc->message();
+            }
+            else {
+                my $message;
+                if (ref $exc) {
+                    $message = $exc->message();
+                }
+                else {
+                    $message = $exc;
+                };
+                $deleteLinkedPages[0]->{MESSAGE} = $message;
+            };
+        }
+        else {
+            return $self->_redirect($pageObj->getParentPageId(),$is_ajax);
+        };
+    };
     
-	my $message = "";
-	if (scalar @lp == 1) {
-		$message = $lp[0]->{MESSAGE};
-		@lp = ();
-	}
+    my $message = "";
+    if (scalar @lp == 1) {
+        $message = $lp[0]->{MESSAGE};
+        @lp = ();
+    };
    
     my $showAll = $self->{_showAll};
     my $tmpl = $cms->gettemplate("admin-side/common/sitestruct/deletepages.tmpl")  || return $cms->error();
@@ -1554,7 +1760,7 @@ sub _loadSubsitesForCAdmin {
     return (\@subsites,$sRow);
 };
 
-sub switchSubsite {
+sub action_switchSubsite {
     my $self = shift;
     #TODO: аналогичный код в NG::PagePrivs
     
@@ -1583,23 +1789,6 @@ sub switchSubsite {
     $cms->addCookie(-name=>"SUBSITEID",-value=>$subsiteid,-domain=>$q->virtual_host(),-path=>"/admin-side/");
     return $cms->redirect($self->getBaseURL());
     #return $self->redirect_url("/admin-side/pages/?_left=struct");
-};
-
-sub _deleteNode {
-	my $self = shift;
-	my $nodeId = shift;
-	
-	my $dbh = $self->db()->dbh();
-	$dbh->do("delete from ng_sitestruct where id = ?",undef,$nodeId) or return $self->error($DBI::errstr);
-};
-
-sub _makeEvent {
-    my $self = shift;
-    my $ename = shift;
-    my $eopts = shift;
-    
-    my $event = NG::SiteStruct::Event->new($self,$ename,$eopts);
-    $self->cms()->processEvent($event);
 };
 
 sub processEvent {
@@ -1635,9 +1824,35 @@ sub processEvent {
         };
         if ($node->{_parent_id} == $pnode->{_parent_id}) {
             $node->DBmoveNode($opts->{ACTION} => $pnode) ;
-            $self->_makeEvent("swapNode",{NODE=> $node->getNodeValue(), ACTION=> $opts->{ACTION}, PARTNER=> $pnode->getNodeValue() });
+            NGPlugins->invoke('NG::Application','afterSwapNodes',{NODE=> $node->getNodeValue(), ACTION=> $opts->{ACTION}, PARTNER=> $pnode->getNodeValue()});
         };
     };
+};
+
+package NG::SiteStruct::Exception;
+use strict;
+
+our @ISA = qw(NG::Exception);
+
+sub throw {
+    my ($class,$params,$message) = (shift,shift,shift);
+    
+    $Carp::Internal{'NG::SiteStruct::Exception'}++;
+    my $code = "NG.SITESTRUCT.EXCEPTION";
+    my $self = $class->SUPER::new($code,$message);
+    $self->{_params} = $params;
+    die $self;
+};
+
+sub params {
+    my $self = shift;
+    return $self->{_params};
+};
+
+BEGIN {
+    use NGPlugins;
+    NGPlugins->registerPlugin('NG::Application','NG::Adminmenu');
+    NGPlugins->registerPlugin('NG::Application','NG::DBI');
 };
 
 return 1;

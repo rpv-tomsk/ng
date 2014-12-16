@@ -155,5 +155,72 @@ sub After_open {
     
 }
 
+#NG::Application (raised from NG::SiteStruct) plugin events
+
+sub beforeEnableNodeLink {
+    my ($class,$link) = (shift,shift);
+    
+    if ($link->{LINKID} && $link->{LANGID}) {
+        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 0 WHERE link_id=? and lang_id = ?",undef,$link->{LINKID},$link->{LANGID}) or warn "beforeEnableNodeLink(): ".$DBI::errstr;
+    }
+    elsif ($link->{LINKID}) {
+        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 0 WHERE link_id=? and lang_id = 0",undef,$link->{LINKID}) or warn "beforeEnableNodeLink(): ".$DBI::errstr;
+    }
+    else {
+        warn "beforeEnableNodeLink(): Missing LINKID value"
+    };
+    return 1;
+};
+
+sub afterDisableNodeLink {
+    my ($class,$link) = (shift,shift);
+    
+    if ($link->{LINKID} && $link->{LANGID}) {
+        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 1 WHERE link_id=? and lang_id = ?",undef,$link->{LINKID},$link->{LANGID}) or warn "afterDisableNodeLink(): ".$DBI::errstr;
+    }
+    elsif ($link->{LINKID}) {
+        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 1 WHERE link_id=? and lang_id = 0",undef,$link->{LINKID}) or warn "afterDisableNodeLink(): ".$DBI::errstr;
+    }
+    else {
+        warn "afterDisableNodeLink(): Missing LINKID value"
+    };
+    return 1;
+};
+
+sub beforeEnableNode {
+    my ($class,$data) = (shift,shift);
+    
+    if ($data->{PAGEID}) {
+        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 0 WHERE page_id=?",undef,$data->{PAGEID}) or warn "beforeEnableNode(): ".$DBI::errstr;
+    }
+    else {
+        warn "beforeEnableNode(): Missing PAGEID value"
+    };
+    return 1;
+};
+
+sub afterDisableNode {
+    my ($class,$data) = (shift,shift);
+
+    if ($data->{PAGEID}) {
+        $class->cms->dbh()->do("UPDATE ng_ftsindex SET disabled = 1 WHERE page_id=?",undef,$data->{PAGEID}) or warn "afterDisableNode(): ".$DBI::errstr;
+    }
+    else {
+        warn "afterDisableNode(): Missing PAGEID value"
+    };
+    return 1;
+};
+
+sub afterDeleteNodeLink {
+    my ($class,$link) = (shift,shift);
+    
+    $class->cms()->db()->deleteFTSIndex($link);
+};
+
+sub afterDeleteNode {
+    my ($class,$data) = (shift,shift);
+    $class->cms()->db()->deleteFTSIndex({PAGEID=>$data->{PAGEID}});
+};
+
 return 1;
 END{};
