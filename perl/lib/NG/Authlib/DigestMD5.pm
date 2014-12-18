@@ -6,7 +6,7 @@ use NGService;
 sub buildHash {
     my ($class,$user,$password,$config,$existingHash) = (shift,shift,shift,shift,shift);
     
-    die unless $user->{user_id};
+    die "buildHash(): No user_id" unless $user->{user_id};
     
     my $salt = undef;
     if ($existingHash) {
