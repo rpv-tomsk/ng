@@ -17,20 +17,20 @@ sub new {
 sub init {
 	my $self = shift;
     my $opts = shift || {};
-    $self->{_pParamsRaw}   = delete $opts->{PLUGINPARAMS};
+    $self->{_pParamsRaw}   = 
     $self->{_adminBaseURL} = delete $opts->{ADMINBASEURL};
     $self->{_pageRow}      = delete $opts->{PAGEPARAMS};
     $self->{_moduleRow}    = delete $opts->{MODULEROW};
     $self->{_opts}   = $opts;
     $self->{_params} = undef;   #For params from ng_module.params
-    $self->{_pluginparams} = undef;   #For params from ng_block.params
+    $self->{_pluginparams} = delete $opts->{PLUGINPARAMS} || {};   #Params from ng_block.params
     $self;
 };
 
 # Использующие pageRow методы сдублированы в NG::Block
 sub getPageRow  {
     my $self=shift;
-	$self->{_pageRow} or cluck ref($self)."::_pageRow() not initialised";
+    $self->{_pageRow} or cluck ref($self)."::_pageRow() not initialised";
     return $self->{_pageRow};
 };
 
@@ -38,7 +38,6 @@ sub getPageObj {
     my $self = shift;
     return $NG::Application::pageObj;
 };
-
 
 sub gettemplate {
     my ($self,$file,$opts) = (shift,shift,shift);
@@ -138,7 +137,7 @@ sub moduleParam {
 	my $param = shift or cluck("moduleParam(): no key specified");
 	$self->{_moduleRow} or cluck ref($self)."::_moduleRow() not initialised";
 	return $self->{_moduleRow}->{$param} if exists $self->{_moduleRow}->{$param};
-	$self->{_params}||=$self->_parseParams($self->{_moduleRow}->{params});
+	$self->{_params} ||= $self->cms->_parseParams($self->{_moduleRow}->{params});
 	return $self->{_params}->{$param} if exists $self->{_params}->{$param};
 	return undef;
 };
@@ -147,11 +146,9 @@ sub pluginParam {
     #Метод вредный. Параметры плагина/модуля передаются параметром
     #вызова getBlockKeys()/getBlockContent(), и должны бы использоваться оттуда
     #TODO: замечание устарело, концепция изменилась. Парсинг параметров надо вынести на уровень выше.
-	my $self = shift;
-	my $param = shift or cluck("pluginParam(): no key specified");
-    $self->{_pluginparams}||=$self->_parseParams($self->{_pParamsRaw});
-    return $self->{_pluginparams}->{$param} if exists $self->{_pluginparams}->{$param};
-	return undef;
+    my $self = shift;
+    my $param = shift or cluck("pluginParam(): no key specified");
+    return $self->{_pluginparams}->{$param};
 };
 
 sub getModuleCode {
@@ -183,22 +180,6 @@ sub getSelfInstance() {
     my $code = $self->getModuleCode() or return $cms->error();
     return $cms->getModuleInstance($code);
 };
-
-sub _parseParams {
-	my $self = shift;
-    #my $t = 'f1:v1,  f2: 2, f3: \'asdasdasd, \' asd\', f4 : "asdasdasdas, \\"asd"';
-    my $t = shift;
-    return {} unless $t;
-    my $h = {};
-    while ($t =~ /\s*([^\:\,]+?)\s*\:\s* (?: [\"\'] ( (?<=[\"]) .* (?=(?<![\\])[\"]) | (?<=[\']) .* (?=(?<![\\])[\']) ) [\"\'] | ([^\,]+)  ) /gx) {
-        my $v;
-        $v = $2 if $2;
-        $v = $3 if $3;
-        $h->{$1} = $v;
-    };
-    return $h;
-};
-
 
 sub setStash { # $mObj->setStash($key,$value)
     my $self = shift;

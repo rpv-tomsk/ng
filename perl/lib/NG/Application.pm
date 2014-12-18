@@ -1457,6 +1457,22 @@ sub getModuleInstance ($$) {
     return $cms->{_moduleInstances}->{$code};
 };
 
+#Метод разбора параметров ng_blocks.params ; ng_modules.params
+sub _parseParams {
+    my $self = shift;
+    #my $t = 'f1:v1,  f2: 2, f3: \'asdasdasd, \' asd\', f4 : "asdasdasdas, \\"asd"';
+    my $t = shift;
+    return {} unless $t;
+    my $h = {};
+    while ($t =~ /\s*([^\:\,]+?)\s*\:\s* (?: [\"\'] ( (?<=[\"]) .* (?=(?<![\\])[\"]) | (?<=[\']) .* (?=(?<![\\])[\']) ) [\"\'] | ([^\,]+)  ) /gx) {
+        my $v;
+        $v = $2 if $2;
+        $v = $3 if $3;
+        $h->{$1} = $v;
+    };
+    return $h;
+};
+
 sub _fixBlock {
     my $cms = shift;
     my $block = shift;
@@ -1466,7 +1482,7 @@ sub _fixBlock {
     $block->{CODE} = delete $block->{code};
     $block->{TYPE} = delete $block->{type};
     $block->{ACTION} = delete $block->{action};
-    $block->{PARAMS} = delete $block->{params};
+    $block->{PARAMS} = $cms->_parseParams(delete $block->{params});
     
     my $mRow = {};
     $mRow->{id}     = delete $block->{module_id};
