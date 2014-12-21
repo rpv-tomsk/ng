@@ -559,6 +559,10 @@ td.content, td.content_img {
 	border-top:1px solid #65a7dd;
 	color:#225279;
 }
+table#content tr.checked td.content,
+table#content tr.checked td.content_img {
+    background: #ffffaa;
+}
 td.content_img {
 	text-align:right;
 	text-align:center;
@@ -2038,3 +2042,56 @@ div.addRuleBar p.name {
 }
 
 .left_links{margin-right:200px; overflow:hidden;}
+
+/*Clickable checkbox on List*/
+div.list-checkbox {
+    width: 13px;
+    height: 13px;
+    background: url(/admin-side/img/checkbox_uncheked.gif) no-repeat bottom right;
+}
+div.list-checkbox.clickable {
+    cursor: pointer;
+}
+div.list-checkbox.checked {
+    background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
+}
+/*Clickable group action checkbox on List*/
+div.list-multiactioncb {
+    width: 13px;
+    height: 13px;
+    background: url(/admin-side/img/checkbox_uncheked.gif) no-repeat bottom right;
+    cursor: pointer;
+}
+div.list-multiactioncb.checked {
+    background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
+}
+div.list-multiactioncb-all {
+    width: 13px;
+    height: 13px;
+    background: url(/admin-side/img/checkbox_uncheked.gif) no-repeat bottom right;
+    cursor: pointer;
+}
+div.list-multiactioncb-all.checked {
+    background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
+}
+div.list-multiaction-panel {
+    margin-top: 5px;
+    height: 25px;
+}
+div.list-multiaction-panel select{
+    border: 1px solid #65a7dd;
+    margin-top: 5px;
+    min-width: 150px;
+    float: left;
+}
+div.list-multiaction-panel .button {
+    float: left;
+    margin: 4px 0 0 5px;
+}
+div.list-multiaction-panel div.list-multiactioncb-all,
+div.list-multiaction-panel div.list-multiactioncb-all.checked {
+    float: left;
+    height: 25px;
+    width: 50px;
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACYAAAAWCAMAAACbmR4xAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAIdJREFUeNpiYCQKAAQQA3HKAAKIgTgNAAEEl2RgwKcOIIAYEKrwqQMIIAYkVXjUAQQQA7Iq3OoAAohILwAEEJHKAAKISGUAAUSkMoAAIlIZQAARqQwggIhUBhBARCoDCCAilQEEEJIyHAAsCRBARKY3gAAiUhlAABGpDCCAiFQGEEBEKgMIMAAZagMLzQih2gAAAABJRU5ErkJggg==") no-repeat scroll 10px -2px rgba(0, 0, 0, 0);
+}

@@ -22,6 +22,9 @@ use NG::Block;
 use vars qw(@ISA);
 @ISA = qw(NG::Block);
 
+#ACTION, NAME, METHOD/SUB, SKIPCONFIRM, CONFIRMTEXT
+our $MULTIACTION_DELETE = {ACTION=>'delete', NAME=>'Удалить выбранные', METHOD=>'_maDeleteRecords', SKIPCONFIRM=>0};
+
 sub new {
     my $class = shift;
     my $self = {};
@@ -66,6 +69,7 @@ sub init {
     $self->{_shlistFields}=undef;
     
     $self->{_filters} = []; # Список фильтров списка
+    $self->{_multiActions} = undef;  #Список возможных действий пользователя над группой записей.
     
     #Конфигурация поиска
     $self->{_searchconfig} = undef;
@@ -119,6 +123,8 @@ sub registerModuleActions {
     $self->register_action('insf',  'processForm');
     $self->register_action('updf',  'processForm');
     $self->register_action('formaction','processForm');
+    $self->register_ajaxaction('checkboxclick', 'processCheckbox');
+    $self->register_ajaxaction('multiaction', 'processMultiaction');
 };
 
 #
@@ -159,7 +165,10 @@ sub buildList {
     $self->setPagesParam();
     $self->highlightSortedColumns($listfields) or return $self->showError("buildList(): Ошибка вызова highlightSortedColumns()");
     
-    my @columns = $self->getListColumns($listfields);  # Также выставляет список полей для getListSQLFields 
+    my @columns = $self->getListColumns($listfields);  # Также выставляет список полей для getListSQLFields
+    my $headersCnt = scalar @columns;
+    
+    $headersCnt++ if $self->{_multiActions};
 
     #Добавляем ссылки на добавление и редактирование записи
     foreach my $fm (reverse @{$self->{_aForms}}) {
@@ -239,8 +248,9 @@ sub buildList {
             $rowObj->{MOVE_URL} = getURLWithParams($myurl,"action=move","$self->{_idname}=$id",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),"ref=$u") if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==0);
             $rowObj->{MOVE_URL_HIDDEN} = 1 if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==1);
             $rowObj->{KEY_VALUE} = "_$id"; 
+            $rowObj->{ID_VALUE} = $id; 
             $rowObj->{AJAX_FORM_CONTAINER} = "formb".$rowObj->{KEY_VALUE};
-            $rowObj->{HEADERS_CNT} = scalar @columns;
+            $rowObj->{HEADERS_CNT} = $headersCnt;
             $rowObj->{ROW} = $rowObj->row();
             
             $self->doHighlight($rowObj);
@@ -265,12 +275,16 @@ sub buildList {
     
     my $template = $self->template() || return $self->error("NG::Module::List::buildList(): Template not opened");
     $template->param(
-        HEADERS   => \@columns, #TODO: this can be $self->getListHeaders(), 
-        HEADERS_CNT_M1 => scalar(@columns)-1,
+        HEADERS   => \@columns, #TODO: this can be $self->getListHeaders(),
+        #HEADERS_CNT => $headersCnt,
+        HEADERS_CNT_M1 => scalar(@columns)-1,  #Для чего это? (rpv,2014-11-27)
         PAGES     => $pages,
         DATA      => \@arraydata,
         FILTERS    => $self->getListFilters(),
         TOP_LINKS => $self->{_topbar_links},
+        MYBASEURL => $myurl,
+        THISURL   => getURLWithParams($myurl,"_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),$self->getPagesParam(),"ref=".$self->buildRefCurrentUrl()),
+        MULTIACTIONS => $self->{_multiActions},
     );
 
     return NG::Block::M_OK;
@@ -285,11 +299,11 @@ sub doHighlight {
 };
 
 sub _getAF {
-    my $self = shift;
+    my ($self,$fprefix) = (shift,shift);
     
     my $q = $self->q();
     
-    my $fprefix = $q->url_param('_form');
+    $fprefix = $q->url_param('_form') unless defined $fprefix;
     
     return $self->error("processForm(): no forms configured") unless scalar @{$self->{_aForms}};
     
@@ -810,6 +824,195 @@ sub processForm {
     };
 };
 
+sub processCheckbox {
+    my ($self,$action,$is_ajax) = (shift,shift,shift);
+    
+    my $q = $self->q();
+    
+    my $cbFieldName = $q->param('field')   || '';
+    my $cbState     = $q->param('checked') || '';
+    my $id          = $q->param('id');
+    
+    return $self->error("Отсутствует параметр имени поля checkbox") unless $cbFieldName;
+    return $self->error("Неподдерживаемое значение состояния checkbox") unless $cbState eq 'true' || $cbState eq 'false';
+    return $self->error("Отсутствует значение ключевого поля") unless $id;
+
+    $self->changeRowValueByForm(
+        {
+            ID         => $id,
+            FORMPREFIX => undef,   #TODO: 
+        },
+        sub {
+            my ($form) = (shift);
+            
+            my $cbField = $form->getField($cbFieldName);
+            return $self->error("Поле не найдено") unless $cbField;
+            return $self->error("Поле не является полем checkbox") unless $cbField->{TYPE} eq "checkbox";    
+            my $cbValue = 0;
+            $cbValue = $cbField->{CB_VALUE} if $cbState eq 'true';
+            $cbField->setValue($cbValue);
+            return 1;
+        }
+    ) or return 0;
+    
+    return $self->outputJSON({status=>'ok',checked=>(($cbState eq 'true')?1:0)});
+};
+
+sub processMultiaction {
+    my ($self,$action,$is_ajax) = (shift,shift,shift);
+    
+    my $q = $self->q();
+    my $dbh = $self->db()->dbh();
+    
+    my $qId     = $q->param('id')          || '';
+    my $qAction = $q->param('multiaction') || '';
+    
+    return $self->error("Multiaction: Действия не сконфигурированы") unless $self->{_multiActions} && ref $self->{_multiActions} eq "ARRAY";
+    return $self->error("Multiaction: Не выбраны записи")   unless $qId;
+    return $self->error("Multiaction: Не выбрано действие") unless $qAction;
+    
+    my $maction = undef;
+    foreach my $ma (@{$self->{_multiActions}}) {
+        if ($ma->{ACTION} eq $qAction) {
+            $maction = $ma;
+            last;  
+        };
+    };
+    return $self->error("Multiaction: Выбранное действие не найдено") unless $maction;
+    my $method = $maction->{METHOD};
+    return $self->error("Multiaction: Выбранное действие сконфигурировано неверно: не указан METHOD") unless $method;
+    return $self->error("Multiaction: Выбранное действие сконфигурировано неверно: метод '$method' не найден") unless $self->can($method);
+    
+    my @IDs = split /,/ , $qId;
+    return $self->$method($qAction,\@IDs);
+};
+
+sub changeRowValueByForm {
+    my ($self,$cfg,$sub) = (shift,shift,shift);
+    
+    my $q = $self->q();
+    my $dbh = $self->db()->dbh();
+    
+    my $cbFormPrefix = $cfg->{FORMPREFIX};
+    
+    my $aF = $self->_getAF($cbFormPrefix) or return $self->showError("processCheckbox(): cant find form for checkbox");
+    return $self->error("У вас нет прав для выполнения данного действия.") if !$self->hasEditPriv($aF);
+    
+    my $id = $cfg->{ID};
+    return $self->error("changeRowValueByForm(): Отсутствует ID") unless $id;
+    
+    #Компонуем ссылку, куда отправлять форму
+    my $formurl = $self->q()->url()."?action=formaction";
+    
+    my $form = NG::Form->new(
+        FORM_URL  => $formurl,
+		KEY_FIELD => $self->{_idname},
+        DB        => $self->db(),
+        TABLE     => $self->{_table},
+        DOCROOT   => $self->getDocroot(),
+        SITEROOT  => $self->getSiteRoot(),
+        CGIObject => $q,
+        REF       => $q->param('ref') || "",
+        IS_AJAX   => 1,
+        PREFIX    => $aF->{PREFIX},
+	);
+    #Поля
+    my $aFields = undef;
+    return $self->json_error("Перечень полей EDITFIELDS формы не массив.") if $aF->{EDITFIELDS} && ref $aF->{EDITFIELDS} ne "ARRAY";
+    $aFields = $aF->{EDITFIELDS} if $aF->{EDITFIELDS} && scalar @{$aF->{EDITFIELDS}};
+    $aFields ||= $aF->{FIELDS};
+    
+    return $self->error("Не знаю откуда наполнять форму полями.") unless $aFields;
+    return $self->error("Перечень полей формы не массив.") unless ref $aFields eq "ARRAY";
+    
+    my $fs = $self->_getIntersectFields($aFields) or return $self->showError("_getIntersectFields(): неизвестная ошибка вызова.");
+    
+    foreach my $field (@{$fs}) {
+        return $self->error("Please, don`t add 'filter' and 'fkparent' fields in formfields() and editfields() calls as they will be added automatically")
+            if ($field->{TYPE} eq "filter" || ($field->{TYPE} eq "fkparent" && !$field->{EDITABLE}));
+    };
+    
+    $form->addfields($fs) or return $self->error($form->getError());
+    
+    foreach my $field (@{$self->{_fields}}) {
+		if ($field->{TYPE} eq "fkparent") {
+            my $fkpF = undef;
+            if ($field->{EDITABLE}) {
+                $fkpF = $form->getField($field->{FIELD}) or return $self->showError("processCheckbox(): Поле ".$field->{FIELD}." типа fkparent со свойством EDITABLE отсутствует в списке полей формы");
+            }
+            else {
+                $fkpF = $form->addfields($field) or return $self->error($form->getError());
+            };
+		};
+        #Тут в форму прокачиваются поля типа filter, в том числе и те, которые ранее имели типы pageId,blockId, etc...
+        if ($field->{TYPE} eq "filter") {
+            return $self->error("Value not specified for FK field \"".$field->{FIELD}."\"") if is_empty($field->{VALUE});
+            $form->addfields($field) or return $self->error($form->getError());
+        };
+    };
+    
+    $form->param($self->{_idname},$id);
+    $form->loadData() or return $self->error($form->getError());
+    
+    my $oldsuffix = undef;
+    if (defined $self->{_searchconfig}) {
+        $oldsuffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
+        return $self->showError() if ($self->getError() ne "");
+    };
+    
+    #$form->setFormValues();
+    
+
+    my $ret = $sub->($form);
+    unless ($ret) {
+        $form->cleanUploadedFiles();
+        return $ret;  
+    };
+    
+    my $fa = "update";
+    $self->afterSetFormValues($form,$fa);
+    
+    $form->StandartCheck();
+    $self->checkData($form,$fa);
+    if (!$form->has_err_msgs()) {
+        my $ret = $self->prepareData($form,$fa);
+        if ($ret != NG::Block::M_OK) {
+            $form->cleanUploadedFiles();
+            return $ret;
+        };
+    };
+
+    if ($form->has_err_msgs()) {
+        $form->cleanUploadedFiles();
+        #if ($is_ajax) {
+        #    return $self->output($form->ajax_showerrors());
+        #}
+        #else {
+        #    $form->print($self->tmpl()) or return $self->error($form->getError());
+        #    return $self->output($self->tmpl()->output());
+        #};
+        return $self->error('При обработке формы возникли ошибки');
+    };
+
+    $self->beforeInsertUpdate($form,$fa) or return $self->showError("processCheckbox(): Ошибка вызова beforeInsertUpdate()");
+    ## Update
+    $form->updateData() or return $self->error($form->getError());
+    if (defined $self->{_searchconfig}) {
+        my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
+        return $self->showError() if ($self->getError() ne "");
+        if ($oldsuffix && $suffix ne $oldsuffix) {
+            $self->_updateIndex($oldsuffix) or return $self->showError("processCheckbox(): Ошибка обновления индекса");
+        };
+        $self->_updateIndex($suffix) or return $self->showError("processCheckbox(): Ошибка обновления индекса");
+    };
+    $self->afterInsertUpdate($form,$fa) or return $self->showError("processCheckbox(): Ошибка вызова afterInsertUpdate()");
+
+    $id = $form->getParam($self->{_idname});
+    $self->_makeEvent($fa,{ID=>$id});
+    
+    return 1;
+};
+
 =head
 sub _getFullForm {
     my $self = shift;
@@ -924,6 +1127,50 @@ sub Delete {
     );
     #$form->print($self->tmpl()) or return $self->error($form->getError());
     return $self->output($self->tmpl()->output());
+};
+
+sub _maDeleteRecords {
+    my ($self,$maction,$ids) = (shift,shift,shift);
+    
+    return $self->error("У вас нет прав для выполнения данного действия.") if (!$self->hasDeletePriv());
+    
+    foreach my $id (@$ids) {
+        my $ret = $self->checkBeforeDelete($id);
+        if ($ret == NG::Application::M_ERROR) {
+            my $e = $self->getError();
+            return $self->outputJSON({status=>'error', error=> 'Проверка перед удалением - ошибка:'.$e});
+        };
+    };
+    
+    $self->{_idname} or return $self->showError("Delete(): Не найдено имя ключевого поля id");
+
+    my $q = $self->q();
+    
+    foreach my $id (@$ids) {
+        my $form = NG::Form->new(
+            FORM_URL  => '',
+            KEY_FIELD => $self->{_idname},
+            DB        => $self->db(),
+            TABLE     => $self->{_table},
+            DOCROOT   => $self->getDocroot(),
+            SITEROOT  => $self->getSiteRoot(),
+            CGIObject => $q,
+            REF       => '',
+            IS_AJAX   => 1,
+        );
+        $form->addfields($self->{_fields}) or return $self->error($form->getError());
+        $form->param($self->{_idname},$id);
+        $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
+        $form->Delete() or return $self->error($form->getError());
+        if(defined $self->{_searchconfig}) {
+            my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
+            return $self->showError() if ($self->getError() ne "");
+            $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
+        };   
+        $self->afterDelete($id) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
+        $self->_makeEvent('delete',{ID=>$id});
+    };
+    return $self->outputJSON({status=>'ok'});
 };
 
  sub afterMove { my ($self, $id, $moveDir) = @_; }
@@ -2520,6 +2767,12 @@ sub order {
 };
 
 sub searchConfig { my $self = shift; $self->{_searchconfig} = shift; };
+
+sub multiactions {
+    my $self = shift;
+    $self->{_multiActions}||=[];
+    $self->_pushFields($self->{_multiActions},@_);
+};
 
 sub add_url_field {
 	my $self = shift;

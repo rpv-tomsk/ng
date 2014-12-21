@@ -115,3 +115,146 @@ function UseEditor(tname,thandler,tparentid,tconfig) {
         tinyMCE.init(params);
     };
 }; 
+
+$.fn.initClickableCheckboxes = function(options) {
+    return this.each(function() {
+        var wrapper = $(this);
+        var checkboxes = wrapper.find('div.list-checkbox.clickable');
+        checkboxes.each(function(){
+            var checkbox = $(this);
+            checkbox.click(function() {
+                var data = {
+                    field: checkbox.attr('data-field'),
+                    id:    checkbox.attr('data-id'),
+                    action: 'checkboxclick',
+                    _ajax: 'json'
+                };
+                data.checked = !checkbox.hasClass('checked');
+                $.ajax({
+                    url: options.url,
+                    data: data,
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function(obj) {
+                        if (obj.status == 'ok') {
+                            if (obj.checked)
+                                checkbox.addClass('checked')
+                            else
+                                checkbox.removeClass('checked');
+                        };
+                        if (obj.status == 'error') {
+                            alert(obj.error);
+                        };
+                    }
+                });
+                //$(this).toggleClass('checked');
+                //checkbox.toggleClass('checked');
+            });
+        });
+    });
+};
+$.fn.initMultiactionCheckboxes = function(options) {
+    var wrapper = $(this);
+    var checkboxes = wrapper.find('div.list-multiactioncb');
+    
+    var panel = $("div.list-multiaction-panel");
+    var select = panel.find('select[name=mult_op]');
+    var btn    = panel.find("div.button");
+    
+    for (var i = 0; i < options.actions.length; i++) {
+        var action = options.actions[i];
+        var newOption = $('<option value="'+action.action+'">'+action.name+'</option>');
+        newOption.data('action',action);
+        select.append(newOption);
+    };
+    
+    btn.click(function(){
+        var idStack = [],
+            selectedOption = select.find('option:selected'),
+            confirmed = 0;
+            
+        if (!selectedOption) {
+            return;
+        };
+        var action = selectedOption.data('action')
+        if (!action) {
+            return;
+        };
+        
+        checkboxes.filter('.checked').each(function() {
+            idStack.push($(this).attr('data-id'));
+        });
+        if (!idStack.length) {
+            return;
+        };
+        
+        if (action.skipconfirm) {
+            confirmed = 1;
+        }
+        else {
+            var confirmText = '¬ы действительно хотите выполнить действие "'+action.name+'" ?';
+            if (action.confirmText) {
+                confirmText = action.confirmText;
+            };
+            confirmed = confirm(confirmText);
+        };
+        if (!confirmed) {
+            return;
+        };
+        var data = {
+            action: 'multiaction',
+            multiaction: action.action,
+            id: idStack.join(),
+            _ajax: 'json'
+        };
+        $.ajax({
+            type: "POST",
+            url: options.url,
+            data: data,
+            dataType: "json",
+            success: function(obj) {
+                if (obj.status == 'ok') {
+                    $('#middle_right_content').load(options.thispage);
+                };
+                if (obj.status == 'error') {
+                    alert(obj.error);
+                    $('#middle_right_content').load(options.thispage);
+                };
+            }
+        });
+        return false;
+    });
+
+    return this.each(function() {
+        //toggle-all checkboxes
+        var toggleallcb = wrapper.find('div.list-multiactioncb-all');
+        toggleallcb.each(function(){
+            var checkbox = $(this);
+            checkbox.click(function() {
+                toggleallcb.toggleClass('checked');
+                var checkboxes = wrapper.find('div.list-multiactioncb');
+                if (checkbox.hasClass('checked')) {
+                    checkboxes.addClass('checked');
+                    checkboxes.closest('tr').addClass('checked');
+                }
+                else {
+                    checkboxes.removeClass('checked');
+                    checkboxes.closest('tr').removeClass('checked');
+                };
+            });
+        });
+        //row checkboxes
+        checkboxes.each(function(){
+            var checkbox = $(this);
+            checkbox.click(function() {
+                checkbox.toggleClass('checked');
+                if (checkbox.hasClass('checked')) {
+                    checkbox.closest('tr').addClass('checked');
+                }
+                else {
+                    checkbox.closest('tr').removeClass('checked');
+                };
+            });
+        });
+    });
+};

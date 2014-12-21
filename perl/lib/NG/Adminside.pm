@@ -406,19 +406,17 @@ sub _run {
         $status = $route->{STATUS};
     }
     else {
-        return $cms->error("Incorrect router response");
+        $status = $cms->error("Incorrect router response");
     };
 
     my $rightBlock = "";
 	
 	if ($status && ref $status ne "NG::BlockContent") {
-		return $cms->showError("Некорректный объект ответа");
+		$status = $cms->error("Некорректный объект ответа");
 	};
 	
 	if ($status == NG::Application::M_ERROR || $status->is_error()) {
-        my $error = $cms->getError("Неизвестная ошибка в контроллере страницы");
-        $rightBlock = $cms->_getRightBlockContentAsErrorMessage($error);
-        return $cms->output($rightBlock) if ($is_ajax);
+        #Later.
 	}
     elsif ($status->is_output()) {
         if ($is_ajax) {
@@ -453,8 +451,16 @@ sub _run {
 		return $status;
 	}
     else {
-        $rightBlock = $cms->_getRightBlockContentAsErrorMessage("Некорректный код возврата ($status) после вызова модуля ");
-        return $cms->output($rightBlock) if ($is_ajax);
+        $status = $cms->error("Некорректный код возврата ($status) после вызова модуля ");
+	};
+    
+    if ($status == NG::Application::M_ERROR || $status->is_error()) {
+        my $error = $cms->getError("Неизвестная ошибка в контроллере страницы");
+        
+        return $cms->outputJSON({status=>'error', error=>$error},-nocache=>1) if $is_ajax && $is_ajax eq 'json';
+        
+        $rightBlock = $cms->_getRightBlockContentAsErrorMessage($error);
+        return $cms->output($rightBlock,-nocache=>1) if ($is_ajax);
 	};
 
     $cms->pushRegion({CONTENT=>$rightBlock,REGION=>"RIGHT"});

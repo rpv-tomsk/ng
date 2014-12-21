@@ -22,7 +22,7 @@
                  <div class="selectWrapper">
               		  <select name="<TMPL_VAR FILTER_NAME>" onchange="this.form.elements['_ajax'].value='1';ajax_form('filterform','middle_right_content');">
                  	   <TMPL_LOOP VALUES>
-                 		   <option value="<TMPL_VAR VALUE>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME></option>
+                 		   <option value="<TMPL_VAR VALUE>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME ESCAPE=HTML></option>
                  	   </TMPL_LOOPVALUES>
                 	</select>
                 </div>
@@ -60,16 +60,19 @@
  </div>
  <!-- container /--> 
 
-
-
-    	
-
-    <!-- -->
+    <!-- -->							
     <div id="table_content">
         <table id="content" >
-            <!-- Строка заголовков -->
-            <tr >            
+            <!--Строка заголовков-->
+            <tr >
+                <TMPL_IF MULTIACTIONS>
+                    <td class="title">
+                        <div class="list-multiactioncb-all" title="Выбрать/отменить все"></div>
+                    </td>
+                </TMPL_IF MULTIACTIONS>
+                
                 <TMPL_LOOP HEADERS>
+                <TMPL_UNLESS HIDE>
 				  <TMPL_IF HEADER_TEMPLATE>
                     <TMPL_INCLUDE_VAR HEADER_TEMPLATE>
  			      <TMPL_ELSE HEADER_TEMPLATE>
@@ -81,6 +84,7 @@
 					</nobr>
 					</td>
                   </TMPL_IF HEADER_TEMPLATE>
+                </TMPL_UNLESS>  
                 </TMPL_LOOP HEADERS>	
     
             </tr>
@@ -93,7 +97,14 @@
                 <tr><td colspan="<TMPL_VAR HEADERS_CNT>"><a href="#anchor_<TMPL_VAR AJAX_FORM_CONTAINER>" name="anchor_<TMPL_VAR AJAX_FORM_CONTAINER>"></a></tr>
 			
 				<tr>
+                <TMPL_IF MULTIACTIONS>
+                <td class="content">
+                    <div class="list-multiactioncb" data-id="<TMPL_VAR ID_VALUE>"></div>
+                </td>
+                </TMPL_IF MULTIACTIONS>
+
 				<TMPL_LOOP COLUMNS>
+                <TMPL_UNLESS HIDE>
 					<TMPL_IF CUSTOM_TEMPLATE>
                         <TMPL_INCLUDE_VAR CUSTOM_TEMPLATE>
                     <TMPL_ELSE CUSTOM_TEMPLATE>
@@ -101,11 +112,9 @@
                         <TMPL_IF IS_IMAGE>	
                             <TMPL_IF DBVALUE><div id="img_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><img src="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>"></div></TMPL_IF>
   						<TMPL_ELSIF IS_CHECKBOX>
-	    					<TMPL_IF VALUE>
-			   					<center><img class="checkbox" src="/admin-side/img/checkbox_checked.gif" alt="" width="12" height="12" border="0"></center>
-					  		<TMPL_ELSE VALUE>
-								<center><img class="checkbox" src="/admin-side/img/checkbox_uncheked.gif" alt="" width="12" height="12" border="0"></center>
-							</TMPL_IF VALUE>
+                                <center>
+                                <div class="list-checkbox <TMPL_IF CLICKABLE>clickable </TMPL_IF><TMPL_IF VALUE>checked </TMPL_IF>" data-field="<TMPL_VAR FIELD>" data-id="<TMPL_VAR ID_VALUE>" id="cb_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"></div>
+                                </center>
                         <TMPL_ELSIF IS_FILE>
                             <TMPL_IF DBVALUE><a href="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>">Загружен</a><TMPL_ELSE>Отсутствует</TMPL_IF>
                         <TMPL_ELSIF IS_SELECT>
@@ -117,6 +126,7 @@
                         </TMPL_IF>
 					</td>
 				 </TMPL_IF CUSTOM_TEMPLATE>
+                </TMPL_UNLESS>
 				</TMPL_LOOP COLUMNS>
                 
                 
@@ -166,7 +176,21 @@
                 <!-- Тень -->
         
         </table>
-    </div>		
+    </div>
+    <TMPL_IF MULTIACTIONS>
+        <div class="list-multiaction-panel">
+            <!--<a href="#" class="mark-all">Отметить все</a> / <a href="#" class="unmark-all">Снять выделение</a>-->
+            <!--&nbsp;-->
+            <div class="list-multiactioncb-all"></div>
+            <select name="mult_op" data-url="<TMPL_VAR MULT_URL>">
+                <option value="">С отмеченными</option>
+            </select>
+            <div class="button">		
+                <input type="image" src="/admin-side/img/buttons/query.gif">
+            </div>
+        </div>
+        <div class="mult-ajax-content"></div>
+    </TMPL_IF MULTIACTIONS>
 
 <TMPL_IF AFTER_LIST_TMPL>
     <TMPL_INCLUDE_VAR AFTER_LIST_TMPL>
@@ -192,3 +216,23 @@
 		   <div id="middle_bottom_right"></div>
 		 </div>
 	</div>
+        
+<script>
+$('div#table_content').initClickableCheckboxes({url:'<TMPL_VAR MYBASEURL>'});
+<TMPL_IF MULTIACTIONS>
+    var actions = [];
+    <TMPL_LOOP MULTIACTIONS>actions.push({
+        action:'<TMPL_VAR ACTION ESCAPE=JS>',
+        name:'<TMPL_VAR NAME ESCAPE=JS>',
+        skipconfirm:<TMPL_VAR SKIPCONFIRM DEFAULT=0 ESCAPE=JS>,
+        confirmText:'<TMPL_VAR CONFIRMTEXT ESCAPE=JS>'
+    });</TMPL_LOOP MULTIACTIONS>
+
+    $('div#info_content').initMultiactionCheckboxes({
+        url:'<TMPL_VAR MYBASEURL>',
+        actions:actions,
+        thispage: '<TMPL_VAR THISURL>'
+    });
+</TMPL_IF MULTIACTIONS>
+</script>
+
