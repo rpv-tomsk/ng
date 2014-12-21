@@ -1,0 +1,78 @@
+Index: News.pm
+===================================================================
+--- News.pm	(revision 196)
++++ News.pm	(working copy)
+@@ -237,7 +237,7 @@
+         {FIELD=>"image"},
+         {FIELD=>'date'},
+         {FIELD=>"header"},
+-        {FIELD=>"enabled"},
++        {FIELD=>"enabled",CLICKABLE=>1},
+     );
+     
+     $self->searchConfig({
+@@ -253,9 +253,64 @@
+         FILTER => {FIELD => "enabled", VALUES=>[1]}
+     });
+     
++    $self->multiactions(
++        $NG::Module::List::MULTIACTION_DELETE,
++        {ACTION=>'unhide', NAME=>'Показать выбранные', METHOD=>'maUnHideRecords', CONFIRMTEXT=>'Включить отображение выбранных записей?'},
++        {ACTION=>'hide',   NAME=>'Скрыть выбранные',   METHOD=>'maHideRecords', SKIPCONFIRM=>1},
++    );
++
++    
+     $self->order({DEFAULT => "DESC", DEFAULTBY => "DESC", FIELD => "date", ORDER_DESC => "date desc,id desc", ORDER_ASC => "date asc,id asc",});
+     $self->{_pageBlockMode}=1; 
+ };
+ 
++sub maHideRecords {
++    my ($self,$maAction,$ids) = (shift,shift,shift);
+ 
++    foreach my $id (@$ids) {
++        $self->changeRowValueByForm(
++            {
++                ID         =>$id,
++                FORMPREFIX => ''
++            },
++            sub {
++                my ($form) = (shift);
++
++                my $cbField = $form->getField('enabled');
++                return $self->error("Поле не найдено") unless $cbField;
++                return $self->error("Поле не является полем checkbox") unless $cbField->{TYPE} eq "checkbox";
++
++                $cbField->setValue(0);
++            }
++        ) or return 0;
++    };
++
++    return $self->outputJSON({status=>'ok'});
++};
++
++sub maUnHideRecords {
++    my ($self,$maAction,$ids) = (shift,shift,shift);
++
++    foreach my $id (@$ids) {
++        $self->changeRowValueByForm(
++            {
++                ID         =>$id,
++                FORMPREFIX => ''
++            },
++            sub {
++                my ($form) = (shift);
++
++                my $cbField = $form->getField('enabled');
++                return $self->error("Поле не найдено") unless $cbField;
++                return $self->error("Поле не является полем checkbox") unless $cbField->{TYPE} eq "checkbox";
++
++                $cbField->setValue($cbField->{CB_VALUE});
++                return 1;
++            }
++        ) or return 0;
++    };
++    return $self->outputJSON({status=>'ok'});
++};
++
++
+ 1;
