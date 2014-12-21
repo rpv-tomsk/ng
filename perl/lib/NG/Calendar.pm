@@ -293,7 +293,7 @@ sub calendar_month {
   my $cal  = "\n<table ". $self->{CLASS3}.">\n";
     $cal .= "\t<tr>\n";	   
     foreach (sort { $days_r{$a} <=> $days_r{$b} } keys %days_r){
-	if($days_r{$_} eq $days_r{'Sat'} || $days_r{$_} eq $days_r{'Sun'}){
+	if($days_r{$_} eq $days_en{'Sat'} || $days_r{$_} eq $days_en{'Sun'}){
 	    $cal .= "\t\t<th ".$self->{CLASS4W}.">$_</th>\n" ;
 	}else{
 	    $cal .= "\t\t<th ".$self->{CLASS4}.">$_</th>\n" ;
@@ -363,7 +363,7 @@ sub get_month_hash {
     my $cal  = "\n<table ". $self->{CLASS3}.">\n";
 #  $cal .= "\t<tr>\n";	   
     foreach (sort { $days_r{$a} <=> $days_r{$b} } keys %days_r){
-        if($days_r{$_} eq $days_r{'Sat'} || $days_r{$_} eq $days_r{'Sun'}){
+        if($days_r{$_} eq $days_en{'Sat'} || $days_r{$_} eq $days_en{'Sun'}){
           push @{$month{'header'}}, $_;
         }
     }

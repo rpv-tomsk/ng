@@ -28,9 +28,9 @@ sub load {
     my $pObj = $self->parent();
     my $q = $pObj->q();
     
-    my $p_day = $q->param("_day")+0;
-    my $p_month = $q->param("_month")+0;
-    my $p_year = $q->param("_year")+0;
+    my $p_day = $q->param("_day")||0+0;
+    my $p_month = $q->param("_month")||0+0;
+    my $p_year = $q->param("_year")||0+0;
 
     if ($p_year && $p_month) {
         return $self->error("В параметрах календаря некорректная дата")  if $p_day && !is_valid_date(sprintf("%02d.%02d.%04d",$p_day,$p_month,$p_year));
@@ -95,6 +95,7 @@ sub beforeOutput {
         'CLASS_NODAY' => '',
         'IMBACK'      => '',
         'IMFORW'      => '',
+        'CLASS_WEEK'  => '',
     });
 	$cal->initdbparams(
     	db    => $pObj->db(),
