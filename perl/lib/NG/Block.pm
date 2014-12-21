@@ -381,6 +381,11 @@ sub output {
 	return $self->cms()->output($content);
 }   	
 
+sub outputJSON {
+    my ($self,$data) = (shift,shift);
+    return $self->cms()->outputJSON($data);
+}
+
 sub redirect {
 	my $self = shift;
 	my $redirectUrl = shift;

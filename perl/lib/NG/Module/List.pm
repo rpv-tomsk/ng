@@ -573,7 +573,7 @@ sub processForm {
         
 		if (defined $self->{_searchconfig}) {
 			$oldsuffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-			return $self->showError() if ($self->cms()->getError() ne "");
+			return $self->showError() if ($self->cms()->getError('') ne "");
 		};
 	}
     elsif ($action eq "formaction"){
@@ -734,7 +734,7 @@ sub processForm {
     
     if (defined $self->{_searchconfig}) {
         my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-        return $self->showError() if ($self->cms()->getError() ne "");
+        return $self->showError() if ($self->cms()->getError('') ne "");
         if ($oldsuffix && $suffix ne $oldsuffix) {
             $self->_updateIndex($oldsuffix) or return $self->showError("InsertUpdate(): Ошибка обновления индекса");
         };
@@ -909,7 +909,7 @@ sub changeRowValueByForm {
 		KEY_FIELD => $self->{_idname},
         DB        => $self->db(),
         TABLE     => $self->{_table},
-        DOCROOT   => $self->getDocroot(),
+        DOCROOT   => $self->getDocRoot(),
         SITEROOT  => $self->getSiteRoot(),
         CGIObject => $q,
         REF       => $q->param('ref') || "",
@@ -957,7 +957,7 @@ sub changeRowValueByForm {
     my $oldsuffix = undef;
     if (defined $self->{_searchconfig}) {
         $oldsuffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-        return $self->showError() if ($self->getError() ne "");
+        return $self->showError() if ($self->cms()->getError('') ne "");
     };
     
     #$form->setFormValues();
@@ -999,7 +999,7 @@ sub changeRowValueByForm {
     $form->updateData() or return $self->error($form->getError());
     if (defined $self->{_searchconfig}) {
         my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-        return $self->showError() if ($self->getError() ne "");
+        return $self->showError() if ($self->cms()->getError('') ne "");
         if ($oldsuffix && $suffix ne $oldsuffix) {
             $self->_updateIndex($oldsuffix) or return $self->showError("processCheckbox(): Ошибка обновления индекса");
         };
@@ -1084,7 +1084,7 @@ sub Delete {
             $form->Delete() or return $self->error($form->getError());
             if(defined $self->{_searchconfig}) {
                 my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-                return $self->showError() if ($self->cms()->getError() ne "");
+                return $self->showError() if ($self->cms()->getError('') ne "");
                 $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
             };   
             $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
@@ -1152,7 +1152,7 @@ sub _maDeleteRecords {
             KEY_FIELD => $self->{_idname},
             DB        => $self->db(),
             TABLE     => $self->{_table},
-            DOCROOT   => $self->getDocroot(),
+            DOCROOT   => $self->getDocRoot(),
             SITEROOT  => $self->getSiteRoot(),
             CGIObject => $q,
             REF       => '',
@@ -1164,7 +1164,7 @@ sub _maDeleteRecords {
         $form->Delete() or return $self->error($form->getError());
         if(defined $self->{_searchconfig}) {
             my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-            return $self->showError() if ($self->getError() ne "");
+            return $self->showError() if ($self->cms()->getError('') ne "");
             $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
         };   
         $self->afterDelete($id) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
