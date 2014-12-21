@@ -457,10 +457,10 @@ sub _run {
     if ($status == NG::Application::M_ERROR || $status->is_error()) {
         my $error = $cms->getError("Неизвестная ошибка в контроллере страницы");
         
-        return $cms->outputJSON({status=>'error', error=>$error},-nocache=>1) if $is_ajax && $is_ajax eq 'json';
+        return $cms->outputJSON({status=>'error', error=>$error},{-nocache=>1}) if $is_ajax && $is_ajax eq 'json';
         
         $rightBlock = $cms->_getRightBlockContentAsErrorMessage($error);
-        return $cms->output($rightBlock,-nocache=>1) if ($is_ajax);
+        return $cms->output($rightBlock,{-nocache=>1}) if ($is_ajax);
 	};
 
     $cms->pushRegion({CONTENT=>$rightBlock,REGION=>"RIGHT"});
