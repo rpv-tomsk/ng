@@ -1,0 +1,94 @@
+Index: htdocs/admin-side/styles/style.css
+===================================================================
+--- htdocs/admin-side/styles/style.css	(revision 2170)
++++ htdocs/admin-side/styles/style.css	(working copy)
+@@ -14,7 +14,7 @@
+ 	font-size: 11px;
+ 	min-width: 1150px;
+ 	width: expression((document.documentElement.clientWidth || document.body.clientWidth) < 1020 ? '1021px': 'auto');
+-	position: relative;
++	/*position: relative;*/
+ }
+ .selected {
+ 	font-weight:bold;
+@@ -1065,11 +1065,11 @@
+ /**** noaccess tree ******/
+ .divTree div.noaccess_element_0 {
+ 	/* TODO: image missing */
+-	background: url(/admin-side/img/imgForTree/inactive_element.gif) no-repeat 0 2px;
++	background: url(/admin-side/img/imgForTree/inactive_element0.gif) no-repeat 0 2px;
+ }
+ .divTree div.noaccess_new_level{
+ 	/* TODO: image missing */
+-	background: url(/admin-side/img/imgForTree/inactive_element.gif) no-repeat 0px -2px;
++	background: url(/admin-side/img/imgForTree/inactive_element0.gif) no-repeat 0px -2px;
+ }
+ .divTree div.noaccess_new_level_open_last  {
+ 	background: url(/admin-side/img/imgForTree/noaccess_inactive_folder_m.gif) no-repeat 7px 0px;
+@@ -1813,34 +1813,27 @@
+ div.pageprivileges div.privilege {
+ 	border:1px solid #7FB4DF;
+ 	border-top:none;
+-	padding:2px 5px;
+ 	/*height:25px;*/
+-    overflow: hidden;
+ }
+ div.pageprivileges div.privilege p.name{
+ 	float:left;
+ 	border-top:none;
+-	/*padding: 5px 0 5px 0px;*/
+-	padding:0; margin:0;
++	padding: 5px 0 5px 10px;
+ 	font-weight: bold;
+ }
+ div.pageprivileges div.privilege img.status {
+-	/*padding:3px 2px 0 2px;*/
+-	padding:0 2px; margin:0;
+-	/*float:left;*/
+-	display:inline-block;
++	padding:3px 2px 0 2px;
++	float:left;
+ }
+ div.pageprivileges div.privilege p.status {
+ 	border-top:none;
+ 	float:left;
+-	/*padding-top:5px;*/
+-	padding:0; margin:0;
++	padding-top:5px;
+ }
+ div.pageprivileges div.privilege p.links {
+ 	float:right;
+ 	border-top:none;
+-	/*padding:5px 10px;*/
+-	padding:0 10px;  
++	padding:5px 10px;
+ }
+ div.pageprivileges div.sources {
+ 	border:1px solid #7FB4DF;
+@@ -2035,4 +2028,11 @@
+   width: 100%;
+ }
+ 
+-.left_links{margin-right:200px; overflow:hidden;}
+\ No newline at end of file
++
++.privilege:before, .privilege:after { content: ""; display: table; }
++.privilege:after { clear: both; }
++.privilege { *zoom: 1; }
++
++.clearfix:before, .clearfix:after { content: ""; display: table; }
++.clearfix:after { clear: both; }
++.clearfix { *zoom: 1; }
+Index: templates/admin-side/common/mprivileges/list.tmpl
+===================================================================
+--- templates/admin-side/common/mprivileges/list.tmpl	(revision 2170)
++++ templates/admin-side/common/mprivileges/list.tmpl	(working copy)
+@@ -6,7 +6,7 @@
+         <div class="pageprivileges" style="padding-top:20px;">
+             <div class="modulename"><p>Список модулей</p></div>
+             <TMPL_LOOP MODULES>
+-            <div class="privilege">
++            <div class="privilege clearfix">
+                 <p class="name"><TMPL_VAR NAME></p>
+                 <p class="links">[<a href="<TMPL_VAR BASEURL><TMPL_VAR ID>/">Привилегии</a>]</p>
+             </div>
