@@ -402,6 +402,12 @@ sub _setDBValue {
 	elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
 		return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for \"".$self->{'TYPE'}."\" field \"$self->{FIELD}\".") if (is_empty($self->{OPTIONS}->{FILEDIR}));
 		if ($value) {
+			unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
+				my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
+				return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e." ".$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) unless defined $v;
+				$self->{VALUE} = '';
+				return 1;
+			};
 			my ($v,$e) = loadValueFromFile($self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
             $self->{VALUE} = $v;
 			return $self->setError("Ошибка чтения файла с данными поля $self->{FIELD}: ".$e) unless defined $v;
