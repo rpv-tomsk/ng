@@ -817,7 +817,7 @@ sub _load {
     #Выставляем полученные значения
 	foreach my $field (@{$afields}) {
         unless ($field->{IS_FAKEFIELD}) {
-            $field->setLoadedValue($tmp->{$field->{'FIELD'}}) or return $self->error("Ошибка вызова setLoadedValue() поля ".$field->{FIELD}." :".$field->error());
+            $field->setLoadedValue($tmp->{$field->{'FIELD'}}) or return $self->error("Ошибка вызова setLoadedValue() поля ".$field->{FIELD}.": ".$field->error());
         };
 	};
     #Дополнительные действия
