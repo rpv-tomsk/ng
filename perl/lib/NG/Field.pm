@@ -404,7 +404,7 @@ sub _setDBValue {
 		if ($value) {
 			unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
 				my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
-				return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e." ".$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) unless defined $v;
+				return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e) unless defined $v;
 				$self->{VALUE} = '';
 				return 1;
 			};
