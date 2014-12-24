@@ -638,6 +638,8 @@ sub saveValueToFile {
     my $data = shift;
     my $file = shift;
     my $dir = $file;
+
+    return wantarray?(undef,"Не указано имя файла"):undef unless $file;
     if ($dir =~ /[\/\\]$/) {
         return wantarray?(undef,"Не указано имя файла"):undef;
     }
