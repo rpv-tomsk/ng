@@ -617,7 +617,10 @@ sub _getBlockPrivileges {
         $btype ||= "moduleBlock";
         next if $btype ne $type;
         $opts->{MODULEOBJ} = $self;
-        my $bObj = $cms->getObject($b->{BLOCK},$opts) or return $cms->error();
+
+        my $classDef = {CLASS=>$b->{BLOCK}};
+        $classDef->{USE}= $b->{USE} if exists $b->{USE};
+        my $bObj = $cms->getObject($classDef,$opts);
         next unless $bObj->can("blockPrivileges");
         my $bp = $bObj->blockPrivileges();
         next unless defined $bp; # [{PRIVILEGE=>"",NAME=>""}]
