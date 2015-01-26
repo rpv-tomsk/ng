@@ -175,7 +175,7 @@ sub setCacheData {
     $expire ||= $DATA_EXPIRATION;
     
     my $key = $self->cms->getCacheId('data',$id);
-    warn "setCacheData():  Stored data_".$key." exp ".$expire;
+    #warn "setCacheData():  Stored data_".$key." exp ".$expire;
     $MEMCACHED->set("data_".$key, $data, $expire);
 };
 
