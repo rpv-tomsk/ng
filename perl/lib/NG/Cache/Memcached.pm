@@ -78,12 +78,13 @@ sub storeCacheContent {
     return 1;
 };
 
-sub _createVersionKey {
-    my ($self,$key,$value) = (shift,shift,shift);
+sub _createVersionKey($$) {
+    my ($self,$key) = (shift,shift);
     
+    my $value = time();
     my $ret = $MEMCACHED->add($key,$value,$VERSION_EXPIRATION);
     if (!defined $ret) {
-        warn "Error MEMCACHED::add($key)";
+        warn "Error MEMCACHED::add($key) while _createVersionKey()";
         return undef;
     };
     unless ($ret) {
@@ -120,15 +121,27 @@ sub updateKeysVersion {
                 last;
             };
             if ($ret) {
-                warn "Set new value on (version_$key): $ret Try $try";# if $try;
+                warn "Set new value on (version_$key): $ret Try $try" if $try;
+                #Touch()
+                my $cas = $MEMCACHED->gets("version_".$key);
+                unless (defined $cas) {
+                    warn "Touch for version_$key failed. Unable to get CAS";
+                    last;
+                };
+                unless ($MEMCACHED->cas('version_'.$key, @$cas,$VERSION_EXPIRATION)) {
+                    warn "Touch for version_$key failed. Failed cas() call";
+                    last;
+                };
+                #
                 last;
             };
-            $ret = $self->_createVersionKey("version_".$key,2);
+            $ret = $self->_createVersionKey("version_".$key);
             last unless defined $ret;
             last if $ret;
             last if $try >= 1;
             $try++;
         };
+        warn "updateKeysVersion() failed on (version_$key)" unless $ret;
     };
     return $ret;
 };
@@ -159,8 +172,12 @@ sub getKeysVersion {
     foreach my $key (@mkeys) {
         #warn "getKeysVersion(): $key ".((exists $mversions->{$key})?"":"not ")."found: ".((exists $mversions->{$key})?$mversions->{$key}:""); #unless exists $mversions->{$key};
         unless (exists $mversions->{$key}) {
-            $mversions->{$key} = $self->_createVersionKey($key,1);
+            $mversions->{$key} = $self->_createVersionKey($key);
+            if (defined $mversions->{$key} && ($mversions->{$key} == 0)) {
+                 $mversions->{$key} = $MEMCACHED->get($key);
+            };
         };
+        warn "getKeysVersion() failed for key $key" unless $mversions->{$key};
         push @$versions,$mversions->{$key};
     };
     #Массив значений версий + массив внутренних ключей.
