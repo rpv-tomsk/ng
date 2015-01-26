@@ -570,9 +570,10 @@ sub addRecord{
     my $sth=$dbh->prepare($sql) or return create_json({error=>"Ошибка БД: ".$DBI::errstr});
     $sth->execute('%'.$text.'%')  or return create_json({error=>"Ошибка БД: ".$DBI::errstr});
     my $row1=$sth->fetchrow_hashref();
-    my $row2=$sth->fetchrow_hashref();
-    
-    return create_json({error=>'В справочнике найдено несколько записей, содержащих "'.$text.'"'}) if $row2;
+    if ($row1) {
+        my $row2=$sth->fetchrow_hashref();
+        return create_json({error=>'В справочнике найдено несколько записей, содержащих "'.$text.'"'}) if $row2;
+    };
     return create_json({id=>$row1->{id},label=>$row1->{label}}) if $row1;
     
     my $id = $db->get_id($dict->{TABLE},$dict->{TABLE}."_id");
