@@ -165,7 +165,7 @@ sub showPageBlock  {
             $self->afterSetFormValues($form) or return $self->cms()->error();
             $form->modeInsert() unless $initialised;
             $form->StandartCheck();
-            $self->CheckData($form,$action) or return $self->showError();
+            $self->checkData($form,$action) or return $self->showError();
             
             if ($form->has_err_msgs()) {
                 $form->cleanUploadedFiles();
@@ -239,7 +239,7 @@ sub searchConfig {
     $self->{_searchconfig} = shift;
 }
 
-sub CheckData {
+sub checkData {
 	my $self = shift;
 	my $form = shift;
     my $action = shift;
@@ -351,7 +351,7 @@ sub _initBlock {
     
     $form->modeInsert();
     $form->StandartCheck();
-    $self->CheckData($form,"update") or return $self->showError();
+    $self->checkData($form,"update") or return $self->showError();
 
     if ($form->has_err_msgs()) {
         return $self->needInitLater();

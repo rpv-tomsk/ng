@@ -116,7 +116,7 @@ sub getListSQLWhere {
     return $where;
 };
 
-sub CheckData
+sub checkData
 {
  my $self=shift;
  my $form=shift;

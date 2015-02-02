@@ -92,7 +92,7 @@ sub showCode
  return $self->output($self->tmpl()->output());  
 };
 
-sub CheckData
+sub checkData
 {
  my $self=shift;
  my $form=shift;

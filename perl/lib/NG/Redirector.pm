@@ -38,7 +38,7 @@ sub Redirect {
 	return $self->error("No url");
 };
 
-sub CheckData {
+sub checkData {
 	my $self = shift;
 	my $form = shift;
 	my $action = shift;

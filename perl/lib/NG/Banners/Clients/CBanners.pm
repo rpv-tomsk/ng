@@ -120,7 +120,7 @@ sub showBanner
 
 #код проверки валидности данных будет изменяться
 #TODO:: Добавить проверку соответствия размеров баннера и места
-sub CheckData
+sub checkData
 {
  my $self=shift;
  my $form=shift;
