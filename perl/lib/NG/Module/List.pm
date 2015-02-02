@@ -994,7 +994,7 @@ sub changeRowValueByForm {
         #    $form->print($self->tmpl()) or return $self->error($form->getError());
         #    return $self->output($self->tmpl()->output());
         #};
-        return $self->error('При обработке формы возникли ошибки');
+        return $self->error($form->getErrorString()||'При обработке формы возникли ошибки');
     };
 
     $self->beforeInsertUpdate($form,$fa) or return $self->showError("processCheckbox(): Ошибка вызова beforeInsertUpdate()");
