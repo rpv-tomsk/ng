@@ -69,13 +69,6 @@ sub init {
     $self;
 };
 
-sub addLinkedPages {
-	my $self = shift;
-	my $pages = shift;
-	my $siteStruct = $self->getObject({CLASS=>'NG::SiteStruct::Block', USE=>'NG::SiteStruct'},{MODULEOBJ=>'NO_MODULE_STUB'});
-	return $siteStruct->addLinkedPages($pages);
-}
-
 sub getDocRoot()  { return $_[0]->{_docroot};  };
 sub getSiteRoot() { return $_[0]->{_siteroot}; };
 
@@ -540,7 +533,6 @@ sub getPageActiveBlock {
     return $cms->error("getActiveBlock() модуля ".(ref $pageObj)." вернул некорректное значение (отсутствует код BLOCK)") unless $ab->{BLOCK};
     
     my $mName = $pageObj->getModuleCode() or return $cms->error();
-    #Т.к. тут выставляется MODULEOBJ, то в getBlockKeys() / getBlockContent() не будут передаваться $block->{PARAMS} из ng_blocks!
     if ($ab->{CODE}) {
         $ab->{MODULEOBJ} = $pageObj if $ab->{CODE} =~ /^$mName\_/;
     }

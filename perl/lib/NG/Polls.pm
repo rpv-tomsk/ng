@@ -6,195 +6,42 @@ use NSecure;
 use NGService;
 our @ISA = qw(NG::PageModule);
 
-use Data::Dumper;
-
-sub getActiveBlock {
-	my $self = shift;
-	my $q = $self->q();
-	return {BLOCK=>"FULL"} if $q->param("id");
-	return {BLOCK=>"LIST"};
-};
-
-sub moduleTabs {
+sub moduleTabs
+{
     return [
         {HEADER=>"Опросы",URL=>"/"}
     ];
 };
 
-sub moduleBlocks {
+sub moduleBlocks
+{
     return [
         {BLOCK=>"NG::Polls::List" ,URL=>"/"}
     ];
 };
 
-sub fields {
+sub fields 
+{
     return [];
 }; 
 
-sub formfields {
+sub formfields
+{
     return [];
 };
 
-sub listfields {
+sub listfields
+{
     return [];
 };
 
-sub voteHandlers {
-    return [
-        {CANVOTE=>'checkIP_check'},
-    ];
+sub url
+{
+	return "/polls/";
 };
 
-sub checkIP_check {
-    my ($self,$voting) = (shift,shift);
-    
-    my $dbh  = $self->dbh();
-    my $q  = $self->q();
-    
-    return unless $voting->{check_ip} && $voting->{active} && $voting->{can_vote};
-
-    my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
-    $sth->execute($q->remote_host(),$voting->{id}) or undef;
-    my ($count) = $sth->fetchrow();
-    $sth->finish();
-    $voting->{can_vote} = 0 if $count>0;
-};
-
-sub _runHandler {
-    my ($self,$voting,$handler) = (shift,shift,shift);
-    my $VH = $self->voteHandlers($handler);
-    
-    foreach my $h (@$VH) {
-        my $m = $h->{$handler} or next;
-        $self->$m($voting);
-    };
-};
-
-sub keys_SLIDER {
-    my $self = shift;
-    
-    my $cms = $self->cms();
-    my $q  = $self->q();
-    my $req = {};
-    
-    my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
-    if ($anyPollVersion && $anyPollVersion->[0]) {  #Кеширование включено
-        my $sliderItems = $cms->getCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]});
-        unless ($sliderItems) {
-            $sliderItems = $self->dbh()->selectall_arrayref("SELECT id,visible,check_ip FROM polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))",{Slice => {}});
-            $cms->setCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]},$sliderItems);
-        };
-        
-        $req->{today} = Date::Simple->new()->as_iso();
-        $req->{items} = {};  #Перечень отображаемых элементов
-        
-        foreach my $si (@$sliderItems) {
-            my $voting = {
-                id       => $si->{id},
-                visible  => $si->{visible},
-                check_ip => $si->{check_ip},
-                can_vote => 1,
-                active   => 1,
-            };
-            
-            $self->_runHandler($voting,'CANVOTE');
-            
-            next unless $voting->{can_vote} || $voting->{visible};
-            
-            $req->{items}->{$voting->{id}} = {
-                visible  => $voting->{visible},
-                can_vote => $voting->{can_vote},
-            };
-        };
-    };
-    return {REQUEST=>$req};
-};
-
-sub block_SLIDER {
-    my ($self,$action,$keys) = (shift,shift,shift);
-    
-    my $cms = $self->cms();
-    my $dbh = $self->dbh();
-    #my $baseURL = $self->getBaseURL();
-    
-    
-    my $sql = "select p.id,p.question,p.multichoice,p.vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip FROM polls p WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW())) ORDER BY start_date DESC";
-    my $sth = $dbh->prepare($sql);
-    $sth->execute();
-    
-    my @polls = ();
-    while (my $voting = $sth->fetchrow_hashref()) {
-        $voting->{active}   = 1;
-        
-        if ($keys->{REQUEST}->{items}) {
-            #Кеш есть.
-            next unless exists $keys->{REQUEST}->{items}->{$voting->{id}};
-        }
-        else {
-            #Кеша нет
-            $voting->{can_vote} = 1;
-            $self->_runHandler($voting,'CANVOTE');
-            
-            next unless $voting->{can_vote} || $voting->{visible};
-        };
-        
-        $self->_loadVoting($voting);
-        $self->_loadAnswers($voting);
-        next unless @{$voting->{answers}};
-        
-        push @polls,$voting;
-    };
-    
-    return $cms->output('') unless @polls;
-    
-	my $template = $self->gettemplate("public/polls/slider.tmpl");
-	$template->param(
-        SLIDER=>\@polls,
-	);
-	return $cms->output($template);
-};
-
-sub _loadVoting {
-    my ($self,$voting) = (shift,shift);
-    
-    my $db = $self->db();
-    
-    $voting->{db_start_date} = $voting->{start_date};
-    $voting->{db_end_date}   = $voting->{end_date};
-    $voting->{start_date}    = $db->date_from_db($voting->{start_date});
-    $voting->{end_date}      = $db->date_from_db($voting->{end_date});
-    
-    my ($sdate,$edate);
-    $sdate = Date::Simple->new($voting->{db_start_date});
-    $edate = Date::Simple->new($voting->{db_end_date}) if $voting->{db_end_date};
-    my $today = Date::Simple::today();
-    $edate ||= $today;
-    
-    $voting->{active} = ($sdate<=$today && $edate>=$today)?1:0;
-    $voting;
-};
-
-sub _loadAnswers {
-    my ($self,$voting) = (shift,shift);
-    
-	my $answers = $self->dbh->selectall_arrayref("SELECT a.id,a.polls_id,a.answer,a.def,a.vote_cnt FROM polls_answers a WHERE a.polls_id=? ORDER BY a.id",{Slice=>{}},$voting->{id});
-    die $DBI::errstr unless defined $answers;
-    
-    $voting->{answers} = [];
-    
-    foreach (@$answers) {
-        push @{$voting->{answers}}, {
-            id       => $_->{id},
-            answer   => $_->{answer},
-            def      => $_->{def},
-            vote_cnt => $_->{vote_cnt},
-            vote_cnt_percent      => !$voting->{vote_cnt}?0:sprintf("%.2f",($_->{vote_cnt}/$voting->{vote_cnt})*100),
-            vote_cnt_percent_show => !$voting->{vote_cnt}?0:sprintf("%d",  ($_->{vote_cnt}/$voting->{vote_cnt})*100),
-        };
-    };
-};
-
-sub block_ONMAIN {
+sub block_ONMAIN
+{
 	my $self = shift;
 	my $cms = $self->cms();
 	my $dbh = $self->dbh();
@@ -202,27 +49,30 @@ sub block_ONMAIN {
 
     my $random_function = $db->isa('NG::DBI::Mysql')? 'rand' : 'random';
 
-	my ($poll_id) = $dbh->selectrow_array("select id from polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW())) ORDER BY ".$random_function."() limit 1",undef);
+	my ($poll_id) = $dbh->selectrow_array("select id from polls where rotate=1 and ((start_date<=now() and end_date>=now()) or start_date<=now()) order by ".$random_function."() limit 1",undef);
 	my $poll = undef;
 	$poll = $self->_loadPoll($poll_id) if (is_valid_id($poll_id));
 	my $template = $self->gettemplate("public/polls/onmain.tmpl") or return $cms->error();
 	$template->param(
 		POLL => $poll,
-		URL => $self->getBaseURL(),
+		URL => $self->url()
 	);
 	return $cms->output($template);
 };
 
-sub _loadPoll {
-	my ($self,$id) = (shift,shift);
+sub _loadPoll
+{
+	my $self = shift;
+	my $id = shift;
 	
 	my $dbh = $self->dbh();
 	my $db = $self->db();
 	my $q = $self->q();
 	
-	my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id order by a.id",{Slice=>{}},$id);
+	my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.multichoice,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id order by a.id",{Slice=>{}},$id);
 	my $poll = undef;
-	if (defined $answers and ref $answers eq 'ARRAY' && scalar @$answers) {
+	if (defined $answers and ref $answers eq 'ARRAY' && scalar @$answers)
+	{
 		$poll = {
 			id => ${$answers}[0]->{polls_id},
 			question => ${$answers}[0]->{question},
@@ -238,7 +88,8 @@ sub _loadPoll {
 			canvote => 0,
 			answers => []
 		};
-		foreach (@$answers) {
+		foreach (@$answers)	
+		{
 			push @{$poll->{answers}},{
 				id => $_->{id},
 				answer => $_->{answer},
@@ -250,32 +101,39 @@ sub _loadPoll {
 		};
 		my $sdate = Date::Simple->new($poll->{db_start_date});
 		my $edate = Date::Simple::today();
-		$edate = Date::Simple->new($poll->{db_end_date}) if $poll->{db_end_date};
+		 $edate = Date::Simple->new($poll->{db_end_date}) if (	$poll->{db_end_date});
 		my $today = Date::Simple::today();
 		
 		$poll->{active} = ($sdate<=$today && $edate>=$today)?1:0;
 		
 		$poll->{canvote} = $poll->{active} eq "0"?0:1;
-		if($poll->{canvote} == 1 && $poll->{check_ip}) {
-			my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
+		if($poll->{canvote} == 1 && $poll->{check_ip}) 
+		{
+			my $sth = $self->db()->dbh()->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
 			$sth->execute($q->remote_host(),$poll->{id}) or undef;
-			my ($count) = $sth->fetchrow();
+			my ($count,) = $sth->fetchrow();
 			$sth->finish();
-			$poll->{canvote}=0 if $count>0;
+			if($count>0) 
+			{
+		  		$poll->{canvote}=0;
+			};
 		};
 	}
-	else {
+	else
+	{
 		$poll = undef;
 	};
 	
 	return $poll;
 };
 
-sub processModulePost {
+sub processModulePost
+{
 	1;
 };
 
-sub _vote {
+sub _vote
+{
 	my $self = shift;
 	my $poll = shift;
 	my $q = $self->q();
@@ -285,22 +143,26 @@ sub _vote {
 	my $errors = {};
 	my $ret = 1;
 
-	unless ($poll->{active}) {
+	unless ($poll->{active})
+	{
 		$ret = 0;
 		$errors->{no_active} = 1;
 	};
 	
-	unless (scalar @answers) {
+	unless (scalar @answers)
+	{
 		$ret = 0;
 		$errors->{no_answers} = 1;
 	};
 	
-	if ($poll->{active} && $poll->{check_ip} && !$poll->{canvote}) {
+	if ($poll->{active} && $poll->{check_ip} && !$poll->{canvote})
+	{
 		$ret = 0;
 		$errors->{same_ip} = 1;		
 	};
 	
-	if (!scalar keys %$errors && scalar @answers) {
+	if (!scalar keys %$errors && scalar @answers)
+	{
 		my $sth_insert = $self->db()->dbh()->prepare("update polls_answers set vote_cnt=vote_cnt+1 where id=? and polls_id=?") ;
 		foreach (@answers)
 		{
@@ -318,6 +180,14 @@ sub _vote {
 	return wantarray?($ret,$errors):$ret;
 };
 
+sub getActiveBlock
+{
+	my $self = shift;
+	my $q = $self->q();
+	return {BLOCK=>"FULL"} if $q->param("id");
+	return {BLOCK=>"LIST"};
+};
+
 package NG::Polls::List;
 use strict;
 use NGService;
@@ -328,24 +198,22 @@ use POSIX;
 
 use NG::Module::List;
 our @ISA = qw(NG::Module::List);
-
 sub config  {
     my $self = shift;
     $self->{_table} = "polls";
     $self->{_pageBlockMode} = 1;
     
     my $m = $self->getModuleObj();
-    
-    my $fields     = $m->fields();
+    my $fields = $m->fields();
     my $formfields = $m->formfields();
     my $listfields = $m->listfields();
     
     $self->fields(
-        {FIELD=>'id',         TYPE=>'id',     NAME=>'Код записи'},
+        {FIELD=>'id',  	      TYPE=>'id',     NAME=>'Код записи'},
         {FIELD=>'question',   TYPE=>'text',   NAME=>'Текст вопроса', IS_NOTNULL=>1},
         {FIELD=>'start_date', TYPE=>'date',   NAME=>'Дата начала (дд.мм.гггг)',   IS_NOTNULL=>1,DEFAULT=>current_date()},
         {FIELD=>'end_date',   TYPE=>'date',   NAME=>'Дата окончания (дд.мм.гггг)'},
-        {FIELD=>'visible',    TYPE=>'checkbox', NAME=>'Показывать результаты', IS_NOTNULL=>0,},
+        {FIELD=>'visible',    TYPE=>'checkbox', NAME=>'Показывать результаты', IS_NOTNULL=>0},
         {FIELD=>'rotate',     TYPE=>'checkbox', NAME=>'Ротировать',IS_NOTNULL=>0},
         {FIELD=>'check_ip',   TYPE=>'checkbox', NAME=>'Проверять IP',         IS_NOTNULL=>0},
         {FIELD=>'multichoice',TYPE=>'checkbox', NAME=>'Несколько вариантов',  IS_NOTNULL=>0},
@@ -358,7 +226,6 @@ sub config  {
         {FIELD=>'question',},
         {FIELD=>'start_date',},
         {FIELD=>'end_date',},
-        {FIELD=>'rotate', CLICKABLE=>1},
         @$listfields
     ]);
     # Формовая часть
@@ -374,50 +241,45 @@ sub config  {
         @$formfields
     );
     
-	$self->filter(
-		NAME  => "Фильтр:",
-		TYPE  => "tabs",
+	$self->filter (
+		NAME   =>"Фильтр:",
+		TYPE  =>"select",
 		VALUES=> [
             {NAME=>"Все опросы", WHERE=>""},
-			{NAME=>"Ротируемые", WHERE=>"rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))"},
-		],
+			{NAME=>"Ротируемые", WHERE=>"rotate=1"},
+		]
 	);
     
-	$self->addRowLink({NAME=>'Варианты ответа',URL=>'?action=showanswers&poll_id={id}',AJAX=>1});
+  
+	$self->add_links('Варианты ответа','?action=showanswers&poll_id={id}',1);
 	$self->register_action('showanswers',"showOrUpdateAnswers");
 	$self->register_action('updateanswers',"showOrUpdateAnswers");
 	$self->register_action('addanswer',"showOrUpdateAnswers");
     $self->register_action('deleteanswer',"deleteAnswer");
     $self->order({FIELD=>"start_date",DEFAULT=>1,DEFAULTBY=>"DESC",ORDER_ASC=>"start_date asc,id desc",ORDER_DESC=>"start_date desc,id desc"});
-    
-    $self->updateKeysVersion([
-        {key=>'voting', id => '{id}'},
-        {key=>'anyvoting'},
-    ]);
-    
-    $m->configList($self) if $m->can('configList');
+    $m->config($self) if ($m->can('config'));
 };
 
 sub beforeDelete {
-    my ($self,$id)=(shift,shift);
-    
+	my $self=shift;
+	my $id=shift;
+	return undef if(!is_valid_id($id));
     my $dbh=$self->dbh();
-    my $sql="delete from polls_ip where polls_id=?";
-    $dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);
-    $sql="delete from polls_answers where polls_id=?";
-    $dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);
-    $sql="delete from polls_ip where polls_id=?";
-    $dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);
-    return NG::Block::M_OK;
+	my $sql="delete from polls_ip where polls_id=?";
+	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
+	$sql="delete from polls_answers where polls_id=?";
+	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
+	$sql="delete from polls_ip where polls_id=?";
+	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
+	return NG::Block::M_OK; ##TODO: check if we need to "use NG::Module"
 };
 
 
 sub deleteAnswer {
 	my $self = shift;
 	my $action = shift;
-    my $is_ajax = shift;
+    my $is_ajax = shift;	
 
-    my $cms   = $self->cms();
 	my $dbh   = $self->dbh();
 	my $q     = $self->q();	
 	my $myurl  = $q->url();
@@ -432,14 +294,9 @@ sub deleteAnswer {
 	if ($confirmation) {
 		
 		$dbh->do("update polls set vote_cnt=(vote_cnt - (select vote_cnt from polls_answers where id = ? and polls_id = ?)) where id=? and (multichoice = 0)",undef,$answer_id,$poll_id,$poll_id) or return $self->error("Ошибка удаления варианта ответа: ".$DBI::errstr);
+	
 		$dbh->do("delete from polls_answers where id = ? and polls_id = ?",undef,$answer_id,$poll_id) or return $self->error("Ошибка удаления варианта ответа: ".$DBI::errstr);
 		
-        my $mObj = $self->getModuleObj();
-        $cms->updateKeysVersion($mObj,[
-            {key=>'voting', id => $poll_id},
-            {key=>'anyvoting'},
-        ]);
-        
 		if ($is_ajax) {
 			#TODO: отсутствует передача параметра ref
 			return $self->output("<script type='text/javascript'>parent.ajax_url('$myurl?action=showanswers&poll_id=$poll_id&_ajax=1','formb_$poll_id');</script>"); 
@@ -457,16 +314,15 @@ sub deleteAnswer {
 			return $self->showOrUpdateAnswers("showanswers",0);
 		};
 	};
-};
+}
 
 sub showOrUpdateAnswers {
 	my $self = shift;
 	my $action = shift;
     my $is_ajax = shift;	
 	
-    my $cms   = $self->cms();
-	my $dbh   = $cms->dbh();
-	my $q     = $cms->q();	
+	my $dbh   = $self->dbh();
+	my $q     = $self->q();	
 	my $myurl  = $q->url();
 	my $method = $q->request_method();
 	
@@ -498,13 +354,6 @@ sub showOrUpdateAnswers {
 			my $id = $self->db()->get_id('polls_answers');
 			return $self->error($self->db()->errstr()) unless $id;
 			$dbh->do("insert into polls_answers (id,polls_id,answer,def,vote_cnt) values (?,?,?,?,?)",undef,$id,$poll_id,$answer,$def,0) or return $self->error("Insert:".$DBI::errstr); ##TODO: вывод ошибки будет в невидимую зону
-            
-            my $mObj = $self->getModuleObj();
-            $cms->updateKeysVersion($mObj,[
-                {key=>'voting', id => $poll_id},
-                {key=>'anyvoting'},
-            ]);
-            
 			if ($is_ajax) {
 				#TODO: отсутствует передача параметра ref
 				#return $self->output("<script type='text/javascript'>parent.ajax_url('$myurl?action=showanswers&poll_id=$poll_id&_ajax=1','formb_$poll_id');</script>");
@@ -562,13 +411,6 @@ sub showOrUpdateAnswers {
 			foreach my $row (@new_answers) {
 				$dbh->do("update polls_answers set answer=?,def=? where id=?",undef,$row->{ANSWER},$row->{DEF},$row->{ID}) or die $DBI::errstr;
 			};
-            
-            my $mObj = $self->getModuleObj();
-            $cms->updateKeysVersion($mObj,[
-                {key=>'voting', id => $poll_id},
-                {key=>'anyvoting'},
-            ]);
-            
 			# Делаем правильный редирект и выходим
 			if ($is_ajax) {
 				#TODO: отсутствует передача параметра ref
@@ -624,8 +466,9 @@ sub beforeInsertUpdate {
 		if ($oldmultichoice != $multichoice && !$multichoice) {
 			$self->db()->dbh()->do("update polls_answers set def=0 where polls_id=?",undef,$id) or return $self->error($DBI::errstr);
 		};
-	};
+	}
+	
 	return NG::Block::M_OK;
-};
+}
 
 1;

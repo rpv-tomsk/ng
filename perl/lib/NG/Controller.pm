@@ -123,7 +123,7 @@ sub process {
 
 sub saveResult {
     my ($self,$destFile) = (shift,shift);
-    $self->{_pObj}->saveResult($destFile) or NG::Exception->throw('NG.INTERNALERROR',$self->{_pclass}."->saveResult() failed: ".$self->{_error});
+    $self->{_pObj}->saveResult($destFile);
 };
 
 sub getResult {
