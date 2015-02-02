@@ -70,6 +70,7 @@ sub init {
     
     $self->{_filters} = []; # Список фильтров списка
     $self->{_multiActions} = undef;  #Список возможных действий пользователя над группой записей.
+    $self->{_versionKeys}  = undef;  #Список ключей кеша, которые надо обновить при действии с записью
     
     #Конфигурация поиска
     $self->{_searchconfig} = undef;
@@ -723,12 +724,14 @@ sub processForm {
         }
         else {
             $form->insertData() or return $self->error($form->getError());
+            $self->_updateVersionKeys($form,$fa);
         };
         $self->_makeLogEvent({operation=>"Вставка записи", operation_param=>"KEY ".join("_",$form->getKeyValues())});
     }
     else {
         ## Update
         $form->updateData() or return $self->error($form->getError());
+        $self->_updateVersionKeys($form,$fa);
         $self->_makeLogEvent({operation=>"Обновление записи", operation_param=>"KEY ".join("_",$form->getKeyValues())});
     };
     
@@ -997,6 +1000,7 @@ sub changeRowValueByForm {
     $self->beforeInsertUpdate($form,$fa) or return $self->showError("processCheckbox(): Ошибка вызова beforeInsertUpdate()");
     ## Update
     $form->updateData() or return $self->error($form->getError());
+    $self->_updateVersionKeys($form,$fa);
     if (defined $self->{_searchconfig}) {
         my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
         return $self->showError() if ($self->cms()->getError('') ne "");
@@ -1082,11 +1086,12 @@ sub Delete {
         if($action eq "deletefull") {
             $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
             $form->Delete() or return $self->error($form->getError());
+            $self->_updateVersionKeys($form,'delete');
             if(defined $self->{_searchconfig}) {
                 my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
                 return $self->showError() if ($self->cms()->getError('') ne "");
                 $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
-            };   
+            };
             $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
             $self->_makeEvent('delete',{ID=>$id});
             $self->_makeLogEvent({operation=>"Удаление записи",operation_param=>"KEY ".$id});
@@ -1162,6 +1167,7 @@ sub _maDeleteRecords {
         $form->param($self->{_idname},$id);
         $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
         $form->Delete() or return $self->error($form->getError());
+        $self->_updateVersionKeys($form,'delete');
         if(defined $self->{_searchconfig}) {
             my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
             return $self->showError() if ($self->cms()->getError('') ne "");
@@ -2430,6 +2436,27 @@ sub showSearchForm {
 	};
 };
 
+sub _updateVersionKeys {
+    my ($self,$form,$fa) = (shift,shift,shift);
+    
+    return unless $self->{_versionKeys};
+    
+    my $cms  = $self->cms();
+    my $mObj = $self->getModuleObj() or die "ASSERT: Unable to getModuleObj()!";
+
+    my $params = {};    
+    my @vk = map +{%$_}, @{$self->{_versionKeys}};
+    foreach my $vk (@vk) {
+        foreach my $key (keys %$vk) {
+            while ($vk->{$key} =~ /\{(.+?)\}/i) {
+                my $value = $params->{$1} ||= $form->getParam($1);
+                $vk->{$key} =~ s/\{(.+?)\}/$value/i;
+            };
+        };
+    };
+    $cms->updateKeysVersion($mObj,\@vk);
+};
+
 =head
 sub checkConfig {
     my $self = shift;
@@ -2547,6 +2574,7 @@ sub _destroyBlock {
         
         $self->beforeDelete($v) or return $self->showError("_destroyBlock(): Ошибка вызова BeforeDelete()");
         $form->Delete() or return $self->error($form->getError());
+        $self->_updateVersionKeys($form,'delete');
         $self->afterDelete($v,$form) or return $self->showError("_destroyBlock(): Ошибка вызова AfterDelete()");
     };
     $sth->finish();
@@ -2772,6 +2800,12 @@ sub multiactions {
     my $self = shift;
     $self->{_multiActions}||=[];
     $self->_pushFields($self->{_multiActions},@_);
+};
+
+sub updateKeysVersion {
+    my $self = shift;
+    $self->{_versionKeys}||=[];
+    $self->_pushFields($self->{_versionKeys},@_);
 };
 
 sub add_url_field {
