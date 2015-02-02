@@ -64,9 +64,8 @@ sub getActiveBlock {
 sub getBlockKeys {
     my ($self, $action) = (shift,shift);
    
-    my $cms = $self->cms();
-    return $cms->error("NG::RtfBlock: invalid getBlockKeys action $action") if $action ne "CONTENT";
-   
+    return $self->SUPER::getBlockKeys($action,@_) unless $action eq "CONTENT";
+
     my $opts = $self->opts();
    
     my $req = {};
@@ -82,19 +81,17 @@ sub getBlockContent{
 	my $cms = $self->cms();
     my $opts = $self->opts();
     
-    my ($pageId, $subPage);
-    
-    if ($keys && $keys->{REQUEST}) {
-        $pageId  = $keys->{REQUEST}->{pageId}; 
-        $subPage = $keys->{REQUEST}->{subpage};
-    }
-    else {
-        $pageId  = $self->getPageId();
-        $subPage = $opts->{subpage} || 1;
-    };  
-    
     if ($action eq "CONTENT") {
-     	my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=? and subpage=?",undef,$pageId,$subPage);
+        my ($pageId, $subPage);
+        if ($keys && $keys->{REQUEST}) {
+            $pageId  = $keys->{REQUEST}->{pageId}; 
+            $subPage = $keys->{REQUEST}->{subpage};
+        }
+        else {
+            $pageId  = $self->getPageId();
+            $subPage = $opts->{subpage} || 1;
+        };
+        my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=? and subpage=?",undef,$pageId,$subPage);
         return $cms->error("Content file name not found in ".(ref $self)."::getBlockContent") unless($file);
         $file = $cms->getSiteRoot().$self->{_rtfdir}.$file if $file;
         #$v = value
@@ -112,7 +109,7 @@ sub getBlockContent{
         };
         return $cms->output($v);
     };
-	return $cms->error("NG::RtfBlock: invalid getBlockContent action $action");
+    return $self->SUPER::getBlockContent($action,$keys,@_);
 };
 
 sub moduleTabs {
