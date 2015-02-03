@@ -280,12 +280,12 @@ sub block_SLIDER {
     
     return $cms->output('') unless @polls;
     
-	my $template = $self->gettemplate("public/polls/slider.tmpl");
-	$template->param(
+    my $template = $self->gettemplate("public/polls/slider.tmpl");
+    $template->param(
         SLIDER=>\@polls,
         BASEURL=>$baseURL,
-	);
-	return $cms->output($template);
+    );
+    return $cms->output($template);
 };
 
 sub _loadVoting {
