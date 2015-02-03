@@ -6,39 +6,21 @@ use NSecure;
 use NGService;
 our @ISA = qw(NG::PageModule);
 
-sub moduleTabs
-{
+sub moduleTabs {
     return [
         {HEADER=>"Опросы",URL=>"/"}
     ];
 };
 
-sub moduleBlocks
-{
+sub moduleBlocks {
     return [
         {BLOCK=>"NG::Polls::List" ,URL=>"/"}
     ];
 };
 
-sub fields 
-{
-    return [];
-}; 
-
-sub formfields
-{
-    return [];
-};
-
-sub listfields
-{
-    return [];
-};
-
-sub url
-{
-	return "/polls/";
-};
+sub fields     { return []; };
+sub formfields { return []; };
+sub listfields { return []; };
 
 sub block_ONMAIN
 {
@@ -49,19 +31,18 @@ sub block_ONMAIN
 
     my $random_function = $db->isa('NG::DBI::Mysql')? 'rand' : 'random';
 
-	my ($poll_id) = $dbh->selectrow_array("select id from polls where rotate=1 and ((start_date<=now() and end_date>=now()) or start_date<=now()) order by ".$random_function."() limit 1",undef);
+	my ($poll_id) = $dbh->selectrow_array("SELECT id FROM polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW())) ORDER BY ".$random_function."() limit 1",undef);
 	my $poll = undef;
 	$poll = $self->_loadPoll($poll_id) if (is_valid_id($poll_id));
 	my $template = $self->gettemplate("public/polls/onmain.tmpl") or return $cms->error();
 	$template->param(
 		POLL => $poll,
-		URL => $self->url()
+		URL => $self->getBaseURL(),
 	);
 	return $cms->output($template);
 };
 
-sub _loadPoll
-{
+sub _loadPoll {
 	my $self = shift;
 	my $id = shift;
 	
@@ -69,10 +50,9 @@ sub _loadPoll
 	my $db = $self->db();
 	my $q = $self->q();
 	
-	my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.multichoice,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id order by a.id",{Slice=>{}},$id);
+	my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id order by a.id",{Slice=>{}},$id);
 	my $poll = undef;
-	if (defined $answers and ref $answers eq 'ARRAY' && scalar @$answers)
-	{
+	if (defined $answers and ref $answers eq 'ARRAY' && scalar @$answers) {
 		$poll = {
 			id => ${$answers}[0]->{polls_id},
 			question => ${$answers}[0]->{question},
@@ -88,8 +68,7 @@ sub _loadPoll
 			canvote => 0,
 			answers => []
 		};
-		foreach (@$answers)	
-		{
+		foreach (@$answers) {
 			push @{$poll->{answers}},{
 				id => $_->{id},
 				answer => $_->{answer},
@@ -101,39 +80,32 @@ sub _loadPoll
 		};
 		my $sdate = Date::Simple->new($poll->{db_start_date});
 		my $edate = Date::Simple::today();
-		 $edate = Date::Simple->new($poll->{db_end_date}) if (	$poll->{db_end_date});
+		$edate = Date::Simple->new($poll->{db_end_date}) if $poll->{db_end_date};
 		my $today = Date::Simple::today();
 		
 		$poll->{active} = ($sdate<=$today && $edate>=$today)?1:0;
 		
 		$poll->{canvote} = $poll->{active} eq "0"?0:1;
-		if($poll->{canvote} == 1 && $poll->{check_ip}) 
-		{
-			my $sth = $self->db()->dbh()->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
+		if ($poll->{canvote} == 1 && $poll->{check_ip}) {
+			my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
 			$sth->execute($q->remote_host(),$poll->{id}) or undef;
-			my ($count,) = $sth->fetchrow();
+			my ($count) = $sth->fetchrow();
 			$sth->finish();
-			if($count>0) 
-			{
-		  		$poll->{canvote}=0;
-			};
+			$poll->{canvote} = 0 if $count>0;
 		};
 	}
-	else
-	{
+	else {
 		$poll = undef;
 	};
 	
 	return $poll;
 };
 
-sub processModulePost
-{
+sub processModulePost {
 	1;
 };
 
-sub _vote
-{
+sub _vote {
 	my $self = shift;
 	my $poll = shift;
 	my $q = $self->q();
@@ -143,31 +115,25 @@ sub _vote
 	my $errors = {};
 	my $ret = 1;
 
-	unless ($poll->{active})
-	{
+	unless ($poll->{active}) {
 		$ret = 0;
 		$errors->{no_active} = 1;
 	};
 	
-	unless (scalar @answers)
-	{
+	unless (scalar @answers) {
 		$ret = 0;
 		$errors->{no_answers} = 1;
 	};
 	
-	if ($poll->{active} && $poll->{check_ip} && !$poll->{canvote})
-	{
+	if ($poll->{active} && $poll->{check_ip} && !$poll->{canvote}) {
 		$ret = 0;
-		$errors->{same_ip} = 1;		
+		$errors->{same_ip} = 1;
 	};
 	
-	if (!scalar keys %$errors && scalar @answers)
-	{
+	if (!scalar keys %$errors && scalar @answers) {
 		my $sth_insert = $self->db()->dbh()->prepare("update polls_answers set vote_cnt=vote_cnt+1 where id=? and polls_id=?") ;
-		foreach (@answers)
-		{
-			if(is_valid_id($_)) 
-			{
+		foreach (@answers) {
+			if(is_valid_id($_)) {
 				$sth_insert->execute($_,$poll->{id});
 				$poll->{vote_cnt} = $poll->{vote_cnt} + 1;
 			};
@@ -180,14 +146,6 @@ sub _vote
 	return wantarray?($ret,$errors):$ret;
 };
 
-sub getActiveBlock
-{
-	my $self = shift;
-	my $q = $self->q();
-	return {BLOCK=>"FULL"} if $q->param("id");
-	return {BLOCK=>"LIST"};
-};
-
 package NG::Polls::List;
 use strict;
 use NGService;
@@ -198,18 +156,20 @@ use POSIX;
 
 use NG::Module::List;
 our @ISA = qw(NG::Module::List);
+
 sub config  {
     my $self = shift;
     $self->{_table} = "polls";
     $self->{_pageBlockMode} = 1;
     
     my $m = $self->getModuleObj();
-    my $fields = $m->fields();
+    
+    my $fields     = $m->fields();
     my $formfields = $m->formfields();
     my $listfields = $m->listfields();
     
     $self->fields(
-        {FIELD=>'id',  	      TYPE=>'id',     NAME=>'Код записи'},
+        {FIELD=>'id',         TYPE=>'id',     NAME=>'Код записи'},
         {FIELD=>'question',   TYPE=>'text',   NAME=>'Текст вопроса', IS_NOTNULL=>1},
         {FIELD=>'start_date', TYPE=>'date',   NAME=>'Дата начала (дд.мм.гггг)',   IS_NOTNULL=>1,DEFAULT=>current_date()},
         {FIELD=>'end_date',   TYPE=>'date',   NAME=>'Дата окончания (дд.мм.гггг)'},
@@ -241,20 +201,19 @@ sub config  {
         @$formfields
     );
     
-	$self->filter (
-		NAME   =>"Фильтр:",
-		TYPE  =>"select",
-		VALUES=> [
+    $self->filter (
+        NAME   => "Фильтр:",
+        TYPE   => "select",
+        VALUES => [
             {NAME=>"Все опросы", WHERE=>""},
-			{NAME=>"Ротируемые", WHERE=>"rotate=1"},
-		]
-	);
+            {NAME=>"Ротируемые", WHERE=>"rotate=1"},
+        ]
+    );
     
-  
-	$self->add_links('Варианты ответа','?action=showanswers&poll_id={id}',1);
-	$self->register_action('showanswers',"showOrUpdateAnswers");
-	$self->register_action('updateanswers',"showOrUpdateAnswers");
-	$self->register_action('addanswer',"showOrUpdateAnswers");
+    $self->addRowLink({NAME=>'Варианты ответа',URL=>'?action=showanswers&poll_id={id}',AJAX=>1});
+    $self->register_action('showanswers',"showOrUpdateAnswers");
+    $self->register_action('updateanswers',"showOrUpdateAnswers");
+    $self->register_action('addanswer',"showOrUpdateAnswers");
     $self->register_action('deleteanswer',"deleteAnswer");
     $self->order({FIELD=>"start_date",DEFAULT=>1,DEFAULTBY=>"DESC",ORDER_ASC=>"start_date asc,id desc",ORDER_DESC=>"start_date desc,id desc"});
     $m->config($self) if ($m->can('config'));
@@ -269,19 +228,15 @@ sub beforeDelete {
 	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
 	$sql="delete from polls_answers where polls_id=?";
 	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
-	$sql="delete from polls_ip where polls_id=?";
-	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
 	return NG::Block::M_OK; ##TODO: check if we need to "use NG::Module"
 };
 
 
 sub deleteAnswer {
-	my $self = shift;
-	my $action = shift;
-    my $is_ajax = shift;	
+	my ($self,$action,$is_ajax) = (shift,shift,shift);
 
 	my $dbh   = $self->dbh();
-	my $q     = $self->q();	
+	my $q     = $self->q();
 	my $myurl  = $q->url();
 	my $confirmation = $q->param("confirmation")?1:0;
 
@@ -314,12 +269,10 @@ sub deleteAnswer {
 			return $self->showOrUpdateAnswers("showanswers",0);
 		};
 	};
-}
+};
 
 sub showOrUpdateAnswers {
-	my $self = shift;
-	my $action = shift;
-    my $is_ajax = shift;	
+	my ($self,$action,$is_ajax) = (shift,shift,shift);
 	
 	my $dbh   = $self->dbh();
 	my $q     = $self->q();	
@@ -466,9 +419,8 @@ sub beforeInsertUpdate {
 		if ($oldmultichoice != $multichoice && !$multichoice) {
 			$self->db()->dbh()->do("update polls_answers set def=0 where polls_id=?",undef,$id) or return $self->error($DBI::errstr);
 		};
-	}
-	
+	};
 	return NG::Block::M_OK;
-}
+};
 
 1;
