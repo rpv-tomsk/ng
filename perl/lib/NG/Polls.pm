@@ -2,6 +2,7 @@ package NG::Polls;
 use strict;
 use NG::PageModule;
 use Date::Simple;
+use Digest::HMAC_SHA1 qw(hmac_sha1_hex);
 use NSecure;
 use NGService;
 our @ISA = qw(NG::PageModule);
@@ -18,10 +19,309 @@ sub moduleBlocks {
     ];
 };
 
+sub pollsConfig {
+    return {};
+};
+
 sub fields     { return []; };
 sub formfields { return []; };
 sub listfields { return []; };
 
+
+sub voteHandlers {
+    return [
+        {CANVOTE=>'checkIP_canvote', DELETE=>'checkIP_delete', VOTE=>'checkIP_vote'},
+        {CANVOTE=>'checkUID_canvote', DELETE=>'checkUID_delete', VOTE=>'checkUID_vote'},
+    ];
+};
+
+sub checkIP_canvote {
+    my ($self,$voting) = (shift,shift);
+    
+    my $dbh  = $self->dbh();
+    my $q  = $self->q();
+    
+    return unless $voting->{check_ip} && $voting->{can_vote};
+
+    my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
+    $sth->execute($q->remote_host(),$voting->{id}) or undef;
+    my ($count) = $sth->fetchrow();
+    $sth->finish();
+    $voting->{can_vote} = 0 if $count>0;
+#$voting->{can_vote} = 0;
+};
+
+sub checkIP_delete {
+    my ($self,$voting) = (shift,shift);
+    $self->dbh()->do("DELETE FROM polls_ip WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkIP_delete() error');
+};
+
+sub checkIP_vote {
+    my ($self,$voting) = (shift,shift);
+    $self->dbh()->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_host()) or NG::DBIException->throw('checkIP_vote() error'); 
+};
+
+
+our $UID_COOKIENAME = 'uid';
+our $UID_COOKIELIFE = '+3M';
+our $UID_KEY        = 'maFaephe9Ezum7j';
+our $UID_STATIC_SALT = 'eiLo3ohnoh';
+
+sub checkUID_canvote {
+    my ($self,$voting,$ctx) = (shift,shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $cms->dbh();
+    my $q   = $cms->q();
+    
+    return unless $voting->{can_vote};
+    
+    my ($time,$uid) = (undef,undef); #Составной идентификатор пользователя
+    
+    #Проверяем наличие куки.
+    my $cid = $q->cookie($UID_COOKIENAME);
+#warn "Found cid $cid from cookie" if $cid;
+    if ($ctx->{new} || ($cid && $ctx->{cid} && $ctx->{cid} eq $cid)) {
+        $time = $ctx->{time};
+        $uid  = $ctx->{uid};
+#warn "Found cid ".$ctx->{cid}." from ctx";
+    }
+    elsif ($cid && $cid =~ /(\d+)_(\S{8})_(\S{40})/) {
+        #кука есть, проверим подпись
+        $time = $1;
+        $uid  = $2;
+        my $hash = $3;
+        
+        my $myHash = hmac_sha1_hex($time.":".$uid.":".$UID_STATIC_SALT, pack('H*',$UID_KEY));
+        
+        if ($myHash eq $hash) {
+            $ctx->{time} = $time;
+            $ctx->{uid}  = $uid;
+            $ctx->{cid}  = $cid;
+            
+#warn "checkUID_canvote(): valid cookie $cid";
+            
+            $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
+        }
+        else {
+            warn "checkUID_canvote(): $hash vs $myHash - mismatch for cookie $cid";
+            $uid = undef;
+            $time = undef;
+        };
+    };
+    
+    if ($time && $uid) {
+        #Найдена валидная кука, ищем наличие голосования по кешу/БД.
+        #Ищем в кеше
+        if ($cms->getCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}})) {
+            $voting->{can_vote} = 0;
+            return;
+        };
+        #Ищем в БД
+        my $sth = $dbh->prepare("select count(*) from polls_uid_votes where polls_id=? and uid = ? and utime=?") or warn $DBI::errstr;
+        $sth->execute($voting->{id},$uid,$time) or warn $DBI::errstr;
+        my ($count) = $sth->fetchrow();
+        $sth->finish();
+        $voting->{can_vote} = 0 if $count>0;
+        
+        $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},$voting->{can_vote},3600);
+    }
+    else {
+        #Generate new.
+        $uid = generate_session_id(8);
+        $uid = substr( $uid, 0, 8 );
+        $time = time();
+        
+        my $myHash = hmac_sha1_hex($time.":".$uid.":".$UID_STATIC_SALT, pack('H*',$UID_KEY));
+        
+        my $cid = $time."_".$uid."_".$myHash;
+        $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
+#warn "Set new cookie $cid";
+        $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600);
+        #
+        $ctx->{time} = $time;
+        $ctx->{uid}  = $uid;
+        $ctx->{cid}  = $cid;
+        $ctx->{new}  = 1;
+    };
+};
+
+sub checkUID_vote {
+    my ($self,$voting,$ctx) = (shift,shift,shift);
+    
+    die "Invalid ctx" unless $ctx->{cid} && $ctx->{uid} && $ctx->{time};
+    
+    $self->cms->setCacheData($self,{key=>'hasvote',uid=>$ctx->{uid},time=>$ctx->{time},vote=>$voting->{id}},1,3600);
+    $self->dbh()->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip) values (?,?,?,?)",undef,$voting->{id},$ctx->{time},$ctx->{uid},$self->q()->remote_host()) or NG::DBIException->throw('checkIP_vote() error'); 
+};
+
+
+sub checkUID_delete {
+    my ($self,$voting,$ctx) = (shift,shift,shift);
+    $self->dbh()->do("DELETE FROM polls_uid_votes WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkIP_delete() error');
+};
+
+#-----------
+
+
+sub _runHandler {
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
+    my $VH = $self->voteHandlers($handler);
+    
+    my $idx = 0;
+    foreach my $h (@$VH) {
+        $idx++;
+        my $m = $h->{$handler} or next;
+        $self->$m($voting,($ctx->[$idx]||={}));
+    };
+};
+
+sub keys_SLIDER {
+    my $self = shift;
+    
+    my $cms = $self->cms();
+    my $q  = $self->q();
+    my $req = {};
+    
+    my $ctx = [];
+    
+    my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
+    if ($anyPollVersion && $anyPollVersion->[0]) {  #Кеширование включено
+        my $sliderItems = $cms->getCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]});
+        unless ($sliderItems) {
+            $sliderItems = $self->dbh()->selectall_arrayref("SELECT id,visible,check_ip FROM polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))",{Slice => {}});
+            $cms->setCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]},$sliderItems);
+        };
+        
+        $req->{today} = Date::Simple->new()->as_iso();
+        $req->{items} = {};  #Перечень отображаемых элементов
+        
+        foreach my $si (@$sliderItems) {
+            my $voting = {
+                id       => $si->{id},
+                visible  => $si->{visible},
+                check_ip => $si->{check_ip},
+                can_vote => 1,
+                active   => 1,
+            };
+            
+            $self->_runHandler($voting,'CANVOTE',$ctx);
+            
+            next unless $voting->{can_vote} || $voting->{visible};
+            
+            $req->{items}->{$voting->{id}} = {
+                visible  => $voting->{visible},
+                can_vote => $voting->{can_vote},
+            };
+        };
+    };
+    return {REQUEST=>$req};
+};
+
+sub block_SLIDER {
+    my ($self,$action,$keys) = (shift,shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $self->dbh();
+    my $baseURL = $self->getBaseURL();
+    
+    my $sql = "select p.id,p.question,p.multichoice,p.vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip";
+    
+    my $imageFields = $self->pollsConfig()->{IMAGEFIELDS};
+    if ($imageFields) {
+        $imageFields = [$imageFields] unless ref $imageFields eq 'ARRAY';
+        foreach my $if (@$imageFields) {
+            $sql.=",p.".$if->{FIELD};
+        };
+    };
+    
+    $sql.=" FROM polls p WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW())) ORDER BY start_date DESC";
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+    
+    my @polls = ();
+    my $ctx = [];
+    while (my $voting = $sth->fetchrow_hashref()) {
+        $voting->{active}   = 1;
+        
+        if ($keys->{REQUEST}->{items}) {
+            #Кеш есть.
+            next unless exists $keys->{REQUEST}->{items}->{$voting->{id}};
+        }
+        else {
+            #Кеша нет
+            $voting->{can_vote} = 1;
+            $self->_runHandler($voting,'CANVOTE',$ctx);
+            
+            next unless $voting->{can_vote} || $voting->{visible};
+        };
+        
+        $self->_loadVoting($voting);
+        $self->_loadAnswers($voting);
+        next unless @{$voting->{answers}};
+        
+        push @polls,$voting;
+    };
+    
+    return $cms->output('') unless @polls;
+    
+	my $template = $self->gettemplate("public/polls/slider.tmpl");
+	$template->param(
+        SLIDER=>\@polls,
+        BASEURL=>$baseURL,
+	);
+	return $cms->output($template);
+};
+
+sub _loadVoting {
+    my ($self,$voting) = (shift,shift);
+    
+    my $db = $self->db();
+    
+    my $imageFields = $self->pollsConfig()->{IMAGEFIELDS};
+    if ($imageFields) {
+        $imageFields = [$imageFields] unless ref $imageFields eq 'ARRAY';
+        foreach my $if (@$imageFields) {
+            $voting->{$if->{FIELD}} = $if->{UPLOADDIR}.$voting->{$if->{FIELD}} if $voting->{$if->{FIELD}};
+        };
+    };
+    
+    $voting->{db_start_date} = $voting->{start_date};
+    $voting->{db_end_date}   = $voting->{end_date};
+    $voting->{start_date}    = $db->date_from_db($voting->{start_date});
+    $voting->{end_date}      = $db->date_from_db($voting->{end_date});
+    
+    my ($sdate,$edate);
+    $sdate = Date::Simple->new($voting->{db_start_date});
+    $edate = Date::Simple->new($voting->{db_end_date}) if $voting->{db_end_date};
+    my $today = Date::Simple::today();
+    $edate ||= $today;
+    
+    $voting->{active} = ($sdate<=$today && $edate>=$today)?1:0;
+    $voting;
+};
+
+sub _loadAnswers {
+    my ($self,$voting) = (shift,shift);
+    
+	my $answers = $self->dbh->selectall_arrayref("SELECT a.id,a.polls_id,a.answer,a.def,a.vote_cnt FROM polls_answers a WHERE a.polls_id=? ORDER BY a.id",{Slice=>{}},$voting->{id});
+    die $DBI::errstr unless defined $answers;
+    
+    $voting->{answers} = [];
+    
+    foreach (@$answers) {
+        push @{$voting->{answers}}, {
+            id       => $_->{id},
+            answer   => $_->{answer},
+            def      => $_->{def},
+            vote_cnt => $_->{vote_cnt},
+            vote_percent     => !$voting->{vote_cnt}?0:sprintf("%.2f",($_->{vote_cnt}/$voting->{vote_cnt})*100),
+            vote_percent_int => !$voting->{vote_cnt}?0:sprintf("%d",  ($_->{vote_cnt}/$voting->{vote_cnt})*100),
+        };
+    };
+};
+
+=comment
 sub block_ONMAIN
 {
 	my $self = shift;
@@ -74,8 +374,8 @@ sub _loadPoll {
 				answer => $_->{answer},
 				def => $_->{def},
 				vote_cnt => $_->{vote_cnt},
-				vote_cnt_percent => !$poll->{vote_cnt}?0:sprintf("%.2f",($_->{vote_cnt}/$poll->{vote_cnt})*100),
-				vote_cnt_percent_show => !$poll->{vote_cnt}?0:sprintf("%d",($_->{vote_cnt}/$poll->{vote_cnt})*100),
+				vote_percent     => !$poll->{vote_cnt}?0:sprintf("%.2f",($_->{vote_cnt}/$poll->{vote_cnt})*100),
+				vote_percent_int => !$poll->{vote_cnt}?0:sprintf("%d",($_->{vote_cnt}/$poll->{vote_cnt})*100),
 			};
 		};
 		my $sdate = Date::Simple->new($poll->{db_start_date});
@@ -100,11 +400,159 @@ sub _loadPoll {
 	
 	return $poll;
 };
+=cut
 
-sub processModulePost {
-	1;
+
+sub processModulePost{
+    my $self = shift;
+    
+    my $q = $self->q();
+    my $action = $q->param('action') || '';
+    
+    return $self->doVote($action) if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest" && ($action eq 'vote' || $action eq 'voteajax');
+    return 1;
 };
 
+sub _doVote {
+    my $self = shift;
+    
+    my $q   = $self->q();
+    my $dbh = $self->dbh();
+    
+    my $id = $q->param("id");
+    my @answers = $q->param("answer");
+
+    my $ret = {status=>'error'};
+    
+    unless (is_valid_id($id)) {
+        $ret->{errorCode} = 'invalidId';
+        return $ret;
+    };
+    
+    my $voting = $dbh->selectrow_hashref("select p.id,p.question,p.multichoice,p.vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip from polls p where p.id=?",undef,$id);
+    unless ($voting) {
+        $ret->{errorCode} = 'invalidId';
+        return $ret;
+    };
+    $self->_loadVoting($voting);
+    $self->_loadAnswers($voting);
+    
+    unless (@{$voting->{answers}}) {
+        $ret->{errorCode} = 'invalidId';
+        return $ret;
+    };
+
+    $ret->{status} = 'warning';
+    $voting->{can_vote} = 1;
+    
+    my $allowVisible = 1;
+    if (scalar @answers > 1 && !$voting->{multichoice}) {
+        $ret->{errorCode} = 'noMultichoice';
+        $allowVisible = 0;
+    };
+    unless (scalar @answers) {
+        $ret->{errorCode} = 'noAnswers';
+        $allowVisible = 0;
+    };
+    unless ($voting->{active}) {
+        $voting->{can_vote} = 0;
+        $ret->{errorCode} = 'inactive';
+    };
+    
+    my $ctx = [];
+    if ($voting->{active}) {
+        $self->_runHandler($voting,'CANVOTE',$ctx);
+        
+        unless ($voting->{can_vote}) {
+            $ret->{errorCode} = 'alreadyVoted';
+        };
+    };
+
+    $ret->{voting} = {
+        id          => $voting->{id},
+        question    => $voting->{question},
+        multichoice => $voting->{multichoice},
+        active      => $voting->{active},
+        visible     => $voting->{visible},
+        can_vote    => $voting->{can_vote},
+        start_date  => $voting->{start_date},
+        end_date    => $voting->{end_date},
+        answers     => [],
+    };
+
+    my $v_selected = {};
+    unless ($ret->{errorCode}) {
+        foreach (@answers) {
+            $v_selected->{$_} = 1;
+        };
+        
+        my $vote_found = 0; 
+        foreach (@{$voting->{answers}}) {
+            $vote_found = 1 if $v_selected->{$_->{id}}
+        };
+        if ($vote_found) {
+            #Будем голосовать!
+            $voting->{vote_cnt}++;
+        }
+        else {
+            $ret->{errorCode} = 'noAnswers';
+        };
+    };
+    
+    if ($voting->{visible} && $allowVisible) {
+        $ret->{voting}->{vote_cnt} = $voting->{vote_cnt};
+    };
+    
+    my $updSth = $self->db()->dbh()->prepare("update polls_answers set vote_cnt=vote_cnt+1 where id=? and polls_id=?") ;
+    foreach (@{$voting->{answers}}) {
+        my $answer = {
+            id       => $_->{id},
+            answer   => $_->{answer},
+            def      => $_->{def},
+        };
+        
+        if ($v_selected->{$_->{id}} && !$ret->{errorCode}) {
+            #Голосуем!
+            $updSth->execute($_->{id},$voting->{id});
+            $_->{vote_cnt}++;
+        };
+        
+        if ($voting->{visible} && $allowVisible) {
+            $answer->{vote_cnt}        = $_->{vote_cnt};
+            $answer->{vote_percent}    = !$voting->{vote_cnt}?0:sprintf("%.2f",($_->{vote_cnt}/$voting->{vote_cnt})*100);
+            $answer->{vote_percent_int}= !$voting->{vote_cnt}?0:sprintf("%d",  ($_->{vote_cnt}/$voting->{vote_cnt})*100);
+        };
+        push @{$ret->{voting}->{answers}}, $answer;
+    };
+    $updSth->finish();
+    
+    unless ($ret->{errorCode}) {
+        $dbh->do("update polls set vote_cnt=vote_cnt+1 where id=?",undef,$voting->{id}) or die $DBI::errstr;
+        $self->_runHandler({id=>$id},'VOTE',$ctx);
+        $ret->{status} = 'ok';
+        $ret->{voting}->{can_vote} = 0;
+    };
+    return $ret;
+};
+
+sub doVote {
+    my ($self,$action) = (shift,shift);
+    
+    my $cms  = $self->cms();
+    
+    return $cms->outputJSON($self->_doVote()) if $action eq 'voteajax';
+    
+    my $vret = $self->_doVote();
+    my $template = $self->gettemplate("public/polls/sliderItem.tmpl");
+    $template->param(%$vret);
+    return $cms->outputJSON({
+        content   => $template->output(),
+        status    => $vret->{status},
+        errorCode => $vret->{errorCode},
+    });
+};
+
+=comment
 sub _vote {
 	my $self = shift;
 	my $poll = shift;
@@ -145,6 +593,7 @@ sub _vote {
 	
 	return wantarray?($ret,$errors):$ret;
 };
+=cut
 
 package NG::Polls::List;
 use strict;
@@ -168,6 +617,8 @@ sub config  {
     my $formfields = $m->formfields();
     my $listfields = $m->listfields();
     
+    my $imageFields = $m->pollsConfig()->{IMAGEFIELDS};
+    
     $self->fields(
         {FIELD=>'id',         TYPE=>'id',     NAME=>'Код записи'},
         {FIELD=>'question',   TYPE=>'text',   NAME=>'Текст вопроса', IS_NOTNULL=>1},
@@ -180,18 +631,24 @@ sub config  {
         {FIELD=>'vote_cnt',   TYPE=>'number', NAME=>'Количество опрошенных',  IS_NOTNULL=>1,READONLY=>1,DEFAULT=>0},
         @$fields
     );
+    $self->fields($imageFields) if $imageFields;
+    
     # Списковая
-    $self->listfields([
+    $self->listfields(
         {FIELD=>'_counter_',NAME=>"№"},
         {FIELD=>'question',},
         {FIELD=>'start_date',},
         {FIELD=>'end_date',},
+        {FIELD=>'rotate', CLICKABLE=>1},
         @$listfields
-    ]);
+    );
     # Формовая часть
     $self->formfields(
         {FIELD=>'id'},
         {FIELD=>'question'},
+    );
+    $self->formfields($imageFields) if $imageFields;
+    $self->formfields(
         {FIELD=>'start_date'},
         {FIELD=>'end_date'},
         {FIELD=>'visible'},
@@ -203,11 +660,11 @@ sub config  {
     
     $self->filter (
         NAME   => "Фильтр:",
-        TYPE   => "select",
+        TYPE   => "tabs",
         VALUES => [
             {NAME=>"Все опросы", WHERE=>""},
-            {NAME=>"Ротируемые", WHERE=>"rotate=1"},
-        ]
+            {NAME=>"Ротируемые", WHERE=>"rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))"},
+        ],
     );
     
     $self->addRowLink({NAME=>'Варианты ответа',URL=>'?action=showanswers&poll_id={id}',AJAX=>1});
@@ -216,25 +673,51 @@ sub config  {
     $self->register_action('addanswer',"showOrUpdateAnswers");
     $self->register_action('deleteanswer',"deleteAnswer");
     $self->order({FIELD=>"start_date",DEFAULT=>1,DEFAULTBY=>"DESC",ORDER_ASC=>"start_date asc,id desc",ORDER_DESC=>"start_date desc,id desc"});
-    $m->config($self) if ($m->can('config'));
+    
+    $self->updateKeysVersion([
+        {key=>'voting', id => '{id}'},
+        {key=>'anyvoting'},
+    ]);
+    
+    $m->configList($self) if $m->can('configList');
 };
+
+sub checkData {
+    my ($self,$form,$action) = (shift,shift,shift);
+
+    my $m = $self->getModuleObj();
+    my $c = $m->pollsConfig();
+    
+    if ($c->{IMAGEFIELDS} && $c->{IMAGEFORROTATE}) {
+        my $if = $c->{IMAGEFIELDS};
+        $if = $if->[0] if ref $if eq 'ARRAY';
+        
+        my $cb = $form->getField('rotate');
+        my $im = $form->getField($if->{FIELD});
+        
+        if ($cb->value() && is_empty($im->value())) {
+            $cb->setError("Отсутствует файл изображения");
+        };
+        #Да, остается вариант "залить файл, выставить признак ротации, а потом удалить файл.
+        #На данный момент нет варианта сделать проверку.
+    };
+    return NG::Block::M_OK;
+};
+
 
 sub beforeDelete {
-	my $self=shift;
-	my $id=shift;
-	return undef if(!is_valid_id($id));
-    my $dbh=$self->dbh();
-	my $sql="delete from polls_ip where polls_id=?";
-	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
-	$sql="delete from polls_answers where polls_id=?";
-	$dbh->do($sql,undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);   
-	return NG::Block::M_OK; ##TODO: check if we need to "use NG::Module"
+    my ($self,$id)=(shift,shift);
+    
+    my $mObj = $self->getModuleObj();
+    $mObj->_runHandler({id=>$id},'DELETE',[]);
+    $self->dbh()->do("DELETE FROM polls_answers WHERE polls_id=?",undef,$id) or return $self->error("Ошибка удаления вопроса: ".$DBI::errstr);
+    return NG::Block::M_OK;
 };
-
 
 sub deleteAnswer {
 	my ($self,$action,$is_ajax) = (shift,shift,shift);
 
+	my $cms   = $self->cms();
 	my $dbh   = $self->dbh();
 	my $q     = $self->q();
 	my $myurl  = $q->url();
@@ -247,11 +730,15 @@ sub deleteAnswer {
 	my $poll_id = $q->param('poll_id') || 0;
 	return $self->error('Не указан код вопроса') unless is_valid_id($poll_id);
 	if ($confirmation) {
-		
 		$dbh->do("update polls set vote_cnt=(vote_cnt - (select vote_cnt from polls_answers where id = ? and polls_id = ?)) where id=? and (multichoice = 0)",undef,$answer_id,$poll_id,$poll_id) or return $self->error("Ошибка удаления варианта ответа: ".$DBI::errstr);
-	
 		$dbh->do("delete from polls_answers where id = ? and polls_id = ?",undef,$answer_id,$poll_id) or return $self->error("Ошибка удаления варианта ответа: ".$DBI::errstr);
 		
+		my $mObj = $self->getModuleObj();
+		$cms->updateKeysVersion($mObj,[
+			{key=>'voting', id => $poll_id},
+			{key=>'anyvoting'},
+		]);
+        
 		if ($is_ajax) {
 			#TODO: отсутствует передача параметра ref
 			return $self->output("<script type='text/javascript'>parent.ajax_url('$myurl?action=showanswers&poll_id=$poll_id&_ajax=1','formb_$poll_id');</script>"); 
@@ -274,8 +761,9 @@ sub deleteAnswer {
 sub showOrUpdateAnswers {
 	my ($self,$action,$is_ajax) = (shift,shift,shift);
 	
+	my $cms   = $self->cms();
 	my $dbh   = $self->dbh();
-	my $q     = $self->q();	
+	my $q     = $self->q();
 	my $myurl  = $q->url();
 	my $method = $q->request_method();
 	
@@ -307,6 +795,13 @@ sub showOrUpdateAnswers {
 			my $id = $self->db()->get_id('polls_answers');
 			return $self->error($self->db()->errstr()) unless $id;
 			$dbh->do("insert into polls_answers (id,polls_id,answer,def,vote_cnt) values (?,?,?,?,?)",undef,$id,$poll_id,$answer,$def,0) or return $self->error("Insert:".$DBI::errstr); ##TODO: вывод ошибки будет в невидимую зону
+            
+			my $mObj = $self->getModuleObj();
+			$cms->updateKeysVersion($mObj,[
+				{key=>'voting', id => $poll_id},
+				{key=>'anyvoting'},
+			]);
+            
 			if ($is_ajax) {
 				#TODO: отсутствует передача параметра ref
 				#return $self->output("<script type='text/javascript'>parent.ajax_url('$myurl?action=showanswers&poll_id=$poll_id&_ajax=1','formb_$poll_id');</script>");
@@ -364,6 +859,13 @@ sub showOrUpdateAnswers {
 			foreach my $row (@new_answers) {
 				$dbh->do("update polls_answers set answer=?,def=? where id=?",undef,$row->{ANSWER},$row->{DEF},$row->{ID}) or die $DBI::errstr;
 			};
+            
+			my $mObj = $self->getModuleObj();
+			$cms->updateKeysVersion($mObj,[
+				{key=>'voting', id => $poll_id},
+				{key=>'anyvoting'},
+			]);
+            
 			# Делаем правильный редирект и выходим
 			if ($is_ajax) {
 				#TODO: отсутствует передача параметра ref
