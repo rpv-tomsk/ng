@@ -195,6 +195,8 @@ sub keys_SLIDER {
     
     my $today = Date::Simple->new()->as_iso();
     
+    my $versionKeys = [];
+    
     my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
     if ($anyPollVersion && $anyPollVersion->[0]) {  #Êåøèğîâàíèå âêëş÷åíî
         my $sliderItems = $cms->getCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0],today=>$today});
@@ -203,6 +205,7 @@ sub keys_SLIDER {
             $cms->setCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]},$sliderItems);
         };
         
+        $req->{anyvv} = $anyPollVersion->[0]; #Çàâèñèìîñòü îò êëş÷à anyvoting
         $req->{today} = $today;
         $req->{items} = {};  #Ïåğå÷åíü îòîáğàæàåìûõ ıëåìåíòîâ
         
@@ -223,9 +226,11 @@ sub keys_SLIDER {
                 visible  => $voting->{visible},
                 can_vote => $voting->{can_vote},
             };
+            
+            push @$versionKeys, {key=>'votingresult', id => $voting->{id}} if $voting->{visible};
         };
     };
-    return {REQUEST=>$req};
+    return {REQUEST=>$req, VERSION_KEYS => $versionKeys};
 };
 
 sub block_SLIDER {
@@ -537,6 +542,12 @@ sub _doVote {
         $dbh->do("update polls set vote_cnt=vote_cnt+1 where id=?",undef,$voting->{id}) or die $DBI::errstr;
         $ret->{status} = 'ok';
         $ret->{voting}->{can_vote} = 0;
+        
+        if ($voting->{visible}) {
+            $self->cms->updateKeysVersion($self,[
+                {key=>'votingresult', id => $voting->{id}},
+            ]);
+        };
     };
     return $ret;
 };
