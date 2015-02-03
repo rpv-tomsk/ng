@@ -30,13 +30,13 @@ sub listfields { return []; };
 
 sub voteHandlers {
     return [
-        {CANVOTE=>'checkIP_canvote', DELETE=>'checkIP_delete', VOTE=>'checkIP_vote'},
-        {CANVOTE=>'checkUID_canvote', DELETE=>'checkUID_delete', VOTE=>'checkUID_vote'},
+        {CANVOTE=>'checkIP_vote',  DELETE=>'checkIP_delete', VOTE=>'checkIP_vote'},
+        {CANVOTE=>'checkUID_vote', DELETE=>'checkUID_delete',VOTE=>'checkUID_vote'},
     ];
 };
 
-sub checkIP_canvote {
-    my ($self,$voting) = (shift,shift);
+sub checkIP_vote {
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     
     my $dbh  = $self->dbh();
     my $q  = $self->q();
@@ -48,27 +48,26 @@ sub checkIP_canvote {
     my ($count) = $sth->fetchrow();
     $sth->finish();
     $voting->{can_vote} = 0 if $count>0;
+
 #$voting->{can_vote} = 0;
+
+    if ($handler eq 'VOTE' && $voting->{can_vote}) {
+        $dbh->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_host()) or NG::DBIException->throw('checkIP_vote() error');
+    };
 };
 
 sub checkIP_delete {
-    my ($self,$voting) = (shift,shift);
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     $self->dbh()->do("DELETE FROM polls_ip WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkIP_delete() error');
 };
-
-sub checkIP_vote {
-    my ($self,$voting) = (shift,shift);
-    $self->dbh()->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_host()) or NG::DBIException->throw('checkIP_vote() error'); 
-};
-
 
 our $UID_COOKIENAME = 'uid';
 our $UID_COOKIELIFE = '+3M';
 our $UID_KEY        = 'maFaephe9Ezum7j';
 our $UID_STATIC_SALT = 'eiLo3ohnoh';
 
-sub checkUID_canvote {
-    my ($self,$voting,$ctx) = (shift,shift,shift);
+sub checkUID_vote {
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     
     my $cms = $self->cms();
     my $dbh = $cms->dbh();
@@ -80,11 +79,9 @@ sub checkUID_canvote {
     
     #Проверяем наличие куки.
     my $cid = $q->cookie($UID_COOKIENAME);
-#warn "Found cid $cid from cookie" if $cid;
     if ($ctx->{new} || ($cid && $ctx->{cid} && $ctx->{cid} eq $cid)) {
         $time = $ctx->{time};
         $uid  = $ctx->{uid};
-#warn "Found cid ".$ctx->{cid}." from ctx";
     }
     elsif ($cid && $cid =~ /(\d+)_(\S{8})_(\S{40})/) {
         #кука есть, проверим подпись
@@ -99,8 +96,6 @@ sub checkUID_canvote {
             $ctx->{uid}  = $uid;
             $ctx->{cid}  = $cid;
             
-#warn "checkUID_canvote(): valid cookie $cid";
-            
             $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
         }
         else {
@@ -111,22 +106,46 @@ sub checkUID_canvote {
     };
     
     if ($time && $uid) {
-        #Найдена валидная кука, ищем наличие голосования по кешу/БД.
-        #Ищем в кеше
-        if ($cms->getCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}})) {
+        if ($handler eq 'VOTE' && $ctx->{new}) {
+            $voting->{can_vote_errorCode} = 'missingUUIDCookie';
             $voting->{can_vote} = 0;
             return;
         };
-        #Ищем в БД
-        my $sth = $dbh->prepare("select count(*) from polls_uid_votes where polls_id=? and uid = ? and utime=?") or warn $DBI::errstr;
-        $sth->execute($voting->{id},$uid,$time) or warn $DBI::errstr;
-        my ($count) = $sth->fetchrow();
-        $sth->finish();
-        $voting->{can_vote} = 0 if $count>0;
         
-        $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},$voting->{can_vote},3600);
+        #Найдена валидная кука, ищем наличие голосования по кешу/БД.
+        #Ищем в кеше
+        my $cache = $cms->getCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}});
+        if (defined $cache && $cache) {
+            $voting->{can_vote} = 0;
+            return;
+        };
+        unless (defined $cache) {
+            #Ищем в БД
+            my $sth = $dbh->prepare("select count(*) from polls_uid_votes where polls_id=? and uid = ? and utime=?") or warn $DBI::errstr;
+            $sth->execute($voting->{id},$uid,$time) or warn $DBI::errstr;
+            my ($count) = $sth->fetchrow();
+            $sth->finish();
+            if ($count > 0) {
+                $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},1,3600);
+                $voting->{can_vote} = 0;
+                return;
+            };
+        };
+        #Далее can_vote = 1; Можно голосовать.
+        if ($handler eq 'VOTE') {
+            $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},1,3600);
+            $dbh->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip,atime) values (?,?,?,?,?)",undef,$voting->{id},$time,$uid,$self->q()->remote_host(),time()) or NG::DBIException->throw('checkIP_vote() error'); 
+        }
+        else {
+            $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600) unless defined $cache;
+        };
     }
     else {
+        if ($handler eq 'VOTE') {
+            $voting->{can_vote_errorCode} = 'missingUUIDCookie';
+            $voting->{can_vote} = 0;
+            return;
+        };
         #Generate new.
         $uid = generate_session_id(8);
         $uid = substr( $uid, 0, 8 );
@@ -136,7 +155,7 @@ sub checkUID_canvote {
         
         my $cid = $time."_".$uid."_".$myHash;
         $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
-#warn "Set new cookie $cid";
+        
         $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600);
         #
         $ctx->{time} = $time;
@@ -146,23 +165,12 @@ sub checkUID_canvote {
     };
 };
 
-sub checkUID_vote {
-    my ($self,$voting,$ctx) = (shift,shift,shift);
-    
-    die "Invalid ctx" unless $ctx->{cid} && $ctx->{uid} && $ctx->{time};
-    
-    $self->cms->setCacheData($self,{key=>'hasvote',uid=>$ctx->{uid},time=>$ctx->{time},vote=>$voting->{id}},1,3600);
-    $self->dbh()->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip) values (?,?,?,?)",undef,$voting->{id},$ctx->{time},$ctx->{uid},$self->q()->remote_host()) or NG::DBIException->throw('checkIP_vote() error'); 
-};
-
-
 sub checkUID_delete {
-    my ($self,$voting,$ctx) = (shift,shift,shift);
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     $self->dbh()->do("DELETE FROM polls_uid_votes WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkIP_delete() error');
 };
 
 #-----------
-
 
 sub _runHandler {
     my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
@@ -172,7 +180,7 @@ sub _runHandler {
     foreach my $h (@$VH) {
         $idx++;
         my $m = $h->{$handler} or next;
-        $self->$m($voting,($ctx->[$idx]||={}));
+        $self->$m($voting,$handler,($ctx->[$idx]||={}));
     };
 };
 
@@ -185,15 +193,17 @@ sub keys_SLIDER {
     
     my $ctx = [];
     
+    my $today = Date::Simple->new()->as_iso();
+    
     my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
     if ($anyPollVersion && $anyPollVersion->[0]) {  #Кеширование включено
-        my $sliderItems = $cms->getCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]});
+        my $sliderItems = $cms->getCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0],today=>$today});
         unless ($sliderItems) {
             $sliderItems = $self->dbh()->selectall_arrayref("SELECT id,visible,check_ip FROM polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))",{Slice => {}});
             $cms->setCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]},$sliderItems);
         };
         
-        $req->{today} = Date::Simple->new()->as_iso();
+        $req->{today} = $today;
         $req->{items} = {};  #Перечень отображаемых элементов
         
         foreach my $si (@$sliderItems) {
@@ -459,15 +469,6 @@ sub _doVote {
         $ret->{errorCode} = 'inactive';
     };
     
-    my $ctx = [];
-    if ($voting->{active}) {
-        $self->_runHandler($voting,'CANVOTE',$ctx);
-        
-        unless ($voting->{can_vote}) {
-            $ret->{errorCode} = 'alreadyVoted';
-        };
-    };
-
     $ret->{voting} = {
         id          => $voting->{id},
         question    => $voting->{question},
@@ -491,8 +492,14 @@ sub _doVote {
             $vote_found = 1 if $v_selected->{$_->{id}}
         };
         if ($vote_found) {
-            #Будем голосовать!
-            $voting->{vote_cnt}++;
+            #Будем голосовать?
+            $self->_runHandler($voting,'VOTE',[]);
+            if ($voting->{can_vote}) {
+                $voting->{vote_cnt}++;
+            }
+            else {
+                $ret->{errorCode} = $voting->{can_vote_errorCode} || 'alreadyVoted';
+            };
         }
         else {
             $ret->{errorCode} = 'noAnswers';
@@ -528,7 +535,6 @@ sub _doVote {
     
     unless ($ret->{errorCode}) {
         $dbh->do("update polls set vote_cnt=vote_cnt+1 where id=?",undef,$voting->{id}) or die $DBI::errstr;
-        $self->_runHandler({id=>$id},'VOTE',$ctx);
         $ret->{status} = 'ok';
         $ret->{voting}->{can_vote} = 0;
     };
