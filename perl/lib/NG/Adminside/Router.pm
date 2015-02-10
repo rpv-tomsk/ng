@@ -165,7 +165,7 @@ sub modules {
         $row = $self->_getRowByModuleURL($t);
     }
     
-    return $cms->error("«апрошенный модуль не найден") unless $row && $row->{id};
+    return $cms->error("«апрошенный модуль не найден в структуре меню ng_admin_menu") unless $row && $row->{id};
     return $cms->error("ќтсутствует значение пол€ module_id дл€ строки ".$row->{id}) unless $row->{module_id};
     
     $row->{url}.="/" unless $row->{url} =~ /\/$/;

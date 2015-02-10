@@ -1393,7 +1393,7 @@ sub modulesHash {
     
     if ($ref->{CODE}) {
         return $cms->{_mrowC} if exists $cms->{_mrowC}->{$ref->{CODE}};
-        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or NG::Exception->throw('NG.INTERNALERROR', "Запрошенный модуль ".$ref->{CODE}." не найден");
+        my $mRow = $cms->getModuleRow("code=?",$ref->{CODE}) or NG::Exception->throw('NG.INTERNALERROR', "Запрошенный модуль '".$ref->{CODE}."' не найден");
         $cms->{_mrowC}->{$ref->{CODE}} = { MODULE=>$mRow->{module},MODULEROW=>$mRow };
     }
     elsif ($ref->{REF}) {

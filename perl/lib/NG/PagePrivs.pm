@@ -946,7 +946,7 @@ sub _getPageModules {
         ref($modules) eq "ARRAY" or return $cms->error("showLocalPrivilegesTab(): Вызов getPageModules() модуля ".(ref $pageObj)." вернул некорректное значение");
         foreach my $module (@$modules) {
             my $code = $module->{CODE} or return $cms->error("showLocalPrivilegesTab(): Элемент массива, возвращенного getPageModules() модуля ".(ref $pageObj)." не содержит CODE модуля");
-            my $row = $cms->getModuleRow("code=?",$code) or return $cms->defError("showLocalPrivilegesTab():","Запрошенный модуль $code не найден");
+            my $row = $cms->getModuleRow("code=?",$code) or return $cms->defError("showLocalPrivilegesTab():","Запрошенный модуль '$code' не найден");
             my $opts = {};
             $opts->{MODULEROW} = $row;
             $opts->{PAGEPARAMS} = $pageObj->getPageRow();

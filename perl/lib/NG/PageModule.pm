@@ -522,7 +522,7 @@ sub processNewSubpages {
         my $module_id = $self->pageParam('module_id');
         if ($variant->{MODULECODE}) {
             #Модуль запросил создание страницы на основе другого модуля
-            my $mRow = $cms->getModuleRow("code=?",$variant->{MODULECODE}) or return $cms->defError("processNewSubpages():","Запрошенный модуль ".$variant->{MODULECODE}." не найден");
+            my $mRow = $cms->getModuleRow("code=?",$variant->{MODULECODE}) or return $cms->defError("processNewSubpages():","Запрошенный модуль '".$variant->{MODULECODE}."' не найден");
             $module_id = $mRow->{id};
         };
         
@@ -593,7 +593,7 @@ sub processNewSubpages {
 		$page->{PAGEROW}->{subptmplgid} = $template->{subptmplgid};
 		
 		if ($template->{modulecode}) {
-		    my $mRow = $cms->getModuleRow("code=?",$template->{modulecode}) or return $cms->defError("processNewSubpages():","Запрошенный модуль ".$template->{modulecode}." не найден");
+		    my $mRow = $cms->getModuleRow("code=?",$template->{modulecode}) or return $cms->defError("processNewSubpages():","Запрошенный модуль '".$template->{modulecode}."' не найден");
 		    $page->{PAGEROW}->{module_id} = $mRow->{id};
 		};
 	};

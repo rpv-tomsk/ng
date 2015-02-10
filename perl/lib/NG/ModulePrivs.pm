@@ -226,7 +226,7 @@ sub showTab {
     $groupId = undef unless is_valid_id($groupId) || $groupId eq 0;
     
     #Ищем модуль, создаем его объект
-    my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("Запрошенный модуль $mId не найден");
+    my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("Модуль с кодом $mId не найден");
     my $mObj = $cms->getObject($mRow->{module},{MODULEROW=>$mRow}) or return $cms->error();
     return $cms->error("showTab(): Модуль ".$mRow->{module}." ($mId) не содержит метода modulePrivileges()") unless $mObj->can("modulePrivileges");
     
@@ -435,7 +435,7 @@ sub showTab {
     
     $self->opentemplate("admin-side/common/mprivileges/sprivs.tmpl");
     $self->tmpl()->param(
-        MNAME => $mRow->{name} || "Модуль ".$mRow->{module},
+        MNAME => "Модуль '". ($mRow->{name} || $mRow->{module})."'",
         PAGEADMINS => \@admins,
         PAGEGROUPS => \@groups,
         DATA       => \@data,
@@ -458,7 +458,7 @@ sub addSubj {
     
     my $mId = $self->{_mId} or die;
     
-    my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("Запрошенный модуль $mId не найден");
+    my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("Модуль с кодом $mId не найден");
 
     my @data = ();    
     if ($action eq "addadmin") {
