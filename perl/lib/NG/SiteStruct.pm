@@ -477,7 +477,7 @@ $canAddLinkedSubnode = 1;
 		$cpage->{PARENTROW}->{url}      = $page->{PARENTROW}->{url};
 		$subpagesControl->{$subsiteId} = $cpage;
         
-        $variantControl->{CODE} = $variant->{CODE};
+        $variantControl->{MODULECODE} = $variant->{MODULECODE};
 	};
 	
 	my $res = $pageObj->processNewSubpages($newSubpages,$variant) or return $cms->error();
@@ -494,7 +494,7 @@ $canAddLinkedSubnode = 1;
 			|| $page->{PAGEROW}->{disabled}  ne $cpage->{PAGEROW}->{disabled}
 			|| $page->{PARENTROW}->{url}     ne $cpage->{PARENTROW}->{url}
 			|| $page->{READONLY} ne $cpage->{READONLY}
-            || $variantControl->{CODE} ne $variant->{CODE}
+            || $variantControl->{MODULECODE} ne $variant->{MODULECODE}
 		   ) {
 			return $cms->error("processNewSubpages(): method corrupts page parameters");
 		};
