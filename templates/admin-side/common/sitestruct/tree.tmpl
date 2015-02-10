@@ -25,42 +25,29 @@
     
     <div id="table_content" class="content_table_tree">
  
-	<TMPL_IF PAGEROW>
+    <TMPL_IF NODEINFO>
         <TMPL_IF GREETINGS.ACTIVATE>
         <div class="message_attention">
-		<h3>Содержимое страницы занесено, но страница ещё не активирована. Для активации страницы сейчас, нажмите <a href="/admin-side/pages/<TMPL_VAR PAGE_ID>/struct/?action=enablepage">активировать</a>.</h3>
-		</div>	
+        <h3>Содержимое страницы занесено, но страница ещё не активирована. Для активации страницы сейчас, нажмите <a href="/admin-side/pages/<TMPL_VAR PAGE_ID>/struct/?action=enablepage">активировать</a>.</h3>
+        </div>	
         </TMPL_IF GREETINGS.ACTIVATE>
         
         <table id="content">
-			<tr>
-                <td class="title" ><p>Код страницы:</p></td>
-                <td class="content" ><p><TMPL_VAR PAGEROW.ID></p></td>
-            </tr>
-            
-			<tr>
-                <td class="title"><p>Название страницы:</p></td>
-                <td class="content"><p><TMPL_VAR PAGEROW.NAME></p></td>
-            </tr>
-
-			<!--tr>
-                <td class="title"><p>Основной шаблон:</p></td>
-                <td class="content"><p><TMPL_VAR PAGE_MTEMPLATE_NAME></p></td>
-            </tr-->
-
-			<tr>
+        <TMPL_LOOP NODEINFO.INFO>
+            <TMPL_IF PAGEURL>
+            <tr>
                 <td class="title"><p>Адрес:</p></td>
-                <td class="content" style="border-bottom:1px solid #65a7dd;"><TMPL_VAR SITEURL><TMPL_VAR PAGEROW.URL>  (<a href="<TMPL_VAR SITEURL><TMPL_VAR PAGEROW.URL>">перейти</a>)</td>
+                <td class="content" style="border-bottom:1px solid #65a7dd;"><TMPL_VAR PAGEURL>  (<a href="<TMPL_VAR PAGEURL>">перейти</a>)</td>
             </tr>
-
-
-			<tr>
-			<TMPL_IF ACTIVE>
+            <TMPL_ELSIF STATUS>
+            <TMPL_WITH STATUS>
+            <tr>
+            <TMPL_IF ACTIVE>
                 <td class="title"><p>Статус:</p></td>
                 <TMPL_IF NO_DEACTIVE>
                   <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <TMPL_VAR NO_DEACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR PAGEURL>?action=disablepage">Выключить</a></td>                
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR NODEURL>?action=disablepage">Выключить</a></td>                
                 </TMPL_IF NO_DEACTIVE>
             <TMPL_ELSE ACTIVE>
                 <td class="title"><p>Статус:</p></td>
@@ -69,65 +56,66 @@
                 <TMPL_ELSIF NO_ACTIVE>
                   <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <TMPL_VAR NO_ACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <a href="<TMPL_VAR PAGEURL>?action=enablepage">Включить</a></td>
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <a href="<TMPL_VAR NODEURL>?action=enablepage">Включить</a></td>
                 </TMPL_IF>
             </TMPL_IF ACTIVE>
             </tr>
+            </TMPL_WITH STATUS>
+            <TMPL_ELSE>
+            <tr>
+                <td class="title"><p><TMPL_VAR NAME>:</p></td>
+                <td class="content"><p><TMPL_VAR VALUE></p></td>
+            </tr>
+            </TMPL_IF>
+        </TMPL_LOOP NODEINFO.INFO>
             
             <!-- Последняя строка таблицы -->
-			<tr>
+            <tr>
                 <td class="last_line_right_img"></td>
                 <td class="last_line_right_img">
-                    <TMPL_IF CAN_ADD_SUBNODE>
-					<a href="<TMPL_VAR PAGEURL>?action=addsubnodeform&haslinkedpages=<TMPL_VAR HAS_LINKEDPAGES>" onclick="ajax_url('<TMPL_VAR PAGEURL>?action=addsubnodeform&haslinkedpages=<TMPL_VAR HAS_LINKEDPAGES>&_ajax=1','new_subpage');return false;">Добавить</a>&nbsp;|&nbsp;
-				    </TMPL_IF CAN_ADD_SUBNODE>
-                    <a href="<TMPL_VAR PAGEURL>?action=editnodeform" onclick="ajax_url('<TMPL_VAR PAGEURL>?action=editnodeform&_ajax=1','new_subpage');return false;">Редактировать</a>         
-                   </td>
+                <TMPL_LOOP NODEINFO.ACTIONS>
+                    <TMPL_IF FORM>
+                        <a href="<TMPL_VAR FORM_URL>" onclick="ajax_url('<TMPL_VAR AJAX_URL>','new_subpage');return false;"><TMPL_VAR NAME></a>
+                    </TMPL_IF FORM>
+                    <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
+                </TMPL_LOOP NODEINFO.ACTIONS>
+                </td>
             </tr>
+        </table>
         
-		</table>
-					
-		<div style="padding-bottom:15px;">
-		  <div id="new_subpage" style="width:100%;"></div>
-		</div>
-		
+        <div style="padding-bottom:15px;">
+          <div id="new_subpage" style="width:100%;"></div>
+        </div>
+        
         <TMPL_IF PAGE_LINKEDPAGES>
-		<h3>Связанные страницы:</h3>
+        <h3>Связанные страницы:</h3>
         
         <table id="content" border="0" >
-			<tr>
-			<td class="title" style="width:27px;"></td>
+            <tr>
+            <td class="title" style="width:27px;"></td>
                 <td class="title" style="text-align:center;"><p>Язык</p></td>
                 <td class="title" style="width:80px;"><p>Сайт</p></td>
                 <td class="title"><p>Название страницы</p></td>
-				<td class="title"></td>
-             </tr>
-       
+                <td class="title"></td>
+            </tr>
             <TMPL_LOOP PAGE_LINKEDPAGES>
-			<tr>
+            <tr>
                 <td class="content" style="text-align:left;"><TMPL_IF NODE_DISABLED><img src="/admin-side/img/attention.gif" alt="OFF" title="Страница не активна"></TMPL_IF></td>
                 <td class="content" style="width:48px;">
                     <TMPL_IF LANG_IMG><img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" title="<TMPL_VAR LANG_NAME>" alt="<TMPL_VAR LANG_NAME>" style="border:1px solid #cfe1ee;margin-left:10px;"></TMPL_IF LANG_IMG>
-				</td>
+                </td>
                 <td class="content"><p><TMPL_VAR SUBSITE_NAME></p></td>
                 <td class="content"><p><TMPL_VAR NODE_NAME></p></td>
-				<td  class="content link" style="text-align:right;padding-right:25px;"> 
-					<TMPL_IF PRIVILEGE.PROPERTIES><nobr><a href="<TMPL_VAR NODELINK>">Свойства</a>&nbsp;|&nbsp;</TMPL_IF PRIVILEGE.PROPERTIES>
-					<TMPL_IF PRIVILEGE.CONTENT><a href="/admin-side/pages/<TMPL_VAR NODE_ID>/">Контент</a>&nbsp;|&nbsp;</TMPL_IF>
+                <td  class="content link" style="text-align:right;padding-right:25px;"> 
+                    <TMPL_IF PRIVILEGE.PROPERTIES><nobr><a href="<TMPL_VAR NODELINK>">Свойства</a>&nbsp;|&nbsp;</TMPL_IF PRIVILEGE.PROPERTIES>
+                    <TMPL_IF PRIVILEGE.CONTENT><a href="/admin-side/pages/<TMPL_VAR NODE_ID>/">Контент</a>&nbsp;|&nbsp;</TMPL_IF>
                     <a href="<TMPL_VAR NODE_URL>">Посмотреть</a></nobr></td>
             </tr>
-			
             </TMPL_LOOP PAGE_LINKEDPAGES>
-            
-            
-            <!-- Последняя строка таблицы -->
-           
-		</table>
-		<br>
+        </table>
+        <br>
         </TMPL_IF PAGE_LINKEDPAGES>
-
-		
-	</TMPL_IF PAGEROW>
+    </TMPL_IF NODEINFO>
 
        <table id="table_tree" style="border: none;">
     
@@ -207,15 +195,15 @@
                     <TMPL_UNLESS CANENABLE>
                       <img src="/admin-side/img/off.gif" alt="" align="top" border="0" alt="Выключена" title="Выключена">
                     <TMPL_ELSIF DISABLED>
-                      <a href="<TMPL_VAR PAGEURL>?action=enablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Включить" title="Включить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Включить"></a>&nbsp;
+                      <a href="<TMPL_VAR NODEURL>?action=enablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Включить" title="Включить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Включить"></a>&nbsp;
                     <TMPL_ELSE DISABLED>
-                      <a href="<TMPL_VAR PAGEURL>?action=disablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Выключить" title="Выключить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Выключить"></a>&nbsp;
+                      <a href="<TMPL_VAR NODEURL>?action=disablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Выключить" title="Выключить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Выключить"></a>&nbsp;
                     </TMPL_IF DISABLED>
                   <TMPL_IF PRIVILEGES.DELPAGE>
-                    <a href="<TMPL_VAR PAGEURL>?action=deletenode&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Удалить" title="Удалить" onclick="ajax_url('<TMPL_VAR PAGEURL>?action=deletenode&_ajax=1&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Удалить" align="top" border="0"></a>&nbsp;
+                    <a href="<TMPL_VAR NODEURL>?action=deletenode&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Удалить" title="Удалить" onclick="ajax_url('<TMPL_VAR NODEURL>?action=deletenode&_ajax=1&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Удалить" align="top" border="0"></a>&nbsp;
                   </TMPL_IF>
-					<a href="<TMPL_VAR PAGEURL>?action=movenodeup&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вверх" title="Передвинуть вверх"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
-					<a href="<TMPL_VAR PAGEURL>?action=movenodedown&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вниз" title="Передвинуть вниз"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
+					<a href="<TMPL_VAR NODEURL>?action=movenodeup&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вверх" title="Передвинуть вверх"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
+					<a href="<TMPL_VAR NODEURL>?action=movenodedown&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вниз" title="Передвинуть вниз"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
 				</div>
 </TMPL_UNLESS IS_TOP>
 					

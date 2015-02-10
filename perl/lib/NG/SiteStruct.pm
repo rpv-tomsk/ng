@@ -106,7 +106,7 @@ sub blockAction {
         $self->{_pageId} = $1;
         $self->{_pageURL} = $self->getBaseURL().$self->{_pageId}."/";
     };
-#return $cms->error($self->SUPER::getModuleObj()->getAdminBaseURL());
+
     return $self->run_actions($is_ajax);
 };
 
@@ -233,6 +233,9 @@ sub getDescrFields {
         {NAME=>"Описание",FIELD=>"description",TYPE=>"textarea",IS_NOTNULL=>0,HEIGHT=>40},
 	];
 };
+
+sub processNodeInfo($$$)    {}; #$self,$pageObj,$nodeInfo - Обработка выводимой информации о странице
+sub afterSetFormValues($$$) {}; #$self,$pageObj,$form     - Предобработка введенных параметров новой страницы перед её созданием
 
 sub action_showAddForm {
 	my $self = shift;
@@ -382,6 +385,8 @@ sub action_showAddForm {
 	my $linkedPartsField = $form->_getfieldhash('linkedParts');
 	$form->modeInsert();
 	$form->setFormValues() if ($q->request_method eq "POST" && defined $prevVariantId);
+	
+	$self->afterSetFormValues($pageObj,$form);
 	
 	## Сохраняем значение кода выбранного шаблона, как флаг что показываем вторую часть формы
 	## и для проверки, что пользователь не сменил шаблон без нажатия кнопки выбрать
@@ -711,7 +716,7 @@ sub addLinkedPages {
             $newPage->{subptmplgid} ||= "0";
             $newPage->{catch}       ||= "0";
             
-            #Ищем, ноду, после которой будет добавлена наша новая страница. Посылаем её параметры в event для синхронизации деревьев
+            #Ищем ноду, после которой будет добавлена наша новая страница. Посылаем её параметры в event для синхронизации деревьев
             my $lastChild = undef;
             my $lastChildOrd = $tree->getLastChildOrder();
             if ($lastChildOrd) {
@@ -1043,15 +1048,13 @@ sub disablePage {
 };
 
 sub action_structPage {
-	my $self = shift;
-	my $action = shift;
-	my $is_ajax = shift;
-
+    my ($self,$action,$is_ajax) = (shift,shift,shift);
+    
     my $cms = $self->cms();
     my $q   = $cms->q();
-	my $dbh = $cms->db()->dbh();
+    my $dbh = $cms->db()->dbh();
     
-	my $tmpl = $cms->gettemplate("admin-side/common/sitestruct/tree.tmpl");
+    my $tmpl = $cms->gettemplate("admin-side/common/sitestruct/tree.tmpl");
     
     my $pageId  = $self->{_pageId};
     my $showAll = $self->{_showAll};
@@ -1087,6 +1090,16 @@ sub action_structPage {
     $allUrl .= "?all=1";
     $allUrl = "" if $showAll;
     
+    my $siteRoot = undef;
+    my $siteUrl = "http://".$q->virtual_host(); #"http://site"
+    if ($cms->confParam("CMS.hasSubsites")) {
+        my ($subsites,$sSubsite) = $self->_loadSubsitesForCAdmin($subsiteId);
+        $subsites or return $cms->error();
+        $siteRoot = $sSubsite->{root_node_id};
+        $siteUrl = "http://".$sSubsite->{domain} if $sSubsite->{domain};
+        $subsites = [] if (scalar @{$subsites} < 2);
+        $tmpl->param(SUBSITES=>$subsites) if !$pageId;
+    };
     
     my $subUrl = $self->getSubURL();
     if ($pageId) {
@@ -1141,52 +1154,68 @@ sub action_structPage {
             $hasLinkedPages = 0;
         };
         
-        $tmpl->param(
-            PAGE_LINKEDPAGES => \@linkedpages,
-            HAS_LINKEDPAGES => $hasLinkedPages,
-            PAGEROW=>$pageRow,
-            CAN_ADD_SUBNODE => $canAddSubnode,
-        );
+        my $nodeInfo = {
+            INFO    => [],
+            ACTIONS => [],
+        };
+        
+        push @{$nodeInfo->{INFO}}, {NAME => 'Код страницы',      VALUE => $pageRow->{id}    };
+        push @{$nodeInfo->{INFO}}, {NAME => 'Название страницы', VALUE => $pageRow->{name}  };
+        #push @{$nodeInfo->{INFO}}, {NAME => 'Основной шаблон',   VALUE => $pageTemplateName };
+        push @{$nodeInfo->{INFO}}, {NAME => 'Адрес', PAGEURL => $siteUrl.$pageRow->{url}    };
         
         #TODO: надо ли проверять права на действие активация ?
+        my $status = {};
         if ($pageRow->{disabled}==0) {
             #Страница включена
             my $canDeactivate = 1;
             $canDeactivate = $pageObj->canDeactivate() if $pageObj->can("canDeactivate");
-            $tmpl->param(ACTIVE => 1);
-            $tmpl->param(NO_DEACTIVE=> "Не отключаема") unless $canDeactivate eq "1";
-            $tmpl->param(NO_DEACTIVE=> $canDeactivate) if $canDeactivate && $canDeactivate ne "1";
+            $status->{ACTIVE} = 1;
+            $status->{NO_DEACTIVE} = "Не отключаема" unless $canDeactivate eq "1";
+            $status->{NO_DEACTIVE} = $canDeactivate if $canDeactivate && $canDeactivate ne "1";
         }
         elsif ($pageRow->{disabled}==$pageRow->{id}) {
             #Страница выключена сама
             my $canActivate = 1;
             $canActivate = $pageObj->canActivate() if $pageObj->can("canActivate");
-            $tmpl->param(ACTIVE => 0);
-            $tmpl->param(NO_ACTIVE=> "Не все блоки заполнены") unless $canActivate eq "1";
-            $tmpl->param(NO_ACTIVE=> $canActivate) if $canActivate && $canActivate ne "1";
+            $status->{ACTIVE}    = 0;
+            $status->{NO_ACTIVE} = "Не все блоки заполнены" unless $canActivate eq "1";
+            $status->{NO_ACTIVE} = $canActivate if $canActivate && $canActivate ne "1";
         }
         else {
             #Страница выключена сверху
-            $tmpl->param(ACTIVE => 0);
-            $tmpl->param(DEACTIVE_ID => $pageRow->{disabled});
-        }
+            $status->{ACTIVE} = 0;
+            $status->{DEACTIVE_ID} = $pageRow->{disabled};
+        };
+        push @{$nodeInfo->{INFO}}, {STATUS=>$status};
+        
+        if ($canAddSubnode) {
+            push @{$nodeInfo->{ACTIONS}}, {
+                FORM     => 1,
+                FORM_URL => $self->{_pageURL}."?action=addsubnodeform&haslinkedpages=$hasLinkedPages",
+                AJAX_URL => $self->{_pageURL}."?action=addsubnodeform&haslinkedpages=$hasLinkedPages&_ajax=1",
+                NAME     => 'Добавить',
+            };
+        };
+        push @{$nodeInfo->{ACTIONS}},{
+            FORM=>1,
+            FORM_URL => $self->{_pageURL}."?action=editnodeform",
+            AJAX_URL => $self->{_pageURL}."?action=editnodeform&_ajax=1",
+            NAME     => 'Редактировать',
+        };
+        
+        $self->processNodeInfo($pageObj,$nodeInfo);
+        
+        $tmpl->param(
+            PAGE_LINKEDPAGES => \@linkedpages,
+            NODEINFO=>$nodeInfo,
+        );
     };
-	
-    my $rootId = $pageId;
-    my $siteRoot = undef;
     
-    my $siteUrl = "http://".$q->virtual_host(); #"http://site"
-    if ($cms->confParam("CMS.hasSubsites")) {
-        my ($subsites,$sSubsite) = $self->_loadSubsitesForCAdmin($subsiteId);
-        $subsites or return $cms->error();
-        $siteRoot = $sSubsite->{root_node_id};
-        $siteUrl = "http://".$sSubsite->{domain} if $sSubsite->{domain};
-        $subsites = [] if (scalar @{$subsites} < 2);
-        $tmpl->param(SUBSITES=>$subsites) if !$pageId;
-    };
+    my $rootId = $pageId;
     $rootId ||= $siteRoot;
     my $tree = NG::Nodes->new();
-	$tree->initdbparams(
+    $tree->initdbparams(
         db     => $self->db(),
         table  => "ng_sitestruct",
         fields => "main.name,main.full_name,main.title,main.url,main.module_id,main.template,main.print_template,main.disabled,ngm.node_id as _amenu_nodeid",
@@ -1243,7 +1272,7 @@ sub action_structPage {
     $tmpl->param(
         SHOW_ALL => $showAll,
         BASEURL  => $self->getBaseURL(),
-        PAGEURL  => $self->{_pageURL},
+        NODEURL  => $self->{_pageURL},  #Адрес админки ноды
         ALL_URL  => $allUrl,
         SITEURL  => $siteUrl,
     );
