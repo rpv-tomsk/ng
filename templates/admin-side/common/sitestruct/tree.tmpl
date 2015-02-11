@@ -47,7 +47,7 @@
                 <TMPL_IF NO_DEACTIVE>
                   <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <TMPL_VAR NO_DEACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR NODEURL>?action=disablepage">Выключить</a></td>                
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR THISNODEURL>?action=disablepage">Выключить</a></td>                
                 </TMPL_IF NO_DEACTIVE>
             <TMPL_ELSE ACTIVE>
                 <td class="title"><p>Статус:</p></td>
@@ -56,7 +56,7 @@
                 <TMPL_ELSIF NO_ACTIVE>
                   <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <TMPL_VAR NO_ACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <a href="<TMPL_VAR NODEURL>?action=enablepage">Включить</a></td>
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <a href="<TMPL_VAR THISNODEURL>?action=enablepage">Включить</a></td>
                 </TMPL_IF>
             </TMPL_IF ACTIVE>
             </tr>
@@ -195,15 +195,15 @@
                     <TMPL_UNLESS CANENABLE>
                       <img src="/admin-side/img/off.gif" alt="" align="top" border="0" alt="Выключена" title="Выключена">
                     <TMPL_ELSIF DISABLED>
-                      <a href="<TMPL_VAR NODEURL>?action=enablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Включить" title="Включить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Включить"></a>&nbsp;
+                      <a href="<TMPL_VAR THISNODEURL>?action=enablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Включить" title="Включить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Включить"></a>&nbsp;
                     <TMPL_ELSE DISABLED>
-                      <a href="<TMPL_VAR NODEURL>?action=disablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Выключить" title="Выключить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Выключить"></a>&nbsp;
+                      <a href="<TMPL_VAR THISNODEURL>?action=disablepage&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Выключить" title="Выключить" onclick=""><img src="/admin-side/img/off.gif" align="top" border="0" alt="Выключить"></a>&nbsp;
                     </TMPL_IF DISABLED>
                   <TMPL_IF PRIVILEGES.DELPAGE>
-                    <a href="<TMPL_VAR NODEURL>?action=deletenode&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Удалить" title="Удалить" onclick="ajax_url('<TMPL_VAR NODEURL>?action=deletenode&_ajax=1&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Удалить" align="top" border="0"></a>&nbsp;
+                    <a href="<TMPL_VAR THISNODEURL>?action=deletenode&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Удалить" title="Удалить" onclick="ajax_url('<TMPL_VAR THISNODEURL>?action=deletenode&_ajax=1&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>','tree_form<TMPL_VAR ID>');return false;"><img src="/admin-side/img/mines.gif" alt="Удалить" align="top" border="0"></a>&nbsp;
                   </TMPL_IF>
-					<a href="<TMPL_VAR NODEURL>?action=movenodeup&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вверх" title="Передвинуть вверх"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
-					<a href="<TMPL_VAR NODEURL>?action=movenodedown&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вниз" title="Передвинуть вниз"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
+					<a href="<TMPL_VAR THISNODEURL>?action=movenodeup&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вверх" title="Передвинуть вверх"><img src="/admin-side/img/img_upp.gif" alt="Вверх" align="top" border="0" height="15" width="12"></a>&nbsp;
+					<a href="<TMPL_VAR THISNODEURL>?action=movenodedown&id=<TMPL_VAR ID>&all=<TMPL_VAR SHOW_ALL>" alt="Передвинуть вниз" title="Передвинуть вниз"><img src="/admin-side/img/img_down.gif" alt="Вниз" align="top" border="0" height="15" width="12"></a>&nbsp;
 				</div>
 </TMPL_UNLESS IS_TOP>
 					

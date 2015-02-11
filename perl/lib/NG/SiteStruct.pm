@@ -1272,7 +1272,7 @@ sub action_structPage {
     $tmpl->param(
         SHOW_ALL => $showAll,
         BASEURL  => $self->getBaseURL(),
-        NODEURL  => $self->{_pageURL},  #Адрес админки ноды
+        THISNODEURL  => $self->{_pageURL},  #Адрес админки ноды
         ALL_URL  => $allUrl,
         SITEURL  => $siteUrl,
     );
