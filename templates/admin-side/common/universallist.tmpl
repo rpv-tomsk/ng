@@ -1,4 +1,4 @@
-<div id="menu_content">				
+<div id="menu_content">
         <div id="middle_right_menu">
             <TMPL_LOOP TOP_LINKS>
                 <strong><a href="<TMPL_VAR URL>" <TMPL_IF TITLE>title="<TMPL_VAR TITLE>"</TMPL_IF TITLE> <TMPL_IF AJAX_URL> onclick="ajax_url('<TMPL_VAR AJAX_URL>','form0');return false;"</TMPL_IF>><TMPL_VAR NAME></a></strong>
@@ -14,26 +14,26 @@
                     <input type="hidden" name="<TMPL_VAR NAME>" value="<TMPL_VAR VALUE>">
                 </TMPL_LOOP FILTERS.PARAMS>
             </TMPL_IF FILTERS.USE_FORM>
-			<TMPL_LOOP FILTERS.LIST>
-            <TMPL_IF TYPE_SELECT>
+            <TMPL_LOOP FILTERS.LIST>
+                <TMPL_IF TYPE_SELECT>
                 <span class="name">
-				<TMPL_VAR NAME>&nbsp;
-				</span>
+                <TMPL_VAR NAME>&nbsp;
+                </span>
                  <div class="selectWrapper">
-              		  <select name="<TMPL_VAR FILTER_NAME>" onchange="this.form.elements['_ajax'].value='1';ajax_form('filterform','middle_right_content');">
-                 	   <TMPL_LOOP VALUES>
-                 		   <option value="<TMPL_VAR VALUE>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME ESCAPE=HTML></option>
-                 	   </TMPL_LOOPVALUES>
-                	</select>
+                        <select name="<TMPL_VAR FILTER_NAME>" onchange="this.form.elements['_ajax'].value='1';ajax_form('filterform','middle_right_content');">
+                         <TMPL_LOOP VALUES>
+                             <option value="<TMPL_VAR VALUE>" <TMPL_IF SELECTED>selected</TMPL_IF SELECTED>><TMPL_VAR NAME ESCAPE=HTML></option>
+                         </TMPL_LOOPVALUES>
+                        </select>
                 </div>
-            </TMPL_IF TYPE_SELECT>
-            <TMPL_IF TYPE_TABS>
+                </TMPL_IF TYPE_SELECT>
+                <TMPL_IF TYPE_TABS>
                 <span class="tabs">
                     <span class="name"><TMPL_VAR NAME>&nbsp;</span>
                     <TMPL_LOOP VALUES><a href="<TMPL_VAR ACTION>&<TMPL_VAR FILTER_NAME>=<TMPL_VAR VALUE>" <TMPL_IF SELECTED>class="selected"</TMPL_IF SELECTED>><TMPL_VAR NAME></a><TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__></TMPL_LOOP VALUES>
                 </span>
-            </TMPL_IF TYPE_TABS>
-        	</TMPL_LOOP FILTERS.LIST>
+                </TMPL_IF TYPE_TABS>
+            </TMPL_LOOP FILTERS.LIST>
             <TMPL_IF FILTERS.USE_FORM>
                 <NOSCRIPT>
                 <div class="button">
@@ -42,8 +42,8 @@
                 </NOSCRIPT>
                 </form>
             </TMPL_IF FILTERS.USE_FORM>
-        	</span>
-        	</TMPL_IF FILTERS>
+            </span>
+            </TMPL_IF FILTERS>
         </div>
 </div>
 
@@ -54,17 +54,17 @@
     <TMPL_INCLUDE_VAR BEFORE_LIST_TMPL>
 </TMPL_IF BEFORE_LIST_TMPL>
     
- <!-- container TODO: ZZZ XXX--> 
- <div id="form_container">
- <div id="form0" style="width:100%;"><TMPL_VAR SEARCHFORMHTML></div>
- </div>
- <!-- container /--> 
+<!-- container TODO: ZZZ XXX--> 
+<div id="form_container">
+<div id="form0" style="width:100%;"><TMPL_VAR SEARCHFORMHTML></div>
+</div>
+<!-- container /--> 
 
-    <!-- -->							
+    <!-- -->
     <div id="table_content">
         <table id="content" >
             <!--Строка заголовков-->
-            <tr >
+            <tr>
                 <TMPL_IF MULTIACTIONS>
                     <td class="title">
                         <div class="list-multiactioncb-all" title="Выбрать/отменить все"></div>
@@ -73,30 +73,28 @@
                 
                 <TMPL_LOOP HEADERS>
                 <TMPL_UNLESS HIDE>
-				  <TMPL_IF HEADER_TEMPLATE>
-                    <TMPL_INCLUDE_VAR HEADER_TEMPLATE>
- 			      <TMPL_ELSE HEADER_TEMPLATE>
-					<td class="title" style="<TMPL_IF WIDTH>width:<TMPL_VAR WIDTH>;</TMPL_IF><TMPL_IF IS_POSORDER>text-align:right;padding-right:20px;</TMPL_IF IS_POSORDER>">			
-                    <TMPL_IF ORDER><nobr><a href="<TMPL_VAR ORDER>" <TMPL_IF SELECTED_ASC> title="Кликните, чтобы отсортировать по убыванию" </TMPL_IF> <TMPL_IF SELECTED_DESC> title="Кликните, чтобы отсортировать по возрастанию" </TMPL_IF> ><TMPL_ELSE ORDER><p></TMPL_IF>
-                    <TMPL_VAR NAME><TMPL_IF ORDER></a><TMPL_ELSE ORDER></p></TMPL_IF>
-					<TMPL_IF SELECTED_ASC><span id="img_upp">&nbsp;&nbsp;</span></TMPL_IF>
-					<TMPL_IF SELECTED_DESC><span id="img_down">&nbsp;&nbsp;</span></TMPL_IF>
-					</nobr>
-					</td>
+                    <TMPL_IF HEADER_TEMPLATE>
+                      <TMPL_INCLUDE_VAR HEADER_TEMPLATE>
+                    <TMPL_ELSE HEADER_TEMPLATE>
+                      <td class="title" style="<TMPL_IF WIDTH>width:<TMPL_VAR WIDTH>;</TMPL_IF><TMPL_IF IS_POSORDER>text-align:right;padding-right:20px;</TMPL_IF IS_POSORDER>">			
+                      <TMPL_IF ORDER><nobr><a href="<TMPL_VAR ORDER>" <TMPL_IF SELECTED_ASC> title="Кликните, чтобы отсортировать по убыванию" </TMPL_IF> <TMPL_IF SELECTED_DESC> title="Кликните, чтобы отсортировать по возрастанию" </TMPL_IF> ><TMPL_ELSE ORDER><p></TMPL_IF>
+                      <TMPL_VAR NAME><TMPL_IF ORDER></a><TMPL_ELSE ORDER></p></TMPL_IF>
+                      <TMPL_IF SELECTED_ASC><span id="img_upp">&nbsp;&nbsp;</span></TMPL_IF>
+                      <TMPL_IF SELECTED_DESC><span id="img_down">&nbsp;&nbsp;</span></TMPL_IF>
+                      </nobr>
+                      </td>
                   </TMPL_IF HEADER_TEMPLATE>
                 </TMPL_UNLESS>  
-                </TMPL_LOOP HEADERS>	
-    
+                </TMPL_LOOP HEADERS>
             </tr>
             <!-- /Строка заголовков -->
             
-            	<!-- data rows -->
-	    		<TMPL_LOOP DATA>
-				<!-- data columns -->
-				
+            <!-- data rows -->
+            <TMPL_LOOP DATA>
+                <!-- data columns -->
+
                 <tr><td colspan="<TMPL_VAR HEADERS_CNT>"><a href="#anchor_<TMPL_VAR AJAX_FORM_CONTAINER>" name="anchor_<TMPL_VAR AJAX_FORM_CONTAINER>"></a></tr>
-			
-				<tr>
+                <tr>
                 <TMPL_IF MULTIACTIONS>
                 <td class="content">
                     <div class="list-multiactioncb" data-id="<TMPL_VAR ID_VALUE>"></div>
@@ -108,7 +106,7 @@
                         <TMPL_INCLUDE_VAR CUSTOM_TEMPLATE>
                     <TMPL_ELSE CUSTOM_TEMPLATE>
                         <td class="content"  style="<TMPL_IF IS_CHECKBOX>width:100px;</TMPL_IF><TMPL_IF HIGHLIGHT>background:#ffcccc;</TMPL_IF>">
-                        <TMPL_IF IS_IMAGE>	
+                        <TMPL_IF IS_IMAGE>
                             <TMPL_IF DBVALUE><div id="img_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><img src="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>"></div></TMPL_IF>
                         <TMPL_ELSIF IS_CHECKBOX>
                                 <center>
@@ -126,53 +124,42 @@
                         </td>
                     </TMPL_IF CUSTOM_TEMPLATE>
                 </TMPL_LOOP COLUMNS>
-                
-                
-                
                 <TMPL_IF MOVE_URL>
                 <td class="content_img">
-				<nobr>
+                    <nobr>
                     <a href="<TMPL_VAR MOVE_URL>&dir=down"><img class="content_img" src="/admin-side/img/img_down.gif" alt="Вниз" width="12" height="15" border="0" align="top"></a>
                     <a href="<TMPL_VAR MOVE_URL>&dir=up"><img class="content_img" src="/admin-side/img/img_upp.gif" alt="Вверх" width="12" height="15" border="0" align="top"></a>
-              	</nobr>
-			   </td>
+                    </nobr>
+                </td>
                 </TMPL_IF>
                 <TMPL_IF MOVE_URL_HIDDEN>
                 <td class="content_img" style="text-align:center;">
-            		<img src="/admin-side/img/button_no-active.gif" alt="" width="68" height="15" border="0">
+                    <img src="/admin-side/img/button_no-active.gif" alt="" width="68" height="15" border="0">
                 </td>
                 </TMPL_IF MOVE_URL_HIDDEN>
-				</tr> 
-				
-				<!-- data columns / -->				
-
+                </tr> 
+                <!-- data columns / -->
                 <!-- /Строка элементов управления записи -->
                 <tr>
-                 
                     <td class="last_line_right_img" colspan="<TMPL_VAR HEADERS_CNT>">
                         <TMPL_IF ROW_LINKS>
                         <TMPL_LOOP ROW_LINKS>
-						<nobr>
+                            <nobr>
                             <a href="<TMPL_VAR URL>" <TMPL_IF AJAX>onclick="ajax_url('<TMPL_VAR AJAX_URL>','<TMPL_VAR AJAX_FORM_CONTAINER>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
-							<TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
+                            <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
+                            </nobr>
                         </TMPL_LOOP>
                         </TMPL_IF ROW_LINKS>
-    					</nobr>	             
-				    </td>
-					
+                    </td>
                 </tr>
                 <!--  /Строка элементов управления записи  -->
 
-				<!-- form container -->
-	        	<tr><td id="<TMPL_VAR AJAX_FORM_CONTAINER>" colspan="<TMPL_VAR HEADERS_CNT>" style="padding:0px;border:none;"></td></tr>				
-	        	<!-- form container / -->
-				
-	    	</TMPL_LOOP DATA>			
-	    	<!-- data rows / -->
-
-
-                <!-- Тень -->
-        
+                <!-- form container -->
+                <tr><td id="<TMPL_VAR AJAX_FORM_CONTAINER>" colspan="<TMPL_VAR HEADERS_CNT>" style="padding:0px;border:none;"></td></tr>				
+                <!-- form container / -->
+                
+            </TMPL_LOOP DATA>
+            <!-- data rows / -->
         </table>
     </div>
     <TMPL_IF MULTIACTIONS>
@@ -183,7 +170,7 @@
             <select name="mult_op" data-url="<TMPL_VAR MULT_URL>">
                 <option value="">С отмеченными</option>
             </select>
-            <div class="button">		
+            <div class="button">
                 <input type="image" src="/admin-side/img/buttons/query.gif">
             </div>
         </div>
@@ -205,16 +192,16 @@
         <TMPL_IF CURRENT><span id="select_page"><TMPL_VAR PAGE></span></TMPL_IF>
         </TMPL_LOOP PAGES>
         </TMPL_IF PAGES>
-        <!-- /PAGENAV -->    
+        <!-- /PAGENAV -->
     </div>
-	
+
 </div>
-	<div id="middle_bottom">
-		 <div id="middle_bottom_left">
-		   <div id="middle_bottom_right"></div>
-		 </div>
-	</div>
-        
+<div id="middle_bottom">
+    <div id="middle_bottom_left">
+      <div id="middle_bottom_right"></div>
+    </div>
+</div>
+
 <script>
 $('div#table_content').initClickableCheckboxes({url:'<TMPL_VAR MYBASEURL>'});
 <TMPL_IF MULTIACTIONS>
@@ -233,4 +220,3 @@ $('div#table_content').initClickableCheckboxes({url:'<TMPL_VAR MYBASEURL>'});
     });
 </TMPL_IF MULTIACTIONS>
 </script>
-
