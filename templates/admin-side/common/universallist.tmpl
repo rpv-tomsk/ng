@@ -103,15 +103,14 @@
                 </td>
                 </TMPL_IF MULTIACTIONS>
 
-				<TMPL_LOOP COLUMNS>
-                <TMPL_UNLESS HIDE>
-					<TMPL_IF CUSTOM_TEMPLATE>
+                <TMPL_LOOP COLUMNS>
+                    <TMPL_IF CUSTOM_TEMPLATE>
                         <TMPL_INCLUDE_VAR CUSTOM_TEMPLATE>
                     <TMPL_ELSE CUSTOM_TEMPLATE>
                         <td class="content"  style="<TMPL_IF IS_CHECKBOX>width:100px;</TMPL_IF><TMPL_IF HIGHLIGHT>background:#ffcccc;</TMPL_IF>">
                         <TMPL_IF IS_IMAGE>	
                             <TMPL_IF DBVALUE><div id="img_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><img src="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>"></div></TMPL_IF>
-  						<TMPL_ELSIF IS_CHECKBOX>
+                        <TMPL_ELSIF IS_CHECKBOX>
                                 <center>
                                 <div class="list-checkbox <TMPL_IF CLICKABLE>clickable </TMPL_IF><TMPL_IF VALUE>checked </TMPL_IF>" data-field="<TMPL_VAR FIELD>" data-id="<TMPL_VAR ID_VALUE>" id="cb_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"></div>
                                 </center>
@@ -122,12 +121,11 @@
                         <TMPL_ELSE>
                             <TMPL_IF URLFIELD><a href="<TMPL_VAR URLFIELD>" title="<TMPL_VAR TITLE>"><TMPL_ELSE URLFIELD><p></TMPL_IF>
                             <TMPL_VAR VALUE>
-                            <TMPL_IF URLFIELD></a><TMPL_ELSE URLFIELD><p></TMPL_IF>
+                            <TMPL_IF URLFIELD></a><TMPL_ELSE URLFIELD></p></TMPL_IF>
                         </TMPL_IF>
-					</td>
-				 </TMPL_IF CUSTOM_TEMPLATE>
-                </TMPL_UNLESS>
-				</TMPL_LOOP COLUMNS>
+                        </td>
+                    </TMPL_IF CUSTOM_TEMPLATE>
+                </TMPL_LOOP COLUMNS>
                 
                 
                 
