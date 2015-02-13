@@ -24,7 +24,7 @@ sub setStatus(){
 
 =head
 CREATE TABLE ng_cron_logs (
-  id SERIAL, 
+  id SERIAL,
   module VARCHAR(25) NOT NULL,
   task VARCHAR(50) NOT NULL,
   message VARCHAR(50) NOT NULL,

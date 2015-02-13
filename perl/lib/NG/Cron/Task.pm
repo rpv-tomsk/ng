@@ -218,13 +218,13 @@ sub updateStatusRecord {
 };
 =head
 CREATE TABLE ng_cron_status (
-  id SERIAL, 
-  module VARCHAR(25) NOT NULL, 
-  task VARCHAR(50) NOT NULL, 
-  status VARCHAR(50) NOT NULL, 
-  startup VARCHAR(10), 
-  "time" TIMESTAMP WITHOUT TIME ZONE, 
-  status_text VARCHAR(25), 
+  id SERIAL,
+  module VARCHAR(25) NOT NULL,
+  task VARCHAR(50) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  startup VARCHAR(10),
+  "time" TIMESTAMP WITHOUT TIME ZONE,
+  status_text VARCHAR(25),
   PRIMARY KEY(id)
 ) ;
 
