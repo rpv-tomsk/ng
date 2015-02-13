@@ -253,6 +253,7 @@ sub buildList {
             $rowObj->{AJAX_FORM_CONTAINER} = "formb".$rowObj->{KEY_VALUE};
             $rowObj->{HEADERS_CNT} = $headersCnt;
             $rowObj->{ROW} = $rowObj->row();
+            $rowObj->{MULTIACTIONS} = $self->{_multiActions};
             
             $self->doHighlight($rowObj);
             $index_counter++;
@@ -1142,8 +1143,8 @@ sub _maDeleteRecords {
     foreach my $id (@$ids) {
         my $ret = $self->checkBeforeDelete($id);
         if ($ret == NG::Application::M_ERROR) {
-            my $e = $self->getError();
-            return $self->outputJSON({status=>'error', error=> 'Проверка перед удалением - ошибка:'.$e});
+            my $e = $self->cms->getError();
+            return $self->outputJSON({status=>'error', error=> 'Проверка перед удалением - ошибка:\n'.$e});
         };
     };
     

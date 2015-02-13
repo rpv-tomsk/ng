@@ -35,7 +35,7 @@ sub addColumn {
 	my $self = shift;
 	my $column = shift;
 	return if ($column->{TYPE} eq "posorder");
-	push @{$self->{COLUMNS}}, $column unless ($column->{TYPE} eq "hidden");
+	push @{$self->{COLUMNS}}, $column unless ($column->{TYPE} eq "hidden" || $column->{HIDE});
 	$self->{HCOLUMNS}->{uc($column->{FIELD})} = $column;
 };
 
