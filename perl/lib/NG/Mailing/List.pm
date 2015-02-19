@@ -107,7 +107,7 @@ sub rowFunction{
     $row->{'_lettersize'} = $row->{'lettersize'};
     $row->{'lettersize'} = get_size_text($row->{'lettersize'});
     
-    my $mailingType = $self->dbh->selectrow_hashref("SELECT type_id, lettersize_limit FROM ng_mailing_types WHERE type_id = (SELECT type FROM mailing m WHERE m.id = ?)",undef,$row->{id});
+    my $mailingType = $self->dbh->selectrow_hashref("SELECT type_id, lettersize_limit FROM ng_mailing_types WHERE type_id = (SELECT type FROM ng_mailing m WHERE m.id = ?)",undef,$row->{id});
     
     my $overLimit = 0;
     if ($mailingType->{lettersize_limit} && $row->{'_lettersize'} > $mailingType->{lettersize_limit}) {
@@ -233,7 +233,7 @@ sub checkBeforeDelete {
 sub beforeDelete {
     my ($list,$id) = (shift,shift);
     
-    $list->dbh()->do("DELETE FROM mailing_recipients WHERE mailing_id = ?", undef, $id);
+    $list->dbh()->do("DELETE FROM ng_mailing_recipients WHERE mailing_id = ?", undef, $id);
     
     return NG::Block::M_OK;
 };
