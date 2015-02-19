@@ -1,0 +1,55 @@
+<TMPL_UNLESS IS_AJAX>  
+    <div id="menu_content"> </div>
+    <div id="info_content" style="padding-bottom:10px;">
+    <div style="width:100%;">
+</TMPL_UNLESS IS_AJAX>
+
+        <form action="<TMPL_VAR URL>" method="post" id="poll<TMPL_VAR MAILING_ID>"  <TMPL_IF IS_AJAX>target="ifr_testdelivery_<TMPL_VAR MAILING_ID>"</TMPL_IF>>
+        <input type="hidden" name="id" value="<TMPL_VAR MAILING_ID>">
+        <input type="hidden" name="action"  value="testdelivery">
+        <input type="hidden" name="ref" value="<TMPL_VAR REF>">
+        <input type="hidden" name="_ajax" id="_ajax" value="<TMPL_VAR IS_AJAX>">
+
+        <table class="component_new_form" border="0" style="width:100%;">
+        <tr>
+        <td  class="container-for-line form">
+            
+            <div class="form-line">
+            <div class="errormsg" id="error_testdelivery_<TMPL_VAR MAILING_ID>"><TMPL_VAR ERRORMSG></div>
+            <div class="form_contener"  style="width: 100%; float: none;">
+               Список получателей тестовой отправки, один получатель на строку&nbsp;*
+            </div>
+            <div class="clearAll"></div>
+            <div class="input_info withTextArea">
+                <textarea name="recipients" class="info_textarea"><TMPL_VAR RCPT ESCAPE=HTML></textarea>
+            </div>
+            </div>
+        </td>
+        </tr>
+        
+        <tr class="form bottom">
+            <td class="button-for-polls">
+                <button name="formaction" id="action" type="submit" class="styleForButtonApply" style="background: #D4E7F6 url(/admin-side/img/buttons/apply.gif) no-repeat top;" title="Отправить тестовые письма" value="Отправить">Отправить</button>
+                <TMPL_IF IS_AJAX>
+                    <a href="#" onclick="clear_block('formb_<TMPL_VAR MAILING_ID>');return false;">
+                <TMPL_ELSE>
+                    <a href="<TMPL_VAR REF>">
+                </TMPL_IF IS_AJAX>
+                    <img src="/admin-side/img/buttons/close.gif" style="border-width: 0;">
+                    </a>
+            </td>
+        </tr>
+        </table>
+        </form>
+<iframe name='ifr_testdelivery_<TMPL_VAR MAILING_ID>' style="display: none;"></iframe>
+
+<TMPL_UNLESS IS_AJAX>
+</div>
+</div>
+<div id="middle_bottom">
+    <div id="middle_bottom_left">
+        <div id="middle_bottom_right"></div>
+    </div>
+</div>
+</TMPL_UNLESS IS_AJAX>
+
