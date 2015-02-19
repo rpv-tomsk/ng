@@ -25,6 +25,7 @@ sub init {
     
     #Resulting data object
     $self->{_dataObj} = undef;
+    $self->{imgCache} = {};    #
 
     $self->{_opts} = {};
     $self->{_charset} = $cms->{_charset};
@@ -45,6 +46,16 @@ sub init {
 sub _newML {
     my $self = shift;
     NG::Mailer::MIMELite->new(Mailer=>$self, @_);
+};
+
+
+sub rset {  #Подготавливает объект к формированию нового письма. Сбрасывается всё, кроме кеша.
+    my $self = shift;
+    
+    $self->{_dataObj} = undef;
+    $self->{_alternatives} = {};
+    $self->{_parts} = [];
+    $self->{_headers} = undef;
 };
 
 #Сохраняем выставляемые атрибуты в отдельный  объект. Потом соберем.
@@ -147,10 +158,14 @@ sub addHTMLPart {
         $multiPart->attach($contentPart);
         
         foreach my $url (keys %images) {
+            my $cid = $images{$url};
+            my $fpath = $url;
+            $fpath =~ s/\%20/ /g;
             $multiPart->attach(
                 Type => "AUTO",
-                Id   => "Image".$images{$url},
-                Path => $baseDir.$url,
+                Id   => "Image".$cid,
+                Path => $baseDir.$fpath,
+                USEImgCache => 1,
             );
         };
     }
@@ -265,7 +280,7 @@ sub _cparam ($$) {
 sub _mparam ($) {
     my $self = shift;
     my $param = shift;
-    die "_mparam(): _mcode is not set" unless $self->{_mcode};
+    die "_mparam(): Method is not set for NG::Mailer" unless $self->{_mcode};
     return $self->confParam("%".$self->{_mcode}."_".$param);
 }
 
@@ -459,6 +474,8 @@ use MIME::Lite;
 use vars qw(@ISA);
 @ISA = qw(MIME::Lite);
 
+use Scalar::Util();
+
 sub build {
     my $self = shift;
     my %params = @_;
@@ -466,6 +483,10 @@ sub build {
     if (my $mailer = delete $params{Mailer}) {
         ref($self) or $self = $self->new;
         $self->{Mailer} = $mailer;
+        Scalar::Util::weaken($self->{Mailer}); ###NEEDED!!!
+    };
+    if ($params{USEImgCache}) {
+        $self->{USEImgCache} = 1;
     };
     $self->SUPER::build(%params);
 };
@@ -531,9 +552,60 @@ sub attach {
     my $self = shift;
     die "Please don`t use attach-to-singlepart hack." if ( $self->{Attrs}->{'content-type'} !~ m{^(multipart|message)/}i );
     $self->{Mailer}->{_dataObj} = undef;
-    my $new = $self->SUPER::attach(@_);
-    $new->{Mailer} = $self->{Mailer};
+        
+    if (@_ == 1) {
+        my $new = $self->SUPER::attach(@_);
+        die unless $new->{Mailer}; #Single param is object, object should already have Mailer.
+        return $new;
+    };
+    
+    my %params = @_;
+    
+    my $new = undef;
+    if ($params{USEImgCache}) {
+        die "Path is missing" unless $params{Path};
+        my $cached = $self->{Mailer}->{imgCache}->{$params{Path}};
+        if ($cached) {
+            if ($cached->{Id} eq $params{Id}) {
+                $new = $cached->{Part};
+            }
+            else {
+                warn "!!! Cached part Id mismatch";
+            };
+        };
+    };
+    
+    if ($new) {
+        my $validate = $self->SUPER::attach($new);
+        die "!!! Attach changed part!!!" unless $validate eq $new;
+    }
+    else {
+        $new = $self->SUPER::attach(Mailer=>$self->{Mailer}, @_);
+        if ($params{USEImgCache}) {
+            $self->{Mailer}->{imgCache}->{$params{Path}} = {Id=>$params{Id}, Part => $new};
+        };
+    };
     $new;
+};
+
+sub print_simple_body {
+    my ( $self, $out, $is_smtp ) = @_;
+    
+    $is_smtp ||= 0;
+    if ( $self->{USEImgCache} ) {
+        if ( $self->{'PreparedBody'.$is_smtp} ) {
+            $out->print( $self->{'PreparedBody'.$is_smtp} );
+        }
+        else {
+            my $buf  = "";
+            my $io   = ( wrap MIME::Lite::IO_Scalar \$buf);
+            $self->SUPER::print_simple_body($io,$is_smtp);
+            $self->{'PreparedBody'.$is_smtp} = $buf;
+            $out->print( $buf );
+        };
+        return 1;
+    };
+    $self->SUPER::print_simple_body($out,$is_smtp);
 };
 
 return 1;
@@ -666,9 +738,9 @@ return 1;
     %SMTP_Debug
     
     ;FILE mail delivery type
-    %FILE_Class=NG::Mailer::File
-    %FILE_OutputDir=/some/writable/dir     ; store each mail into this dir, timestamp as filename
-    %FILE_OutputFile=/some/writable/file   ; output all mail into this file, rewriting existing
-    %FILE_MessageOnly=                     ; skip options dumping
+    %File_Class=NG::Mailer::File
+    %File_OutputDir=/some/writable/dir     ; store each mail into this dir, timestamp as filename
+    %File_OutputFile=/some/writable/file   ; output all mail into this file, rewriting existing
+    %File_MessageOnly=                     ; skip options dumping
 =cut
 
