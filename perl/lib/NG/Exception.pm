@@ -76,8 +76,19 @@ sub code     { my $self = shift; return $self->{code};    };
 sub getText {
     my $exc = shift;
     
-    return $exc->{carpmessage} if $exc->{carpmessage};
-    $exc->code.": ".$exc->message."\n";
+    if (ref $exc) { #Object method
+        return $exc->{carpmessage} if $exc->{carpmessage};
+        $exc->code.": ".$exc->message."\n";
+    }
+    else {          #Class method
+        my $e = shift;
+        if (NG::Exception->caught($e)) {
+            return $e->getText();
+        }
+        else {
+            return $e;
+        };
+    };
 };
 
 sub notify {
