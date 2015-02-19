@@ -396,6 +396,8 @@ sub _fillNMailer {
     $nmailer->add("from",$mtype->{mail_from}) if $mtype->{mail_from};
     $nmailer->add("subject", $subj) if $subj;
     $nmailer->add("to", ($rcpt->{fio}||'').'<'.$rcpt->{email}.'>');
+    $nmailer->add("Precedence","bulk");
+    $nmailer->add("Auto-Submitted", "auto-generated");
     $nmailer->addHTMLPart(Data=>$mailingHTMLContent, BaseDir=>$cms->getDocRoot()) if $mailingHTMLContent;
     $nmailer->addPlainPart(Data=>$mailingPLAINContent) if $mailingPLAINContent;
     1;
