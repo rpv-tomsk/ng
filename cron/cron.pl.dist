@@ -5,7 +5,7 @@ use NG::Bootstrap;
 
 NG::Bootstrap::importX(
    undef,
-   App => 'NG::CronManager',
+   App => 'NG::Cron::Application',
    DB  => 'Site::DB',
    SiteRoot => '/web/site',
    Debug => 0,
