@@ -1,6 +1,6 @@
 package NG::Mailing;
 use strict;
-use base qw(tdsk::PageModule);
+use base qw(NG::Module);
 
 sub moduleTabs{
 	return [
@@ -129,7 +129,7 @@ sub new {
     
     #Load mailing_type
     $param->{type} = 1 unless exists $param->{type};
-    my $mailingType = $class->dbh->selectrow_hashref("SELECT type_id, type_name, subject_prefix, subscribers_module, subscribers_id, segment_size, layout, plain_layout, mailer_group_code, mail_from, test_rcpt_data, lettersize_limit FROM mailing_types WHERE type_id = ?",undef,$param->{type});
+    my $mailingType = $class->dbh->selectrow_hashref("SELECT type_id, type_name, subject_prefix, subscribers_module, subscribers_id, segment_size, layout, plain_layout, mailer_group_code, mail_from, test_rcpt_data, lettersize_limit FROM ng_mailing_types WHERE type_id = ?",undef,$param->{type});
     NG::DBIException->throw() if $DBI::errstr;
     return $class->error('mailing_type (id '.$param->{type} . ') not found') unless $mailingType->{type_id};
     
@@ -178,7 +178,7 @@ sub load {
 sub _load {
     my ($class,$where) = (shift,shift);
     
-    my $mailing = $class->dbh->selectrow_hashref("SELECT id,status,total,progress,module,contentid,subject,type FROM mailing WHERE $where",undef,@_);
+    my $mailing = $class->dbh->selectrow_hashref("SELECT id,status,total,progress,module,contentid,subject,type FROM ng_mailing WHERE $where",undef,@_);
     NG::DBIException->throw() if $DBI::errstr;
     return undef unless $mailing->{id};
     return $class->new($mailing);
@@ -190,9 +190,11 @@ sub save {
     my $dbh = $mailing->dbh();
     
     if ($mailing->{_new}) {
-        $mailing->{_id}= $mailing->db()->get_id('mailing');
+        $mailing->{_id}= $mailing->db()->get_id('ng_mailing');
         my $param = $mailing->{_param};
-        $dbh->do("INSERT INTO mailing (id, module, contentid, subject, html_content,plain_content) VALUES (?,?,?,?,?,?)",undef, $mailing->{_id},$param->{module},$param->{contentid},$param->{subject},$param->{htmlcontent},$param->{plaincontent});
+        $param->{htmlcontent}  ||= '';
+        $param->{plaincontent} ||= '';
+        $dbh->do("INSERT INTO ng_mailing (id, module, contentid, subject, html_content,plain_content) VALUES (?,?,?,?,?,?)",undef, $mailing->{_id},$param->{module},$param->{contentid},$param->{subject},$param->{htmlcontent},$param->{plaincontent});
     }
     else {
         die "Not implemented!";
@@ -218,7 +220,7 @@ sub saveRecipients {
     NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): Already has recipients") if $mailing->{_param}->{total};
     
     my $dbh = $mailing->dbh();
-    my $insSth = $dbh->prepare("INSERT INTO mailing_recipients (mailing_id,segment,email,fio,data) VALUES (?,?,?,?,?)") or NG::DBIException->throw('Error');
+    my $insSth = $dbh->prepare("INSERT INTO ng_mailing_recipients (mailing_id,segment,email,fio,data) VALUES (?,?,?,?,?)") or NG::DBIException->throw('Error');
     
     my $total = 0;
     my $segment = 1;
@@ -292,8 +294,8 @@ sub saveRecipients {
     
     unless ($ret) {
         $dbh->rollback() or NG::DBIException->throw('Transaction rollback error');
-        $dbh->do("DELETE FROM mailing_recipients WHERE mailing_id = ?",undef, $mailing->{_id}) or warn $DBI::errstr;
-        $dbh->do("UPDATE mailing SET status = 5 WHERE id = ?",undef,$mailing->{_id}) or warn $DBI::errstr;
+        $dbh->do("DELETE FROM ng_mailing_recipients WHERE mailing_id = ?",undef, $mailing->{_id}) or warn $DBI::errstr;
+        $dbh->do("UPDATE ng_mailing SET status = 5 WHERE id = ?",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 5;
         die $@;
     };
@@ -301,12 +303,12 @@ sub saveRecipients {
     $dbh->commit() or NG::DBIException->throw('Transaction commit error');
     
     unless ($total) {
-        $dbh->do("UPDATE mailing SET status = 6 WHERE id = ?",undef,$mailing->{_id}) or warn $DBI::errstr;
+        $dbh->do("UPDATE ng_mailing SET status = 6 WHERE id = ?",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 6;
         return $mailing;
     };
     
-    $dbh->do("UPDATE mailing SET total = ? WHERE id = ?",undef,$total,$mailing->{_id}) or warn $DBI::errstr;
+    $dbh->do("UPDATE ng_mailing SET total = ? WHERE id = ?",undef,$total,$mailing->{_id}) or warn $DBI::errstr;
     $mailing->{_param}->{total} = $total;
     return $mailing;
 };
@@ -331,7 +333,7 @@ sub updateLetterSize {
     
     my $letterSize = length ($nmailer->_getDataObj()->as_string());
     
-    $dbh->do("UPDATE mailing SET lettersize = ? WHERE id = ?",undef,$letterSize,$mailing->{_id}) or warn $DBI::errstr;
+    $dbh->do("UPDATE ng_mailing SET lettersize = ? WHERE id = ?",undef,$letterSize,$mailing->{_id}) or warn $DBI::errstr;
     return 1;
 };
 
@@ -345,7 +347,7 @@ sub _fillNMailer {
     
     unless (exists $param->{htmlcontent} && exists $param->{plaincontent}) {
         #Загрузим контент
-        my $row = $dbh->selectrow_hashref("SELECT html_content,plain_content FROM mailing WHERE id = ?",undef, $mailing->{_id});
+        my $row = $dbh->selectrow_hashref("SELECT html_content,plain_content FROM ng_mailing WHERE id = ?",undef, $mailing->{_id});
         unless ($row && ($row->{html_content} || $row->{plain_content})) {
             $mailing->_terminate({reason=>'Content missing', oldstatus=>3});
             return 0;
@@ -409,7 +411,7 @@ sub deliverSegment {
     my $cms = $mailing->cms();
     my $dbh = $cms->dbh();
     
-    my $segmentId = $dbh->selectrow_array("SELECT MIN(segment) FROM mailing_recipients WHERE mailing_id = ?",undef, $mailing->{_id});
+    my $segmentId = $dbh->selectrow_array("SELECT MIN(segment) FROM ng_mailing_recipients WHERE mailing_id = ?",undef, $mailing->{_id});
     unless ($segmentId) {
         $mailing->_terminate({reason=>'Unable to find next segment', oldstatus=>3});
         return;
@@ -458,7 +460,7 @@ sub deliverSegment {
 #warn Dumper($mailing);
     
     #Определили сегмент. Получаем список получателей.
-    my $dbc = $dbh->prepare("SELECT email, fio, data FROM mailing_recipients WHERE mailing_id = ? AND segment = ?")  or die $DBI::errstr;
+    my $dbc = $dbh->prepare("SELECT email, fio, data FROM ng_mailing_recipients WHERE mailing_id = ? AND segment = ?")  or die $DBI::errstr;
     $dbc->execute($mailing->{_id}, $segmentId) or die $DBI::errstr;
     
     my $i = 0;
@@ -471,14 +473,14 @@ sub deliverSegment {
     $dbc->finish();
     
     #Delete segment
-    my $ret = $dbh->do("DELETE FROM mailing_recipients WHERE mailing_id = ? AND segment = ?",undef,$mailing->{_id}, $segmentId) or warn $DBI::errstr;
+    my $ret = $dbh->do("DELETE FROM ng_mailing_recipients WHERE mailing_id = ? AND segment = ?",undef,$mailing->{_id}, $segmentId) or warn $DBI::errstr;
     unless (defined $ret && $ret == $i) {
         $mailing->_terminate({reason=>"Unable to delete processed segment / row count mismatch: processed $ret expected $i", oldstatus=>3});
         return;
     };
     
     #Increment progressbar
-    $ret = $dbh->do("UPDATE mailing SET progress = progress + ? WHERE id = ? AND status = 3",undef,$i,$mailing->{_id}) or warn $DBI::errstr;
+    $ret = $dbh->do("UPDATE ng_mailing SET progress = progress + ? WHERE id = ? AND status = 3",undef,$i,$mailing->{_id}) or warn $DBI::errstr;
     unless (defined $ret && $ret == 1) {
         $mailing->_terminate({reason=>'Progress update failed', oldstatus=>3});
         return;
@@ -486,7 +488,7 @@ sub deliverSegment {
     
     if ($mailing->{_param}->{progress} + $i == $mailing->{_param}->{total}) {
         #Wow!
-        $ret = $dbh->do("UPDATE mailing SET status = 8 WHERE id = ? AND status = 3",undef,$mailing->{_id}) or warn $DBI::errstr;
+        $ret = $dbh->do("UPDATE ng_mailing SET status = 8 WHERE id = ? AND status = 3",undef,$mailing->{_id}) or warn $DBI::errstr;
         warn "Mailing ".$mailing->{_id}." finished but status update failed." unless defined $ret && $ret == 1;
     };
 };
@@ -525,7 +527,7 @@ sub begin {
             $mailing->saveRecipients();
         };
         if ($mailing->{status} == 2) {
-            my $ret = $mailing->dbh->do("UPDATE mailing SET status = 3, date_begin = now() WHERE id = ? AND status = 2",undef,$mailing->{_id}) or warn $DBI::errstr;
+            my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 3, date_begin = now() WHERE id = ? AND status = 2",undef,$mailing->{_id}) or warn $DBI::errstr;
             $mailing->{status} = 3 if defined $ret && $ret == 1;
         };
         return 1;
@@ -540,7 +542,7 @@ sub _terminate {
     my ($mailing,$reason) = (shift,shift);
     warn "Mailing ".$mailing->{_id}." terminated: ".$reason->{reason};
     
-    my $ret = $mailing->dbh->do("UPDATE mailing SET status = 5 WHERE id = ? AND status = ?",undef,$mailing->{_id},$reason->{oldstatus}) or warn $DBI::errstr;
+    my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 5 WHERE id = ? AND status = ?",undef,$mailing->{_id},$reason->{oldstatus}) or warn $DBI::errstr;
     warn "Mailing ".$mailing->{_id}." terminated, status update failed too." unless defined $ret && $ret == 1;
 };
 
@@ -548,7 +550,7 @@ sub start {
     my ($mailing) = (shift);
     
     if ($mailing->{status} == 1) {
-        my $ret = $mailing->dbh->do("UPDATE mailing SET status = 2 WHERE id = ? AND status = 1",undef,$mailing->{_id}) or warn $DBI::errstr;
+        my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 2 WHERE id = ? AND status = 1",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 2 if defined $ret && $ret == 1;
     };
     return $mailing;
@@ -558,7 +560,7 @@ sub pause {
     my ($mailing) = (shift);
     
     if ($mailing->{status} == 2 || $mailing->{status} == 3) {
-        my $ret = $mailing->dbh->do("UPDATE mailing SET status = 4 WHERE id = ? AND (status = 2 OR status = 3)",undef,$mailing->{_id}) or warn $DBI::errstr;
+        my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 4 WHERE id = ? AND (status = 2 OR status = 3)",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 4 if defined $ret && $ret == 1;
     };
     return $mailing;
@@ -568,7 +570,7 @@ sub unpause {
     my ($mailing) = (shift);
     
     if ($mailing->{status} == 4) {
-        my $ret = $mailing->dbh->do("UPDATE mailing SET status = 2 WHERE id = ? AND status = 4",undef,$mailing->{_id}) or warn $DBI::errstr;
+        my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 2 WHERE id = ? AND status = 4",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 2 if defined $ret && $ret == 1;
     };
     return $mailing;
@@ -578,10 +580,10 @@ sub cancel {
     my ($mailing) = (shift);
     
     if ($mailing->{status} == 2 || $mailing->{status} == 3 || $mailing->{status} == 4) {
-        my $ret = $mailing->dbh()->do("UPDATE mailing SET status = 7 WHERE id = ? AND (status = 2 OR status = 3 OR status = 4)",undef,$mailing->{_id}) or warn $DBI::errstr;
+        my $ret = $mailing->dbh()->do("UPDATE ng_mailing SET status = 7 WHERE id = ? AND (status = 2 OR status = 3 OR status = 4)",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 7 if defined $ret && $ret == 1;
     };
-    $mailing->dbh()->do("DELETE FROM mailing_recipients WHERE mailing_id = ?",undef,$mailing->{_id}) or warn $DBI::errstr;
+    $mailing->dbh()->do("DELETE FROM ng_mailing_recipients WHERE mailing_id = ?",undef,$mailing->{_id}) or warn $DBI::errstr;
     return $mailing;
 };
 
@@ -589,7 +591,7 @@ sub retry0 { #Специальное действие
     my ($mailing) = (shift);
     
     if ($mailing->{status} == 6 && $mailing->{_param}->{total} == 0) {
-        my $ret = $mailing->dbh->do("UPDATE mailing SET status = 2 WHERE id = ? AND status = 6 AND total = 0",undef,$mailing->{_id}) or warn $DBI::errstr;
+        my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 2 WHERE id = ? AND status = 6 AND total = 0",undef,$mailing->{_id}) or warn $DBI::errstr;
         $mailing->{status} = 2 if defined $ret && $ret == 1;
     };
     return $mailing;

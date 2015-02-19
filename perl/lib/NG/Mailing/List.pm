@@ -42,7 +42,7 @@ sub config {
     my $q    = $self->q();
     my $status = $q->param("status") || "";
     
-    $self->{_table} = "mailing";
+    $self->{_table} = "ng_mailing";
     $self->{_recordname} = "Рассылки";
     
     $self->{BEFORE_LIST_TMPL} = "/admin-side/title.tmpl";
@@ -55,7 +55,7 @@ sub config {
         {FIELD => 'plain_content', TYPE => 'textarea',  NAME => 'Текстовый вариант', IS_NOTNULL => 0, },
         {FIELD => 'html_content', TYPE => 'rtf',    NAME => 'Текст',     IS_NOTNULL => 0,
             OPTIONS => {
-                IMG_TABLE     => "mailer_rtf_images",
+                IMG_TABLE     => "ng_mailing_rtf_images",
                 IMG_UPLOADDIR => $cms->confParam("Mailer.uploadDir"),
                 IMG_TABLE_FIELDS_MAP => {id => "parent_id"},
                 CONFIG => "rtfConfig",
@@ -107,7 +107,7 @@ sub rowFunction{
     $row->{'_lettersize'} = $row->{'lettersize'};
     $row->{'lettersize'} = get_size_text($row->{'lettersize'});
     
-    my $mailingType = $self->dbh->selectrow_hashref("SELECT type_id, lettersize_limit FROM mailing_types WHERE type_id = (SELECT type FROM mailing m WHERE m.id = ?)",undef,$row->{id});
+    my $mailingType = $self->dbh->selectrow_hashref("SELECT type_id, lettersize_limit FROM ng_mailing_types WHERE type_id = (SELECT type FROM mailing m WHERE m.id = ?)",undef,$row->{id});
     
     my $overLimit = 0;
     if ($mailingType->{lettersize_limit} && $row->{'_lettersize'} > $mailingType->{lettersize_limit}) {
@@ -222,7 +222,7 @@ sub checkBeforeDelete {
     
     my $dbh = $list->dbh();
     
-    my $mailing = $dbh->selectrow_hashref("select id,status from mailing where id = ?", undef, $id);
+    my $mailing = $dbh->selectrow_hashref("select id,status from ng_mailing where id = ?", undef, $id);
     return $list->error("Рассылка не найдена") unless $mailing;
     return $list->error("Рассылка находится в очереди  доставки! Удаление невозможно.") if $mailing->{status} == 2;
     return $list->error("Рассылка находится в процессе доставки! Удаление невозможно.") if $mailing->{status} == 3;
