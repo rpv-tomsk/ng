@@ -362,7 +362,7 @@ sub _fillNMailer {
     };
     
     my $mailingHTMLContent;
-    if ($mtype->{layout}) {
+    if ($mtype->{layout} && $param->{htmlcontent}) {
         my $tmpl = $mtype->{layout};
         my $layout = $cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$tmpl,debug_file=>0});
         $layout->param(
@@ -377,7 +377,7 @@ sub _fillNMailer {
     };
     
     my $mailingPLAINContent;
-    if ($mtype->{plain_layout}) {
+    if ($mtype->{plain_layout} && $param->{plaincontent}) {
         my $tmpl = $mtype->{plain_layout};
         my $layout = $cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$tmpl,debug_file=>0});
         $layout->param(
