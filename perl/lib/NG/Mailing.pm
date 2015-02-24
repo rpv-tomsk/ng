@@ -374,7 +374,7 @@ sub _fillNMailer {
         );
         $mailingHTMLContent = $layout->output();
     }
-    else {
+    elsif ($param->{htmlcontent}) {
         $mailingHTMLContent = $param->{htmlcontent};
         $mailingHTMLContent = '<html><body>'.$mailingHTMLContent.'</body></html>';
     };
@@ -389,7 +389,7 @@ sub _fillNMailer {
         );
         $mailingPLAINContent = $layout->output();
     }
-    else {
+    elsif ($param->{plaincontent}) {
         $mailingPLAINContent = $param->{plaincontent};
     };
     
