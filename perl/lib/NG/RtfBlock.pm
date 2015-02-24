@@ -24,15 +24,15 @@ use NGService;
 =cut
 
 sub init {
-	my $self = shift;
-	$self->SUPER::init(@_);
-	
-	$self->{_table} = $self->moduleParam('table') || "ng_rtfpblocks";
-	$self->{_imgtable} = $self->moduleParam('imgtable');
+    my $self = shift;
+    $self->SUPER::init(@_);
+    
+    $self->{_table} = $self->moduleParam('table') || "ng_rtfpblocks";
+    $self->{_imgtable} = $self->moduleParam('imgtable');
     $self->{_imgtable} = "ng_rtfpblock_images" unless defined $self->{_imgtable};
-	$self->{_hassubpages} = $self->moduleParam('hassubpages') || 0;
-	$self->{_blockClass} = $self->moduleParam('blockClass');
-	$self->{_blockClass} ||= "NG::RtfBlock::Block";
+    $self->{_hassubpages} = $self->moduleParam('hassubpages') || 0;
+    $self->{_blockClass} = $self->moduleParam('blockClass');
+    $self->{_blockClass} ||= "NG::RtfBlock::Block";
     
     $self->{_rtffilemask} = $self->moduleParam('rtffilemask');
     unless (defined $self->{_rtffilemask}) {
@@ -54,7 +54,7 @@ sub init {
 };
 
 sub getActiveBlock {
-	my $self = shift;
+    my $self = shift;
     my $block = { BLOCK => 'CONTENT' };
     my $layout = $self->moduleParam('layout');
     $block->{LAYOUT} = $layout if $layout;
@@ -76,9 +76,9 @@ sub getBlockKeys {
 };
 
 sub getBlockContent{
-	my ($self,$action,$keys) = (shift,shift,shift);
-
-	my $cms = $self->cms();
+    my ($self,$action,$keys) = (shift,shift,shift);
+    
+    my $cms = $self->cms();
     my $opts = $self->opts();
     
     if ($action eq "CONTENT") {
@@ -127,7 +127,7 @@ sub moduleBlocks {
 };
 
 sub modulePrivileges {
-	return [];
+    return [];
 };
 
 1;
@@ -139,39 +139,39 @@ use vars qw(@ISA);
 use NG::Module::Record 0.5;
 
 BEGIN {
-	@ISA = qw(NG::Module::Record);
+    @ISA = qw(NG::Module::Record);
 };
 
 sub config  {
     my $self = shift;
-
+    
     my $opts = $self->opts();
     my $subp = $opts->{subpage} || 1;
-	
-	my $mObj = $self->{_moduleObj};
-	
+    
+    my $mObj = $self->{_moduleObj};
+    
     $self->{_table} = $mObj->{_table};
-	
+    
     $self->fields(
         {FIELD=>'page_id',  TYPE=>'pageId'},
-	);
-
-	if ($mObj->{_hassubpages}) {
-		$self->fields({FIELD=>'subpage',  TYPE=>'subpage', NAME=>'Части страницы:'});
-	}
+    );
+    
+    if ($mObj->{_hassubpages}) {
+        $self->fields({FIELD=>'subpage',  TYPE=>'subpage', NAME=>'Части страницы:'});
+    }
     else {
         $self->fields({FIELD=>'subpage',  TYPE=>'filter',VALUE=>$subp});
     }
-	
-	$self->fields(
+    
+    $self->fields(
         {FIELD=>'textfile', TYPE=>'rtffile', NAME=>'Текст',
-        	OPTIONS=>{
-	        	IMG_TABLE => $mObj->{_imgtable},
-	        	IMG_UPLOADDIR => $mObj->{_imgdirmask},
-	        	FILENAME_MASK => $mObj->{_rtffilemask},
-	        	FILEDIR => $mObj->{_rtfdir},
-				CONFIG  => $mObj->{_rtfconfig},
-        	}
+            OPTIONS=>{
+                IMG_TABLE => $mObj->{_imgtable},
+                IMG_UPLOADDIR => $mObj->{_imgdirmask},
+                FILENAME_MASK => $mObj->{_rtffilemask},
+                FILEDIR => $mObj->{_rtfdir},
+                CONFIG  => $mObj->{_rtfconfig},
+            }
         },
     );
     #TODO: add searchConfig
