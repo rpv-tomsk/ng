@@ -271,14 +271,14 @@ sub saveRecipients {
             if ($mailing->{_mtype}->{subscribers_module}) {
                 my $sModule = $mailing->cms->getModuleByCode($mailing->{_mtype}->{subscribers_module});
                 NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): Subscribers module has no getMailingRecipients()") unless $sModule->can('getMailingRecipients');
-                $recipients = $sModule->getMailingRecipients($mailing->{_mtype}->{subscribers_id}, $sub);
+                $recipients = $sModule->getMailingRecipients($mailing, $sub);
             }
             else {
                 NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): Missing mailing initiator module") unless $mailing->{_param}->{module};
                 my $initiator  = $mailing->cms->getModuleByCode($mailing->{_param}->{module});
                 NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): Mailing initiator module has no getMailingRecipients()") unless $initiator->can('getMailingRecipients');
                 
-                $recipients = $initiator->getMailingRecipients($sub);
+                $recipients = $initiator->getMailingRecipients($mailing, $sub);
             };
             return 1 if $total;
             NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): Invalid result from getMailingRecipients()") if ref $recipients ne 'ARRAY';
@@ -325,13 +325,16 @@ sub updateLetterSize {
     my $nmailer = $cms->getModuleByCode('MAILER') or return $cms->error();
     $nmailer->setGroupCode($mtype->{mailer_group_code}) if $mtype->{mailer_group_code};
     
-    $mailing->_fillNMailer($nmailer, {
+    my $ret = $mailing->_fillNMailer($nmailer, {
         email => 'test.recipient@domain.tld',
         fio   => 'Тестов Тест Тестович',
         data  => $mtype->{test_rcpt_data},
     });
     
-    my $letterSize = length ($nmailer->_getDataObj()->as_string());
+    my $letterSize = 0;
+    if ($ret) {
+        $letterSize = length ($nmailer->_getDataObj()->as_string());
+    };
     
     $dbh->do("UPDATE ng_mailing SET lettersize = ? WHERE id = ?",undef,$letterSize,$mailing->{_id}) or warn $DBI::errstr;
     return 1;
@@ -546,6 +549,7 @@ sub _terminate {
     
     my $ret = $mailing->dbh->do("UPDATE ng_mailing SET status = 5 WHERE id = ? AND status = ?",undef,$mailing->{_id},$reason->{oldstatus}) or warn $DBI::errstr;
     warn "Mailing ".$mailing->{_id}." terminated, status update failed too." unless defined $ret && $ret == 1;
+    $mailing->{status} = 5;
 };
 
 sub start {
@@ -600,3 +604,18 @@ sub retry0 { #Специальное действие
 };
 
 return 1;
+
+=comment
+
+sub getMailingRecipients {
+    my ($self,$mailing,$sub) = (shift,shift,shift);
+
+    my $dbc = $self->dbh->prepare("SELECT email,name as fio, hash FROM subscribers WHERE is_active");
+    $dbc->execute();
+    while($_ = $dbc->fetchrow_hashref()){
+        &$sub($_);
+    };
+    $dbc->finish();
+};
+
+=cut

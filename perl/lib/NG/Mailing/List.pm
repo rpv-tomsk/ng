@@ -48,17 +48,24 @@ sub config {
     $self->{BEFORE_LIST_TMPL} = "/admin-side/title.tmpl";
     $self->{BEFORE_LIST_DATA} = $messages{$status};
     
+    my $mObj = $self->getModuleObj();
+    my $rtfconfig = $mObj->moduleParam('rtfconfig') || 'rtfconfig';
+    my $uploaddir = $mObj->moduleParam('uploaddir') || '';
+    
     $self->fields(
         {FIELD => 'id',        TYPE => 'id',   NAME => 'ID'},
-        {FIELD => 'date_add',  TYPE => 'date', NAME => 'Дата',      IS_NOTNULL => 1},
+        {FIELD => 'module',    TYPE => 'text', NAME => 'Модуль контента', IS_NOTNULL => 1, DEFAULT => $mObj->getModuleCode(), HIDE=>1 },
+        {FIELD => 'contentid', TYPE => 'text', NAME => 'ID контента',     IS_NOTNULL => 1, HIDE=>1 },
+        {FIELD => 'date_add',  TYPE => 'datetime', NAME => 'Дата создания',  IS_NOTNULL => 1, DEFAULT=>current_datetime(), READONLY=>1},
+        {FIELD => 'send_after',TYPE => 'datetime', NAME => 'Отправка не ранее', IS_NOTNULL => 1, DEFAULT=>current_datetime(),},
         {FIELD => 'subject',   TYPE => 'text', NAME => 'Заголовок', IS_NOTNULL => 1},
         {FIELD => 'plain_content', TYPE => 'textarea',  NAME => 'Текстовый вариант', IS_NOTNULL => 0, },
-        {FIELD => 'html_content', TYPE => 'rtf',    NAME => 'Текст',     IS_NOTNULL => 0,
+        {FIELD => 'html_content', TYPE => 'rtf',    NAME => 'HTML-текст рассылки',     IS_NOTNULL => 0,
             OPTIONS => {
                 IMG_TABLE     => "ng_mailing_rtf_images",
-                IMG_UPLOADDIR => $cms->confParam("Mailer.uploadDir"),
+                IMG_UPLOADDIR => $uploaddir,
                 IMG_TABLE_FIELDS_MAP => {id => "parent_id"},
-                CONFIG => "rtfConfig",
+                CONFIG => $rtfconfig,
             }
         },
         {FIELD => "lettersize",   TYPE => "text", NAME => "Размер письма",   IS_NOTNULL => 0},
@@ -77,7 +84,10 @@ sub config {
     
     $self->formfields(
         {FIELD => 'id'},
+        {FIELD => 'module'},
+        {FIELD => 'contentid'},
         {FIELD => 'date_add'},
+        {FIELD => 'send_after'},
         {FIELD => 'subject'},
         {FIELD => 'html_content'},
         {FIELD => 'plain_content'},
@@ -124,7 +134,7 @@ sub rowFunction{
     my $actionsA = $dstatus->{actions} || [];
     my $actionHTML = "";
     foreach my $act (@$actionsA) {
-        next if $act eq 'send' && $overLimit;
+        next if $act eq 'send' && ($overLimit || !$row->{_lettersize});
         $actionHTML .= '<div style="margin-top:3px;"><a href="?action=mailingAction&mailingAction='.$act.'&id=' . $row->{id} . '"><small>' . $actions->{$act}->{name} . '</small></a></div>'
     };
 
@@ -249,6 +259,29 @@ sub afterInsertUpdate {
     
     $mailing->updateLetterSize();
     return 1;
+};
+
+sub afterSetFormValues {
+    my ($list,$form,$fa) = (shift,shift,shift);
+    
+    if ($fa eq 'insert') {
+        $form->param('contentid',"id=".$form->getValue('id'));
+    };
+    
+    1;
+};
+
+sub checkData {
+    my ($list,$form,$fa) = (shift,shift,shift);
+    
+    my $plainField=$form->getField('plain_content');
+    my $htmlField=$form->getField('html_content');
+    
+    if (is_empty($plainField->value()) && is_empty($htmlField->value())) {
+        $htmlField->setError("Отсутствует рассылаемый контент");
+        $plainField->setError("Отсутствует рассылаемый контент");
+    };
+    return NG::Block::M_OK;
 };
 
 sub testDelivery {
