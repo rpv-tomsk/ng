@@ -274,6 +274,8 @@ sub buildList {
                 AJAX_URL=> getURLWithParams($myurl,"action=showsearchform","_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),$self->getPagesParam(),"ref=".$self->buildRefCurrentUrl()),
         };
     };
+    my $ma = $self->{_multiActions};
+    $ma = undef unless $cnt;
     
     my $template = $self->template() || return $self->error("NG::Module::List::buildList(): Template not opened");
     $template->param(
@@ -286,7 +288,7 @@ sub buildList {
         TOP_LINKS => $self->{_topbar_links},
         MYBASEURL => $myurl,
         THISURL   => getURLWithParams($myurl,"_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),$self->getPagesParam(),"ref=".$self->buildRefCurrentUrl()),
-        MULTIACTIONS => $self->{_multiActions},
+        MULTIACTIONS => $ma,
     );
 
     return NG::Block::M_OK;
