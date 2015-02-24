@@ -1,7 +1,6 @@
 package NG::SiteModule::Faq;
 use strict;
 use NGService;
-use NMailer;
 use NSecure;
 use NHtml;
 use NG::PageModule;
@@ -123,12 +122,12 @@ sub processModulePost {
     $form->setFormValues();
     $form->StandartCheck();
     unless ($form->has_err_msgs()) {
-        foreach my $key qw(q_name q_mail q_text) {
+        foreach my $key (qw(q_name q_mail q_text)) {
             $form->param($key,htmlspecialchars($form->getValue($key)));                
         };        
         $form->param('id',$db->get_id($form->{'_table'}));
         $form->insertData();
-        $self->_send_notify();
+        #$self->_send_notify();
         return $cms->redirect(getURLWithParams($page_row->{'url'},'ok=1'));
     };
     $self->setStash('form',$form);
@@ -136,6 +135,7 @@ sub processModulePost {
     return 1; 
 };
 
+=comment
 sub _send_notify {
     my $self = shift;
     my $dbh = $self->dbh();
@@ -155,7 +155,7 @@ sub _send_notify {
         $nmailer->send_to_list(@mails);
     };
 };
-
+=cut
 
 
 package NG::SiteModule::Faq::List;
