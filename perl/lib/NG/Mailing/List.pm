@@ -322,6 +322,7 @@ sub testDelivery {
                 };
                 push @rcpt, $_;
             };
+            last if $errorMsg;
             
             #Получатели корректны, делаем тестовую отправку
             my $mailing = NG::Mailing::Mailing->load($id);
