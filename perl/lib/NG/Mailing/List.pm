@@ -49,7 +49,7 @@ sub config {
     $self->{BEFORE_LIST_DATA} = $messages{$status};
     
     my $mObj = $self->getModuleObj();
-    my $rtfconfig = $mObj->moduleParam('rtfconfig') || 'rtfconfig';
+    my $rtfconfig = $mObj->moduleParam('rtfconfig') || 'rtfConfig';
     my $uploaddir = $mObj->moduleParam('uploaddir') || '';
     
     $self->fields(
