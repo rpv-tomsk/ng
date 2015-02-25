@@ -26,6 +26,7 @@ sub init {
     #Resulting data object
     $self->{_dataObj} = undef;
     $self->{imgCache} = {};    #
+    $self->{_mObj} = undef;    #Кешированный объект метода доставки
 
     $self->{_opts} = {};
     $self->{_charset} = $cms->{_charset};
@@ -260,6 +261,7 @@ sub setGroupCode {
     $self->{_gcode} = shift;
     $self->{_gsubcode} = undef;
     $self->{_mcode} = undef;
+    $self->{_mObj}  = undef;
 };
 
 sub _cparam ($$) {
@@ -362,26 +364,31 @@ sub send {
         $opts->{To} = [$debugTo];  #Не забываем слать отладку только себе.
     };
     
-    my $s = $cms->getObject($class,$self) or return $cms->error();
+    my $s = $self->{_mObj} ||= $cms->getObject($class,$self);
     $s->send($d,$opts);
 };
 
 package NG::Mailer::SMTP;
 use strict;
+use Scalar::Util();
 
 sub new {
     my $class = shift;
     my $self = {};
     bless $self,$class;
     $self->{Mailer} = shift;
+    $self->{SMTP} = undef;
+    
+    Scalar::Util::weaken($self->{Mailer});
+    
     $self;
 };
 
-sub send {
+sub _connect {
+    my $self = shift;
+    
     #require Net::SMTP;
     use Net::SMTP;
-    
-    my ($self,$data,$opts) = (@_);
     
     my $cms = $self->cms();
     my $m   = $self->{Mailer};
@@ -392,7 +399,7 @@ sub send {
         $p{$h} = $v;
     };
     $p{Host}||="localhost";
-    my $smtp = Net::SMTP->new(%p) or return $cms->error("SMTP: Failed to connect to server: ".$!);
+    my $smtp = $self->{SMTP} = Net::SMTP->new(%p) or return $cms->error("SMTP: Failed to connect to server: ".$!);
     
     %p = ();
     foreach my $h (qw/NoAuth AuthUser AuthPass/) {
@@ -403,32 +410,72 @@ sub send {
         $smtp->supports('AUTH') or                return $cms->error("SMTP: AUTH not supported");
         $smtp->auth($p{AuthUser},$p{AuthPass}) or return $cms->error("SMTP: AUTH failed: ".$!." ".$smtp->message);
     };
+    $smtp;
+};
+
+sub send {
+    my ($self,$data,$opts) = (@_);   #$opts - To, From, Notify SkipBad ORcpt
+
+    my $cms = $self->cms();
     
     $opts->{From} or return $cms->error("SMTP: No 'From' option found.");
-    $smtp->mail($opts->{From}) or return $cms->error("SMTP: MAIL failed: ".$!." ".$smtp->message);
+    ($opts->{To} && ref ($opts->{To}) eq "ARRAY" && @{$opts->{To}}) or return $cms->error("SMTP: No 'To' option found.");
     
+    my $smtp = $self->{SMTP};
+    
+    my $cached = 0;
+    if ($smtp) {
+        $cached = 1;
+    }
+    else {
+        $smtp = $self->_connect();
+        return $cms->error() unless $smtp;
+    };
+    
+    while (1) {
+        my $ret = $smtp->mail($opts->{From});
+        last if $ret;
+        if ($cached && ($smtp->code() eq '000')) {
+            warn "NG::Mailer::SMTP: Lost cached connection";
+            $smtp = $self->_connect();
+            return $cms->error() unless $smtp;
+            $cached = 0;
+            next;
+        }
+        return $cms->error("SMTP: MAIL failed: ".$!." ".$smtp->message." ".$smtp->code);
+    };
+    
+    my %p = ();
     %p = map { exists $opts->{$_} ? ( $_ => $opts->{$_} ) : () } qw/Notify SkipBad ORcpt/;
     $p{Notify} = ['NEVER'] unless exists $p{Notify};
     $p{SkipBad} = 1 unless exists $p{SkipBad};
-    ($opts->{To} && ref ($opts->{To}) eq "ARRAY" && @{$opts->{To}}) or return $cms->error("SMTP: No 'To' option found.");
     $smtp->recipient(@{$opts->{To}}, \%p)  or return $cms->error("SMTP: recipient() failed: ".$!." ".$smtp->message);
     
     $smtp->data()                 or return $cms->error("SMTP: DATA failed: ".$!." ".$smtp->message);
     $smtp->datasend($data->as_string); #<- this is the best...
     #$data->print_for_smtp($smtp);
     $smtp->dataend()              or return $cms->error("SMTP: dataend() failed: ".$!." ".$smtp->message);
-    $smtp->quit;
     return 1;
+};
+
+sub DESTROY {
+    my $self = shift;
+    
+    $self->{SMTP}->quit() if $self->{SMTP};
 };
 
 package NG::Mailer::File;
 use strict;
+use Scalar::Util();
 
 sub new {
     my $class = shift;
     my $self = {};
     bless $self,$class;
     $self->{Mailer} = shift;
+    
+    Scalar::Util::weaken($self->{Mailer});
+    
     $self;
 };
 
