@@ -724,8 +724,14 @@ return 1;
     FAQ_SUBGROUP=COMMON1
     ;
     COMMON1_CC="sda@nikolas.ru"               ; Хочу получать всю почту.
-    
-    
+    ;
+    ;Пример настройки отправки части почты на другой сервер
+    MAILING_Method=MAILING
+    %MAILING_Class=NG::Mailer::SMTP
+    %MAILING_Host=mail3-lists.nikolas.ru
+    %MAILING_Port=225
+    %MAILING_Hello=buy.fabrikagrezkhv.ru
+
     ; SMTP mail delivery type
     %SMTP_Class=NG:Mailer::SMTP
     %SMTP_Host=mail.areainter.net,mail.polden.info
