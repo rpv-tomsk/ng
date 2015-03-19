@@ -872,8 +872,13 @@ sub _regTmplBlock {
     return "[Блок $bCode не является плагином]" if $isPlugin  && $block->{TYPE} != 1;
     return "[Блок $bCode не является модулем]"  if !$isPlugin && $block->{TYPE} != 0;
      
-    warn "Block $bCode found, registering it into template '$self->{_tmplFile}'";
-    $dbh->do("insert into ng_tmpl_blocks (template, block_id) values (?,?)", undef, $self->{_tmplFile}, $block->{ID}) or return $DBI::errstr;
+    if ($NG::BlocksController::config::skipBlockToTemplateRegistration) {
+        warn "Block $bCode does not registered into template '$self->{_tmplFile} due to skipBlockToTemplateRegistration=1 flag.'";
+    }
+    else {
+        warn "Block $bCode found, registering it into template '$self->{_tmplFile}'";
+        $dbh->do("insert into ng_tmpl_blocks (template, block_id) values (?,?)", undef, $self->{_tmplFile}, $block->{ID}) or return $DBI::errstr;
+    };
      
     $block->{SOURCE}="tmpl";
     $self->_pushBlock($block) or return "[".$cms->getError()."]";
