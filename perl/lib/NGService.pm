@@ -176,6 +176,7 @@ sub getURLWithParams {
         };
     }
     $url =~ s/\&$//;
+    $url =~ s/\?$//;
     return $url;
 };
 
