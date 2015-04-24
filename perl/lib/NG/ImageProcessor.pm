@@ -380,7 +380,8 @@ sub saveToField {
     step2       = saveToFile         #сохраняем картинку с идентификатором small в некий файл
     step2_id    = "small"
     step2_dir   = "/some/dir"        #если директория не совпадает с директорией UPLOADDIR исходного поля
-    step2_mask  = "{f}_small.{e}"    #маска... маски совпадают с тем что есть в NG::Field
+    step2_file  = "filename.ext"     #Фиксированное имя файла
+    step2_mask  = "{f}_small.{e}"    #или маска... маски совпадают с тем что есть в NG::Field
 =cut
 
 sub saveToFile {
@@ -388,6 +389,7 @@ sub saveToFile {
     my $pCtrl = $self->getCtrl();
     my $cms = $self->cms();
     my $dir = $pCtrl->param("dir");
+    my $file= $pCtrl->param("file");
     my $mask = $pCtrl->param("mask");
     
     if ($dir =~ /\{siteroot\}/) {
@@ -398,28 +400,33 @@ sub saveToFile {
         $dir =~ s/\{docroot\}/$cms->getDocRoot()/;
     };
 
+    my $dest = undef;
+    if ($file) {
+        $dest = $dir.$file;
+    }
+    elsif ($mask) {
+        if ($mask =~ /\{[fk]\}/) {
+            my $field = $pCtrl->getCurrentField();
 
-    if ($mask) {
-        my $field = $pCtrl->getCurrentField();
-        
-        my $fieldName = $field->{FIELD};
-        $mask =~ s@\{f\}@$fieldName@;
-        
-        my $key = $field->parent()->getComposedKeyValue();
-        $mask =~ s@\{k\}@$key@;
+            return $pCtrl->error("Отсутствует поле/имя поля для заполнения маски имени файла") unless $field;
+
+            my $fieldName = $field->{FIELD};
+            $mask =~ s@\{f\}@$fieldName@;
+            
+            my $key = $field->parent()->getComposedKeyValue();
+            $mask =~ s@\{k\}@$key@;
+        }
         
         my $rand = int(rand(9999));
         $mask =~ s@\{r\}@$rand@;
-        
 #         
 #         $ext = ".".$ext if $ext;
 #         $mask =~ s@\{e\}@$ext@;    
+        $dest = $dir.$mask;
     }
     else {
-        $mask = "";
+        return $pCtrl->error("Отсутствует имя файла для сохранения изображения или маска для его формирования.");
     };
-
-    my $dest = $dir.$mask;
     
     my $iObj = $self->_getIObj(0) or return $pCtrl->error();
     my $err = $iObj->Write($dest);
