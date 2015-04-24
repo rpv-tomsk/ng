@@ -295,7 +295,8 @@ sub setFormValue {
     $field->{_processed}   = 0;
     
     if ($field->{TYPE} eq 'multivalue') {
-        foreach my $id (split /,/,$q->param($field->{FIELD})){
+        my $v = $q->param($field->{FIELD})||'';
+        foreach my $id (split /,/,$v) {
             $field->{_NEWH}->{$id} = $id;
             push @{$field->{_NEWA}},$id;
         }
