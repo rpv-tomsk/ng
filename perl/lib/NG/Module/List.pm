@@ -598,6 +598,7 @@ sub processForm {
                 $e ||= "Обработчик doFormAction не вернул содержимого ответа";
                 return $self->error($ret);
             };
+            return $ret if ref($ret) && $ret->isa('NG::BlockContent');
             return $self->output($ret);
         }
         else {
