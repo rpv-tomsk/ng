@@ -435,9 +435,17 @@ sub setDBValue {
     return $ret;
 };
 
+#
+# Заполняет внутренние структуры данными, полученными из БД.
+# Доступны все поля таблицы, полученные из БД.
+# Перечень полей таблицы определяется возвратом вызовов dbFields() по всем полям формы.
+#
 sub setLoadedValue {
     my $self = shift;
-    my $value = shift;
+    my $row  = shift;
+    
+    return 1 if $self->{IS_FAKEFIELD};
+    my $value = $row->{$self->{FIELD}};
     
     my $ret = $self->_setDBValue($value,@_);
     if ($ret) {
@@ -482,7 +490,7 @@ sub _setValue {
 	}
 	elsif (($field->{TYPE} eq "number") || ($field->{TYPE} eq "int")) {
 		$field->{VALUE} = $value;
-        $field->{VALUE} = undef if $value eq "";
+        $field->{VALUE} = undef if defined $value && $value eq "";
 	}
 	else {
 		$field->{VALUE} = $value;
@@ -602,6 +610,7 @@ sub genNewFileName {
 
 #Возвращает список полей таблицы, необходимых для выполнения операции формой
 #Операции:
+# - load   - Загрузка значений
 # - insert - Вставка новой записи в таблицу
 # - update - Обновление записи в таблице
 sub dbFields {
@@ -612,6 +621,7 @@ sub dbFields {
 
 #Возвращает значение для сохранения в таблице / для использования в условиях запроса
 #
+# $dbField заполнен, если идет сохранение (insert/update) формы, в остальных случаях (а их достаточно) - undef
 sub dbValue {
 	my ($field,$dbField) = (shift,shift);
     die "Not implemented" if $dbField && $dbField ne $field->{FIELD};
@@ -1078,45 +1088,17 @@ sub _setValueFromField {
     return 1;
 };
 
-
+## Обработка перед сохранением
 sub process {
     my $self = shift;
+    
+    my $options = $self->{OPTIONS};
+    return 1 unless $options && ($options->{STEPS} || $options->{METHOD});
 
 	my $oldDbV = $self->{OLDDBVALUE};
 	my $newDbV = $self->dbValue();
 
-    return 1 if ($oldDbV && $oldDbV eq $newDbV ); 
-    
-    if (exists $self->{METHOD}) {
-        my $method = $self->{METHOD};
-        return $self->setError("Класс ".ref($self)." поля ".$self->{FIELD}." не содержит метода ".$method." обработки данных") unless $self->can($method);
-        $self->$method() or return $self->showError("Ошибка вызова метода $method. Метод не возвратил текст ошибки.");
-        return 1;
-    };
-    
-    my $options = $self->{OPTIONS};
-    
-    unless ($options->{STEPS} || $options->{METHOD}) {
-        return 1 unless $self->isFileField();
-        my $newDBV = $self->dbValue();
-        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDBV;
-        
-        eval { mkpath($self->parent()->getDocRoot().$self->{UPLOADDIR}); };
-        if ($@) {
-            $@ =~ /(.*)at/s;
-            return $self->setError("Ошибка при создании директории: $1");
-        };
-                
-        #TODO: хм, а что будет если $self->value() вернет путь к несуществующему файлу, равный $dirfile ?
-        if ($self->value() ne $dest) {
-            copy($self->value(),$dest) or return $self->setError("Ошибка копирования файла: ".$!);
-            $self->setDBValue($newDBV);
-            my $mask = umask();
-            $mask = 0777 &~ $mask;
-            chmod $mask, $dest;
-        };
-        return 1;
-    };
+    return 1 if ($oldDbV && $oldDbV eq $newDbV); 
     
     my $procClass = $self->getProcessorClass() or return $self->showError("Ошибка вызова метода getProcessorClass(). Метод не возвратил текст ошибки.");
     
@@ -1151,6 +1133,7 @@ sub process {
 };
 
 #Возвращает признак, было ли изменено значение поля таблицы
+#Вызывается без $dbField для определения необходимости вызова методов processChilds(), process(), clean()
 sub changed {
     my ($field,$dbField) = (shift,shift);
     die "Not implemented" if $dbField && $dbField ne $field->{FIELD};
@@ -1163,11 +1146,30 @@ sub beforeSave {
     my $self = shift;
     my $action = shift;
     
-    my $oldDbV = $self->{OLDDBVALUE};
-    my $newDbV = $self->dbValue();
-    
     if ($self->isFileField()) {
         return $self->setError("Предыдущее значение поля не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
+        return $self->setError("Не указано значение опции UPLOADDIR для поля ".$self->{FIELD}) unless $self->{UPLOADDIR};
+        
+        my $oldDbV = $self->{OLDDBVALUE};
+        my $newDbV = $self->dbValue();
+        
+        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
+        eval { mkpath($self->parent()->getDocRoot().$self->{UPLOADDIR}); };
+        if ($@) {
+            $@ =~ /(.*)at/s;
+            return $self->setError("Ошибка при создании директории: $1");
+        };
+        
+        #TODO: хм, а что будет если $self->value() вернет путь к несуществующему файлу, равный $dirfile ?
+        if ($self->value() ne $dest) {
+            move($self->value(),$dest) or return $self->setError("Ошибка копирования файла: ".$!);
+            $self->setDBValue($newDbV);
+            my $mask = umask();
+            $mask = 0777 &~ $mask;
+            chmod $mask, $dest;
+        };
+        $self->{TMP_FILE} = "";
+        
         if ($oldDbV && $oldDbV ne $newDbV) {
             unlink $self->parent()->getDocRoot().$self->{UPLOADDIR}.$oldDbV if $oldDbV;
         };
@@ -1408,7 +1410,24 @@ sub uploadRtfImage {
 sub deleteFile {
     my $field = shift;
     my $is_ajax = shift;
-    my $ret = $field->parent()->cleanField($field);
+    
+    my $ret = eval {
+        my $ret = $field->parent()->cleanField($field);
+    };
+    if (my $exc = $@) {
+        my $excMsg  = "";
+        if (NG::Exception->caught($exc)) {
+            my $excCode = $exc->code();
+            $excMsg  = $exc->message()." (".$excCode.")";
+        }
+        elsif (ref $exc){
+            $excMsg = "Неизвестное исключение класса ".(ref $exc);
+        }
+        else {
+            $excMsg = $exc;
+        };
+        return $field->error($excMsg);
+    };
     
     if ($ret && $is_ajax) {
         return "<!-- -->"; #STUB

@@ -791,8 +791,10 @@ sub _load {
 	#Компонуем запрос
     my $fields = "";
     foreach my $field (@{$afields}) {
-        next if ($field->{IS_FAKEFIELD});
-        $fields .= ",".$field->{FIELD};
+        my @fieldDbFields = $field->dbFields('load');
+        foreach my $dbField (@fieldDbFields) {
+            $fields .= ",".$dbField;
+        };
     };
 
     #Компонуем ключи и условие запроса
@@ -810,15 +812,13 @@ sub _load {
 	
 	my $sth = $dbh->prepare("select $fields from $table where $where") or return $self->error("NG::Form->_load(): Ошибка в запросe: $DBI::errstr");
 	$sth->execute(@keys) or return $self->error("NG::Form->_load(): Ошибка исполнения запроса: $DBI::errstr");
-	my $tmp = $sth->fetchrow_hashref();
-    return $self->error("Запрошенные данные не найдены") unless $tmp;
+	my $row = $sth->fetchrow_hashref();
+	return $self->error("Запрошенные данные не найдены") unless $row;
 	$sth->finish();
 
     #Выставляем полученные значения
 	foreach my $field (@{$afields}) {
-        unless ($field->{IS_FAKEFIELD}) {
-            $field->setLoadedValue($tmp->{$field->{'FIELD'}}) or return $self->error("Ошибка вызова setLoadedValue() поля ".$field->{FIELD}.": ".$field->error());
-        };
+        $field->setLoadedValue($row) or return $self->error("Ошибка вызова setLoadedValue() поля ".$field->{FIELD}.": ".$field->error());
 	};
     #Дополнительные действия
     foreach my $field (@{$afields}) {
@@ -873,40 +873,38 @@ sub cleanField {
     my $field = shift;
 
     return $self->error("Операция запрещена: У очищаемого поля стоит признак \"Не пустое\"") if ($field->{IS_NOTNULL});
-	
+
     my @fields = ();
     my @loadfields = ();
-   
-    push @fields,$field;
-    push @loadfields, $field if ($field->isFileField() || $field->type() eq "rtffile");
 
-    if (exists $field->{CHILDS}) {
-        my $childs = $field->getChilds();
-        return $self->showError() unless $childs;
+    push @loadfields, $field if $field->{NEED_LOAD_FOR_UPDATE};
+
+    my $childs = $field->getChilds();
+    return $self->error("Результат getChilds() поля ".$field->{FIELD}." не является ссылкой на массив") unless $childs && ref $childs eq "ARRAY";
+    foreach my $ch (@{$childs}) {
+        my $child = $self->_getfieldhash($ch->{FIELD}) or return $self->error("Подчиненное поле ".$ch->{FIELD}." не найдено");
         
-        return $self->error("Параметр CHILDS не является ссылкой на массив") unless (ref $field->{CHILDS} eq "ARRAY");
-        foreach my $ch (@{$childs}) {
-            my $child = $self->_getfieldhash($ch->{FIELD}) or return $self->error("Подчиненное поле ".$ch->{FIELD}." не найдено");
-			
-			#next if $child->{IS_NOTNULL};
-			return $self->error("Вложенная подчиненность полей недопустима") if exists $child->{CHILDS};
+        #next if $child->{IS_NOTNULL};
+        
+        #Проверяем наличие вложенной подчиненности
+        my $childChilds = $child->getChilds();
+        return $self->error("Результат getChilds() поля ".$childs->{FIELD}." не является ссылкой на массив") unless $childChilds && ref $childChilds eq "ARRAY";
+        return $self->error("Вложенная подчиненность полей недопустима") if scalar @$childChilds;
 
-            if ( $child->isFileField() || $child->type() eq "rtffile" ) {
-				push @loadfields, $child;
-			}
-			else {
-				$child->setLoadedValue("") or return $self->error("Ошибка вызова setLoadedValue() поля ".$child->{FIELD}." :".$child->error());
-			};
-            push @fields,$child;
-        };
+        push @loadfields, $child if $child->{NEED_LOAD_FOR_UPDATE};
+        push @fields,$child;
     };
     $self->_load(\@loadfields) or return 0;
-
+    
+    $field->clean();
+    $field->processChilds() or return $self->error("Ошибка вызова processChilds() поля ".$field->{FIELD}." :".$field->error());
+    
     foreach my $f (@fields) {
         $f->clean() unless $f->changed();
-        $f->processChilds() or return $self->error("Ошибка вызова processChilds() поля ".$field->{FIELD}." :".$field->error());
+        #$f->processChilds(); Вложенная подчиненность запрещена
     };
- 
+    
+    unshift @fields,$field;
     $self->_update(\@fields) or return 0;
     return 1;
 }
