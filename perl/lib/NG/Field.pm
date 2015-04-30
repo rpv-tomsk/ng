@@ -1149,29 +1149,34 @@ sub beforeSave {
     if ($self->isFileField()) {
         return $self->setError("Предыдущее значение поля не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
         return $self->setError("Не указано значение опции UPLOADDIR для поля ".$self->{FIELD}) unless $self->{UPLOADDIR};
-        
+
+        my $uplDir = $self->parent()->getDocRoot().$self->{UPLOADDIR};
         my $oldDbV = $self->{OLDDBVALUE};
         my $newDbV = $self->dbValue();
-        
-        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
-        eval { mkpath($self->parent()->getDocRoot().$self->{UPLOADDIR}); };
-        if ($@) {
-            $@ =~ /(.*)at/s;
-            return $self->setError("Ошибка при создании директории: $1");
-        };
-        
-        #TODO: хм, а что будет если $self->value() вернет путь к несуществующему файлу, равный $dirfile ?
-        if ($self->value() ne $dest) {
-            move($self->value(),$dest) or return $self->setError("Ошибка копирования файла: ".$!);
+        my $target = $uplDir.$newDbV;
+
+        my $file = $self->value();
+        if ($file && $file ne $target) {
+            my $targetDir = $target;
+            $targetDir=~s@[^\/]+$@@; #вырезаем текст после последнего слеша
+
+            eval { mkpath($targetDir); };
+            if ($@) {
+                $@ =~ /(.*)at/s;
+                return $self->setError("Ошибка при создании директории: $1");
+            };
+
+            move($file,$target) or return $self->setError("Ошибка копирования файла: ".$!);
             $self->setDBValue($newDbV);
+            $self->{TMP_FILE} = "";
+
             my $mask = umask();
             $mask = 0777 &~ $mask;
-            chmod $mask, $dest;
+            chmod $mask, $target;
         };
-        $self->{TMP_FILE} = "";
-        
+
         if ($oldDbV && $oldDbV ne $newDbV) {
-            unlink $self->parent()->getDocRoot().$self->{UPLOADDIR}.$oldDbV if $oldDbV;
+            unlink $uplDir.$oldDbV if $oldDbV;
         };
     }
     elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
