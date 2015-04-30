@@ -154,6 +154,10 @@ sub get_links {
     return $text;
 };
 
+
+##
+## Цель: фильтровать пользовательский ввод, чтобы не допустить вставки кода
+##
 sub htmlspecialchars {
 	my $str = shift;
 	if (!defined $str) { return undef; };
@@ -168,23 +172,25 @@ sub htmlspecialchars {
 sub unhtmlspecialchars {
 	my $str = shift;
 	if (!defined $str) { return undef; };
-	$str =~ s/&amp;/\&/g;
 	$str =~ s/&lt;/\</gi;
 	$str =~ s/&gt;/\>/gi;
 	$str =~ s/&#039;/\'/g;
 	$str =~ s/&quot;/\"/g;
+	$str =~ s/&amp;/\&/g;
 	return $str;
 };
 
 sub unescapehtml {
-    my $str= shift;
+    my $str = shift;
     return $str if !defined $str;
     $str=~ s/&lt;/>/g;
     $str=~ s/&gt;/</g;
-    $str=~ s/&quot;/"/g;
-    $str=~ s/&apos;/'/g;
-    $str=~ s/&amp;/&/g;
+    $str=~ s/&quot;/\"/g;
+    $str=~ s/&apos;/\'/g;
+    $str=~ s/&laquo;/\«/g;
+    $str=~ s/&raquo;/\»/g;
     $str=~ s/&#039;/'/g;
+    $str=~ s/&amp;/&/g;
     return $str;
 };
 
