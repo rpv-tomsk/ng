@@ -179,7 +179,6 @@ sub _addfield { #internal method
 
     my $type = $fObj->type();
     if ($type eq "id" || $type eq "filter") {
-        return $self->error("Field with type \"id\" or \"filter\" can`t have attribute IS_FAKEFIELD") if ($field->{IS_FAKEFIELD});
         push @{$self->{_keyfields}},$fObj ;
     }
     elsif (($type eq "rtf") || ($type eq "rtffile")) {
@@ -923,8 +922,7 @@ sub getComposedKeyValue() {
     my $self = shift;
     my $keyValue = "";
     foreach my $field (@{$self->{_keyfields}}) {
-        return $self->error("Field with type \"id\" or \"filter\" can`t have attribute IS_FAKEFIELD") if ($field->{IS_FAKEFIELD});
-        die "Can`t find value for key field \"$field->{FIELD}\" in NG::Form::getComposedKeyValue()" if(is_empty($field->{VALUE}));
+        die "Can`t find value for key field \"$field->{FIELD}\" in NG::Form::getComposedKeyValue()" if is_empty($field->{VALUE});
         $keyValue .= "_".$field->{VALUE};
     };
     $keyValue =~ s/^_//;
@@ -936,7 +934,7 @@ sub _getKeyURLParam {
     my $param = "";
     foreach my $field (@{$self->{_keyfields}}) {
         next if $field->{TYPE} eq "filter";
-        die "Can`t find value for key field \"$field->{FIELD}\" in Form::_getKeyURLParam()" if (is_empty($field->{VALUE}));
+        die "Can`t find value for key field \"$field->{FIELD}\" in NG::Form::_getKeyURLParam()" if is_empty($field->{VALUE});
         $param .= $field->{FIELD}."=".$field->{VALUE}."&";
     };
     $param =~ s/\&$//;
@@ -947,7 +945,6 @@ sub getKeyWhere {
     my $self = shift;
     my $where = "";
     foreach my $field (@{$self->{_keyfields}}) {
-        return $self->error("Field with type \"id\" or \"filter\" can`t have attribute IS_FAKEFIELD") if ($field->{IS_FAKEFIELD});
         $where .= " ".$field->{FIELD}."=? and";
     };
     $where  =~ s/and$//;
@@ -958,8 +955,7 @@ sub getKeyValues {
     my $self = shift;
     my @keyValues = ();
     foreach my $field (@{$self->{_keyfields}}) {
-        return $self->error("Field with type \"id\" or \"filter\" can`t have attribute IS_FAKEFIELD") if ($field->{IS_FAKEFIELD});
-        die "Can`t find value for key field \"$field->{FIELD}\" in Form::getKeyValues()" if(is_empty($field->{VALUE}));
+        die "Can`t find value for key field \"$field->{FIELD}\" in NG::Form::getKeyValues()" if is_empty($field->{VALUE});
         push @keyValues, $field->{VALUE};
     }
     return wantarray?@keyValues:\@keyValues;
@@ -1026,13 +1022,11 @@ sub Delete {
     foreach my $field (@{$self->{_fields}}) {
         my $type = $field->{TYPE};
         if ($type eq "id" || $type eq "filter") {
-            return $self->error("Field with type \"id\" or \"filter\" can`t have attribute IS_FAKEFIELD") if ($field->{IS_FAKEFIELD});
-            return $self->error("Не найдено значение ключевого поля ".$field->{FIELD}) if (is_empty($field->{VALUE}));
+            return $self->error("Не найдено значение ключевого поля ".$field->{FIELD}) if is_empty($field->{VALUE});
             push @params, $field->{VALUE};
             push @fields, $field->{FIELD};
             next;
         }
-        next if ($field->{IS_FAKEFIELD});
         if ($field->{NEED_LOAD_FOR_UPDATE}) {
             push @loadfields, $field;
         };
