@@ -444,7 +444,10 @@ sub setLoadedValue {
     my $self = shift;
     my $row  = shift;
     
-    return 1 if $self->{IS_FAKEFIELD};
+    unless (exists $row->{$self->{FIELD}}) {
+        return 1 if $self->{IS_FAKEFIELD};
+        return $self->setError("setLoadedValue(): Отсутствуют данные для поля");
+    };
     my $value = $row->{$self->{FIELD}};
     
     my $ret = $self->_setDBValue($value,@_);
