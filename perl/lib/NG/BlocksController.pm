@@ -1,8 +1,10 @@
 package NG::BlocksController;
 use strict;
 
+use Carp;
 use Data::Dumper;
 
+our @CARP_NOT;
 our $CACHE;
 
 our $MAX_CACHE_TIME = 300;            #  5 min
@@ -33,6 +35,7 @@ sub init {
     #
     $self->{_regions} = {};
     $self->{_tmplAttached} = 0; #Флаг для процедуры автоматической разрегистрации блока
+    $self->{_insideAB} = 0;     #Флаг выполнения getBlockKeys()/getBlockContent() для АБ
     
     $self;
 };
@@ -113,8 +116,9 @@ sub _pushBlock {
           Для АБ:
             RELATED          - Данные для подчиненных блоков, выставляются при формировании контента.
             HASRELATED       - выставляется в getBlockKeys(), признак, что в getBlockContent() или из кеша в RELATED будут выставлены данные.
+            ABFIRST          - ??
             REDIRECT         - АБ говорит что его строить не надо, а нужен редирект.
-            HELPER           - стандартизированный ключ, значение которого можно использовать в прочих (не-АБ) блоках. В кеш не сохраняется.
+            HELPER           - стандартизированный ключ АБ, значение которого можно использовать в прочих (не-АБ) блоках. В кеш не сохраняется.
     
      CACHEKEYS   - метаданные, полученные из кеша, при их наличии.
         Состав метаданных:
@@ -125,10 +129,13 @@ sub _pushBlock {
             
             USED_VERSIONS    - Значение, выставленное в функции построения контента
             ETAG             - Ключи проверки устаревания закешированного контента
-            LM               - 
+            LM               -
+            
+            BREADCRUMBS       - кешированное значение, которое АБ может выставить вызовом cms->setBreadcrumbs()
         
+     BREADCRUMBS - значение, выставленное вызовом cms->setBreadcrumb() (только для АБ)
      CONTENT
-     VERSIONS    - массив значений, соответствующих элементам из VERSION_KEYS
+     VERSIONS         - массив значений, соответствующих элементам из VERSION_KEYS
      USED_VERSIONS    - массив значений, соответствующих элементам из CACHEKEYS.USED_VERSIONS
      
      MODULEOBJ   - Объект модуля блока
@@ -215,6 +222,7 @@ sub pushABlock {
     
 #NG::Profiler::saveTimestamp("pushABlock begin: ".ref($block->{MODULEOBJ})."_".$block->{ACTION},"pushABlock");
     
+    local $self->{_insideAB} = 1;
     #Запросим ключи АБ для дальнейших действий
     my $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
     #Специальный костылек для удобного возврата перенаправлений из АБ
@@ -277,6 +285,9 @@ sub pushABlock {
         if (defined $content->[0]) {
             #Ура, контент получен
             $self->_setContentFromCache($block,$content->[0]);
+            if ($block->{CACHEKEYS}->{BREADCRUMBS}) {
+                $self->cms->setBreadcrumbs($block->{CACHEKEYS}->{BREADCRUMBS});
+            };
             return $block->{CONTENT};
         };
 warn "not found cache data: $block->{CODE} ".Dumper($block->{KEYS},$block->{CACHEKEYS});
@@ -319,12 +330,32 @@ sub getABHelper {
 
     my $aBlock = $self->{_ablock} or return $self->cms->error("getABRelated(): No ActiveBlock found!");
     my $abKeys = $self->_getBlockKeys($aBlock) or return $self->cms->error();
-    use Carp;
-    our @CARP_NOT;
+    
     local @CARP_NOT = qw(NG::Application);
     croak "Key 'HELPER' doesn't exists" unless exists $abKeys->{HELPER};
     return $abKeys->{HELPER};
 };
+
+sub setABBreadcrumbs {
+    my ($self,$breadcrumbs) = (shift,shift);
+    
+    $self->{_ablock} or die "setABBreadcrumb(): No AB found!";
+    my $abKeys = $self->{_ablock}->{KEYS} or die "setABBreadcrumb(): No AB KEYS found!";
+    
+    local @CARP_NOT = qw(NG::Application);
+    croak "setBreadcrumbs() not allowed from non-AB blocks" unless $self->{_insideAB};
+    croak "AB must have HASRELATED key to use setBreadcrumbs()" if ($abKeys->{REQUEST} && !($abKeys->{HASRELATED} || $abKeys->{ABFIRST}));
+    
+    $self->{_ablock}->{BREADCRUMBS} = $breadcrumbs;
+};
+
+sub getABBreadcrumbs {
+    my $self = shift;
+    
+    $self->{_ablock} or die "getABBreadcrumb(): No AB found!";
+    return $self->{_ablock}->{BREADCRUMBS};
+};
+
 
 sub getETagSummary {
     my $self = shift;
@@ -597,6 +628,7 @@ sub _prepareCacheContent {
     };
     #Сохраняемые параметры для подчиненных блоков
     $metadata->{RELATED} = $block->{KEYS}->{RELATED} if exists $block->{KEYS}->{RELATED};
+    $metadata->{BREADCRUMBS} = $block->{BREADCRUMBS} if exists $block->{BREADCRUMBS};
     #Сохраняемые параметры для проверки устаревания
     $metadata->{VERSIONS} = $block->{VERSIONS} if exists $block->{VERSIONS};
     $metadata->{ETAG}    = $block->{KEYS}->{ETAG} if exists $block->{KEYS}->{ETAG};

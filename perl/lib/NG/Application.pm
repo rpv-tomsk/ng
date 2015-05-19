@@ -739,7 +739,16 @@ sub getABRelated {
 
 sub getABHelper {
     return $NG::Application::blocksController->getABHelper();
-}
+};
+
+sub setBreadcrumbs {
+    my ($cms,$breadcrumbs) = (shift,shift);
+    return $NG::Application::blocksController->setABBreadcrumbs($breadcrumbs);
+};
+
+sub getBreadcrumbs {
+    return $NG::Application::blocksController->getABBreadcrumbs();
+};
 
 sub isPrint {
     my $self=shift;
