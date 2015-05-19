@@ -913,86 +913,11 @@ sub gettemplate {
     return $self->getObject("HTML::Template::Compiled 0.85", %$opts);
 };
 
-
-=comment set_header setNoCache  getNoCache set_header403 set_header_nocache
-sub set_header {
-    my $self = shift;
-    return $self->set_header_nocache() if($self->getNoCache());
-    print $self->q->header(
-        -type=>$self->{_type},
-        -charset=>$self->{_charset},
-        -cookie=>$self->{_cookies},
-    );
-    $self->{_headerssent} = 1;
-};
-
-sub setNoCache {
-    my $self=shift;
-    $self->{'_nocache'}=1;
-};
-
-sub getNoCache {
-    my $self=shift;
-    return $self->{'_nocache'};
-};
-
-sub set_header403 {
-    my $self = shift;
-    print $self->q->header(
-        -type=>$self->{_type},
-        -charset=>$self->{_charset},
-        -cookie=>$self->{_cookies},
-        -status=>"403"
-    );
-    $self->{_headerssent} = 1;
-};
-
-sub set_header_nocache {
-    my $self = shift;
-    print $self->q->header(
-        -type=>$self->{_type},
-        -charset=>$self->{_charset},
-        -cookie=>$self->{_cookies},
-        -Pragma=>"no-cache",        
-        -expires=>"-1d",
-        -Cache_Control=>"no-store, no-cache, must-revalidate",
-    );
-    $self->{_headerssent} = 1;
-};
-=cut
-
 sub addCookie {
     my $self = shift;
     my $cookie = CGI::cookie(@_);
     push @{$self->{_cookies}}, $cookie;
-    #$self->setNoCache();
 };
-
-=comment get_referer_or redirect_to_referer_or
-sub get_referer_or {
-    my $self = shift;
-    my $backup_url = shift;
-    my $redirect_url = $self->q->referer();
-    if (!defined $redirect_url || $redirect_url eq "")  {
-        if (defined $backup_url && $backup_url ne "") {
-                $redirect_url = $self->q->url(-base=>1).$backup_url;
-        } else {
-                $redirect_url = $self->q->url(-base=>1)."/";
-        };
-    };
-    return $redirect_url;	
-};
-
-sub redirect_to_referer_or {
-    my $self = shift;
-    my $backup_url = shift;
-    my $redirect_url = $self->get_referer_or($backup_url);
-    print $self->q->redirect(
-        -uri=>$redirect_url,
-        -cookie=>$self->{_cookies},
-    );
-};
-=cut
 
 sub _header {
     my $self = shift;
