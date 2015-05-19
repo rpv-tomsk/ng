@@ -2,7 +2,6 @@ package NG::Application;
 use strict;
 
 use Carp;
-use Carp qw(cluck);
 use NGService;
 use NSecure;
 
