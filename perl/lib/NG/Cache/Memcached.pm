@@ -229,7 +229,7 @@ sub _initMemcached {
 sub initialize {
     my ($class,$params) = (shift,shift);
     
-    die "NG::Cache::Memcached->initialize(): initialize() must be called only from BEGIN {} blocks" unless ${^GLOBAL_PHASE} eq "START" || exists $ENV{MOD_PERL};
+    die "NG::Cache::Memcached->initialize(): initialize() must be called only from BEGIN {} blocks" unless $^V lt v5.14.0 || ${^GLOBAL_PHASE} eq "START" || exists $ENV{MOD_PERL};
     die "NG::Cache::Memcached->initialize(): No parameters passed" unless $params && ref $params eq "HASH";
     die "NG::Cache::Memcached->initialize(): Another cache is already set up." if $NG::Application::Cache and ref $NG::Application::Cache ne "NG::Cache::Stub";
     
