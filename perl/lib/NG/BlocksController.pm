@@ -114,6 +114,7 @@ sub _pushBlock {
             RELATED          - ƒанные дл€ подчиненных блоков, выставл€ютс€ при формировании контента.
             HASRELATED       - выставл€етс€ в getBlockKeys(), признак, что в getBlockContent() или из кеша в RELATED будут выставлены данные.
             REDIRECT         - јЅ говорит что его строить не надо, а нужен редирект.
+            HELPER           - стандартизированный ключ, значение которого можно использовать в прочих (не-јЅ) блоках. ¬ кеш не сохран€етс€.
     
      CACHEKEYS   - метаданные, полученные из кеша, при их наличии.
         —остав метаданных:
@@ -308,6 +309,18 @@ sub getABRelated {
     };
     return $aBlock->{CACHEKEYS}->{RELATED} if exists $aBlock->{CACHEKEYS} && $aBlock->{CACHEKEYS}->{RELATED};
     return $aBlock->{KEYS}->{RELATED} || return $self->cms->error("Active Block does not set value to RELATED key");
+};
+
+sub getABHelper {
+    my $self = shift;
+
+    my $aBlock = $self->{_ablock} or return $self->cms->error("getABRelated(): No ActiveBlock found!");
+    my $abKeys = $self->_getBlockKeys($aBlock) or return $self->cms->error();
+    use Carp;
+    our @CARP_NOT;
+    local @CARP_NOT = qw(NG::Application);
+    croak "Key 'HELPER' doesn't exists" unless exists $abKeys->{HELPER};
+    return $abKeys->{HELPER};
 };
 
 sub getETagSummary {

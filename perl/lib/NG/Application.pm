@@ -738,6 +738,10 @@ sub getABRelated {
     return $NG::Application::blocksController->getABRelated();
 };
 
+sub getABHelper {
+    return $NG::Application::blocksController->getABHelper();
+}
+
 sub isPrint {
     my $self=shift;
     my $q = $self->q();
