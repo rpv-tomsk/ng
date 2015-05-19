@@ -796,6 +796,7 @@ sub addLinkedPages {
         NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Exception: '.$exc->message.' Code: '.$exc->code) unless NG::SiteStruct::Exception->caught($exc);
         die $exc; #Raise up.
     };
+    $self->_updateKeysVersion();
     return $ret;
 };
 
@@ -880,23 +881,28 @@ sub deleteLinkedPages {
         $dbh->do("delete from ng_sitestruct where id = ?",undef,$dpageId) or return $self->error($DBI::errstr);
     };
     
+    my @vk = ();
     #Вызываем обработчики уведомлений
     foreach my $dpageId (@$deletePages) {
         my $dpageObj = $lpageObjs->{$dpageId};
         NGPlugins->invoke('NG::Application','afterDeleteNode',{PAGEID=>$dpageId,PAGEOBJ=>$dpageObj});
+        push @vk, {pageId=>$dpageId};
     };
     
     #Если не осталось страниц в линке, делаем финальную подчистку
     unless (scalar keys %{$lpageObjs}) {
         NGPlugins->invoke('NG::Application','afterDeleteNodeLink',{LINKID=>$linkId});
+        push @vk, {linkId=>$linkId};
     }
     else {
         #Если не осталось страниц в некотором языке линка, делаем подчистку
         foreach my $langId (keys %{$linkLang}) {
             next if scalar(keys %{$linkLang->{$langId}});
             NGPlugins->invoke('NG::Application','afterDeleteNodeLink',{LINKID=>$linkId, LANGID=>$langId});
+            push @vk, {linkId=>$linkId,langId=>$langId};
         };
     };
+    $self->_updateKeysVersion(\@vk);
     1;
 };
 
@@ -938,6 +944,7 @@ sub enablePage {
     my $allEnabledLinkedPages = $sth->fetchall_hashref(['link_id','lang_id']);
     $sth->finish();
     
+    my @vk = ();
     #Запрашиваем список страниц, подлежащих включению, для проведения операций
     my $pageFields = $cms->getPageFields();
     $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
@@ -948,6 +955,7 @@ sub enablePage {
         #$pageObj->enablePage(); #TODO: extend $pageObj API
         
         NGPlugins->invoke('NG::Application','beforeEnableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
+        push @vk, {pageId=>$pRow->{id}};
         next unless $pRow->{link_id};
         
         my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
@@ -958,6 +966,7 @@ sub enablePage {
             unless ($enabledLinkedPages->{$pRow->{lang_id}}) {
                 #warn "ENABLING LINKID ".$pRow->{link_id}." LANGID ".$pRow->{lang_id};
                 NGPlugins->invoke('NG::Application','beforeEnableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+                push @vk, {linkId=>$pRow->{link_id},langId=>$pRow->{lang_id}};
             }
         }
         else {
@@ -965,12 +974,16 @@ sub enablePage {
             #warn "ENABLING (2) LANG LINKID ".$pRow->{link_id}." LANGID ".$pRow->{lang_id};
             NGPlugins->invoke('NG::Application','beforeEnableNodeLink',{LINKID=> $pRow->{link_id}});
             NGPlugins->invoke('NG::Application','beforeEnableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+            push @vk, {linkId=>$pRow->{link_id}};
+            push @vk, {linkId=>$pRow->{link_id},langId=>$pRow->{lang_id}};
         };
     };
     $sth->finish();
     
     #Включаем страницы в структуре сайта
     $dbh->do("UPDATE ng_sitestruct set disabled = 0 where $where and disabled = ?", undef, @params, $pageId) or return $cms->error($DBI::errstr);
+    
+    $self->_updateKeysVersion(\@vk);
     1;
 };
 
@@ -1013,6 +1026,7 @@ sub disablePage {
     #Выключаем страницы в структуре сайта
     $dbh->do("UPDATE ng_sitestruct set disabled = ? where $where and disabled = 0", undef, $pageId, @params) or return $cms->error($DBI::errstr);
     
+    my @vk = ();
     #Запрашиваем список страниц, подлежащих выключению, для проведения операций
     my $pageFields = $cms->getPageFields();
     $sth = $dbh->prepare("select $pageFields from ng_sitestruct where $where and disabled = ? order by tree_order desc") or return $cms->error("disablePage(): Error in pageRow query: ".$DBI::errstr);
@@ -1023,6 +1037,7 @@ sub disablePage {
         #$pageObj->disablePage(); #TODO: extend $pageObj API
         
         NGPlugins->invoke('NG::Application','afterDisableNode',{PAGEID=>$pRow->{id},PAGEOBJ=>$pageObj});
+        push @vk, {pageId=>$pRow->{id}};
         next unless $pRow->{link_id};
         
         my $enabledLinkedPages = $allEnabledLinkedPages->{$pRow->{link_id}};
@@ -1032,7 +1047,8 @@ sub disablePage {
                 #Больше не осталось связанных страниц с таким языком 
                 #warn "DISABLING LINKID ".$pRow->{link_id}." LANG ".$pRow->{lang_id};
                 NGPlugins->invoke('NG::Application','afterDisableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
-            }
+                push @vk, {linkId=>$pRow->{link_id},langId=>$pRow->{lang_id}};
+            };
             #Есть связанные страницы, линк целиком не отключаем.
         }
         else {
@@ -1041,9 +1057,14 @@ sub disablePage {
             #warn "DISABLING (2) LANG LINKID ".$pRow->{link_id}." LANG ".$pRow->{lang_id};
             NGPlugins->invoke('NG::Application','afterDisableNodeLink',{LINKID=> $pRow->{link_id}});
             NGPlugins->invoke('NG::Application','afterDisableNodeLink',{LINKID=> $pRow->{link_id},LANGID=>$pRow->{lang_id}});
+            push @vk, {linkId=>$pRow->{link_id}};
+            push @vk, {linkId=>$pRow->{link_id},langId=>$pRow->{lang_id}};
         };
     };
     $sth->finish();
+    
+    $self->_updateKeysVersion(\@vk);
+    
     1;
 };
 
@@ -1422,7 +1443,7 @@ sub _moveNode {
             NGPlugins->invoke('NG::Application','afterSwapNodes',{NODE=> $tree->getNodeValue(), ACTION=> "after", PARTNER=> $partner->getNodeValue()});
         };
     };
-    
+    $self->_updateKeysVersion();
     return $self->_redirect($parent_pageId,0);
 };
 
@@ -1582,6 +1603,9 @@ sub action_updateNode {
     $form->param("url",$nodeUrl);
     $form->updateData() or return $self->error("Не удалось обновить данные: ".$form->getError());
     
+    my @vk = ();
+    push @vk, {pageId=>$pageId};
+    
     my $newValue = undef;
     if ($oldValue->{url} ne $nodeUrl) {
         my $tree = $self->_create_tree_object();
@@ -1615,6 +1639,7 @@ sub action_updateNode {
                     $sth->execute($value->{url},$_tree->{_id}) or return $cms->error($DBI::errstr." БД находится в поврежденном состоянии") + 1;
                     
                     NGPlugins->invoke('NG::Application','afterUpdateNodeURL',{PAGEID=>$_tree->{_id}, OLDURL=>$oldUrl, NEWURL=>$value->{url}});
+                    push @vk, {pageId=>$_tree->{_id}};
                 };
                 return 0;
             }
@@ -1630,6 +1655,7 @@ sub action_updateNode {
     };
     #TODO: передается старый $pageObj
     NGPlugins->invoke('NG::Application','afterUpdateNode',{PAGEID=>$pageId, PAGEOBJ=>$pageObj, OLDVALUE=>$oldValue, NEWVALUE=>$newValue});
+    $self->_updateKeysVersion(\@vk);
     return $self->_redirect($pageId,$is_ajax);
 }; 
 
@@ -1792,6 +1818,29 @@ $canDelThisPage = 1;
     );
     return $self->output($tmpl->output());
 };
+
+sub _updateKeysVersion {
+    my $self = shift;
+    my $keys = shift;
+    
+    $keys = [$keys] if $keys && ref $keys eq "HASH";
+    $keys ||= [];
+    
+    my $cms = $self->cms();
+    my $code = $cms->confParam("CMS.SiteStructModule","") or die 'No code';
+
+    $_->{MODULECODE} = $code foreach @$keys;
+    push @$keys, {MODULECODE=>$code, key=>'anypage'};
+    
+    #Supported keys:
+    # {key=>'anypage'},
+    # {pageId=>$pageId},
+    # {linkId=>$linkId},
+    # {linkId=>$linkId, langId=>$langId},
+    
+    $cms->updateKeysVersion(undef,$keys);
+};
+
 
 sub _redirect {
     my $self = shift;
