@@ -117,7 +117,7 @@ sub hasPageAccess {
     my $cms = shift;
     my $pageId = shift or die "hasPageAccess(): no pageId";
     my $subsiteId = shift;
-    die "hasPageStructAccess(): no subsiteId in $pageId" unless defined $subsiteId;
+    die "hasPageAccess(): no subsiteId in $pageId" unless defined $subsiteId;
     return 1 unless $cms->{_sitePAccessObj};
     return $cms->hasPageModulePrivilege(PRIVILEGE=>'ACCESS',MODULE_ID=>$cms->{_sitePAccessObj}->moduleParam('id'),PAGE_ID=>$pageId,SUBSITE_ID=>$subsiteId);
 };
