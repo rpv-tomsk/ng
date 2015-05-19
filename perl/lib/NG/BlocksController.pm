@@ -305,6 +305,9 @@ sub getABRelated {
     
     unless ($abKeys->{HASRELATED}) {
         #Если включить кеширование, будет ой. Причем не сразу =)
+        #Ключи подчиненных блоков используют закешированное значение RELATED, но контент АБ может отсутствовать,
+        #что приведет к его перегенерированию. Перегенерирование может выставить другие значения RELATED.
+        #Чтобы это исключить, выставляем HASRELATED, указывающий что контент АБ надо получить до формирования ключей остальных блоков.
         return $self->cms->error("Active Block ".$aBlock->{CODE}." does not set HASRELATED key. This can lead to floating errors on production site.");
     };
     return $aBlock->{CACHEKEYS}->{RELATED} if exists $aBlock->{CACHEKEYS} && $aBlock->{CACHEKEYS}->{RELATED};
