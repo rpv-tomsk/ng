@@ -994,55 +994,6 @@ sub redirect_to_referer_or {
 };
 =cut
 
-sub _caller {
-    my $self = shift;
-    my @call  = caller(2);
-    
-    return $call[3];
-};
-
-=comment
-sub _gethparams {
-    my $self = shift;
-    my %param = ();
-    
-    while (1) {
-        last unless scalar @_;
-        my $v = shift @_;
-        if ($v =~ m/^-/) {
-            unshift @_, $v;
-            last;
-        };
-        $param{-type} = $v;
-        
-        last unless scalar @_;
-        $v = shift;
-        $param{-status} = $v;
-        
-        return $self->showError("cms->".$self->_caller()."(): invalid parameters count") if scalar @_;
-    };
-    
-    if (scalar @_ ) {
-        if (scalar @_ % 2 == 0) {
-            %param = (@_);
-        }
-        else {
-            warn "cms->".$self->_caller()."(): invalid parameters count, skipped.";
-        };
-    };
-    if (exists $param{-cookie}) {
-        if (ref $param{-cookie} eq "ARRAY") {
-            push @{$self->{_cookies}}, @{$param{-cookie}};
-        }
-        else {
-            push @{$self->{_cookies}}, $param{-cookie};
-        };
-        delete $param{-cookie};
-    };
-    return \%param;
-};
-=cut
-
 sub _header {
     my $self = shift;
     my $params = shift || {};
