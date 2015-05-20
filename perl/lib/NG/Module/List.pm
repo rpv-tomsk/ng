@@ -1090,6 +1090,7 @@ sub Delete {
         if($action eq "deletefull") {
             $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
             $form->Delete() or return $self->error($form->getError());
+            #TODO: Do $form->loadData() ?
             $self->_updateVersionKeys($form,'delete');
             if(defined $self->{_searchconfig}) {
                 my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
@@ -1171,6 +1172,7 @@ sub _maDeleteRecords {
         $form->param($self->{_idname},$id);
         $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
         $form->Delete() or return $self->error($form->getError());
+        #TODO: Do $form->loadData() ?
         $self->_updateVersionKeys($form,'delete');
         if(defined $self->{_searchconfig}) {
             my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
@@ -1265,7 +1267,8 @@ sub Move {
         $dbh->do("UPDATE $table set $posFieldName = -$posFieldName where $posFieldName >= ? and $posFieldName < ?",undef,-$nextPos+1,-$currPos+1) or return $self->error($DBI::errstr);        
     };
     $self->_makeEvent('move',{ID=>$id, DIR=>$moveDir});
-
+    #TODO: ugly solution....
+    $self->_updateVersionKeys({$idFieldName => $id}, 'move');
     $self->afterMove($id, $moveDir);
 
     return $self->redirect($q->param("ref"));
@@ -2448,12 +2451,41 @@ sub _updateVersionKeys {
     my $cms  = $self->cms();
     my $mObj = $self->getModuleObj() or die "ASSERT: Unable to getModuleObj()!";
 
-    my $params = {};    
+    my $params = {};
+    #Ugly solution for $fa 'move'
+    if (ref $form eq 'HASH') {
+        $params = $form;
+        $form = NG::Form->new(
+            FORM_URL  => '',
+            KEY_FIELD => $self->{_idname},
+            DB        => $self->db(),
+            TABLE     => $self->{_table},
+            DOCROOT   => $self->getDocRoot(),
+            SITEROOT  => $self->getSiteRoot(),
+            CGIObject => $self->q(),
+            REF       => '',
+            IS_AJAX   => 1,
+        );
+        $form->addfields($self->{_fields}) or return $self->error($form->getError());
+        $form->param($self->{_idname},$params->{$self->{_idname}});
+        $form->loadData() or die $form->getError();
+    };
     my @vk = map +{%$_}, @{$self->{_versionKeys}};
     foreach my $vk (@vk) {
         foreach my $key (keys %$vk) {
+            if (ref $vk->{$key} eq 'CODE') {
+                my $sub = $vk->{$key};
+                $vk->{$key} = &$sub($form,$fa);
+                next;
+            };
             while ($vk->{$key} =~ /\{(.+?)\}/i) {
-                my $value = $params->{$1} ||= $form->getParam($1);
+                my $value = undef;
+                if (exists $params->{$1}) {
+                    $value = $params->{$1};
+                }
+                else {
+                    $value = $params->{$1} = $form->getParam($1);
+                };
                 $vk->{$key} =~ s/\{(.+?)\}/$value/i;
             };
         };
@@ -2578,6 +2610,7 @@ sub _destroyBlock {
         
         $self->beforeDelete($v) or return $self->showError("_destroyBlock(): Ошибка вызова BeforeDelete()");
         $form->Delete() or return $self->error($form->getError());
+        #TODO: Do $form->loadData() ?
         $self->_updateVersionKeys($form,'delete');
         $self->afterDelete($v,$form) or return $self->showError("_destroyBlock(): Ошибка вызова AfterDelete()");
     };
