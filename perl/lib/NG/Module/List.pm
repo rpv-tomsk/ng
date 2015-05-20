@@ -728,8 +728,8 @@ sub processForm {
         }
         else {
             $form->insertData() or return $self->error($form->getError());
-            $self->_updateVersionKeys($form,$fa);
         };
+        $self->_updateVersionKeys($form,$fa);
         $self->_makeLogEvent({operation=>"Вставка записи", operation_param=>"KEY ".join("_",$form->getKeyValues())});
     }
     else {
