@@ -103,4 +103,39 @@ sub run {
     return $cms->exit('', {-location=>'/'.$baseUrl.$groupName.'/'.$sizeName.'/'.$url});
 };
 
+sub deleteFromCache {
+    my ($self,$dir,$file) = (shift,shift,shift);
+    
+    NG::Exception->throw('NG.INTERNALERROR','deleteFromCache(): Missing baseDir') unless $dir;
+    NG::Exception->throw('NG.INTERNALERROR','deleteFromCache(): Missing fileName') unless $file;
+    
+    $dir .= '/' unless $dir =~ /\/$/;
+    $dir  = '/'.$dir unless $dir =~ /^\//;
+    
+    my $baseUrl = $self->moduleParam('base');
+    $baseUrl =~ s/^\///;
+    NG::Exception->throw('NG.INTERNALERROR','No base configured') unless $baseUrl;
+    
+    my $cfg = $self->getConfig();
+    NG::Exception->throw('NG.INTERNALERROR','Module not configured') unless $cfg && ref $cfg eq 'HASH';
+    
+    my $docroot = $self->cms->getDocRoot();
+    
+    foreach my $groupName (keys %$cfg) {
+        my $group = $cfg->{$groupName};
+        NG::Exception->throw('NG.INTERNALERROR','Wrong configuration - group ne HASH') unless ref $group eq 'HASH';
+        NG::Exception->throw('NG.INTERNALERROR','Wrong configuration - group has no SOURCE') unless $group->{SOURCE};
+        NG::Exception->throw('NG.INTERNALERROR','Wrong configuration - group has no SIZES')  unless $group->{SIZES};
+        NG::Exception->throw('NG.INTERNALERROR','Wrong configuration - group has wrong SIZES') unless ref $group->{SIZES} eq 'HASH';
+        
+        next if $group->{SOURCE} ne $dir;
+        
+        foreach my $sizeName (keys %{$group->{SIZES}}) {
+            NG::Exception->throw('NG.INTERNALERROR','Wrong configuration - group has wrong sizename at SIZES') unless $sizeName ne '';
+            my $targetFile = $docroot.$baseUrl.$groupName.'/'.$sizeName.'/'.$file;
+            unlink $targetFile if -f $targetFile;
+        };
+    };
+};
+
 1;

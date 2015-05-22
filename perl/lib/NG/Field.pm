@@ -1178,9 +1178,7 @@ sub beforeSave {
             chmod $mask, $target;
         };
 
-        if ($oldDbV && $oldDbV ne $newDbV) {
-            unlink $uplDir.$oldDbV if $oldDbV;
-        };
+        $self->_unlink($oldDbV) if ($oldDbV && $oldDbV ne $newDbV);
     }
     elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
         my $dbv = $self->dbValue();
@@ -1204,9 +1202,7 @@ sub beforeDelete {
         return $field->setError("Не указано значение опции UPLOADDIR для поля ".$field->{FIELD}) unless $field->{UPLOADDIR};
         return $field->setError("Значение файлового поля не загружено") unless $field->{_loaded};
         my $dbv = $field->dbValue();
-        if ($dbv) {
-            unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbv;
-        };
+        $field->_unlink($dbv) if $dbv;
     };
     if ($type eq "rtffile" || $type eq "textfile") {
         my $filedir = $field->options('FILEDIR') or return $field->setError("Не указана опции FILEDIR");
@@ -1290,6 +1286,27 @@ sub getJSShowError {
     return $error;
 };
 
+sub _unlink {
+    my ($field,$dbValue) = (shift,shift);
+    
+    die "Missing UPLOADDIR" unless $field->{UPLOADDIR};
+    die "Missing DBValue" unless $dbValue;
+    
+    if ($field->{TYPE} eq 'image' && $field->{OPTIONS}->{IMGRESIZER}) {
+        my $resizer = $field->{OPTIONS}->{IMGRESIZER};
+        
+        if ($resizer =~ /^([^\/]+)(\/\S+\/\S+)?$/) {
+            my $module = $field->cms()->getModuleInstance($1);
+            $module->deleteFromCache($field->{UPLOADDIR},$dbValue);
+        }
+        else {
+            die "Wrong IMGRESIZER option";
+        };
+    };
+    
+    unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbValue;
+};
+
 sub clean {
     my $self = shift;
     
@@ -1298,7 +1315,7 @@ sub clean {
 
 	if ($self->isFileField()) {
         die "TODO: fix this UPLOADDIR" unless exists $self->{UPLOADDIR};
-		unlink $self->parent()->getDocRoot().$self->{UPLOADDIR}.$oldDbV if $oldDbV;
+        $self->_unlink($oldDbV) if $oldDbV;
         delete $self->{DBVALUE};
     };
     $self->setValue("");
@@ -1319,7 +1336,19 @@ sub getListCellHTML {
     
     if ($type eq 'image') {
         my $link = "";
-        $link = $field->{UPLOADDIR}.$field->{DBVALUE} if $field->{DBVALUE};
+        if ($field->{DBVALUE}) {
+            my $resizer = $field->{OPTIONS}->{IMGRESIZER};
+            if ($resizer && $resizer =~ /^(\S+)\/(\S+)\/(\S+)$/) {
+                my ($code,$group,$size) = ($1,$2,$3);
+                
+                my $module = $field->cms()->getModuleInstance($code);
+                $link = $module->getBaseURL() or return "[ERROR]";
+                $link .= "$group/$size/".$field->{DBVALUE};
+            }
+            else {
+                $link = $field->{UPLOADDIR}.$field->{DBVALUE};
+            };
+        }
         
         return "<div><img src='$link'></div>" if $link;
         return '';
