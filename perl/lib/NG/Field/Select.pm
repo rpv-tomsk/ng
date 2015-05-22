@@ -340,6 +340,7 @@ sub selectedName {
 };
 
 *SELECTEDNAME = \&selectedName;
+*getListCellHTML = \&selectedName;
 
 
 sub selectOptions {

@@ -76,7 +76,7 @@
                     <TMPL_IF HEADER_TEMPLATE>
                       <TMPL_INCLUDE_VAR HEADER_TEMPLATE>
                     <TMPL_ELSE HEADER_TEMPLATE>
-                      <td class="title" style="<TMPL_IF WIDTH>width:<TMPL_VAR WIDTH>;</TMPL_IF><TMPL_IF IS_POSORDER>text-align:right;padding-right:20px;</TMPL_IF IS_POSORDER>">			
+                      <td class="title" style="<TMPL_IF WIDTH>width:<TMPL_VAR WIDTH>;</TMPL_IF><TMPL_IF IS_POSORDER>text-align:right;padding-right:20px;</TMPL_IF IS_POSORDER>">
                       <TMPL_IF ORDER><nobr><a href="<TMPL_VAR ORDER>" <TMPL_IF SELECTED_ASC> title="Кликните, чтобы отсортировать по убыванию" </TMPL_IF> <TMPL_IF SELECTED_DESC> title="Кликните, чтобы отсортировать по возрастанию" </TMPL_IF> ><TMPL_ELSE ORDER><p></TMPL_IF>
                       <TMPL_VAR NAME><TMPL_IF ORDER></a><TMPL_ELSE ORDER></p></TMPL_IF>
                       <TMPL_IF SELECTED_ASC><span id="img_upp">&nbsp;&nbsp;</span></TMPL_IF>
@@ -92,8 +92,6 @@
             <!-- data rows -->
             <TMPL_LOOP DATA>
                 <!-- data columns -->
-
-                <tr><td colspan="<TMPL_VAR HEADERS_CNT>"><a href="#anchor_<TMPL_VAR AJAX_FORM_CONTAINER>" name="anchor_<TMPL_VAR AJAX_FORM_CONTAINER>"></a></tr>
                 <tr>
                 <TMPL_IF MULTIACTIONS>
                 <td class="content">
@@ -101,28 +99,14 @@
                 </td>
                 </TMPL_IF MULTIACTIONS>
 
-                <TMPL_LOOP COLUMNS>
-                    <TMPL_IF CUSTOM_TEMPLATE>
-                        <TMPL_INCLUDE_VAR CUSTOM_TEMPLATE>
-                    <TMPL_ELSE CUSTOM_TEMPLATE>
-                        <td class="content"  style="<TMPL_IF IS_CHECKBOX>width:100px;</TMPL_IF><TMPL_IF HIGHLIGHT>background:#ffcccc;</TMPL_IF>">
-                        <TMPL_IF IS_IMAGE>
-                            <TMPL_IF DBVALUE><div id="img_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><img src="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>"></div></TMPL_IF>
-                        <TMPL_ELSIF IS_CHECKBOX>
-                                <center>
-                                <div class="list-checkbox <TMPL_IF CLICKABLE>clickable </TMPL_IF><TMPL_IF VALUE>checked </TMPL_IF>" data-field="<TMPL_VAR FIELD>" data-id="<TMPL_VAR ID_VALUE>" id="cb_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"></div>
-                                </center>
-                        <TMPL_ELSIF IS_FILE>
-                            <TMPL_IF DBVALUE><a href="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>">Загружен</a><TMPL_ELSE>Отсутствует</TMPL_IF>
-                        <TMPL_ELSIF IS_SELECT>
-                            <TMPL_VAR selectedName>
-                        <TMPL_ELSE>
-                            <TMPL_IF URLFIELD><a href="<TMPL_VAR URLFIELD>" title="<TMPL_VAR TITLE>"><TMPL_ELSE URLFIELD><p></TMPL_IF>
-                            <TMPL_VAR VALUE>
-                            <TMPL_IF URLFIELD></a><TMPL_ELSE URLFIELD></p></TMPL_IF>
-                        </TMPL_IF>
-                        </td>
-                    </TMPL_IF CUSTOM_TEMPLATE>
+                <TMPL_LOOP COLUMNS ALIAS=COLUMN>
+                    <td class="content"  style="<TMPL_IF COLUMN.WIDTH>width:<TMPL_VAR COLUMN.WIDTH>;</TMPL_IF><TMPL_IF COLUMN.HIGHLIGHT>background:#ffcccc;</TMPL_IF>">
+                    <TMPL_IF COLUMN.CUSTOM_TEMPLATE>
+                        <TMPL_INCLUDE_VAR COLUMN.CUSTOM_TEMPLATE>
+                    <TMPL_ELSE>
+                        <TMPL_VAR COLUMN.HTML>
+                    </TMPL_IF>
+                    </td>
                 </TMPL_LOOP COLUMNS>
                 <TMPL_IF MOVE_URL>
                 <td class="content_img">
@@ -139,13 +123,13 @@
                 </TMPL_IF MOVE_URL_HIDDEN>
                 </tr> 
                 <!-- data columns / -->
-                <!-- /Строка элементов управления записи -->
+                <!-- Строка элементов управления записи -->
                 <tr>
                     <td class="last_line_right_img" colspan="<TMPL_VAR HEADERS_CNT>">
                         <TMPL_IF ROW_LINKS>
                         <TMPL_LOOP ROW_LINKS>
                             <nobr>
-                            <a href="<TMPL_VAR URL>" <TMPL_IF AJAX>onclick="ajax_url('<TMPL_VAR AJAX_URL>','<TMPL_VAR AJAX_FORM_CONTAINER>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
+                            <a href="<TMPL_VAR URL>" <TMPL_IF AJAX>onclick="ajax_url('<TMPL_VAR AJAX_URL>','formb_<TMPL_VAR ID_VALUE>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
                             <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
                             </nobr>
                         </TMPL_LOOP>
@@ -155,7 +139,7 @@
                 <!--  /Строка элементов управления записи  -->
 
                 <!-- form container -->
-                <tr><td id="<TMPL_VAR AJAX_FORM_CONTAINER>" colspan="<TMPL_VAR HEADERS_CNT>" style="padding:0px;border:none;"></td></tr>				
+                <tr><td id="formb_<TMPL_VAR ID_VALUE>" colspan="<TMPL_VAR HEADERS_CNT>" style="padding:0px;border:none;"></td></tr>				
                 <!-- form container / -->
                 
             </TMPL_LOOP DATA>

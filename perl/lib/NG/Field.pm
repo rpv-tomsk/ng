@@ -1311,6 +1311,57 @@ sub ASHASH {
   return \%h;
 }
 
+#Возвращает HTML, выводимый в лист
+sub getListCellHTML {
+    my $field = shift;
+    
+    my ($type,$fName) = ($field->{TYPE},$field->{FIELD});
+    
+    if ($type eq 'image') {
+        my $link = "";
+        $link = $field->{UPLOADDIR}.$field->{DBVALUE} if $field->{DBVALUE};
+        
+        return "<div><img src='$link'></div>" if $link;
+        return '';
+    }
+    elsif ($type eq 'checkbox') {
+        my ($clickable,$checked) = ('','');
+        my $clickable = 'clickable' if $field->{CLICKABLE};
+        my $checked   = 'checked'   if $field->{VALUE};
+        
+        my $parent = $field->parent();
+        my $id     = $parent->{ID_VALUE}; #TODO: rework!
+        
+        return "<center>"
+        ."<div class='list-checkbox $clickable $checked' data-field='$fName' data-id='$id'></div>"
+        ."</center>";
+    }
+    elsif ($field->isFileField) {
+        my $link = "";
+        $link = $field->{UPLOADDIR}.$field->{DBVALUE} if $field->{DBVALUE};
+        
+        return "<a href='$link'>Загружен</a>" if $link;
+        return 'Отсутствует';
+    }
+    else {
+        my ($url,$title) = ($field->{URLMASK},$field->{TITLE});
+        
+        if ($url) {
+            my $parent  = $field->parent();
+            my $baseurl = $parent->list()->getBaseURL();
+            my $row     = $parent->{ROW};
+            $url =~ s@{baseurl}@$baseurl@;
+			$url =~ s/\{(.+?)\}/$row->{$1}/gi;
+        };
+        
+        my $ret = '';
+        $ret .= $url?"<a href='$url' title='$title'>":'<p>';
+        $ret .= $field->{VALUE};
+        $ret .= $url?"</a>":'</p>';
+        return $ret;
+    }
+};
+
 sub getFieldActions {
     my $self = shift;
     

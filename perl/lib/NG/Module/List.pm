@@ -235,24 +235,18 @@ sub buildList {
             
             $self->rowFunction($row);
             
-            my $rowObj = $self->{_rowClass}->new($row,$self);
-            foreach my $field (@{$self->{_listfields}}) {
-              my $c = NG::Field->new($field,$rowObj);
-                $rowObj->addColumn($c);
-                #$c->{ROWOBJ} = $rowObj;
-            };
-            $rowObj->number($index_counter);
-            $rowObj->buildColumnList();
-            $rowObj->buildLinks();
+            my $id = $row->{$self->{_idname}};
             
-            my $id = $rowObj->getParam($self->{_idname});
+            my $rowObj = $self->{_rowClass}->new({
+                ID      => $id,
+                DATA    => $row,
+                LISTOBJ => $self,
+                INDEX   => $index_counter,
+            });
+            
             $rowObj->{MOVE_URL} = getURLWithParams($myurl,"action=move","$self->{_idname}=$id",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),"ref=$u") if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==0);
             $rowObj->{MOVE_URL_HIDDEN} = 1 if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==1);
-            $rowObj->{KEY_VALUE} = "_$id"; 
-            $rowObj->{ID_VALUE} = $id; 
-            $rowObj->{AJAX_FORM_CONTAINER} = "formb".$rowObj->{KEY_VALUE};
             $rowObj->{HEADERS_CNT} = $headersCnt;
-            $rowObj->{ROW} = $rowObj->row();
             $rowObj->{MULTIACTIONS} = $self->{_multiActions};
             
             $self->doHighlight($rowObj);
@@ -299,7 +293,7 @@ sub doHighlight {
     my $rowObj = shift;
     
     my $hlId = $self->q()->param("hlid") || "";
-    $rowObj->highlight() if $rowObj->{ROW}->{$self->{_idname}} eq $hlId;
+    $rowObj->highlight() if $rowObj->{ID_VALUE} eq $hlId;
 };
 
 sub _getAF {

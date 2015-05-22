@@ -2,6 +2,12 @@ branches/ng6
 
     * Удалена поддержка METHOD (метода обработки перед сохранением) в описании конфигурации полей NG::Field
     * Изменилось поведение NG::Field->setLoadedValue(), теперь в него передается вся полученная строка БД
+    * NG::Module::List::Row->new() / NG::Module::List::Row->init() - изменено API
+    - NG::Module::List::Row->number()
+    - NG::Module::List::Row->addColumn()
+    - NG::Module::List::Row->buildColumnList()
+    - NG::Module::List::Row->getComposedKeyValue()
+    * NG::Module::List::Row - HCOLUMNS переименовано в HFIELDS
 
 branches/ng-4.3
 
