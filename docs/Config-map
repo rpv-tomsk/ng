@@ -34,6 +34,7 @@ hasSubsites = [0|1]  (0)
 hasLanguages = [0|1] (0)
 SiteName    = "Имя сайта" ("Сайт")
 DefaultPageClass = "Site::PageModule" ("NG::PageModule")
+DefaultPageFields = "field,otherfield" (ng_sitestruct table)
 
 
 LAYOUT_L%LANG% = "templates/public/layout.tmpl"           #Путь к шаблону layout

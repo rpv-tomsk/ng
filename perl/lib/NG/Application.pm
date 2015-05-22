@@ -308,16 +308,21 @@ sub findSubsite {
 
 sub getPageFields {
 	my $app = shift;
-	my $baseClass = $app->confParam('CMS.DefaultPageClass',"NG::PageModule");
 	my $pageFields = "id,parent_id,name,full_name,keywords,description,title,url,template,print_template,module_id,subptmplgid,disabled,subsite_id,lang_id,link_id,tree_order,level,catch";
 	
-    my $obj = $app->getObject($baseClass) or return $app->error();
-    
-	if ($obj->can('pageFields')) {
-		my $addon = $obj->pageFields();
-		return $app->defError($baseClass."->pageFields()","Не вернул списка полей") if $addon eq "0";
-		$pageFields .= ",".$addon if $addon;
+	my $baseClass = $app->confParam('CMS.DefaultPageClass','');
+	if ($baseClass) {
+		my $obj = $app->getObject($baseClass);
+		if ($obj->can('pageFields')) {
+			my $addon = $obj->pageFields();
+			return $app->defError($baseClass."->pageFields()","Не вернул списка полей") if $addon eq "0";
+			$pageFields .= ",".$addon if $addon;
+		};
 	};
+	
+	my $addon = $app->confParam('CMS.DefaultPageFields','');
+	$pageFields .= ",".$addon if $addon;
+	
 	return $pageFields;
 };
 
@@ -761,9 +766,6 @@ sub getPrintParam {
     my $self=shift;
     return "print=1";
 };
-
-
-
 
 ## /NG::CMS functions
 
@@ -1338,7 +1340,7 @@ sub getModuleInstance ($$) {
     my $code = shift;
     
     unless (exists $cms->{_moduleInstances}->{$code}) {
-		my $mObj = $cms->getModuleByCode($code) or return $cms->defError("getModuleInstance():");
+		my $mObj = $cms->getModuleByCode($code);
         $cms->{_moduleInstances}->{$code} = $mObj;
     };
     
