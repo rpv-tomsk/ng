@@ -35,6 +35,7 @@ hasLanguages = [0|1] (0)
 SiteName    = "Имя сайта" ("Сайт")
 DefaultPageClass = "Site::PageModule" ("NG::PageModule")
 
+
 LAYOUT_L%LANG% = "templates/public/layout.tmpl"           #Путь к шаблону layout
 LAYOUT_S%SUBSITEID% = "templates/public/layout.tmpl"      #параметры приведены
 LAYOUT = "templates/public/layout.tmpl"                   #в порядке приоритета
