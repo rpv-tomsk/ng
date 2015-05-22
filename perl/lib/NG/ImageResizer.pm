@@ -36,10 +36,11 @@ sub run {
     my ($groupName,$sizeName) = ($1,$2);
     
     my $group = $cfg->{$groupName};
-    my $size  = $group->{SIZES}->{$sizeName};
-    
     NG::Exception->throw('NG.INTERNALERROR',"Group not found") unless $group;
+
+    my $size  = $group->{SIZES}->{$sizeName};
     NG::Exception->throw('NG.INTERNALERROR',"Size not found")  unless $size;
+    
     NG::Exception->throw('NG.INTERNALERROR',"Security error")  if  $url =~ /\.\./ || $url =~ /\<|\>/;
     NG::Exception->throw('NG.INTERNALERROR',"SOURCE not configured") unless $group->{SOURCE};
     NG::Exception->throw('NG.INTERNALERROR',"STEPS or METHOD not configured") unless $size->{METHOD} || $size->{STEPS};
