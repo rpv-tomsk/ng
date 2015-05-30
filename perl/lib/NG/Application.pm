@@ -1583,7 +1583,26 @@ print STDERR "getCacheId(): MISMATCH DETECTED $key != $k2".Dumper($r, $key, thaw
 };
 
 sub expireCacheContent {
-    my ($cms,$keys) = (shift,shift);
+    my ($cms,$module,$keys) = (shift,shift,shift);
+    
+    $keys = [$keys] if (ref $keys eq "HASH");
+    
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    
+    die "cms->expireCacheContent(): \$keys not ARRAYREF" unless ref $keys eq 'ARRAY';
+    
+    foreach my $key (@$keys) {
+        die "cms->expireCacheContent(): Wrong array value" unless ref $key eq 'HASH';
+        die "cms->expireCacheContent(): Missing REQUEST" unless exists $key->{REQUEST};
+        if (exists $key->{BLOCK}) {
+            die "cms->expireCacheContent(): Missing \$module for BLOCK" unless $mcode;
+            $key->{CODE} = $mcode.'_'.(delete $key->{BLOCK});
+        };
+        die "cms->expireCacheContent(): Missing CODE" unless exists $key->{CODE};
+        die "cms->expireCacheContent(): Wrong keys count in array value" unless scalar keys %$key == 2;
+    };
+    
     $NG::Application::Cache->expireCacheContent($keys);
 };
 
