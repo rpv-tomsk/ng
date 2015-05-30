@@ -1582,6 +1582,11 @@ print STDERR "getCacheId(): MISMATCH DETECTED $key != $k2".Dumper($r, $key, thaw
     return $key;
 };
 
+sub expireCacheContent {
+    my ($cms,$keys) = (shift,shift);
+    $NG::Application::Cache->expireCacheContent($keys);
+};
+
 =head
 =cut
 
@@ -1671,6 +1676,10 @@ sub getCacheContent {
 };
 
 sub storeCacheContent {
+    return 1;
+};
+
+sub expireCacheContent {
     return 1;
 };
 

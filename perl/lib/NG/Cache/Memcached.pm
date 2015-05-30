@@ -78,6 +78,19 @@ sub storeCacheContent {
     return 1;
 };
 
+sub expireCacheContent {
+    my ($self,$keys) = (shift,shift);
+    
+    foreach my $id (@$keys) {
+        my $key = $self->cms->getCacheId('content',$id);
+        
+        #warn "expireCacheContent(): ".$id->{CODE}." Removed content/metadata ".$key;
+        $MEMCACHED->delete("meta_".$key);
+        $MEMCACHED->delete("content_".$key);
+    };
+    return 1;
+};
+
 sub _createVersionKey($$) {
     my ($self,$key) = (shift,shift);
     
