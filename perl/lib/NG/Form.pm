@@ -181,9 +181,6 @@ sub _addfield { #internal method
     if ($type eq "id" || $type eq "filter") {
         push @{$self->{_keyfields}},$fObj ;
     }
-    elsif (($type eq "rtf") || ($type eq "rtffile")) {
-        $fObj->{FILE_HANDLER} ||= $self->q()->url(-absolute=>1);
-    }
 	push @{$self->{_fields}}, $fObj;
     return $fObj;
 }
