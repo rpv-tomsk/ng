@@ -1035,7 +1035,13 @@ sub Delete {
     foreach my $field (@{$self->{_fields}}) {
         $field->beforeDelete() or return $self->error("При выполнении beforeDelete() поля ".$field->{FIELD}." произошла ошибка: ". $field->error());
     };
+
     $self->db()->dbh()->do("delete from ".$self->{_table}." where ".join("=? and ",@fields)."=?",undef,@params) or return $self->error($DBI::errstr);
+
+    foreach my $field (@{$self->{_fields}}) {
+        $field->afterDelete() or return $self->error("При выполнении afterDelete() поля ".$field->{FIELD}." произошла ошибка: ". $field->error());
+    };
+
     return 1;
 };
 

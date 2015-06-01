@@ -1249,6 +1249,11 @@ sub beforeDelete {
     return 1;
 };
 
+sub afterDelete {
+    my $field = shift;
+    return 1;
+};
+
 sub getJSSetValue {
     my $field = shift;
 
