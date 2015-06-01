@@ -666,7 +666,7 @@ sub __saveData {
         foreach my $field (@{$fields}) {
             local @NG::Exception::messagePrepend = @NG::Exception::messagePrepend;
             push  @NG::Exception::messagePrepend, "Ошибка вызова afterSave() поля ".$field->{FIELD};
-            $field->afterSave() or NG::Exception->throw('NG.INTERNALERROR', $field->error());
+            $field->afterSave($action) or NG::Exception->throw('NG.INTERNALERROR', $field->error());
         };
     }
     $self->cleanUploadedFiles();

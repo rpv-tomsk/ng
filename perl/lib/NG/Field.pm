@@ -1146,8 +1146,7 @@ sub changed {
 };
 
 sub beforeSave {
-    my $self = shift;
-    my $action = shift;
+    my ($self,$action) = (shift,shift);
     
     if ($self->isFileField()) {
         return $self->setError("Предыдущее значение поля не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
@@ -1190,7 +1189,7 @@ sub beforeSave {
 };
 
 sub afterSave {
-    my $self = shift;
+    my ($self,$action) = (shift,shift);
     return 1;
 };
 
