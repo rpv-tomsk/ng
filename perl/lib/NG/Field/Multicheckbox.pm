@@ -311,7 +311,7 @@ sub setFormValue {
 };
 
 sub afterSave {
-    my $self = shift;
+    my ($self,$action) = (shift,shift);
 
     #Данные в форму загружены, т.к. LIST делает $form->loadData перед сохранением $form->update()
     unless ($self->{_dict_loaded}) {
