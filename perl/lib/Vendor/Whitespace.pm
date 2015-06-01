@@ -31,6 +31,7 @@ my $inplace_whitespace_filter = sub {
         |
         ([^\S\n]{2,})           # spaces between text
     }{ $1 ? "\n" : $2 ? q{ } : q{} }xmsge;
+    ${$scalarref} =~ s/^\s*(\<\/?TMPL_(?:IF|LOOP)(?:\s+[^\>]+)?\>)\s*/$1/igms; #For single TMPL_LOOP/TMPL_IF tag on line
     for my $unclean (@unclean) {
         ${$scalarref} =~ s{\0}{$unclean}xms;
     }
