@@ -48,6 +48,7 @@ BEGIN
                        create_json
                        trim
                        split_cost
+                       plural
              );
 };
 
@@ -355,6 +356,16 @@ sub month_name {
   } else {
     return "";
   };  
+};
+
+
+sub plural {
+    my ($cnt,$v1,$v2,$v5) = (shift,shift,shift,shift);
+    
+    #http://localization-guide.readthedocs.org/en/latest/l10n/pluralforms.html
+    return $v1 if $cnt % 10 == 1 && $cnt % 100 != 11;
+    return $v2 if $cnt % 10 >= 2 && $cnt % 10 <= 4 && ($cnt % 100 < 10 || $cnt % 100 >= 20);
+    return $v5;
 };
 
 sub in_array {
