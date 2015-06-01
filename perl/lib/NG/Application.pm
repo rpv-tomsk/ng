@@ -6,6 +6,7 @@ use NGService;
 use NSecure;
 
 use NG::BlockContent;
+use Vendor::Whitespace;
 
 $NG::Application::VERSION = 0.5;
 
@@ -895,6 +896,7 @@ sub gettemplate {
         my $m = $self->confParam("CMS.HTC_Cache",undef);
         $opts->{cache_dir} = $m if $m;
         $opts->{cache} = 1;
+        $opts->{filter} = HTML::Template::Compiled::Filter::Whitespace::get_whitespace_filter(); #From Vendor::Whitespace
     };
     
     #defaultTemplateParams() support
