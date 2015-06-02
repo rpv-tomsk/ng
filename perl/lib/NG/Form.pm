@@ -615,7 +615,7 @@ sub cleanUploadedFiles {
 
         if ($field->isFileField() && !is_empty($field->{TMP_FILE})) {
 			unlink $field->{TMP_FILE};
-			$field->{TMP_FILE} = "";
+			delete $field->{TMP_FILE};
 		};
 	};
 };

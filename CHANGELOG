@@ -9,6 +9,10 @@ branches/ng6
     - NG::Module::List::Row->getComposedKeyValue()
     * NG::Module::List::Row - HCOLUMNS переименовано в HFIELDS
 
+    * Изменена работа processChilds. Требуется перепроверить все конфигурации полей с заданным CHILDS.
+      Поддерживается обратная совместимость только на связке image->image.
+      В случае связки file->file при (пере)заливке содержимого основного поля подчиненные будут пустыми (очищены).
+
 branches/ng-4.3
 
 ===

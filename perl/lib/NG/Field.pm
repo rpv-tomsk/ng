@@ -15,6 +15,13 @@ $NG::Field::VERSION = 0.1;
 
 
 =head
+    Описание некоторых ключей:
+    
+    TMP_FILENAME    - исходное имя загруженного файла
+    TMP_FILE        - путь к временному файлу. Файл будет удален после закрытия формы
+    _TMP_FILE_FROM_PARENT   - указывает, что новое значение пути к файлу выставлено из родительского поля,
+                              соответственно требуется специальная обработка - родительское поле может переместить
+                              файл до того, как его удастся сохранить чайлду
 
    Специальные флаги, используемые в полях:
  
@@ -576,7 +583,7 @@ sub genNewFileName {
     my $ext = "html";
     
     if ($field->isFileField()) {
-        return undef if is_empty($field->{TMP_FILENAME});
+        die 'NG::Field->genNewFileName(): Missing TMP_FILENAME value. Unable to get file extension.' if is_empty($field->{TMP_FILENAME});
         $ext = get_file_extension($field->{TMP_FILENAME}) || "";
         $field->{TMP_FILENAME} =~ /([^\\\/]+?)\.?$ext$/;
         my $ts = ts($1);
@@ -662,14 +669,8 @@ sub oldDBValue {
 sub checkFileType {
     my $field = shift;
 	
-	my $size = 0;
-	
-	if ($field->{VALUE}) { $size = -s $field->{VALUE}; };
-	
-	if ($size == 0) {
-		if (($field->{_new}==1) && ($field->{IS_NOTNULL}) && is_empty($field->{VALUE})) {
-            return $field->setErrorByCode("MISSING_FILE");
-		};
+	if (is_empty($field->{VALUE})) {
+		return $field->setErrorByCode("MISSING_FILE") if $field->{_new} == 1 && $field->{IS_NOTNULL};
 		return 1;
 	};
     #TODO: нужно ли проверять ранее загруженные значения? для этого надо использовать _loaded
@@ -981,13 +982,13 @@ sub getChilds {
 
 sub processChilds {
     my $self = shift;
-   
+    
     my $defConvMethod = "_setValueFromField";
-   	my $convMethods = {
-#	   "image_image" => "_setFileValueFromField",
-#	   "file_image" => "_setFileValueFromField",
-#	   "image_file" => "_setFileValueFromField",
-#	   "file_file" => "_setFileValueFromField",
+    my $convMethods = {
+        'image_image' => '_image2image',    #Специальный обработчик (костыль) для поддержки обработки изображений различными процессорами (неэффективно!)
+        'file_image'  => '',                #Не используемые конфигурации
+        'image_file'  => '',                #Не используемые конфигурации
+        'file_file'   => '_file2file',      #Не копируем файлы, CHILDS используется только для удаления.
     };
 
     return 1 unless exists $self->{CHILDS};
@@ -996,18 +997,22 @@ sub processChilds {
     return $self->showError() unless $childs;
     
     foreach my $ch (@{$childs}) {
-        my $convMethod;
-        $convMethod = $ch->{METHOD} if exists $ch->{METHOD};
         my $chName = $ch->{FIELD};
-        
         my $child = $self->parent()->getField($chName) or NG::Exception->throw('NG.INTERNALERROR', "Подчиненное поле $chName не найдено");
         
-        #Ищем подходящий метод конвертации поля в поле
-        $convMethod ||= $convMethods->{$self->type()."_".$child->type()} if exists $convMethods->{$self->type()."_".$child->type()};
-        $convMethod ||= $defConvMethod;
+        my $convMethod = $ch->{METHOD};
+        if (!defined $convMethod) {
+            $convMethod = $convMethods->{$self->type()."_".$child->type()};
+        };
+        
+        if (defined $convMethod) {
+            next  if $convMethod eq '';
+        }
+        else {
+            $convMethod = $defConvMethod;
+        };
         
         NG::Exception->throw('NG.INTERNALERROR', "Класс ".ref($child)." поля ".$child->{FIELD}." не содержит метода ".$convMethod." для копирования данных из поля ".$self."(".ref($self).")") unless $child->can($convMethod);
-        
         $child->$convMethod($self,$ch) or NG::Exception->throw('NG.INTERNALERROR',"Ошибка выставления значения из ".$self->{FIELD}." подчиненному полю ".$child->{FIELD}." :".$child->error());
     };
     return 1;
@@ -1069,24 +1074,32 @@ sub processChilds {
 
 =cut
 
-sub _setValueFromField {
-    my $self = shift;
-    my $parent = shift;
+sub _image2image {
+    my ($self,$parent) = (shift,shift);
     
-    if ($self->isFileField()) {
-        return $self->setError("Поле-родитель ".$parent->{FIELD}." не является файловым полем") unless ($parent->isFileField());
+    #Parent field changed. Use existing file as source. It must be copied, not moved.
+    my $v = $parent->value();
+    if ($v) {
+        $self->{_TMP_FILE_FROM_PARENT} = 1; #Special flag
         $self->{TMP_FILENAME} = $parent->{TMP_FILENAME};
+        $self->setValue($v);
         $self->genNewFileName();
-        my $v = $parent->value();
-        unless ($v) {
-            $self->clean();
-        }
-        else {
-            $self->setValue($v);
-        };
-        return 1;
+    }
+    else {
+        $self->clean();
     };
-    
+    return 1;
+};
+
+sub _file2file {
+    my ($self,$parent) = (shift,shift);
+    #Parent field changed.
+    $self->clean();
+    1;
+};
+
+sub _setValueFromField {
+    my ($self,$parent) = (shift,shift);
     $self->setValue($parent->value());
     return 1;
 };
@@ -1095,13 +1108,29 @@ sub _setValueFromField {
 sub process {
     my $self = shift;
     
+    return 1 unless $self->{_changed};
+    
     my $options = $self->{OPTIONS};
-    return 1 unless $options && ($options->{STEPS} || $options->{METHOD});
-
-	my $oldDbV = $self->{OLDDBVALUE};
-	my $newDbV = $self->dbValue();
-
-    return 1 if ($oldDbV && $oldDbV eq $newDbV); 
+    unless ($options && ($options->{STEPS} || $options->{METHOD})) {
+        return 1 unless $self->isFileField();
+        return 1 unless $self->{_TMP_FILE_FROM_PARENT};
+        
+        my $newDbV = $self->dbValue();
+        die 'Internal error' unless $newDbV;
+        
+        my $source = $self->value();
+        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
+        $self->_makeTargetDir($dest) or return 0;
+        
+        if ($source ne $dest) {
+            copy($source,$dest) or return $self->setError("Ошибка копирования файла: ".$!);
+            $self->setDBValue($newDbV);
+            my $mask = umask();
+            $mask = 0777 &~ $mask;
+            chmod $mask, $dest;
+        };
+        return 1;
+    };
     
     my $procClass = $self->getProcessorClass() or return $self->showError("Ошибка вызова метода getProcessorClass(). Метод не возвратил текст ошибки.");
     
@@ -1114,18 +1143,16 @@ sub process {
     });
     
     if ($self->isFileField()) {
+        my $newDbV = $self->dbValue();
+        die 'Internal error' unless $newDbV;
+        
         my $source = $self->value();
-        my $newDBV = $self->dbValue();
-        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDBV;
-        eval { mkpath($self->parent()->getDocRoot().$self->{UPLOADDIR}); };
-        if ($@) {
-            $@ =~ /(.*)at/s;
-            return $self->setError("Ошибка при создании директории: $1");
-        };
+        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
+        $self->_makeTargetDir($dest) or return 0;
         
         $pCtrl->process($source);
         $pCtrl->saveResult($dest);
-        $self->setDBValue($newDBV);
+        $self->setDBValue($newDbV);
     }
     else {
         my $value = $self->value();
@@ -1153,30 +1180,25 @@ sub beforeSave {
         return $self->setError("Не указано значение опции UPLOADDIR для поля ".$self->{FIELD}) unless $self->{UPLOADDIR};
 
         my $uplDir = $self->parent()->getDocRoot().$self->{UPLOADDIR};
-        my $oldDbV = $self->{OLDDBVALUE};
-        my $newDbV = $self->dbValue();
-        my $target = $uplDir.$newDbV;
-
-        my $file = $self->value();
-        if ($file && $file ne $target) {
-            my $targetDir = $target;
-            $targetDir=~s@[^\/]+$@@; #вырезаем текст после последнего слеша
-
-            eval { mkpath($targetDir); };
-            if ($@) {
-                $@ =~ /(.*)at/s;
-                return $self->setError("Ошибка при создании директории: $1");
-            };
-
+        
+        my $file = $self->value();     #Путь к файлу, возможно только что залитому.
+        my $newDbV = $self->dbValue(); #Новое значение dbValue, если файл залит
+        
+        if ($file && $newDbV && $file ne $uplDir.$newDbV) {
+            my $target = $uplDir.$newDbV;
+            
+            $self->_makeTargetDir($target) or return 0;
+            
             move($file,$target) or return $self->setError("Ошибка копирования файла: ".$!);
-            $self->setDBValue($newDbV);
-            $self->{TMP_FILE} = "";
+            $self->setDBValue($newDbV); #выставляем новое значение $field->{VALUE}, файл уже перемещен.
+            delete $self->{TMP_FILE} if $self->{TMP_FILE} eq $file;
 
             my $mask = umask();
             $mask = 0777 &~ $mask;
             chmod $mask, $target;
         };
-
+        
+        my $oldDbV = $self->{OLDDBVALUE};
         $self->_unlink($oldDbV) if ($oldDbV && $oldDbV ne $newDbV);
     }
     elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
@@ -1290,6 +1312,20 @@ sub getJSShowError {
     return $error;
 };
 
+sub _makeTargetDir {
+    my ($self, $target) = (shift,shift);
+    
+    my $targetDir = $target;
+    $targetDir=~s@[^\/]+$@@; #вырезаем текст после последнего слеша
+
+    eval { mkpath($targetDir); };
+    if ($@) {
+        $@ =~ /(.*)at/s;
+        return $self->setError("Ошибка при создании директории: $1");
+    };
+    return 1;
+};
+
 sub _unlink {
     my ($field,$dbValue) = (shift,shift);
     
@@ -1308,17 +1344,16 @@ sub _unlink {
         };
     };
     
-    unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbValue;
+    unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbValue or warn "Could not unlink $field->{UPLOADDIR}$dbValue: $!";;
 };
 
 sub clean {
     my $self = shift;
     
     my $oldDbV = $self->{OLDDBVALUE};
-	my $newDbV = $self->dbValue();
-
-	if ($self->isFileField()) {
-        die "TODO: fix this UPLOADDIR" unless exists $self->{UPLOADDIR};
+    my $newDbV = $self->dbValue();
+    
+    if ($self->isFileField()) {
         $self->_unlink($oldDbV) if $oldDbV;
         delete $self->{DBVALUE};
     };
@@ -1377,14 +1412,14 @@ sub getListCellHTML {
         return 'Отсутствует';
     }
     else {
-        my ($url,$title) = ($field->{URLMASK},$field->{TITLE});
+        my ($url,$title) = ($field->{URLMASK},$field->{TITLE}||'');
         
         if ($url) {
             my $parent  = $field->parent();
             my $baseurl = $parent->list()->getBaseURL();
             my $row     = $parent->{ROW};
             $url =~ s@{baseurl}@$baseurl@;
-			$url =~ s/\{(.+?)\}/$row->{$1}/gi;
+            $url =~ s/\{(.+?)\}/$row->{$1}/gi;
         };
         
         my $ret = '';
