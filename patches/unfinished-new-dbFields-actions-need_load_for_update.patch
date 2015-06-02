@@ -1,0 +1,171 @@
+Index: perl/lib/NG/Form.pm
+===================================================================
+--- perl/lib/NG/Form.pm	(revision 2331)
++++ perl/lib/NG/Form.pm	(working copy)
+@@ -660,7 +660,7 @@
+ 		$ret = $self->_insert();
+ 	}
+ 	else {
+-		$ret = $self->_update($self->fields());
++		$ret = $self->_update($self->fields(),'update');
+ 	};
+     if ($ret) {
+         foreach my $field (@{$fields}) {
+@@ -734,9 +734,10 @@
+ };
+ 
+ sub _update {
+-    my $self = shift;
+-    my $afields = shift;
++    my ($self,$afields,$action) = (shift,shift,shift);
+     
++    die '_update(): Internal error - $action missing' unless $action;
++    
+     my $dbh = $self->dbh();
+     my $table = $self->{_table} or return $self->error("Parameter \"TABLE\" not initialised");
+     
+@@ -747,7 +748,7 @@
+     my @data      = ();
+     
+     foreach my $field (@{$self->fields()}) {
+-        my @fieldDbFields = $field->dbFields('update');
++        my @fieldDbFields = $field->dbFields($action); #update/clean
+         foreach my $dbField (@fieldDbFields) {
+             return $self->error("Table field $dbField specified twice for 'update' operation: at " . $fieldsH->{$dbField}." and ".$field->{FIELD}) if $fieldsH->{$dbField};
+             $fieldsH->{$dbField} = $field->{FIELD};
+@@ -774,22 +775,30 @@
+ 
+ sub loadData {
+ 	my $self = shift;
+-    return $self->_load($self->fields());
++    return $self->_load($self->fields(),'load');
+ };
+ 
+ sub _load {
+-    my $self = shift;
+-    my $afields = shift;
++    my ($self,$afields,$action) = (shift,shift,shift);
+     
++    die '_update(): Internal error - $action missing' unless $action;
++    
++    #setLoadedValue() и afterLoad() вызываются всегда для $action=load.
++    #Для $action before-update,before-delete - только в случае запроса полей классом.
++    #Если классу не требуются свои поля из таблицы, то класс может получить
++    #вызовы setLoadedValue() и afterLoad() и весь ряд возвратив ('') из dbFields()
++    
+ 	my $dbh = $self->dbh();
+ 	my $table = $self->{_table} or return $self->error("Parameter \"TABLE\" not initialised");
+ 	
+ 	#Компонуем запрос
+     my $fields = "";
++    my $reqDBField = {}; #Хеш полей, запросивших данные из таблицы
+     foreach my $field (@{$afields}) {
+-        my @fieldDbFields = $field->dbFields('load');
++        my @fieldDbFields = $field->dbFields($action); # load,before-update,before-delete
++        $reqDBField->{$field} = 1 if scalar @fieldDbFields;
+         foreach my $dbField (@fieldDbFields) {
+-            $fields .= ",".$dbField;
++            $fields .= ",".$dbField if $dbField; 
+         };
+     };
+ 
+@@ -811,13 +820,17 @@
+ 	my $row = $sth->fetchrow_hashref();
+ 	return $self->error("Запрошенные данные не найдены") unless $row;
+ 	$sth->finish();
++    
++    #TODO: $row has no keyfields when $action before-update/before-delete
+ 
+     #Выставляем полученные значения
+ 	foreach my $field (@{$afields}) {
++        next unless $action eq 'load' || exists $reqDBField->{$field};
+         $field->setLoadedValue($row) or return $self->error("Ошибка вызова setLoadedValue() поля ".$field->{FIELD}.": ".$field->error());
+ 	};
+     #Дополнительные действия
+     foreach my $field (@{$afields}) {
++        next unless $action eq 'load' || exists $reqDBField->{$field};
+         $field->afterLoad() or return $self->error("Ошибка вызова afterLoad() поля $field->{FIELD}: ".$field->error());
+     };
+     return 1;
+@@ -873,7 +886,7 @@
+     my @fields = ();
+     my @loadfields = ();
+ 
+-    push @loadfields, $field if $field->{NEED_LOAD_FOR_UPDATE};
++    push @loadfields, $field; #->dbFields('before-update'); if $field->{NEED_LOAD_FOR_UPDATE};
+ 
+     my $childs = $field->getChilds();
+     return $self->error("Результат getChilds() поля ".$field->{FIELD}." не является ссылкой на массив") unless $childs && ref $childs eq "ARRAY";
+@@ -887,10 +900,10 @@
+         return $self->error("Результат getChilds() поля ".$childs->{FIELD}." не является ссылкой на массив") unless $childChilds && ref $childChilds eq "ARRAY";
+         return $self->error("Вложенная подчиненность полей недопустима") if scalar @$childChilds;
+ 
+-        push @loadfields, $child if $child->{NEED_LOAD_FOR_UPDATE};
++        push @loadfields, $child; #->dbFields('before-update'); if $field->{NEED_LOAD_FOR_UPDATE};
+         push @fields,$child;
+     };
+-    $self->_load(\@loadfields) or return 0;
++    $self->_load(\@loadfields,'before-update') or return 0;
+     
+     $field->clean();
+     $field->processChilds() or return $self->error("Ошибка вызова processChilds() поля ".$field->{FIELD}." :".$field->error());
+@@ -901,7 +914,7 @@
+     };
+     
+     unshift @fields,$field;
+-    $self->_update(\@fields) or return 0;
++    $self->_update(\@fields,'clean') or return 0;
+     return 1;
+ }
+ 
+@@ -1023,14 +1036,10 @@
+             push @params, $field->{VALUE};
+             push @fields, $field->{FIELD};
+             next;
+-        }
+-        if ($field->{NEED_LOAD_FOR_UPDATE}) {
+-            push @loadfields, $field;
+         };
++        push @loadfields, $field; #->dbFields('before-delete'); if $field->{NEED_LOAD_FOR_UPDATE};
+     };
+-    if (scalar @loadfields) {
+-        $self->_load(\@loadfields) or return 0;
+-    };
++    $self->_load(\@loadfields,'before-delete') or return 0;
+     
+     foreach my $field (@{$self->{_fields}}) {
+         $field->beforeDelete() or return $self->error("При выполнении beforeDelete() поля ".$field->{FIELD}." произошла ошибка: ". $field->error());
+Index: perl/lib/NG/Field/Multicheckbox.pm
+===================================================================
+--- perl/lib/NG/Field/Multicheckbox.pm	(revision 2331)
++++ perl/lib/NG/Field/Multicheckbox.pm	(working copy)
+@@ -399,6 +399,8 @@
+ sub dbFields {
+     my ($field,$action) = (shift,shift);
+     
++    return () if $action eq 'before-update' || $action eq 'before-delete';
++    
+     my $options = $field->{OPTIONS};
+     
+     my @fields = ();
+Index: perl/lib/NG/Field.pm
+===================================================================
+--- perl/lib/NG/Field.pm	(revision 2331)
++++ perl/lib/NG/Field.pm	(working copy)
+@@ -615,10 +615,15 @@
+ #Операции:
+ # - load   - Загрузка значений
+ # - insert - Вставка новой записи в таблицу
+-# - update - Обновление записи в таблице
++# - update - Обновление записи в таблице (обновляемые поля)
++# - clean  - Сохранение после выполнения clean()
++# - before-update - Список полей таблицы, значения которых надо загрузить перед действиями update/clean
++# - before-delete - Список полей таблицы, значения которых надо загрузить перед действием delete
+ sub dbFields {
+     my ($field,$action) = (shift,shift);
+     return () if $field->{IS_FAKEFIELD};
++    return () if $action eq 'before-update' && !$field->{NEED_LOAD_FOR_UPDATE};
++    return () if $action eq 'before-delete' && !$field->{NEED_LOAD_FOR_UPDATE};
+     return ($field->{FIELD});
+ };
+ 
