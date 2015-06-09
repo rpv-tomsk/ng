@@ -26,7 +26,7 @@ sub init {
     $field->parent() or return 0; ## Вызовы методов могут выставить ошибки
     $field->db() or return 0; 
     
-    $field->{_dict_loaded} = 0;         #Словарь подгружен
+    $field->{_dict_loaded} = 0;         #Словарь подгружен из таблицы БД
     $field->{_prepared} = 0;            #Произведена коррекция списка опций, возможно добавлены значения "не выбрано"/"выберите значение"
     $field->{_prepare_adds_option} = 0; #Коррекция списка опций добавила нулевой дополнительный элемент
     $field->{_defoption} = undef;       #опция, которая стала дефолтной из ключа option.DEFAULT
@@ -70,7 +70,6 @@ sub init {
             if ($options->{ORDER}) { $sql .= " order by ".$options->{ORDER}; };
             $options->{_SQL} = $sql;
         };
-        $field->{SELECT_OPTIONS} = [];
     };
     
     $field->{NULL_VALUE} = 0 unless exists $field->{NULL_VALUE};
@@ -104,6 +103,7 @@ sub _loadFKSelect {
         push @result, $o;
     };
     $sth->finish();
+    $field->{_dict_loaded} = 1;
     return $field->setSelectOptions(\@result);
 };
 
@@ -149,7 +149,6 @@ sub setSelectOptions {
     };
     $field->{_selected_option}->{SELECTED}=1 if $field->{_selected_option};
     $field->{SELECT_OPTIONS} = \@o;
-    $field->{_dict_loaded} = 1;
     
     return 1;
 };
@@ -159,6 +158,10 @@ sub setDefaultValue {
     
     #option.DEFAULT имеет приоритет над значением, указанным в field->{DEFAULT}.
     #Если нет ни того ни другого - применяется опция DEFAULT_FIRST
+    
+    $field->_prepare() or return 0;
+    
+    die 'setDefaultValue(): SELECT_OPTIONS does not set' unless $field->{SELECT_OPTIONS};
     
     my $options = $field->{OPTIONS} || {};
     if ($field->{_defoption}) {
@@ -180,6 +183,11 @@ sub setDefaultValue {
         $field->{DBVALUE} = $field->{_selected_option}->{ID};
         $field->{_changed} = 1;
     };
+    
+    if ($field->{_prepare_adds_option} == 1 && $field->{_selected_option}) {
+        $field->{_prepare_adds_option} = 0;
+        shift @{$field->{SELECT_OPTIONS}};
+    };
 };
 
 sub _prepare {
@@ -189,6 +197,8 @@ sub _prepare {
         $field->_loadFKSelect() or return 0;
     };
     return 1 if $field->{_prepared} == 1;
+    
+    die 'setDefaultValue(): SELECT_OPTIONS does not set' unless $field->{SELECT_OPTIONS};
     
     #Если новая строка:
     #  - если поле обязательное: IS_NOTNULL=>1
@@ -248,12 +258,15 @@ sub _setDBValue {
 	
 	$field->{DBVALUE} = $value;
 	$field->{VALUE} = $value;
+
     $field->{_selected_option}=undef;
-    foreach my $opt (@{$field->{SELECT_OPTIONS}}) {
-        delete $opt->{SELECTED};
-        if (defined $value && $opt->{ID} eq $value) {
-            $opt->{SELECTED}=1;
-            $field->{_selected_option} = $opt;
+    if ($field->{SELECT_OPTIONS}) {
+        foreach my $opt (@{$field->{SELECT_OPTIONS}}) {
+            delete $opt->{SELECTED};
+            if (defined $value && $opt->{ID} eq $value) {
+                $opt->{SELECTED}=1;
+                $field->{_selected_option} = $opt;
+            };
         };
     };
     return 1;
@@ -267,11 +280,13 @@ sub _setValue {
     $field->{DBVALUE} = $value;
 
     $field->{_selected_option}=undef;
-    foreach my $f (@{$field->{SELECT_OPTIONS}}) {
-        delete $f->{SELECTED};
-        if (defined $value && $f->{ID} eq $value) {
-            $f->{SELECTED} = 1;
-            $field->{_selected_option} = $f;
+    if ($field->{SELECT_OPTIONS}) {
+        foreach my $opt (@{$field->{SELECT_OPTIONS}}) {
+            delete $opt->{SELECTED};
+            if (defined $value && $opt->{ID} eq $value) {
+                $opt->{SELECTED} = 1;
+                $field->{_selected_option} = $opt;
+            };
         };
     };
     
@@ -327,8 +342,8 @@ sub selectedName {
         return $field->{_selected_option}->{NAME};
     };
     
-    if ($field->{_dict_loaded}) {
-        #die "NG::Field::Select::selectedName(): Dictionary loaded but no selected option exists";
+    if ($field->{SELECT_OPTIONS}) {
+        warn "NG::Field::Select::selectedName(): Selected option does not exists in SELECT_OPTIONS";
         return "[no dict]";
     };
     
@@ -411,7 +426,7 @@ sub check {
     my $field = shift;
      
     unless ($field->{_selected_option}) {
-        if ($field->{VALUE} && !$field->{_dict_loaded}) {
+        if ($field->{VALUE} && !$field->{SELECT_OPTIONS}) {
             #Dict not loaded, try to load SO
             my $so = $field->_getSOFromDB();
             $field->{_selected_option} = $so if $so;
