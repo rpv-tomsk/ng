@@ -55,7 +55,7 @@ sub Authenticate {
             $self->{_auth_status} = C_AUTH_NOCOOKIE;
             last;
         };
-        if ($admin->{last_ip} ne $q->remote_host()) {
+        if ($admin->{last_ip} ne $q->remote_addr()) {
             $self->{_auth_status} = C_AUTH_WRONGIP;
             last;
         };
@@ -188,7 +188,7 @@ sub AuthenticateByLogin {
         #};
         $admin->{sessionkey} = generate_session_id();
         $admin->{last_online} = time();
-        $dbh->do("update ng_admins set sessionkey=?,last_online=?,last_ip=? where id=?",undef,$admin->{sessionkey},$admin->{last_online},$q->remote_host(),$admin->{id}) or die $DBI::errstr;
+        $dbh->do("update ng_admins set sessionkey=?,last_online=?,last_ip=? where id=?",undef,$admin->{sessionkey},$admin->{last_online},$q->remote_addr(),$admin->{id}) or die $DBI::errstr;
         $cms->addCookie(-name=>COOKIENAME,-value=>$admin->{sessionkey},-domain=>$q->virtual_host(),-path=>$baseUrl.'/');
         $self->{_auth_status} = C_AUTH_OK;
         #$self->_makeLogEvent($self,{operation=>"Вход в систему",module_name=>"Система"});

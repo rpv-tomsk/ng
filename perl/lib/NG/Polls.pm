@@ -44,7 +44,7 @@ sub checkIP_vote {
     return unless $voting->{check_ip} && $voting->{can_vote};
 
     my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
-    $sth->execute($q->remote_host(),$voting->{id}) or undef;
+    $sth->execute($q->remote_addr(),$voting->{id}) or undef;
     my ($count) = $sth->fetchrow();
     $sth->finish();
     $voting->{can_vote} = 0 if $count>0;
@@ -52,7 +52,7 @@ sub checkIP_vote {
 #$voting->{can_vote} = 0;
 
     if ($handler eq 'VOTE' && $voting->{can_vote}) {
-        $dbh->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_host()) or NG::DBIException->throw('checkIP_vote() error');
+        $dbh->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_addr()) or NG::DBIException->throw('checkIP_vote() error');
     };
 };
 
@@ -134,7 +134,7 @@ sub checkUID_vote {
         #Далее can_vote = 1; Можно голосовать.
         if ($handler eq 'VOTE') {
             $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},1,3600);
-            $dbh->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip,atime) values (?,?,?,?,?)",undef,$voting->{id},$time,$uid,$self->q()->remote_host(),time()) or NG::DBIException->throw('checkIP_vote() error'); 
+            $dbh->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip,atime) values (?,?,?,?,?)",undef,$voting->{id},$time,$uid,$self->q()->remote_addr(),time()) or NG::DBIException->throw('checkIP_vote() error'); 
         }
         else {
             $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600) unless defined $cache;
@@ -403,7 +403,7 @@ sub _loadPoll {
 		$poll->{canvote} = $poll->{active} eq "0"?0:1;
 		if ($poll->{canvote} == 1 && $poll->{check_ip}) {
 			my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
-			$sth->execute($q->remote_host(),$poll->{id}) or undef;
+			$sth->execute($q->remote_addr(),$poll->{id}) or undef;
 			my ($count) = $sth->fetchrow();
 			$sth->finish();
 			$poll->{canvote} = 0 if $count>0;
@@ -605,7 +605,7 @@ sub _vote {
 		};
 		$sth_insert->finish();
 		$self->db()->dbh()->do("update polls set vote_cnt=? where id=?",undef,$poll->{vote_cnt},$poll->{id}) or die $DBI::errstr;
-		$self->db()->dbh()->do("insert into polls_ip(polls_id,ip) values(?,?)",undef,$poll->{id},$self->q()->remote_host()) or die $DBI::errstr; 
+		$self->db()->dbh()->do("insert into polls_ip(polls_id,ip) values(?,?)",undef,$poll->{id},$self->q()->remote_addr()) or die $DBI::errstr; 
 	};
 	
 	return wantarray?($ret,$errors):$ret;

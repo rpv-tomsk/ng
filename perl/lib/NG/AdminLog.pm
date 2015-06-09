@@ -27,7 +27,7 @@ sub processEvent {
     my $q = $self->q();
     my $dbh = $self->dbh();
     my $db = $self->db();
-    my $ip = $q->remote_host();
+    my $ip = $q->remote_addr();
     my $sender = $event->sender();
     my $options = $event->options();
     my $page_id = $options->{page_id};

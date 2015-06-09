@@ -35,7 +35,7 @@ sub countPage {
     my $sth = $dbh->prepare("insert into counter_raw (ip, referer, url, useragent, xforwarded,title)	VALUES (?, ?, ?, ?, ?,?)") or return $self->error($DBI::errstr);
 
     my $title = $self->getPageParams()->{full_name};
-    $sth->execute( $q->remote_host(), $q->referer(), $q->url(-full=>1,-query=>1), $q->user_agent(), $ENV{'HTTP_X_FORWARDED_FOR'},$title ) or return $self->error($DBI::errstr);
+    $sth->execute( $q->remote_addr(), $q->referer(), $q->url(-full=>1,-query=>1), $q->user_agent(), $ENV{'HTTP_X_FORWARDED_FOR'},$title ) or return $self->error($DBI::errstr);
 
     my $time = time();
     $NG::Counter::last_commit ||= $time;
