@@ -26,7 +26,6 @@ sub init {
     $field->parent() or return 0; ## Вызовы методов могут выставить ошибки
     $field->db() or return 0; 
     
-    $field->{_dict_loaded} = 0;         #Словарь подгружен из таблицы БД
     $field->{_prepared} = 0;            #Произведена коррекция списка опций, возможно добавлены значения "не выбрано"/"выберите значение"
     $field->{_prepare_adds_option} = 0; #Коррекция списка опций добавила нулевой дополнительный элемент
     $field->{_defoption} = undef;       #опция, которая стала дефолтной из ключа option.DEFAULT
@@ -84,7 +83,7 @@ sub _loadFKSelect {
     my $field = shift;
 
     my $options = $field->{OPTIONS};
-    my $sql = $options->{_SQL} or return $field->set_err("NG::Field::Select::prepareOutput(): отсутствует значение запроса. Ошибка инициализации поля.");
+    my $sql = $options->{_SQL} or return $field->set_err("NG::Field::Select: отсутствует значение запроса (QUERY/TABLE) или значение SELECT_OPTIONS. Ошибка инициализации поля.");
     my @params = ();
     @params = @{$options->{PARAMS}} if (exists $options->{PARAMS});
     
@@ -103,7 +102,6 @@ sub _loadFKSelect {
         push @result, $o;
     };
     $sth->finish();
-    $field->{_dict_loaded} = 1;
     return $field->setSelectOptions(\@result);
 };
 
@@ -193,7 +191,7 @@ sub setDefaultValue {
 sub _prepare {
     my $field = shift;
     
-    unless ($field->{_dict_loaded}) {
+    unless ($field->{SELECT_OPTIONS}) {
         $field->_loadFKSelect() or return 0;
     };
     return 1 if $field->{_prepared} == 1;
@@ -361,8 +359,8 @@ sub selectedName {
 sub selectOptions {
 	my $field = shift;
 
-    if ($field->{_dict_loaded}==0) {
-        $field->_loadFKSelect() or return undef;
+    unless ($field->{SELECT_OPTIONS}) {
+        $field->_loadFKSelect() or return 0;
     };
     if ($field->{_prepare_adds_option} == 1) {
         $field->{_prepared} = 0;
