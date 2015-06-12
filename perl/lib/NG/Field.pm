@@ -466,13 +466,13 @@ sub _setValue {
     my ($field,$value) = (shift,shift);
     
     if ($field->{TYPE} eq "checkbox") {
-        $field->{CHECKED}="";
+        $field->{CHECKED}=0;
         $value = 0 unless defined $value;
         if ($value ne $field->{CB_VALUE}) {
             $value = 0;
         }
         else {
-            $field->{CHECKED}="checked";
+            $field->{CHECKED}=1;
         };
         $field->{VALUE} = $value;
         $field->{DBVALUE} = $value;
