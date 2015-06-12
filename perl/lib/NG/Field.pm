@@ -36,35 +36,35 @@ sub new {
     my $class = shift;
     my $config = shift;
     my $parentobj = shift;
-
+    
     $config || return $class->set_err("Отсутствует конфигурация создаваемого поля");
-  	return $class->set_err("Конфигурация поля не является HASHREF (".(ref $config)) if ref $config ne "HASH";
-
+    return $class->set_err("Конфигурация поля не является HASHREF (".(ref $config)) if ref $config ne "HASH";
+    
     return $class->set_err("Не указан тип поля")  unless $config->{TYPE};
-	return $class->set_err("Не указано имя поля") unless $config->{FIELD};
-
+    return $class->set_err("Не указано имя поля") unless $config->{FIELD};
+    
     my $classes = {
-        fkselect		=> {CLASS=>"NG::Field::Select", },  #Устарело, используйте select
-        select			=> {CLASS=>"NG::Field::Select", },
-        radiobutton		=> {CLASS=>"NG::Field::Select", },
-        multicheckbox	=> {CLASS=>"NG::Field::Multicheckbox"},
-        multiselect		=> {CLASS=>"NG::Field::Multicheckbox"},
-        multivalue		=> {CLASS=>"NG::Field::Multicheckbox"},
-        mp3file			=> {CLASS=>"NG::Field::MP3File"},
+        fkselect        => {CLASS=>"NG::Field::Select", },  #Устарело, используйте select
+        select          => {CLASS=>"NG::Field::Select", },
+        radiobutton     => {CLASS=>"NG::Field::Select", },
+        multicheckbox   => {CLASS=>"NG::Field::Multicheckbox"},
+        multiselect     => {CLASS=>"NG::Field::Multicheckbox"},
+        multivalue      => {CLASS=>"NG::Field::Multicheckbox"},
+        mp3file         => {CLASS=>"NG::Field::MP3File"},
         mp3properties   => {CLASS=>"NG::Field::MP3Properties"},
-		turing			=> {CLASS=>"NG::Field::Turing"},
+        turing          => {CLASS=>"NG::Field::Turing"},
     };
     
     #Обратная совместимость. Следует использовать тип number, который был изначально, а не плодить типы втупую.
     $config->{TYPE} = "number" if $config->{TYPE} eq "float";
-	
-	if ($config->{TYPE} eq "fkparent") {
+    
+    if ($config->{TYPE} eq "fkparent") {
         if (!exists $config->{EDITABLE}) {
-			my $options = {};
-			$options = $config->{OPTIONS} if (exists $config->{OPTIONS});
-			if (exists $options->{TABLE} || exists $options->{QUERY} || exists $config->{SELECT_OPTIONS}) {
-				return $class->set_err("Указан источник данных, но отсутствует ключ EDITABLE");
-			};
+            my $options = {};
+            $options = $config->{OPTIONS} if (exists $config->{OPTIONS});
+            if (exists $options->{TABLE} || exists $options->{QUERY} || exists $config->{SELECT_OPTIONS}) {
+                return $class->set_err("Указан источник данных, но отсутствует ключ EDITABLE");
+            };
             $config->{TYPE}= "hidden";
         }
         elsif ($config->{EDITABLE}==1 || $config->{EDITABLE} eq "select") {
@@ -77,7 +77,7 @@ sub new {
             return $class->set_err("Параметр EDITABLE некорректен");
         };
     };
-	
+    
     my $type = $config->{TYPE};
     my $fieldclass = "NG::Field";
     
@@ -94,27 +94,27 @@ sub new {
         my $extended_class = NG::Field->confParam('types', $type."_class");
         $fieldclass = $extended_class if $extended_class;
     };
-
-	# Создаем поле другого класса
-	if ($fieldclass && $fieldclass ne $class) {
-		unless (UNIVERSAL::can($fieldclass,"can")) {
-			eval "use $fieldclass";
-			return $class->set_err($@) if ($@);
-		};
-		unless (UNIVERSAL::can($fieldclass,"new")) {
-			return $class->set_err("Класс $fieldclass не содержит конструктора new().");
-		};
-		return $fieldclass->new($config,$parentobj);
-	};
-    	
+    
+    # Создаем поле другого класса
+    if ($fieldclass && $fieldclass ne $class) {
+        unless (UNIVERSAL::can($fieldclass,"can")) {
+            eval "use $fieldclass";
+            return $class->set_err($@) if ($@);
+        };
+        unless (UNIVERSAL::can($fieldclass,"new")) {
+            return $class->set_err("Класс $fieldclass не содержит конструктора new().");
+        };
+        return $fieldclass->new($config,$parentobj);
+    };
+        
     my $field = {};
-	%{$field} = %{$config};
+    %{$field} = %{$config};
     
     bless $field, $class;
-	$field->{_parentObj} = $parentobj;
-	$field->{ERRORMSG} = "";
+    $field->{_parentObj} = $parentobj;
+    $field->{ERRORMSG} = "";
     $field->init(@_) or return undef;
-	$field->setValue($config->{VALUE}) if (exists $config->{VALUE});
+    $field->setValue($config->{VALUE}) if (exists $config->{VALUE});
     return $field; 
 };
 
@@ -125,7 +125,7 @@ sub init {
     $field->{TEMPLATE} ||= "admin-side/common/fields.tmpl";
     
     $field->{_loaded} = 0;
-	$field->{_changed} = 0;
+    $field->{_changed} = 0;
     $field->{_new} = 0;
     
     $field->{OLDDBVALUE} = "";
@@ -153,10 +153,10 @@ sub init {
     $hash->{EXTENSIONLIST_FORBIDDEN} = "Запрещенное расширение файла: *.{e}. Расширения: {el} запрещены.";
     $hash->{EXTENSIONLIST_NEEDED}    = "Запрещенное расширение файла: *.{e}. Разрешается {el}.";
 
-	if ($field->isFileField) {
-		return $field->set_err("addfields(): UPLOADDIR value not specified for field ".$field->{FIELD}) unless exists $field->{UPLOADDIR};
+    if ($field->isFileField) {
+        return $field->set_err("addfields(): UPLOADDIR value not specified for field ".$field->{FIELD}) unless exists $field->{UPLOADDIR};
         $field->{NEED_LOAD_FOR_UPDATE} = 1;
-	};
+    };
     if ($type eq "id" || $type eq "hidden") {
         #TODO: Может быть имеет смысл отдельный тип IS_ID для визуальной отладки.
         $field->{IS_HIDDEN} = 1; 
@@ -194,7 +194,7 @@ sub init {
         my $is_type = uc("IS_".$field->{TYPE});
         $field->{$is_type} = 1;  
     };
-	return 1;
+    return 1;
 };
 
 sub getProcessorClass {
@@ -249,15 +249,13 @@ sub dbh {
 };
 
 sub parent {
-	my $field = shift;
+    my $field = shift;
     return $field->set_err("Для поля ".$field->{FIELD}. " не указан объект-родитель") if !$field->{_parentObj} || (ref $field->{_parentObj} eq "");
-	return $field->{_parentObj};
+    return $field->{_parentObj};
 };
 
 sub setError {
-	my $field = shift;
-	my $errormsg = shift;
-	my $mask     = shift;
+    my ($field,$errormsg,$mask) = (shift,shift,shift);
     
     $errormsg =~ s/{n}/$field->{NAME}/;
     $errormsg =~ s/{f}/$field->{FIELD}/;
@@ -272,16 +270,16 @@ sub setError {
     $errormsg ||= "";
 warn "NG::Field($field->{FIELD})::setError(".ts($errormsg).")";
     $field->{ERRORMSG} = $errormsg;
-	return 0;
+    return 0;
 };
 
 sub set_err {
-	my $self = shift;
-	my $errstr = shift;
+    my $self = shift;
+    my $errstr = shift;
 print STDERR "NG::Field(".(ref $self?$self->{FIELD}:"").")::set_err($errstr)\n";
-	$NG::Field::errstr = $errstr;
-	$self->{ERRORMSG} = $errstr if ref $self;
-	return undef;
+    $NG::Field::errstr = $errstr;
+    $self->{ERRORMSG} = $errstr if ref $self;
+    return undef;
 };
 
 sub error { return shift->{ERRORMSG}; };
@@ -294,8 +292,8 @@ sub hasError {
 };
 
 sub ajaxError {
-	my ($s) = @_;
-	{ name => $s->{FIELD}, type => $s->{TYPE}, err => $s->error };
+    my ($s) = @_;
+    { name => $s->{FIELD}, type => $s->{TYPE}, err => $s->error };
 }
 
 sub showError {
@@ -308,45 +306,45 @@ sub showError {
 };
 
 sub _param {
-	my $field = shift;
-	my $href = shift;
-	
-	foreach my $key (keys %{$href}) {
-		$field->{$key} = $href->{$key};
-	}
-	return 1;
+    my $field = shift;
+    my $href = shift;
+    
+    foreach my $key (keys %{$href}) {
+        $field->{$key} = $href->{$key};
+    }
+    return 1;
 }
 
 sub param {
-	my $field = shift;
-	my $ref   = shift;
-	
-	if (!defined $ref) {
-		#возвращаем все параметры в виде hashref
-		my %tmp = %{$field};
-		return \%tmp;
-	};
-	
-	if (ref $ref eq "") {
-		unshift(@_,$ref);
-		if (scalar @_ == 1) {
-			#запрос
-			return $field->{$ref};
-		}
-		#elsif (scalar @_ % 2 == 0) {
-		#}
-		else {
-			my %param = (@_);
-			$field->_param(\%param) or return 0;
-		};
-	}
-	elsif (ref $ref eq 'HASH') {
-		$field->_param($ref) or return 0;
-	}
-	else {
-		die "NG::Field::param(): incorrect method call";
-	};
-	return 1;
+    my $field = shift;
+    my $ref   = shift;
+    
+    if (!defined $ref) {
+        #возвращаем все параметры в виде hashref
+        my %tmp = %{$field};
+        return \%tmp;
+    };
+    
+    if (ref $ref eq "") {
+        unshift(@_,$ref);
+        if (scalar @_ == 1) {
+            #запрос
+            return $field->{$ref};
+        }
+        #elsif (scalar @_ % 2 == 0) {
+        #}
+        else {
+            my %param = (@_);
+            $field->_param(\%param) or return 0;
+        };
+    }
+    elsif (ref $ref eq 'HASH') {
+        $field->_param($ref) or return 0;
+    }
+    else {
+        die "NG::Field::param(): incorrect method call";
+    };
+    return 1;
 };
 
 sub options {
@@ -363,26 +361,26 @@ sub options {
 };
 
 sub isFileField {
-	my $self = shift;
-	my $type = $self->{TYPE};
-	return 1 if ($type eq "file") || ($type eq "image");
-	return 0;
+    my $self = shift;
+    my $type = $self->{TYPE};
+    return 1 if ($type eq "file") || ($type eq "image");
+    return 0;
 }
 
 sub type { return shift->{TYPE}; };
 
 sub _setDBValue {
-	my $self = shift;
-	my $value = shift;
-	
-	$self->{DBVALUE} = $value;
-	$self->{VALUE} = $value;
-	
+    my $self = shift;
+    my $value = shift;
+    
+    $self->{DBVALUE} = $value;
+    $self->{VALUE} = $value;
+    
     if ($self->{TYPE} eq "date") {
         $self->{VALUE} = $self->db()->date_from_db($value);
     }
     elsif ($self->{TYPE} eq "checkbox") {
-		$self->{CHECKED} = ($value eq $self->{CB_VALUE})?1:0;
+        $self->{CHECKED} = ($value eq $self->{CB_VALUE})?1:0;
     }
     elsif ($self->{TYPE} eq "datetime") {
         $self->{VALUE} = $self->db()->datetime_from_db($value);
@@ -406,21 +404,21 @@ sub _setDBValue {
     elsif ($self->isFileField()) {
         $self->{VALUE} = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$self->{VALUE} if ($self->{VALUE});
     }
-	elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
-		return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for \"".$self->{'TYPE'}."\" field \"$self->{FIELD}\".") if (is_empty($self->{OPTIONS}->{FILEDIR}));
-		if ($value) {
-			unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
-				my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
-				return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e) unless defined $v;
-				$self->{VALUE} = '';
-				return 1;
-			};
-			my ($v,$e) = loadValueFromFile($self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
+    elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
+        return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for \"".$self->{'TYPE'}."\" field \"$self->{FIELD}\".") if (is_empty($self->{OPTIONS}->{FILEDIR}));
+        if ($value) {
+            unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
+                my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
+                return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e) unless defined $v;
+                $self->{VALUE} = '';
+                return 1;
+            };
+            my ($v,$e) = loadValueFromFile($self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
             $self->{VALUE} = $v;
-			return $self->setError("Ошибка чтения файла с данными поля $self->{FIELD}: ".$e) unless defined $v;
-		}
-	};
-	return 1;
+            return $self->setError("Ошибка чтения файла с данными поля $self->{FIELD}: ".$e) unless defined $v;
+        }
+    };
+    return 1;
 };
 
 sub setDBValue {
@@ -467,51 +465,51 @@ sub setLoadedValue {
 };
 
 sub _setValue {
-	my $field = shift;
-	my $value = shift;
-	
-	if ($field->{TYPE} eq "checkbox") {
-		$field->{CHECKED}="";
-		$value = 0 unless defined $value;
-		if ($value ne $field->{CB_VALUE}) {
-			$value = 0;
-		}
-		else {
-			$field->{CHECKED}="checked";
-		};
-		$field->{VALUE} = $value;
-	}
-	elsif ($field->{TYPE} eq "date") {
-		$field->{VALUE} = $value;
-	}
-	elsif ($field->{TYPE} eq "datetime") {
-		$field->{VALUE} = $value;
-	}
-	elsif ($field->isFileField()) {
-		if (!is_empty($value) && -e $value) {
-			if (!$field->{TMP_FILENAME}) {
-				($field->{TMP_FILENAME}) = $value =~ /([^\\\/]*)$/; 
-			};
-			$field->{VALUE} = $value;
-		}
-		else {
+    my $field = shift;
+    my $value = shift;
+    
+    if ($field->{TYPE} eq "checkbox") {
+        $field->{CHECKED}="";
+        $value = 0 unless defined $value;
+        if ($value ne $field->{CB_VALUE}) {
+            $value = 0;
+        }
+        else {
+            $field->{CHECKED}="checked";
+        };
+        $field->{VALUE} = $value;
+    }
+    elsif ($field->{TYPE} eq "date") {
+        $field->{VALUE} = $value;
+    }
+    elsif ($field->{TYPE} eq "datetime") {
+        $field->{VALUE} = $value;
+    }
+    elsif ($field->isFileField()) {
+        if (!is_empty($value) && -e $value) {
+            if (!$field->{TMP_FILENAME}) {
+                ($field->{TMP_FILENAME}) = $value =~ /([^\\\/]*)$/; 
+            };
+            $field->{VALUE} = $value;
+        }
+        else {
             $field->{VALUE} = "";
-		};
-	}
-	elsif (($field->{TYPE} eq "number") || ($field->{TYPE} eq "int")) {
-		$field->{VALUE} = $value;
+        };
+    }
+    elsif (($field->{TYPE} eq "number") || ($field->{TYPE} eq "int")) {
+        $field->{VALUE} = $value;
         $field->{VALUE} = undef if defined $value && $value eq "";
-	}
-	else {
-		$field->{VALUE} = $value;
-	};
+    }
+    else {
+        $field->{VALUE} = $value;
+    };
     return 1;
 };
 
 sub setValue {
     my $field = shift;
     $field->_setValue(@_) or return 0;
-	$field->{_changed} = 1;
+    $field->{_changed} = 1;
     return 1;
 };
 
@@ -530,7 +528,7 @@ sub setFormValue {
     
     my $q = $field->parent()->q();
     
-	my ($contentType, $is_utf8) = ($q->content_type()||"",0);
+    my ($contentType, $is_utf8) = ($q->content_type()||"",0);
 
     $is_utf8++ if $contentType =~ /utf\-?8/i; # application/x-www-form-urlencoded; charset=UTF-8
     $is_utf8++ if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest";
@@ -568,8 +566,8 @@ sub setTmpFile {
 };
 
 sub value {
-	my $field = shift;
-	return $field->{VALUE};
+    my $field = shift;
+    return $field->{VALUE};
 };
 *VALUE = \&value;
 
@@ -633,32 +631,32 @@ sub dbFields {
 #
 # $dbField заполнен, если идет сохранение (insert/update) формы, в остальных случаях (а их достаточно) - undef
 sub dbValue {
-	my ($field,$dbField) = (shift,shift);
+    my ($field,$dbField) = (shift,shift);
     die "Not implemented" if $dbField && $dbField ne $field->{FIELD};
     
-	my $type = $field->type();
-
-	if ($type eq "rtffile" || $type eq "textfile") {
-		return $field->{DBVALUE} if exists($field->{DBVALUE});
-		$field->genNewFileName();
-	}
-	elsif ($field->isFileField()){
-		return $field->{DBVALUE};
-	}
-	elsif ($type eq "date") {
-		$field->{DBVALUE} = $field->db()->date_to_db($field->{VALUE});
-	}
-	elsif ($type eq "datetime") {
-		$field->{DBVALUE} = $field->db()->datetime_to_db($field->{VALUE});
-	}
+    my $type = $field->type();
+    
+    if ($type eq "rtffile" || $type eq "textfile") {
+        return $field->{DBVALUE} if exists($field->{DBVALUE});
+        $field->genNewFileName();
+    }
+    elsif ($field->isFileField()){
+        return $field->{DBVALUE};
+    }
+    elsif ($type eq "date") {
+        $field->{DBVALUE} = $field->db()->date_to_db($field->{VALUE});
+    }
+    elsif ($type eq "datetime") {
+        $field->{DBVALUE} = $field->db()->datetime_to_db($field->{VALUE});
+    }
     elsif ($type eq "id") {
         die("Can`t find value for key field \"$field->{FIELD}\"") if !defined $field->{VALUE};
         $field->{DBVALUE} = $field->{VALUE};
     }
-	else {
-		$field->{DBVALUE} = $field->{VALUE};
-	};
-	return $field->{DBVALUE};
+    else {
+        $field->{DBVALUE} = $field->{VALUE};
+    };
+    return $field->{DBVALUE};
 };
 
 sub oldDBValue {
@@ -668,11 +666,11 @@ sub oldDBValue {
 
 sub checkFileType {
     my $field = shift;
-	
-	if (is_empty($field->{VALUE})) {
-		return $field->setErrorByCode("MISSING_FILE") if $field->{_new} == 1 && $field->{IS_NOTNULL};
-		return 1;
-	};
+    
+    if (is_empty($field->{VALUE})) {
+        return $field->setErrorByCode("MISSING_FILE") if $field->{_new} == 1 && $field->{IS_NOTNULL};
+        return 1;
+    };
     #TODO: нужно ли проверять ранее загруженные значения? для этого надо использовать _loaded
     return 1 if $field->{_loaded} && !$field->changed();
     
@@ -906,15 +904,15 @@ sub check {
     if (($type eq "id") && !is_valid_id($value)) {
         return $field->setErrorByCode("MISSING_KEY");
     };
-       
+    
     if (($type eq "email") && ($value) && (!is_valid_email($value)))  {
         return $field->setErrorByCode("INVALID_EMAIL");
     };
-        
+    
     if ($field->{IS_NOTNULL} && is_empty($value)) {
         return $field->setErrorByCode("IS_EMPTY");
     };
-		
+    
     if ($type eq "url" && !is_empty($value)){
         if (is_valid_link($value)){
             return 1;
