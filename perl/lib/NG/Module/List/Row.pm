@@ -31,7 +31,7 @@ sub init {
     $self->{ID_VALUE} = $id;      #В том числе для шаблона
     
     foreach my $field (@{$self->{_listObj}->{_listfields}}) {
-        my $c = NG::Field->new($field,$self);
+        my $c = NG::Field->new($field,$self) or die $NG::Field::errstr;
         $self->_addColumn($c);
     };
     
