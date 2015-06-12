@@ -1393,7 +1393,7 @@ sub getListCellHTML {
     elsif ($type eq 'checkbox') {
         my ($clickable,$checked) = ('','');
         $clickable = 'clickable' if $field->{CLICKABLE};
-        $checked   = 'checked'   if $field->{VALUE};
+        $checked   = 'checked'   if $field->{CHECKED};
         
         my $parent = $field->parent();
         my $id     = $parent->{ID_VALUE};
