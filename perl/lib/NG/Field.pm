@@ -563,6 +563,15 @@ sub value {
 };
 *VALUE = \&value;
 
+sub searchIndexValue {
+    my $field = shift;
+    
+    my $type = $field->type();
+    return strip_tags($field->{VALUE}) if $type eq 'rtffile' || $type eq 'rtf';
+    die 'NG::Field::searchIndexValue(): Unable to index checkbox' if $type eq 'checkbox';
+    return $field->{VALUE};
+};
+
 sub REQUIRED {return shift->{IS_NOTNULL}; };
 sub NAME {return shift->{NAME}; };
 

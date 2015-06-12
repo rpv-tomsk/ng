@@ -1731,11 +1731,9 @@ sub getBlockIndex {
                             $v = $rowFieldValues->{$fn};
                         }
                         else {
-                            $v = $self->_indexGetFieldValue($fieldObjs->{$fn},$row);
-                            unless ($v) {
-                                my $e = $self->cms()->getError();
-                                return $self->showError("_getIndexes(): Ошибка получения значения поля $fn для класса $class: $e") if $e;
-                            };
+                            my $fieldObj = $fieldObjs->{$fn};
+                            $fieldObj->setLoadedValue($row) or return $self->showError("_getIndexes(): Ошибка получения значения поля $fn для класса $class: ".$fieldObj->error());
+                            $v = $fieldObj->searchIndexValue();
                             $rowFieldValues->{$fn} = $v;
                         };
                     }
@@ -1792,52 +1790,6 @@ sub getBlockIndex {
     return $index;
 };
 
-sub _indexGetFieldValue {
-    #TODO: заменить на последовательность $fieldObj->setDBValue(), $fieldObj->value();
-    my $self = shift;
-    my $fieldObj = shift;
-    my $row = shift;
-
-    if ($fieldObj->isa("NG::Field::Select")) {
-        $fieldObj->setValue($row->{$fieldObj->{FIELD}});
-        return $fieldObj->selectedName();
-    }
-    elsif ($fieldObj->{TYPE} eq "text") {
-        return $row->{$fieldObj->{FIELD}};
-    }
-    elsif ($fieldObj->{TYPE} eq "textarea") {
-        return $row->{$fieldObj->{FIELD}};
-    }
-    elsif ($fieldObj->{TYPE} eq "rtf") {
-        return strip_tags($row->{$fieldObj->{FIELD}});
-    }
-    elsif ($fieldObj->{TYPE} eq "rtffile") {
-        return $self->error("Can`t load data from file: OPTIONS.FILEDIR is not specified for \"rtffile\" field \"$fieldObj->{FIELD}\" при построении индекса.") if (is_empty($fieldObj->options('FILEDIR')));
-        if ($row->{$fieldObj->{FIELD}}) {
-            my ($value,$e) = loadValueFromFile($self->getSiteRoot().$fieldObj->options('FILEDIR').$row->{$fieldObj->{FIELD}});
-            return $self->error("Ошибка чтения файла с данными поля $fieldObj->{FIELD}: ".$e) unless defined $value;
-            return strip_tags($value);
-        }
-        else {
-            return $self->error("Не найден файл данных поля ".$fieldObj->{FIELD}." типа ".$fieldObj->{TYPE});
-        }
-    }
-    elsif ($fieldObj->{TYPE} eq "file") {
-        #$index->{DATAADDON} = "Суперфотка, урл: ".$self->getFileURL($row->{$indexfield->{FIELD}});
-        #$index->{DATAADDON} .= "мелкая фотка: ".$self->getFileURL($row->{'small_img'});
-    }
-    elsif ($fieldObj->{TYPE} eq "date") {
-        return $self->db()->date_from_db($row->{$fieldObj->{FIELD}});
-    }
-    elsif ($fieldObj->{TYPE} eq "datetime") {
-        return $self->db()->datetime_from_db($row->{$fieldObj->{FIELD}});
-    }
-    else {# для неизвестного типа поля (кастомного) vinnie 22.06.2011 15:02:04
-       $fieldObj->setDBValue($row->{$fieldObj->{FIELD}});
-       return $fieldObj->value();
-    };
-    return $self->error("Неподдерживаемый индексатором тип поля ".$fieldObj->{TYPE}." - поле ".$fieldObj->{FIELD});
-};
 ##  /Код, ответственный за индексирование блока
 
 sub getContentKey {

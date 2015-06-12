@@ -18,6 +18,7 @@ branches/ng6
       Несовместимость: TYPE=>'fkparent' + CLASS=>'Some::Class' - не произойдет замена fkparent -> hidden/select/radiobutton
     * Удален тип поля float, используйте number.
     * Вынесено $NG::Field::classesMap
+    + Метод NG::Field::searchIndexValue()
 
 branches/ng-4.3
 

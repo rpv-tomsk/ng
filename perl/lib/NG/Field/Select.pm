@@ -354,7 +354,7 @@ sub selectedName {
 
 *SELECTEDNAME = \&selectedName;
 *getListCellHTML = \&selectedName;
-
+*searchIndexValue = \&selectedName;
 
 sub selectOptions {
 	my $field = shift;
