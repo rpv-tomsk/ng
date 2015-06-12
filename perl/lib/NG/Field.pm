@@ -549,8 +549,8 @@ sub setFormValue {
         return 1;
     };
 #print STDERR $field->{FIELD}." - ".$value;
-    $field->_setValue($value);
-    $field->{_changed} = 1 unless $field->{READONLY};
+    $field->setValue($value);
+    $field->{_changed} = 0 if $field->{READONLY};
 };
 
 sub setTmpFile {
