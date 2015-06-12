@@ -13,6 +13,17 @@ my $DISABLED_FILES_RE = qr@pl|php|exe|cgi|bat|com|asp@i;
 
 $NG::Field::VERSION = 0.1;
 
+our $classesMap = {
+    fkselect        => {CLASS=>"NG::Field::Select", },  #Устарело, используйте select
+    select          => {CLASS=>"NG::Field::Select", },
+    radiobutton     => {CLASS=>"NG::Field::Select", },
+    multicheckbox   => {CLASS=>"NG::Field::Multicheckbox"},
+    multiselect     => {CLASS=>"NG::Field::Multicheckbox"},
+    multivalue      => {CLASS=>"NG::Field::Multicheckbox"},
+    mp3file         => {CLASS=>"NG::Field::MP3File"},
+    mp3properties   => {CLASS=>"NG::Field::MP3Properties"},
+    turing          => {CLASS=>"NG::Field::Turing"},
+};
 
 =head
     Описание некоторых ключей:
@@ -33,63 +44,44 @@ $NG::Field::VERSION = 0.1;
  
 
 sub new {
-    my $class = shift;
-    my $config = shift;
-    my $parentobj = shift;
+    my ($class,$config,$parentobj) = (shift,shift,shift);
     
     $config || return $class->set_err("Отсутствует конфигурация создаваемого поля");
     return $class->set_err("Конфигурация поля не является HASHREF (".(ref $config)) if ref $config ne "HASH";
     
-    return $class->set_err("Не указан тип поля")  unless $config->{TYPE};
     return $class->set_err("Не указано имя поля") unless $config->{FIELD};
     
-    my $classes = {
-        fkselect        => {CLASS=>"NG::Field::Select", },  #Устарело, используйте select
-        select          => {CLASS=>"NG::Field::Select", },
-        radiobutton     => {CLASS=>"NG::Field::Select", },
-        multicheckbox   => {CLASS=>"NG::Field::Multicheckbox"},
-        multiselect     => {CLASS=>"NG::Field::Multicheckbox"},
-        multivalue      => {CLASS=>"NG::Field::Multicheckbox"},
-        mp3file         => {CLASS=>"NG::Field::MP3File"},
-        mp3properties   => {CLASS=>"NG::Field::MP3Properties"},
-        turing          => {CLASS=>"NG::Field::Turing"},
-    };
-    
-    #Обратная совместимость. Следует использовать тип number, который был изначально, а не плодить типы втупую.
-    $config->{TYPE} = "number" if $config->{TYPE} eq "float";
-    
-    if ($config->{TYPE} eq "fkparent") {
-        if (!exists $config->{EDITABLE}) {
-            my $options = {};
-            $options = $config->{OPTIONS} if (exists $config->{OPTIONS});
-            if (exists $options->{TABLE} || exists $options->{QUERY} || exists $config->{SELECT_OPTIONS}) {
-                return $class->set_err("Указан источник данных, но отсутствует ключ EDITABLE");
-            };
-            $config->{TYPE}= "hidden";
-        }
-        elsif ($config->{EDITABLE}==1 || $config->{EDITABLE} eq "select") {
-            $config->{TYPE}= "select";
-        }
-        elsif ($config->{EDITABLE} eq "radiobutton") {
-            $config->{TYPE}= "radiobutton";
-        }
-        else {
-            return $class->set_err("Параметр EDITABLE некорректен");
-        };
-    };
-    
-    my $type = $config->{TYPE};
     my $fieldclass = "NG::Field";
-    
-    if (exists $classes->{$type}) {
-        $fieldclass = $classes->{$type}->{CLASS};
-    };
-    
     # если указан конкретный класс обработчик поля, то возмем его
     if (exists $config->{CLASS}) {
         $fieldclass = $config->{CLASS};
     }
     else {
+        return $class->set_err("Не указан тип поля")  unless $config->{TYPE};
+        
+        if ($config->{TYPE} eq "fkparent") {
+            if (!exists $config->{EDITABLE}) {
+                my $options = {};
+                $options = $config->{OPTIONS} if (exists $config->{OPTIONS});
+                if (exists $options->{TABLE} || exists $options->{QUERY} || exists $config->{SELECT_OPTIONS}) {
+                    return $class->set_err("Указан источник данных, но отсутствует ключ EDITABLE");
+                };
+                $config->{TYPE}= "hidden";
+            }
+            elsif ($config->{EDITABLE}==1 || $config->{EDITABLE} eq "select") {
+                $config->{TYPE}= "select";
+            }
+            elsif ($config->{EDITABLE} eq "radiobutton") {
+                $config->{TYPE}= "radiobutton";
+            }
+            else {
+                return $class->set_err("Параметр EDITABLE некорректен");
+            };
+        };
+        
+        my $type = $config->{TYPE};
+        $fieldclass = $classesMap->{$type}->{CLASS} if exists $classesMap->{$type};
+        
         # если в конфиге есть информация о том что тип поля перекрыт\расширен, возмем этот класс
         my $extended_class = NG::Field->confParam('types', $type."_class");
         $fieldclass = $extended_class if $extended_class;
@@ -106,31 +98,31 @@ sub new {
         };
         return $fieldclass->new($config,$parentobj);
     };
-        
+    
     my $field = {};
     %{$field} = %{$config};
     
     bless $field, $class;
     $field->{_parentObj} = $parentobj;
-    $field->{ERRORMSG} = "";
     $field->init(@_) or return undef;
-    $field->setValue($config->{VALUE}) if (exists $config->{VALUE});
+    $field->setValue($config->{VALUE}) if exists $config->{VALUE};
     return $field; 
 };
 
 sub init {
     my $field = shift;
 
-    $field->{TEMPLATE} ||= $field->{_parentObj}->{_deffieldtemplate};    
+    $field->{TEMPLATE} ||= $field->{_parentObj}->{_deffieldtemplate};
     $field->{TEMPLATE} ||= "admin-side/common/fields.tmpl";
     
     $field->{_loaded} = 0;
     $field->{_changed} = 0;
     $field->{_new} = 0;
     
+    $field->{ERRORMSG}   = "";
     $field->{OLDDBVALUE} = "";
 
-    my $type = $field->{TYPE};
+    my $type = $field->{TYPE} or return $field->set_err("Не указан тип поля");
     
     my $hash = $field->{_errorTexts}->{""} = {};  # $hash->{$lang}->{$code}=$text;
     $hash->{NOT_UNIQUE}   = "Значение поля \"{n}\" не уникально";
@@ -192,7 +184,7 @@ sub init {
     }
     else {
         my $is_type = uc("IS_".$field->{TYPE});
-        $field->{$is_type} = 1;  
+        $field->{$is_type} = 1;
     };
     return 1;
 };
