@@ -40,6 +40,11 @@ our $classesMap = {
    field->{IS_HIDDEN}=1    # Поле передается в форму как hidden поле (HIDE имеет приоритет). Ошибки из таких полей выносятся в глобальный контейнер ошибок.
    field->{IS_FAKEFIELD}=1 # Поле не является полем основной таблицы формы, флаг используется в операциях _load,_insert,_update для skip-а
    field->{NEED_LOAD_FOR_UPDATE} = 1 # Для произведения обновления значения поля или удаления записи требуется наличие его DBVALUE
+   
+   OLDDBVALUE - значение, загруженное из БД
+   DBVALUE    - значение, загруженное из БД или подготовленное для сохранения в БД.
+   VALUE      - значение, соответствующее текущему значению DBVALUE (ключ не обязательный)
+              - Ключи DBVALUE и VALUE меняются синхронно, в функциях _setValue() и _setDBValue()
 =cut
  
 
@@ -120,7 +125,6 @@ sub init {
     $field->{_new} = 0;
     
     $field->{ERRORMSG}   = "";
-    $field->{OLDDBVALUE} = "";
 
     my $type = $field->{TYPE} or return $field->set_err("Не указан тип поля");
     
@@ -394,11 +398,13 @@ sub _setDBValue {
         };
     }
     elsif ($self->isFileField()) {
-        $self->{VALUE} = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$self->{VALUE} if ($self->{VALUE});
+        $self->{VALUE} = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$self->{DBVALUE} if $self->{DBVALUE};
     }
     elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
         return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for \"".$self->{'TYPE'}."\" field \"$self->{FIELD}\".") if (is_empty($self->{OPTIONS}->{FILEDIR}));
         if ($value) {
+            #Если файл отсутствует, создаем пустой файл заранее.
+            #Зачем делать это в этой фазе - знание утеряно.
             unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
                 my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
                 return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e) unless defined $v;
@@ -406,9 +412,9 @@ sub _setDBValue {
                 return 1;
             };
             my ($v,$e) = loadValueFromFile($self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
-            $self->{VALUE} = $v;
             return $self->setError("Ошибка чтения файла с данными поля $self->{FIELD}: ".$e) unless defined $v;
-        }
+            $self->{VALUE} = $v;
+        };
     };
     return 1;
 };
@@ -457,8 +463,7 @@ sub setLoadedValue {
 };
 
 sub _setValue {
-    my $field = shift;
-    my $value = shift;
+    my ($field,$value) = (shift,shift);
     
     if ($field->{TYPE} eq "checkbox") {
         $field->{CHECKED}="";
@@ -470,12 +475,15 @@ sub _setValue {
             $field->{CHECKED}="checked";
         };
         $field->{VALUE} = $value;
+        $field->{DBVALUE} = $value;
     }
     elsif ($field->{TYPE} eq "date") {
         $field->{VALUE} = $value;
+        $field->{DBVALUE} = $field->db()->date_to_db($field->{VALUE});
     }
     elsif ($field->{TYPE} eq "datetime") {
         $field->{VALUE} = $value;
+        $field->{DBVALUE} = $field->db()->datetime_to_db($field->{VALUE});
     }
     elsif ($field->isFileField()) {
         if (!is_empty($value) && -e $value) {
@@ -487,13 +495,16 @@ sub _setValue {
         else {
             $field->{VALUE} = "";
         };
+        #DBVALUE формируется в момент вызова dbValue(), т.к. использует значения прочих полей
     }
     elsif (($field->{TYPE} eq "number") || ($field->{TYPE} eq "int")) {
         $field->{VALUE} = $value;
         $field->{VALUE} = undef if defined $value && $value eq "";
+        $field->{DBVALUE} = $field->{VALUE};
     }
     else {
         $field->{VALUE} = $value;
+        $field->{DBVALUE} = $value;
     };
     return 1;
 };
@@ -638,31 +649,19 @@ sub dbValue {
     my $type = $field->type();
     
     if ($type eq "rtffile" || $type eq "textfile") {
-        return $field->{DBVALUE} if exists($field->{DBVALUE});
-        $field->genNewFileName();
-    }
-    elsif ($field->isFileField()){
-        return $field->{DBVALUE};
-    }
-    elsif ($type eq "date") {
-        $field->{DBVALUE} = $field->db()->date_to_db($field->{VALUE});
-    }
-    elsif ($type eq "datetime") {
-        $field->{DBVALUE} = $field->db()->datetime_to_db($field->{VALUE});
-    }
-    elsif ($type eq "id") {
-        die("Can`t find value for key field \"$field->{FIELD}\"") if !defined $field->{VALUE};
-        $field->{DBVALUE} = $field->{VALUE};
-    }
-    else {
-        $field->{DBVALUE} = $field->{VALUE};
+        $field->genNewFileName() unless exists $field->{DBVALUE};
     };
+    
+    die 'NG::Field::dbValue(): DBVALUE not built for field '.$field->{FIELD} unless exists $field->{DBVALUE};
+    die 'NG::Field::dbValue(): Can`t find value for key field '.$field->{FIELD} if $type eq "id" && !$field->{DBVALUE};
+
     return $field->{DBVALUE};
 };
 
 sub oldDBValue {
     my $field=shift;
-    return $field->{'OLDDBVALUE'};
+    die 'NG::Field::oldDBValue(): OLDDBVALUE not loaded!' unless exists $field->{OLDDBVALUE};
+    return $field->{OLDDBVALUE};
 };
 
 sub checkFileType {
@@ -1349,6 +1348,7 @@ sub _unlink {
 sub clean {
     my $self = shift;
     
+    die 'NG::Field::clean(): OLDDBVALUE not loaded!' unless exists $self->{OLDDBVALUE};
     my $oldDbV = $self->{OLDDBVALUE};
     my $newDbV = $self->dbValue();
     
