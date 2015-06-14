@@ -371,23 +371,24 @@ sub _setDBValue {
     my $self = shift;
     my $value = shift;
     
-    $self->{DBVALUE} = $value;
-    $self->{VALUE} = $value;
-    
     if ($self->{TYPE} eq "date") {
         $self->{VALUE} = $self->db()->date_from_db($value);
+        $self->{DBVALUE} = $value;
     }
     elsif ($self->{TYPE} eq "checkbox") {
         $self->{CHECKED} = ($value eq $self->{CB_VALUE})?1:0;
+        $self->{DBVALUE} = $value;
     }
     elsif ($self->{TYPE} eq "datetime") {
         $self->{VALUE} = $self->db()->datetime_from_db($value);
+        $self->{DBVALUE} = $value;
     }
     elsif ($self->{TYPE} eq "inttimestamp") {
         use POSIX qw/strftime/;
         my $format = "%d.%m.%Y %T";
         $format = $self->{FORMAT} if exists $self->{FORMAT}; ## options->FORMAT ?
         $self->{VALUE} = strftime($format,localtime($value));
+        $self->{DBVALUE} = $value;
     }
     elsif ($self->{TYPE} eq "url") {
         my $link = parseBBlink($value);
@@ -398,13 +399,19 @@ sub _setDBValue {
             $self->{LINK_URL} = $link->{HREF};
             $self->{LINK_PATTERN} = $link;
         };
+        $self->{VALUE}   = $value;
+        $self->{DBVALUE} = $value;
     }
     elsif ($self->isFileField()) {
-        $self->{VALUE} = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$self->{DBVALUE} if $self->{DBVALUE};
+        if ($value) {
+            $self->{VALUE}   = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$value;
+            $self->{DBVALUE} = $value;
+        };
     }
-    elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
+    elsif ($self->{TYPE} eq "rtffile" || $self->{TYPE} eq "textfile") {
         return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for field {f} (type: {t}).") if is_empty($self->{OPTIONS}->{FILEDIR});
         if ($value) {
+            $self->{DBVALUE} = $value;
             #Если файл отсутствует, создаем пустой файл заранее.
             #Зачем делать это в этой фазе - знание утеряно.
             unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
@@ -417,6 +424,10 @@ sub _setDBValue {
             return $self->setError("Ошибка чтения файла с данными поля {f}: ".$e) unless defined $v;
             $self->{VALUE} = $v;
         };
+    }
+    else {
+        $self->{DBVALUE} = $value;
+        $self->{VALUE} = $value;
     };
     return 1;
 };
@@ -503,6 +514,9 @@ sub _setValue {
         $field->{VALUE} = $value;
         $field->{VALUE} = undef if defined $value && $value eq "";
         $field->{DBVALUE} = $field->{VALUE};
+    }
+    elsif ($field->{TYPE} eq 'rtffile' || $field->{TYPE} eq 'textfile') {
+        $field->{VALUE} = $value;
     }
     else {
         $field->{VALUE} = $value;
@@ -1201,7 +1215,7 @@ sub beforeSave {
         my $oldDbV = $self->{OLDDBVALUE};
         $self->_unlink($oldDbV) if ($oldDbV && $oldDbV ne $newDbV);
     }
-    elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
+    elsif ($self->{TYPE} eq "rtffile" || $self->{TYPE} eq "textfile") {
         my $dbv = $self->dbValue();
         return $self->setError("Отсутствует имя файла для сохранения данных поля {f} (тип: {t}).") unless $dbv;
         my ($v,$e) = saveValueToFile($self->{VALUE},$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$dbv);
