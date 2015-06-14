@@ -559,6 +559,7 @@ sub setFormValue {
     };
     
     if ($field->isFileField()) {
+        $field->{DBVALUE} = undef;
         return 1 if is_empty($value);
         return 1 unless -e $value;
         $field->setTmpFile($q->tmpFileName($value),$value);
