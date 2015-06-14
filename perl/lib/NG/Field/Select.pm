@@ -182,7 +182,7 @@ sub setDefaultValue {
         $field->{_changed} = 1;
     };
     
-    if ($field->{_prepare_adds_option} == 1 && $field->{_selected_option}) {
+    if ($field->{_prepare_adds_option} == 1 && $field->{_selected_option} && $field->{IS_NOTNULL}) {
         $field->{_prepare_adds_option} = 0;
         shift @{$field->{SELECT_OPTIONS}};
     };
