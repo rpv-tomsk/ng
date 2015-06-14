@@ -504,11 +504,12 @@ sub _setValue {
                 ($field->{TMP_FILENAME}) = $value =~ /([^\\\/]*)$/; 
             };
             $field->{VALUE} = $value;
+            delete $field->{DBVALUE}; #DBVALUE формируетс€ в момент вызова dbValue(), т.к. использует значени€ прочих полей
         }
         else {
             $field->{VALUE} = "";
+            $field->{DBVALUE} = undef;
         };
-        #DBVALUE формируетс€ в момент вызова dbValue(), т.к. использует значени€ прочих полей
     }
     elsif (($field->{TYPE} eq "number") || ($field->{TYPE} eq "int")) {
         $field->{VALUE} = $value;
@@ -559,7 +560,6 @@ sub setFormValue {
     };
     
     if ($field->isFileField()) {
-        $field->{DBVALUE} = undef;
         return 1 if is_empty($value);
         return 1 unless -e $value;
         $field->setTmpFile($q->tmpFileName($value),$value);
@@ -582,7 +582,6 @@ sub setTmpFile {
     $field->{TMP_FILE} = $tmpfile;      # Ёта переменна€ содержит только пути к временным файлам.
                                         # ≈сли файл не временный, путь к нему содержитс€ только в VALUE
     $field->setValue($tmpfile);
-    $field->genNewFileName();
 };
 
 sub value {
@@ -665,7 +664,7 @@ sub dbValue {
     
     my $type = $field->type();
     
-    if ($type eq "rtffile" || $type eq "textfile") {
+    if ($type eq "rtffile" || $type eq "textfile" || $field->isFileField()) {
         $field->genNewFileName() unless exists $field->{DBVALUE};
     };
     
@@ -1367,13 +1366,12 @@ sub clean {
     
     die 'NG::Field::clean(): OLDDBVALUE not loaded!' unless exists $self->{OLDDBVALUE};
     my $oldDbV = $self->{OLDDBVALUE};
-    my $newDbV = $self->dbValue();
     
     if ($self->isFileField()) {
         $self->_unlink($oldDbV) if $oldDbV;
-        delete $self->{DBVALUE};
     };
     $self->setValue("");
+    $self->{DBVALUE} = undef;
 };
 
 
