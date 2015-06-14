@@ -41,10 +41,11 @@ our $classesMap = {
    field->{IS_FAKEFIELD}=1 # Поле не является полем основной таблицы формы, флаг используется в операциях _load,_insert,_update для skip-а
    field->{NEED_LOAD_FOR_UPDATE} = 1 # Для произведения обновления значения поля или удаления записи требуется наличие его DBVALUE
    
-   OLDDBVALUE - значение, загруженное из БД
+   OLDDBVALUE - значение, загруженное из БД. Выставляется в setLoadedValue().
    DBVALUE    - значение, загруженное из БД или подготовленное для сохранения в БД.
    VALUE      - значение, соответствующее текущему значению DBVALUE (ключ не обязательный)
               - Ключи DBVALUE и VALUE меняются синхронно, в функциях _setValue() и _setDBValue()
+   _new       - Признак, что строка новая.
 =cut
  
 
@@ -255,6 +256,7 @@ sub setError {
     
     $errormsg =~ s/{n}/$field->{NAME}/;
     $errormsg =~ s/{f}/$field->{FIELD}/;
+    $errormsg =~ s/{t}/$field->{TYPE}/;
     
     if ($mask && ref $mask eq "HASH") {
         foreach my $key (keys %$mask) {
@@ -401,18 +403,18 @@ sub _setDBValue {
         $self->{VALUE} = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$self->{DBVALUE} if $self->{DBVALUE};
     }
     elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
-        return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for \"".$self->{'TYPE'}."\" field \"$self->{FIELD}\".") if (is_empty($self->{OPTIONS}->{FILEDIR}));
+        return $self->setError("Can`t load data from file: OPTIONS.FILEDIR is not specified for field {f} (type: {t}).") if is_empty($self->{OPTIONS}->{FILEDIR});
         if ($value) {
             #Если файл отсутствует, создаем пустой файл заранее.
             #Зачем делать это в этой фазе - знание утеряно.
             unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
                 my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
-                return $self->setError("Ошибка инициализации файла данных поля $self->{FIELD}: ".$e) unless defined $v;
+                return $self->setError("Ошибка инициализации файла данных поля {f}: ".$e) unless defined $v;
                 $self->{VALUE} = '';
                 return 1;
             };
             my ($v,$e) = loadValueFromFile($self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
-            return $self->setError("Ошибка чтения файла с данными поля $self->{FIELD}: ".$e) unless defined $v;
+            return $self->setError("Ошибка чтения файла с данными поля {f}: ".$e) unless defined $v;
             $self->{VALUE} = $v;
         };
     };
@@ -449,7 +451,7 @@ sub setLoadedValue {
     
     unless (exists $row->{$self->{FIELD}}) {
         return 1 if $self->{IS_FAKEFIELD};
-        return $self->setError("setLoadedValue(): Отсутствуют данные для поля");
+        return $self->setError("setLoadedValue(): Отсутствуют данные для поля {f}");
     };
     my $value = $row->{$self->{FIELD}};
     
@@ -1106,7 +1108,7 @@ sub _setValueFromField {
 sub process {
     my $self = shift;
     
-    return 1 unless $self->{_changed};
+    return 1 unless $self->changed();
     
     my $options = $self->{OPTIONS};
     unless ($options && ($options->{STEPS} || $options->{METHOD})) {
@@ -1174,8 +1176,8 @@ sub beforeSave {
     my ($self,$action) = (shift,shift);
     
     if ($self->isFileField()) {
-        return $self->setError("Предыдущее значение поля не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
-        return $self->setError("Не указано значение опции UPLOADDIR для поля ".$self->{FIELD}) unless $self->{UPLOADDIR};
+        return $self->setError("Предыдущее значение поля {f} не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
+        return $self->setError("Не указано значение опции UPLOADDIR для поля {f}") unless $self->{UPLOADDIR};
 
         my $uplDir = $self->parent()->getDocRoot().$self->{UPLOADDIR};
         
@@ -1201,9 +1203,9 @@ sub beforeSave {
     }
     elsif ($self->{TYPE} eq "rtffile" || $self->{'TYPE'} eq "textfile") {
         my $dbv = $self->dbValue();
-        return $self->setError("Отсутствует имя файла для сохранения данных поля ".$self->{FIELD}." типа ".$self->{'TYPE'}) unless $dbv;
+        return $self->setError("Отсутствует имя файла для сохранения данных поля {f} (тип: {t}).") unless $dbv;
         my ($v,$e) = saveValueToFile($self->{VALUE},$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$dbv);
-        return $self->setError("Ошибка сохранения данных поля $self->{FIELD}: ".$e) unless defined $v;
+        return $self->setError("Ошибка сохранения данных поля {f}: ".$e) unless defined $v;
     };
     return 1;
 };
@@ -1218,15 +1220,15 @@ sub beforeDelete {
     
     my $type = $field->{TYPE};
     if ($field->isFileField()) {
-        return $field->setError("Не указано значение опции UPLOADDIR для поля ".$field->{FIELD}) unless $field->{UPLOADDIR};
-        return $field->setError("Значение файлового поля не загружено") unless $field->{_loaded};
+        return $field->setError("Не указано значение опции UPLOADDIR для поля {f}") unless $field->{UPLOADDIR};
+        return $field->setError("Значение файлового поля {f} не загружено") unless $field->{_loaded};
         my $dbv = $field->dbValue();
         $field->_unlink($dbv) if $dbv;
     };
     if ($type eq "rtffile" || $type eq "textfile") {
-        my $filedir = $field->options('FILEDIR') or return $field->setError("Не указана опции FILEDIR");
-        return $field->setError("Значение файлового поля не загружено") unless $field->{_loaded};
-        my $dbv = $field->dbValue();           
+        my $filedir = $field->options('FILEDIR') or return $field->setError("Не указана опция FILEDIR");
+        return $field->setError("Значение файлового поля {f} не загружено") unless $field->{_loaded};
+        my $dbv = $field->dbValue();
         unlink $field->parent()->getSiteRoot().$filedir.$dbv if $dbv;
     };
     if ($type eq "rtf" || $type eq "rtffile") {
