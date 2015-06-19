@@ -916,6 +916,7 @@ sub changeRowValueByForm {
         REF       => $q->param('ref') || "",
         IS_AJAX   => 1,
         PREFIX    => $aF->{PREFIX},
+        OWNER     => $self,
 	);
     #Поля
     my $aFields = undef;
