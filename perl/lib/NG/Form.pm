@@ -719,6 +719,7 @@ sub _insert {
     my $ph = "";
 	foreach my $field (@{$self->fields()}) {
         my @fieldDbFields = $field->dbFields('insert');
+        return $self->error("ERROR: Key field does not provide dbFields for insert operation.") if ($field->{TYPE} eq "id" || $field->{TYPE} eq "filter") && scalar @fieldDbFields == 0;
         foreach my $dbField (@fieldDbFields) {
             return $self->error("Table field $dbField specified twice for 'insert' operation: at " . $fieldsH->{$dbField}." and ".$field->{FIELD}) if $fieldsH->{$dbField};
             $fieldsH->{$dbField} = $field->{FIELD};
@@ -748,6 +749,7 @@ sub _update {
     
     foreach my $field (@{$self->fields()}) {
         my @fieldDbFields = $field->dbFields('update');
+        return $self->error("ERROR: Key field does not provide dbFields for update operation.") if ($field->{TYPE} eq "id" || $field->{TYPE} eq "filter") && scalar @fieldDbFields == 0;
         foreach my $dbField (@fieldDbFields) {
             return $self->error("Table field $dbField specified twice for 'update' operation: at " . $fieldsH->{$dbField}." and ".$field->{FIELD}) if $fieldsH->{$dbField};
             $fieldsH->{$dbField} = $field->{FIELD};
