@@ -403,6 +403,7 @@ sub _setDBValue {
         $self->{DBVALUE} = $value;
     }
     elsif ($self->isFileField()) {
+        $self->{DBVALUE} = undef;
         if ($value) {
             $self->{VALUE}   = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$value;
             $self->{DBVALUE} = $value;
@@ -653,6 +654,7 @@ sub genNewFileName {
 sub dbFields {
     my ($field,$action) = (shift,shift);
     return () if $field->{IS_FAKEFIELD};
+    return () if ($action eq 'insert' || $action eq 'update') && ! ($field->{TYPE} eq "id" || $field->{TYPE} eq "filter") && ! $field->changed();
     return ($field->{FIELD});
 };
 
@@ -1191,6 +1193,7 @@ sub beforeSave {
     my ($self,$action) = (shift,shift);
     
     if ($self->isFileField()) {
+        return 1 unless $self->changed();
         return $self->setError("Предыдущее значение поля {f} не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
         return $self->setError("Не указано значение опции UPLOADDIR для поля {f}") unless $self->{UPLOADDIR};
 
