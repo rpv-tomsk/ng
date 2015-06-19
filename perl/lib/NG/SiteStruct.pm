@@ -238,9 +238,7 @@ sub processNodeInfo($$$)    {}; #$self,$pageObj,$nodeInfo - Обработка выводимой 
 sub afterSetFormValues($$$) {}; #$self,$pageObj,$form     - Предобработка введенных параметров новой страницы перед её созданием
 
 sub action_showAddForm {
-	my $self = shift;
-	my $action = shift;
-	my $is_ajax = shift;
+	my ($self,$action,$is_ajax) = (shift,shift,shift);
 	
     my $cms = $self->cms();
 
@@ -572,7 +570,7 @@ $canAddLinkedSubnode = 1;
         }
         else {
             #afterNodeAdded вызывается от NG::Application. Вызов от NG::SiteStruct может отличаться наличием FORM, VARIANT и т д
-            #foreach my $pObj (@{$ret->{PAGES}) {
+            #foreach my $pObj (@{$ret->{PAGES}}) {
             #    NGPlugins->invoke('NG::SiteStruct','afterNodeAdded',{PAGEOBJ=>$pObj->{PAGEOBJ}, VARIANT=>$variant, PREV_SIBLING_ID=>$pObj->{PREV_SIBLING_ID}});
             #};
             
@@ -640,6 +638,11 @@ $canAddLinkedSubnode = 1;
 sub addLinkedPages {
     my ($self, $newPages) = (shift,shift);
     
+    #Supported additional keys (options) at $newPages:
+    # -to_top         -
+    # -after_page_id  -
+    # -disabled       -
+    
     my $cms = $self->cms();
     my $dbh = $self->dbh();
     
@@ -682,6 +685,7 @@ sub addLinkedPages {
             #PARENTROW => $parentRow, #Not used.
             #PREV_SIBLING_ID => ...   #Assigned on later steps.
             #PAGEOBJ         => ...   #Assigned on later steps.
+            #TO_TOP          => ...   #Assigned on later steps.
         };
         push @newPagesInt, $int;
         
@@ -718,18 +722,44 @@ sub addLinkedPages {
             
             #Ищем ноду, после которой будет добавлена наша новая страница. Посылаем её параметры в event для синхронизации деревьев
             my $lastChild = undef;
-            my $lastChildOrd = $tree->getLastChildOrder();
-            if ($lastChildOrd) {
+            my $opts = {};
+            
+            if ($newPage->{-to_top}) {
+                NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка создания страницы - конфликт опций -after_page_id и -to_top') if $newPage->{-after_page_id};
+                delete $newPage->{-to_top};
+                $opts->{TO_TOP} = 1;
+                $int->{TO_TOP}  = 1;
+            }
+            elsif ($newPage->{-after_page_id}) {
+                my $aPageId = delete $newPage->{-after_page_id};
                 $lastChild = $self->_create_tree_object();
-                $lastChild = $lastChild->loadNode(tree_order => $lastChildOrd);
+                $lastChild = $lastChild->loadNode(id => $aPageId);
+                
+                NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка создания страницы - страница -after_page_id не найдена') unless $lastChild;
+                NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Ошибка создания страницы - страница -after_page_id находится в другой ветке') unless $lastChild->{_parent_id} == $newPage->{parent_id};
+                $opts->{AFTER} = $lastChild;
+            }
+            else {
+                my $lastChildOrd = $tree->getLastChildOrder();
+                if ($lastChildOrd) {
+                    $lastChild = $self->_create_tree_object();
+                    $lastChild = $lastChild->loadNode(tree_order => $lastChildOrd);
+                };
             };
                 
             if ($lastChild) {
                 $int->{PREV_SIBLING_ID} = $lastChild->{_id};
             };
+            
+            $newPage->{id} = $self->db()->get_id('ng_sitestruct');
+            
+            if ($newPage->{-disabled}) {
+                $newPage->{disabled} = $newPage->{id} unless $newPage->{disabled};
+                delete $newPage->{-disabled};
+            };
         
             #NG::Nodes не умеет возвращать ошибки, делает die().
-            $newPage->{id} = $tree->DBaddChild($newPage);
+            $newPage->{id} = $tree->DBaddChild($newPage,$opts);
             $idx++;
         };
         #Создаем объекты новых страниц
@@ -757,10 +787,11 @@ sub addLinkedPages {
         $idx = 0;
         foreach my $int (@newPagesInt) {
             next unless $int->{PAGEOBJ};
-            NGPlugins->invoke('NG::Application','afterNodeAdded',{PAGEOBJ=>$int->{PAGEOBJ},PREV_SIBLING_ID=>$int->{PREV_SIBLING_ID}});
+            NGPlugins->invoke('NG::Application','afterNodeAdded',{PAGEOBJ=>$int->{PAGEOBJ},PREV_SIBLING_ID=>$int->{PREV_SIBLING_ID},TO_TOP=>$int->{TO_TOP}});
             push @linkedPages, {
                 PAGEOBJ         => $int->{PAGEOBJ},
                 PREV_SIBLING_ID => $int->{PREV_SIBLING_ID},
+                TO_TOP          => $int->{TO_TOP},
             };
             $idx++;
         };
@@ -1532,12 +1563,17 @@ sub action_updateNode {
         $oldUrl =~ /([^\/]*)\/$/;
         $oldUrl = ($oldUrl ne "/"?$1:"/"); #($1 || "/";)
         
+        local $oldValue->{url} = $oldUrl;
+        
         my $fields = $form->fields();
-        foreach my $f (@{$fields}) {
-            return $cms->error("Ключ ".$f->{FIELD}." не найден") unless exists $oldValue->{$f->{FIELD}};
-            $form->param($f->{FIELD},$oldValue->{$f->{FIELD}});
+        #Выставляем полученные значения
+        foreach my $field (@{$fields}) {
+            $field->setLoadedValue($oldValue) or return $cms->error($field->error() || "Ошибка вызова setLoadedValue() поля ".$field->{FIELD});
         };
-        $form->param("url",$oldUrl);
+        #Дополнительные действия
+        foreach my $field (@{$fields}) {
+            $field->afterLoad() or return $cms->error("Ошибка вызова afterLoad() поля $field->{FIELD}: ".$field->error());
+        };
     }
     elsif ($action eq "updatenode") {
         $form->setFormValues();

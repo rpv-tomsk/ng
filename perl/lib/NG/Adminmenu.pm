@@ -21,7 +21,7 @@ sub moduleBlocks {
 sub afterLinkedNodesAdded {
     my ($self,$data) = (shift,shift);
     
-    #data: PAGES => [{PAGEOBJ=>...,PREV_SIBLING_ID=>...},...]
+    #data: PAGES => [{PAGEOBJ=>...,PREV_SIBLING_ID=>..., TO_TOP=>(0|1)},...]
     return unless ref $data->{PAGES} eq "ARRAY";
     
     my $cms = $self->cms();
@@ -44,20 +44,19 @@ sub afterLinkedNodesAdded {
             link_id => $linkId,
         };
         
-        my $afterNode = undef;
+        my $opts = {};
         if ($node->{PREV_SIBLING_ID}) {
-            $afterNode = NG::Nodes->loadNode(node_id=>$node->{PREV_SIBLING_ID});
+            my $afterNode = NG::Nodes->loadNode(node_id=>$node->{PREV_SIBLING_ID});
             unless ($afterNode && $afterNode->{_parent_id} == $parent->{_id}) {
                 #последняя нода ветки в структуре имеет соответствие в дереве меню в другой ветке.
                 $afterNode = undef;
             };
-        };
-        if ($afterNode) {
-            $parent->DBaddChild($newMenuElem,{AFTER=>$afterNode});
+            $opts->{AFTER} = $afterNode;
         }
-        else {
-            $parent->DBaddChild($newMenuElem);
+        elsif ($node->{TO_TOP}) {
+            $opts->{TO_TOP} = 1;
         };
+        $parent->DBaddChild($newMenuElem,$opts);
     };
     1;
 };

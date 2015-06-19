@@ -331,7 +331,7 @@ croak("Not defined ID") unless defined $id;
 sub DBaddChild {
     my $self = shift;
     my $data = shift;
-	my $opts = shift; # Currently supported: AFTER=> (id | NG::Nodes), TOTOP=> (0|1)
+	my $opts = shift; # Currently supported: AFTER=> (id | NG::Nodes), TO_TOP=> (0|1)
     
 	croak ("NG::Nodes::DBaddChild: node has not loaded") if (!defined $self->{_id});
 	croak ("NG::Nodes::DBaddChild: node has not loaded") if ($self->{_loaded} != 1);
@@ -344,8 +344,8 @@ sub DBaddChild {
     my $fields= $self->fields();
 	
 	my ($i1,$i2);
-	if ($opts->{TOTOP}) {
-		croak ("NG::Nodes::DBaddChild: Options conflict: opts->AFTER and opts->TOTOP") if exists $opts->{AFTER};
+	if ($opts->{TO_TOP}) {
+		croak ("NG::Nodes::DBaddChild: Options conflict: opts->AFTER and opts->TO_TOP") if exists $opts->{AFTER};
 		$i1 = $self->{_order};
 		$i2 = $self->getFirstChildOrder();
         unless ($i2) {
@@ -404,7 +404,7 @@ sub DBaddChild {
     $sth->execute($idvalue,$self->{_id},$i1+1,$self->{_level}+1, @values) or croak $DBI::errstr;
     $sth->finish();
     
-    if ($opts->{TOTOP}) { #To TOP, as First Child
+    if ($opts->{TO_TOP}) { #To TOP, as First Child
         $self->{_last_child_order}  = $i1 + 1 unless $self->{_first_child_order};
         $self->{_first_child_order} = $i1 + 1;
     }
