@@ -331,7 +331,7 @@ croak("Not defined ID") unless defined $id;
 sub DBaddChild {
     my $self = shift;
     my $data = shift;
-	my $opts = shift; # Currently supported: AFTER=> (id | NG::Nodes)
+	my $opts = shift; # Currently supported: AFTER=> (id | NG::Nodes), TOTOP=> (0|1)
     
 	croak ("NG::Nodes::DBaddChild: node has not loaded") if (!defined $self->{_id});
 	croak ("NG::Nodes::DBaddChild: node has not loaded") if ($self->{_loaded} != 1);
@@ -343,22 +343,31 @@ sub DBaddChild {
     my $table = $self->table();
     my $fields= $self->fields();
 	
-	my $afterNode = undef;
-	if (exists $opts->{AFTER}) {
-		if (ref $opts->{AFTER}) {
-			croak ("NG::Nodes::DBaddChild: opts->AFTER is not valid object") unless $opts->{AFTER}->isa(ref($self));
-			$afterNode = $opts->{AFTER};
-		}
-		else {
-			$afterNode = $self->_getNewObj();
-			$afterNode->loadNode(id=>$opts->{AFTER}) or croak("DBaddChild(): opts->{AFTER} - node not found");
+	my ($i1,$i2);
+	if ($opts->{TOTOP}) {
+		croak ("NG::Nodes::DBaddChild: Options conflict: opts->AFTER and opts->TOTOP") if exists $opts->{AFTER};
+		$i1 = $self->{_order};
+		$i2 = $self->getFirstChildOrder();
+        unless ($i2) {
+            $i2 = $self->getNextSiblingOrder();
+        };
+	}
+	else {
+		my $afterNode = $self;
+		if (exists $opts->{AFTER}) {
+			if (ref $opts->{AFTER}) {
+				croak ("NG::Nodes::DBaddChild: opts->AFTER is not valid object") unless $opts->{AFTER} && $opts->{AFTER}->isa(ref($self));
+				$afterNode = $opts->{AFTER};
+			}
+			else {
+				$afterNode = $self->_getNewObj();
+				$afterNode->loadNode(id=>$opts->{AFTER}) or croak("DBaddChild(): opts->{AFTER} - node not found");
+			};
+			croak("NG::Nodes::DBaddChild: Node in opts->AFTER is not valid child") unless $afterNode->{_parent_id} == $self->{_id};
 		};
-		croak("NG::Nodes::DBaddChild: Node in opts->AFTER is not valid child") unless $afterNode->{_parent_id} == $self->{_id};
+		$i1 = $afterNode->getLastRelativeOrder();
+		$i2 = $afterNode->getSubtreeBorderOrder();
 	};
-	$afterNode ||= $self;
-    
-    my $i1 = $afterNode->getLastRelativeOrder();
-    my $i2 = $afterNode->getSubtreeBorderOrder();
     
     if ($i2 && ($i1 + 1 >= $i2)) {
         #croak("DBaddChild: no space for new child, need tree balancing");
@@ -368,6 +377,13 @@ sub DBaddChild {
     	# PG version
         $dbh->do("UPDATE $table set tree_order = -tree_order-10 where tree_order > ?",undef,$i1) or die $DBI::errstr;
         $dbh->do("UPDATE $table set tree_order = -tree_order where tree_order < 0") or die $DBI::errstr;
+        
+        my $delta = 10;
+        $self->{_first_child_order}   += $delta if $self->{_first_child_order} && $self->{_first_child_order} > $i1;
+        $self->{_last_child_order}    += $delta if $self->{_last_child_order}  && $self->{_last_child_order}  > $i1;
+        $self->{_last_relative_order} += $delta if $self->{_last_relative_order}  && $self->{_last_relative_order} > $i1;
+        $self->{_next_sibling_order}  += $delta if $self->{_next_sibling_order}   && $self->{_next_sibling_order}  > $i1;
+        $self->{_subtree_border_order}+= $delta if $self->{_subtree_border_order} && $self->{_subtree_border_order}> $i1;
     };
     
     my $idvalue = 0;
@@ -385,13 +401,23 @@ sub DBaddChild {
     
     
     my $sth=$dbh->prepare("INSERT into $table (id,parent_id,tree_order,level".(($fields)?",$fields":"").") values (?,?,?,?".( ",?" x scalar(@values)).")");
-    $sth->execute($idvalue,$self->{_id},$i1+1,$self->{_level}+1, @values) or die $DBI::errstr;
+    $sth->execute($idvalue,$self->{_id},$i1+1,$self->{_level}+1, @values) or croak $DBI::errstr;
     $sth->finish();
-
-    $self->{_last_child_order}= $i1+1;
-    $self->{_last_relative_order}= $i1+1;
+    
+    if ($opts->{TOTOP}) { #To TOP, as First Child
+        $self->{_last_child_order}  = $i1 + 1 unless $self->{_first_child_order};
+        $self->{_first_child_order} = $i1 + 1;
+    }
+    elsif ($opts->{AFTER}) {
+        #NOOP
+    }
+    else { #As Last Child
+        $self->{_first_child_order}   = $i1 + 1 if $i1 == $self->{_order};
+        $self->{_last_child_order}    = $i1 + 1;
+        $self->{_last_relative_order} = $i1 + 1;
+    };
     return $idvalue;
-}
+};
 
 sub DBdelete {
     my $self = shift;
@@ -512,6 +538,9 @@ sub DBmoveNode {
         }
         elsif ($partnerBorderOrder == $self->{_order}) {
             #Уже упорядочены как надо, но возможно надо поправить level
+            #TODO: В этой логике всё-таки есть ошибка. 19.06.2015
+            #Если ноды уже находятся в нужном порядке, то получается, например, так: 5078 5090 5078 0 0
+            #Соответственно, падает с сообщением $c > $q
             $self->_swapIntervals($self->{_order}, $borderOrder, $partnerBorderOrder, $levelDelta, 0);
         }
         elsif ($partnerBorderOrder > $self->{_order}) {
