@@ -956,6 +956,11 @@ sub enablePage {
     return $cms->error("Node already enabled")    if $nodeValue->{disabled} == 0;
     return $cms->error("Node disabled by parent") if $nodeValue->{disabled} != $pageId;
     
+    if ($nodeValue->{parent_id}) {
+        my $parentRow = $dbh->selectrow_hashref("select ngs.disabled from ng_sitestruct ngs where ngs.id = ?",undef,$nodeValue->{parent_id}) or return $cms->error($DBI::errstr);
+        return $cms->error("Parent Node is disabled!") if $parentRow->{disabled};
+    };
+    
     my $where = "";
     my @params = ();
     
@@ -1228,16 +1233,40 @@ sub action_structPage {
         }
         elsif ($pageRow->{disabled}==$pageRow->{id}) {
             #Страница выключена сама
-            my $canActivate = 1;
-            $canActivate = $pageObj->canActivate() if $pageObj->can("canActivate");
-            $status->{ACTIVE}    = 0;
-            $status->{NO_ACTIVE} = "Не все блоки заполнены" unless $canActivate eq "1";
-            $status->{NO_ACTIVE} = $canActivate if $canActivate && $canActivate ne "1";
+            $status->{ACTIVE} = 0;
+            
+            my $parentRow = $dbh->selectrow_hashref("select ngs.disabled, ngm.node_id as _amenu_nodeid, ngm.url as _amenu_url from ng_sitestruct ngs left join ng_admin_menu ngm on ngs.id = ngm.node_id where ngs.id = ?",undef,$pageRow->{parent_id}) or return $cms->error($DBI::errstr);
+            if ($parentRow->{disabled}) {
+                $status->{BY_PARENT} = $parentRow->{disabled};
+                $status->{NO_ACTIVE} = "Выключена страница-родитель";
+                $status->{BY_PARENT_URL} = $nBase.$status->{BY_PARENT}.'/';
+                if ($parentRow->{_amenu_nodeid} && $self->{_pageMode}) {
+                    my $aurl = $parentRow->{_amenu_url};
+                    $aurl //= $parentRow->{_amenu_nodeid};
+                    $status->{BY_PARENT_URL} = "/admin-side/pages/".$aurl.$nSuff;
+                };
+            }
+            else {
+                my $canActivate = 1;
+                $canActivate = $pageObj->canActivate() if $pageObj->can("canActivate");
+                $status->{NO_ACTIVE} = "Не все блоки заполнены" unless $canActivate eq "1";
+                $status->{NO_ACTIVE} = $canActivate if $canActivate && $canActivate ne "1";
+            };
         }
         else {
             #Страница выключена сверху
             $status->{ACTIVE} = 0;
-            $status->{DEACTIVE_ID} = $pageRow->{disabled};
+            $status->{BY_PAGEID} = $pageRow->{disabled};
+            $status->{BY_PAGEID_URL} = $nBase.$status->{BY_PAGEID}.'/';
+            
+            if ($self->{_pageMode}) {
+                my $menuRow = $dbh->selectrow_hashref("select node_id,url from ng_admin_menu where node_id = ?",undef,$pageRow->{disabled}) or return $cms->error($DBI::errstr);
+                if ($menuRow->{node_id}) {
+                    my $aurl = $menuRow->{url};
+                    $aurl //= $menuRow->{node_id};
+                    $status->{BY_PAGEID_URL} = "/admin-side/pages/".$aurl.$nSuff;
+                };
+            };
         };
         push @{$nodeInfo->{INFO}}, {STATUS=>$status};
         
@@ -1256,6 +1285,18 @@ sub action_structPage {
             NAME     => 'Редактировать',
         };
         
+        unless ($self->{_pageMode}) {
+            my $menuRow = $dbh->selectrow_hashref("select node_id,url from ng_admin_menu where node_id = ?",undef,$pageId) or return $cms->error($DBI::errstr);
+            if ($menuRow->{node_id}) {
+                my $aurl = $menuRow->{url};
+                $aurl //= $menuRow->{node_id};
+                push @{$nodeInfo->{ACTIONS}},{
+                    URL  => '/admin-side/pages/'.$aurl.$nSuff,
+                    NAME => 'Контент',
+                };
+            };
+        };
+        
         $self->processNodeInfo($pageObj,$nodeInfo);
         
         $tmpl->param(
@@ -1270,7 +1311,7 @@ sub action_structPage {
     $tree->initdbparams(
         db     => $self->db(),
         table  => "ng_sitestruct",
-        fields => "main.name,main.full_name,main.title,main.url,main.module_id,main.template,main.print_template,main.disabled,ngm.node_id as _amenu_nodeid",
+        fields => "main.name,main.full_name,main.title,main.url,main.module_id,main.template,main.print_template,main.disabled,ngm.node_id as _amenu_nodeid, ngm.url as _amenu_url",
         join   => "left join ng_admin_menu ngm on main.id = ngm.node_id", 
     );
 
@@ -1290,7 +1331,9 @@ sub action_structPage {
             my $value = $_tree->getNodeValue();
             
             if ($value->{_amenu_nodeid} && $self->{_pageMode}) {
-                $value->{NODEURL} = "/admin-side/pages/".$value->{id}.$nSuff;
+                my $aurl = $value->{_amenu_url};
+                $aurl //= $value->{_amenu_nodeid};
+                $value->{NODEURL} = "/admin-side/pages/".$aurl.$nSuff;
             }
             else {
                 $value->{NODEURL} = $nBase.$value->{id}.$nSuff;

@@ -47,12 +47,14 @@
                 <TMPL_IF NO_DEACTIVE>
                   <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <TMPL_VAR NO_DEACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR THISNODEURL>?action=disablepage">Выключить</a></td>                
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR THISNODEURL>?action=disablepage">Выключить</a></td>
                 </TMPL_IF NO_DEACTIVE>
             <TMPL_ELSE ACTIVE>
                 <td class="title"><p>Статус:</p></td>
-                <TMPL_IF DEACTIVE_ID>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BASEURL><TMPL_VAR DEACTIVE_ID>/">разделом</a></td>
+                <TMPL_IF BY_PAGEID>
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BY_PAGEID_URL>">разделом</a></td>
+                <TMPL_ELSIF BY_PARENT>
+                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BY_PARENT_URL>">страница-родитель</a></td>
                 <TMPL_ELSIF NO_ACTIVE>
                   <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <TMPL_VAR NO_ACTIVE></td>
                 <TMPL_ELSE>
@@ -76,6 +78,8 @@
                 <TMPL_LOOP NODEINFO.ACTIONS>
                     <TMPL_IF FORM>
                         <a href="<TMPL_VAR FORM_URL>" onclick="ajax_url('<TMPL_VAR AJAX_URL>','new_subpage');return false;"><TMPL_VAR NAME></a>
+                    <TMPL_ELSIF URL>
+                        <a href="<TMPL_VAR URL>"><TMPL_VAR NAME></a>
                     </TMPL_IF FORM>
                     <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
                 </TMPL_LOOP NODEINFO.ACTIONS>
