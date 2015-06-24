@@ -418,6 +418,8 @@ sub getBlockContent {
     my $bObj = $self->_getBlockObj($block) or return $cms->error();
     return $cms->error("Модуль ".(ref $bObj)." не содержит метода getBlockContent") unless $bObj->can("getBlockContent");
     
+    local $self->{_insideAB} = 1 if $self->{_ablock} eq $block;
+    
     my $keys = $self->_getBlockKeys($block) or return $cms->error();
     
     my $c = $bObj->getBlockContent($block->{ACTION}, $keys, $block->{PARAMS});
