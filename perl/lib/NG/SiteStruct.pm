@@ -795,6 +795,7 @@ sub addLinkedPages {
             };
             $idx++;
         };
+        $idx = 0;
         NGPlugins->invokeWhileTrue('NG::Application','afterLinkedNodesAdded',{PAGES=>\@linkedPages}) or NG::Exception->throw('NG.INTERNALERROR','Ошибка выполнения обработчиков afterLinkedPagesAdded(): '.$cms->getError());
         return {PAGES=>\@linkedPages};
     };
