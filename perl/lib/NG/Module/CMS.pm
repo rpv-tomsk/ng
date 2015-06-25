@@ -12,7 +12,7 @@ sub keys_BREADCRUMBS {
     
     my $req = {};
     $req->{pageId}  = $pageRow->{id};
-    $req->{history} = $self->cms->getBreadcrumbs();
+    $req->{history} = $self->cms->getBreadcrumbs() if $NG::Application::blocksController->hasAB();
     
     return {
         REQUEST=>$req,
@@ -42,7 +42,7 @@ sub block_BREADCRUMBS {
         {MODULECODE=>'SITESTRUCT', key=>'anypage'},
     ]);
     if ($version && $version->[0]) {  #Кеширование включено
-        $path = $cms->getCacheData($self,{key=>'historyline_path', version=>$version->[0]});
+        $path = $cms->getCacheData($self,{key=>'historyline_path', pageId=>$pageId, version=>$version->[0]});
     };
     unless ($path) {
         my $pageRow = $self->getPageRow();
@@ -51,7 +51,7 @@ sub block_BREADCRUMBS {
         ." WHERE tree_order=o.maxorder ORDER BY tree_order";
         
         $path = $cms->dbh->selectall_arrayref($sql, {'Slice' => {}},$pageRow->{tree_order},$pageRow->{level},$minLevel) or NG::DBIException->throw();
-        $cms->setCacheData($self,{key=>'historyline_path', version=>$version->[0]},$path) if $version && $version->[0];
+        $cms->setCacheData($self,{key=>'historyline_path', pageId=>$pageId, version=>$version->[0]},$path) if $version && $version->[0];
     };
     
     if ($history) {

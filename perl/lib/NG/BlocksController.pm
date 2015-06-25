@@ -349,6 +349,11 @@ sub setABBreadcrumbs {
     $self->{_ablock}->{BREADCRUMBS} = $breadcrumbs;
 };
 
+sub hasAB {
+    my $self = shift;
+    $self->{_ablock}?1:0;
+};
+
 sub getABBreadcrumbs {
     my $self = shift;
     
