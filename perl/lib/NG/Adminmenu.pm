@@ -51,7 +51,7 @@ sub afterLinkedNodesAdded {
                 #последняя нода ветки в структуре имеет соответствие в дереве меню в другой ветке.
                 $afterNode = undef;
             };
-            $opts->{AFTER} = $afterNode;
+            $opts->{AFTER} = $afterNode if $afterNode;
         }
         elsif ($node->{TO_TOP}) {
             $opts->{TO_TOP} = 1;
