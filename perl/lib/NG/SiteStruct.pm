@@ -1287,8 +1287,8 @@ sub action_structPage {
         };
         
         unless ($self->{_pageMode}) {
-            my $menuRow = $dbh->selectrow_hashref("select node_id,url from ng_admin_menu where node_id = ?",undef,$pageId) or return $cms->error($DBI::errstr);
-            if ($menuRow->{node_id}) {
+            my $menuRow = $dbh->selectrow_hashref("select node_id,url from ng_admin_menu where node_id = ?",undef,$pageId);
+            if ($menuRow) {
                 my $aurl = $menuRow->{url};
                 $aurl //= $menuRow->{node_id};
                 push @{$nodeInfo->{ACTIONS}},{
