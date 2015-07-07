@@ -577,7 +577,7 @@ sub addRecord{
     };
     return create_json({id=>$row1->{id},label=>$row1->{label}}) if $row1;
     
-    my $id = $db->get_id($dict->{TABLE},$dict->{TABLE}."_id");
+    my $id = $db->get_id($dict->{TABLE},$dict->{ID_FIELD});
     return create_json({error=>"Ошибка БД при получении кода новой записи: ".$DBI::errstr}) unless $id;
     $dbh->do("INSERT INTO ".$dict->{TABLE}." (".$dict->{ID_FIELD}.",".$dict->{NAME_FIELD}.") VALUES (?,?)",undef,$id,$text) or return create_json({error=>"Ошибка БД при вставке записи: ".$DBI::errstr});
     return create_json({id=>$id,label=>$text});
