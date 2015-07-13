@@ -4,12 +4,10 @@ use strict;
 use warnings;
 
 our $VERSION = '0.08';
-our $DEBUG;
 
 my $inplace_whitespace_filter = sub {
     my $scalarref = shift;
 
-    return if $DEBUG;
     ${$scalarref} =~ tr{\0}{ };
     my @unclean;
     while (
