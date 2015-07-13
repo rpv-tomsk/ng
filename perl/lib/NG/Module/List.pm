@@ -2332,24 +2332,24 @@ sub getSearchParam {
 };
 
 sub createSearchForm {
-    #TODO: проверить вызов и проверку возврата
+	#TODO: проверить вызов и проверку возврата
 	my $self = shift;
 	if (scalar @{$self->{_searchfields}}) {
-    	$self->processFKFields() or return $self->showError("createSearchForm(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
+		$self->processFKFields() or return $self->showError("createSearchForm(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
 		$self->processFilters() or return $self->showError("createSearchForm(): Ошибка вызова processFilters()");
 		
 		my $action = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFKParam(),$self->getFilterParam());
 		my $sform = NG::Form->new(
-	        FORM_URL  => $action,
-	        DOCROOT   => $self->getDocRoot(),
-	        CGIObject => $self->q(),
-	        DB => $self->db(),
-            OWNER     => $self,
+			FORM_URL  => $action,
+			DOCROOT   => $self->getDocRoot(),
+			CGIObject => $self->q(),
+			DB        => $self->db(),
+			OWNER     => $self,
 		);
-        
-        my $fs = $self->_getIntersectFields($self->{_searchfields}) or return $self->showError("_getIntersectFields(): неизвестная ошибка вызова.");
-        $sform->addfields($fs) or return $self->error($sform->getError());
-        
+		
+		my $fs = $self->_getIntersectFields($self->{_searchfields}) or return $self->showError("_getIntersectFields(): неизвестная ошибка вызова.");
+		$sform->addfields($fs) or return $self->error($sform->getError());
+		
 		$sform->setFormValues();
 		$sform->setTitle("Поиск");
 		$sform->addfields({FIELD=>"_search",TYPE=>"hidden",VALUE=>"1"});
@@ -2360,9 +2360,8 @@ sub createSearchForm {
 };
 
 sub showSearchForm {
-	my $self = shift;
-    my $action = shift;
-    my $is_ajax = shift;
+	my ($self,$action,$is_ajax) = (shift,shift,shift);
+	
 	my $form = $self->createSearchForm();
 	if ($form) {
 		$form->{_ajax} = $is_ajax;
@@ -2370,7 +2369,7 @@ sub showSearchForm {
 		unless ($action && $action eq "showsearchform") {
 			$template = $self->tmpl();
 		};
-		$self->opentemplate($self->{_searchformtemplate});	
+		$self->opentemplate($self->{_searchformtemplate});
 		#$self->tmpl()->param(IS_AJAX=>$is_ajax);# if (!$self->{_search_popup} || $action eq "showsearchform");
 		$self->tmpl()->param(CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFilterParam(),$self->getFKParam(),$self->getOrderParam()));				
 		$form->print($self->tmpl());
