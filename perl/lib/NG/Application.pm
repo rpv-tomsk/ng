@@ -69,6 +69,18 @@ sub init {
     $self;
 };
 
+sub addLinkedPages {
+    my ($self,$pages) = (shift,shift);
+    my $siteStruct = $self->getObject({CLASS=>'NG::SiteStruct::Block', USE=>'NG::SiteStruct'},{MODULEOBJ=>'NO_MODULE_STUB'});
+    return $siteStruct->addLinkedPages($pages);
+};
+
+sub deleteLinkedPages {
+    my ($self,$pages) = (shift,shift);
+    my $siteStruct = $self->getObject({CLASS=>'NG::SiteStruct::Block', USE=>'NG::SiteStruct'},{MODULEOBJ=>'NO_MODULE_STUB'});
+    return $siteStruct->deleteLinkedPages($pages);
+};
+
 sub getDocRoot()  { return $_[0]->{_docroot};  };
 sub getSiteRoot() { return $_[0]->{_siteroot}; };
 
