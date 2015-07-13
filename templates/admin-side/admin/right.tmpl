@@ -57,13 +57,13 @@
 	<td  class="text select_user" style="border-right:none;border-left:none;text-align:right; "></td>
 	
 	<td class="select_sait">
-        <TMPL_IF SUBSITES>
+        <TMPL_IF SUBSITES#>
 		<select name="subsite_id">
         <TMPL_LOOP SUBSITES>
             <option value="<TMPL_VAR ID>" <TMPL_IF SELECTED>selected</TMPL_IF>><TMPL_VAR NAME></option>
         </TMPL_LOOP>
         </select>
-        </TMPL_IF SUBSITES>
+        </TMPL_IF SUBSITES#>
 	</td>
 	</tr>
     
