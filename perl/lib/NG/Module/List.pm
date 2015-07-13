@@ -361,9 +361,7 @@ sub doFormAction {
 };
 
 sub processForm {
-	my $self = shift;
-	my $action = shift;
-	my $is_ajax = shift;
+    my ($self,$action,$is_ajax) = (shift,shift,shift);
     
     my $q = $self->q();
     my $dbh = $self->db()->dbh();
@@ -384,11 +382,11 @@ sub processForm {
     #Компонуем ссылку, куда отправлять форму
     my $formurl = $self->q()->url()."?action=formaction";
     
-	if ($action eq "insf" || $action eq "updf" || (!$is_ajax && $action eq "formaction")) {
-		#Построение ссылки возврата после добавления записи
-		$self->processFilters() or return $self->showError("processForm(): Ошибка вызова processFilters()");
-	    $self->processSorting([]) or return $self->showError("processForm(): Ошибка вызова processSorting()");
-		
+    if ($action eq "insf" || $action eq "updf" || (!$is_ajax && $action eq "formaction")) {
+        #Построение ссылки возврата после добавления записи
+        $self->processFilters() or return $self->showError("processForm(): Ошибка вызова processFilters()");
+        $self->processSorting([]) or return $self->showError("processForm(): Ошибка вызова processSorting()");
+
         $formurl = getURLWithParams($formurl,
             $self->getFilterParam(), # На текущий момент не используется в формирования ссылки перехода на добавленную запись
             $self->getOrderParam(),  # Добавленное значение используется при формировании ссылки перехода на добавленную запись
@@ -400,7 +398,7 @@ sub processForm {
     
     my $form = NG::Form->new(
         FORM_URL  => $formurl,
-		KEY_FIELD => $self->{_idname},
+        KEY_FIELD => $self->{_idname},
         DB        => $self->db(),
         TABLE     => $self->{_table},
         DOCROOT   => $self->getDocRoot(),
@@ -410,7 +408,7 @@ sub processForm {
         IS_AJAX   => $is_ajax,
         PREFIX    => $aF->{PREFIX},
         OWNER     => $self,
-	);
+    );
     
     my $aFields = undef;
     if ($fa eq "insert" || $action eq "insf" || $isInsert) {
