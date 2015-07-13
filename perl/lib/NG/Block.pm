@@ -53,11 +53,16 @@ sub _makeLogEvent {
     $self->cms->_makeLogEvent($self->{_moduleObj},@_);
 };
 
+sub gettemplate {
+    my $self = shift;
+    return $self->cms->gettemplate(shift,{case_sensitive=>1,search_path_on_include=>1});
+};
+
 sub opentemplate {
     my $self = shift;
     my $filename = shift;
     my $cms = $self->cms();
-	$self->{_template} = $cms->gettemplate($filename) || return $cms->error();
+    $self->{_template} = $cms->gettemplate($filename,{case_sensitive=>1,search_path_on_include=>1});
 };
 
 sub template { return $_[0]->{_template}; };
