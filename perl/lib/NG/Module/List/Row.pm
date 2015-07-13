@@ -22,6 +22,7 @@ sub init {
     $self->{_listObj} = $params->{LISTOBJ};
     $self->{_index}   = $params->{INDEX};      # Индекс строки в выборке
     my $id            = $params->{ID};         # ID записи строки
+    $self->{REF}      = $params->{REF};        # Значение параметра ref для ссылок, экранированная ссылка для возврата после действия
     
     $self->{ROW_LINKS} = [];     #Массив ссылок операций со строкой
     $self->{COLUMNS} = [];       #Массив столбцов рядка
@@ -82,7 +83,7 @@ sub pushLink {
         $link->{URL} = $self->list()->getBaseURL().$self->list()->getSubURL().$link->{URL};
     };
     
-    $link->{URL} = getURLWithParams($link->{URL},"ref=".$self->list()->buildRefCurrentUrl());
+    $link->{URL} = getURLWithParams($link->{URL},"ref=".$self->{REF});
     if ($link->{AJAX}) {
         $link->{AJAX_URL} = getURLWithParams($link->{URL},"_ajax=1","rand=".int(rand(10000)));
     };

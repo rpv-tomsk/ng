@@ -48,6 +48,7 @@ sub init {
     $self->{_listfields} = [];   # Массив полей, которые выводить в список
 
     $self->{_searchfields} = [];   # массив полей, которые выводятся в форму в режиме редактирования
+    $self->{_searchform}   = undef;# NG::Form for search
     $self->{_orders}       = [];   # Конфигурация вариантов сортировки списка
     $self->{_extra_links}  = []; # 
     $self->{_topbar_links} = []; #
@@ -118,7 +119,7 @@ sub registerModuleActions {
     
     $self->register_action('move',"Move");
     
-    $self->register_action('showsearchform','showSearchForm') if (scalar $self->{_searchfields});
+    $self->register_action('showsearchform','showSearchForm') if (scalar @{$self->{_searchfields}});
 
     $self->register_action('insf',  'processForm');
     $self->register_action('updf',  'processForm');
@@ -139,9 +140,6 @@ sub showList {
     $self->buildList() or return $self->showError('showList(): Вызов buildList() не вернул текст ошибки');
     $self->afterBuildList() or return $self->showError('showList(): Вызов afterBuildList() не вернул текст ошибки');
     
-    if (scalar @{$self->{_searchfields}}) {
-        $self->showSearchForm() if ($self->q()->param("_search") || $self->{_search_popup} || $self->q()->param("showsearchform"));
-    };
     
     return $self->output($self->tmpl()->output());
 };
@@ -149,10 +147,12 @@ sub showList {
 sub buildList {
     my $self = shift;
     my $q = $self->q();
-    my $issearch = $q->param("_search")||0; $issearch = 0 if ($issearch != 1);
+    
+    my $is_search = $q->param("_search")||0; $is_search = 0 if ($is_search != 1);
+    
     my $myurl = $self->getBaseURL().$self->getSubURL();
-                # Текущий URL, без учета AJAX/noAJAX, 
-    my $u = $q->url(-query=>1); # для возврата в исходную страницу 
+                                # Текущий URL, без учета AJAX/noAJAX,
+    my $u = $q->url(-query=>1); # для возврата в исходную страницу
     $u =~ s/_ajax=1//;          # после действий со списком
     $u = uri_escape($u);
 
@@ -169,6 +169,45 @@ sub buildList {
     my $headersCnt = scalar @columns;
     
     $headersCnt++ if $self->{_multiActions};
+    
+    my $refURL = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam());
+    
+    #Обрабатываем функцию поиска
+    my $sform = undef;
+    my $searchParam = "";
+    if (scalar @{$self->{_searchfields}}) {
+        my $sform = $self->createSearchForm() or return $self->showError("showSearchForm(): Ошибка вызова createSearchForm()");
+        #$sform->{_ajax} = $is_ajax;
+        
+        if ($self->{_search_popup} || $is_search || $self->q()->param("showsearchform")) {
+            my $tmpl = $self->gettemplate($self->{_searchformtemplate});
+            #$tmpl->param(IS_AJAX=>$is_ajax);# if (!$self->{_search_popup} || $action eq "showsearchform");
+            $tmpl->param(
+                CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),
+                    $self->getFilterParam(),
+                    $self->getFKParam(),
+                    $self->getOrderParam()
+                )
+            );
+            $sform->print($tmpl);
+            $self->tmpl()->param(
+                SEARCHFORMHTML => $tmpl->output(),
+            );
+        };
+        if ($is_search) {
+            $searchParam = $self->getSearchParam($sform);
+            $self->buildSearchWhere($sform);
+        };
+        unless ($self->{_search_popup}) {
+            push @{$self->{_topbar_links}}, {
+                NAME    => $self->{_search_link_name},
+                URL     => getURLWithParams($myurl,"showsearchform=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),"ref=".$refURL),
+                AJAX_URL=> getURLWithParams($myurl,"action=showsearchform","_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),"ref=".$refURL),
+            };
+        };
+        $refURL = getURLWithParams($refURL, $searchParam);
+    };
+    $refURL = uri_escape($refURL);
 
     #Добавляем ссылки на добавление и редактирование записи
     foreach my $fm (reverse @{$self->{_aForms}}) {
@@ -193,7 +232,7 @@ sub buildList {
             push @params, $self->getFKParam();
             push @params, $self->getFilterParam();
             push @params, $self->getOrderParam();
-            push @params, "ref=".$self->buildRefCurrentUrl();
+            push @params, "ref=".$refURL;
             push @params, "rand=".int(rand(10000));
             
             $link->{URL} = getURLWithParams($self->getBaseURL().$self->getSubURL(), @params);
@@ -208,10 +247,7 @@ sub buildList {
     my $page = $q->param('page') || 0;
     $page = $page + 0;
     
-    if ($issearch) {
-        #TODO: review method getSearchWhere
-        $self->getSearchWhere();
-    };
+    
     my $dblist = NG::DBlist->new(
         db     => $self->db(),
         table  => $self->getListSQLTable(),
@@ -241,6 +277,7 @@ sub buildList {
                 DATA    => $row,
                 LISTOBJ => $self,
                 INDEX   => $index_counter,
+                REF     => $refURL,
             });
             
             $rowObj->{MOVE_URL} = getURLWithParams($myurl,"action=move","$self->{_idname}=$id",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),"ref=$u") if ($self->{_has_move_link}==1) && ($self->{_hide_move_link}==0);
@@ -254,19 +291,12 @@ sub buildList {
         }
     );
     
-    $dblist->disablePages() if ($self->{_disablepages} || $issearch);
+    $dblist->disablePages() if ($self->{_disablepages} || $searchParam); #$searchParam - really has search, not empty
     $dblist->open($self->getListSQLValues()) or return $self->error($DBI::errstr);    ## На вход пойдут значения для where. Сразу же подсчитаем число записей, откроем sth
     my $data = $dblist->data();
     my $pages = $dblist->pages();  # Массив постраничной листалки
     my $cnt  = $dblist->size();    # Число записей
    
-    if (scalar @{$self->{_searchfields}}) {
-        push @{$self->{_topbar_links}}, {
-                NAME    => $self->{_search_link_name},
-                URL     => getURLWithParams($myurl,"showsearchform=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),$self->getPagesParam(),"ref=".$self->buildRefCurrentUrl()),
-                AJAX_URL=> getURLWithParams($myurl,"action=showsearchform","_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),$self->getPagesParam(),"ref=".$self->buildRefCurrentUrl()),
-        };
-    };
     my $ma = $self->{_multiActions};
     $ma = undef unless $cnt;
     
@@ -280,7 +310,7 @@ sub buildList {
         FILTERS    => $self->getListFilters(),
         TOP_LINKS => $self->{_topbar_links},
         MYBASEURL => $myurl,
-        THISURL   => getURLWithParams($myurl,"_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),$self->getPagesParam(),"ref=".$self->buildRefCurrentUrl()),
+        THISURL   => getURLWithParams($myurl,"_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),"ref=".$refURL),
         MULTIACTIONS => $ma,
     );
 
@@ -792,8 +822,15 @@ sub processForm {
             $currentcount = 1 if ($currentcount  < 1);
             my $curpage = int(($currentcount - 1)/$self->{_onpage})+1;
             $self->setPagesParam($curpage);
-            $ref = uri_unescape($self->buildRefCurrentUrl());
-            $ref = getURLWithParams($ref,"hlid=".$form->getParam($self->{_idname}));
+            
+            $ref = getURLWithParams($self->getBaseURL().$self->getSubURL(),
+                $self->getPagesParam(),
+                $self->getFKParam(),
+                $self->getFilterParam(),
+                $self->getOrderParam(),
+                #$self->getSearchParam(), *Removed!
+                "hlid=".$form->getParam($self->{_idname}),
+            );
         }
         else {
             $ref = uri_unescape($q->param('ref'));
@@ -2132,7 +2169,7 @@ sub highlightSortedColumns {
     #Подсветка столбцов, по которым можно делать сортировку
     
     #Если есть несколько столбцов, значит есть дефолтный, значит есть активный
-    return NG::Block::M_OK unless $self->{_shlistActiveOrder}; 
+    return NG::Block::M_OK unless $self->{_shlistActiveOrder};
     my $found = $self->{_shlistActiveOrder}->{ORDER};
     my $dir   = $self->{_shlistActiveOrder}->{DIR};
     
@@ -2225,27 +2262,22 @@ sub getListSQLOrder {
     return "order by ".$found->{FIELD}." ".$dir;
 };
 
-sub getSearchWhere {
-	my $self = shift;
-	$self->opentemplate($self->{_listtemplate}) || return $self->showError("showList(): не могу открыть шаблон");
-	my $form = $self->createSearchForm();
-	if ($form) {
-		$form->setFormValues();
-		foreach my $field (@{$form->{_fields}}) {
-			next unless $field->{VALUE};
-			my $type = $field->{TYPE};
-			if ($type eq "datetime" && is_valid_date($field->{VALUE})) {
-				$self->pushSearchCondition($field->{FIELD}." between ? and ?",[$self->db()->date_to_db($field->{VALUE})." 00:00:00",$self->db()->date_to_db($field->{VALUE})." 23:59:59"]);
-			};
-			if ($type eq "date" && is_valid_date($field->{VALUE})) {
-				$self->pushSearchCondition($field->{FIELD}."=?",[$self->db()->date_to_db($field->{VALUE})]);
-			};
-			if ($type eq "text") {
-				if ($self->db()->isa("NG::DBI::Postgres")) {
-					$self->pushSearchCondition($field->{FIELD}." ilike ?",["%".$field->{VALUE}."%"]);
-				} elsif ($self->db()->isa("NG::DBI::Mysql")) {
-					$self->pushSearchCondition($field->{FIELD}." like ?",["%".$field->{VALUE}."%"]);
-				};
+sub buildSearchWhere {
+	my ($self,$sform) = (shift,shift);
+	foreach my $field (@{$sform->{_fields}}) {
+		next unless $field->{VALUE};
+		my $type = $field->{TYPE};
+		if ($type eq "datetime" && is_valid_date($field->{VALUE})) {
+			$self->pushSearchCondition($field->{FIELD}." between ? and ?",[$self->db()->date_to_db($field->{VALUE})." 00:00:00",$self->db()->date_to_db($field->{VALUE})." 23:59:59"]);
+		};
+		if ($type eq "date" && is_valid_date($field->{VALUE})) {
+			$self->pushSearchCondition($field->{FIELD}."=?",[$self->db()->date_to_db($field->{VALUE})]);
+		};
+		if ($type eq "text") {
+			if ($self->db()->isa("NG::DBI::Postgres")) {
+				$self->pushSearchCondition($field->{FIELD}." ilike ?",["%".$field->{VALUE}."%"]);
+			} elsif ($self->db()->isa("NG::DBI::Mysql")) {
+				$self->pushSearchCondition($field->{FIELD}." like ?",["%".$field->{VALUE}."%"]);
 			};
 		};
 	};
@@ -2253,12 +2285,13 @@ sub getSearchWhere {
 
 sub getDeleteLink {
 	my $self = shift;
-    if ($self->hasDeletePriv() && $self->{_has_delete_link} == 1) {
-    	my $idn = $self->{_idname};
-    	return {
-			NAME=> $self->{_delete_link_name},
-			URL=> getURLWithParams($self->getBaseURL().$self->getSubURL()."?action=delete&$idn={$idn}",$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam(),'rand='.(int(rand(10000)))),
-			AJAX=>1
+	if ($self->hasDeletePriv() && $self->{_has_delete_link} == 1) {
+		my $idn = $self->{_idname};
+		return {
+			NAME => $self->{_delete_link_name},
+			#FKParam & FilterParam are used in delete link as they are key fields.
+			URL  => getURLWithParams($self->getBaseURL().$self->getSubURL()."?action=delete&$idn={$idn}",$self->getFKParam(),$self->getFilterParam()),
+			AJAX => 1,
 		};
 	};
 	return undef;
@@ -2275,90 +2308,74 @@ sub getPagesParam {
 }
 
 sub setPagesParam {
-    #TODO: review this method
+	#TODO: review this method
 	my $self = shift;
 	my $page = shift || (is_valid_id($self->q()->url_param("page"))?$self->q()->url_param("page"):1);
 	$self->{_shlistPageParam} = "page=".$page;
 }
 
-sub buildRefCurrentUrl {
-	my $self = shift;
-	
-	my $refurl = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$self->getSearchParam());
-	return uri_escape($refurl);
-};
-
 sub getSearchParam {
-	my $self = shift;
-	my $issearch = $self->q()->param("_search") || 0; $issearch = 0 if ($issearch != 1);
+	my ($self,$sform) = (shift,shift);
+	
+	$sform or die "getSearchParam(): search form object parameter is missing!";
+	
 	my $url = "";
-	if ($issearch) {
-		my $form = $self->createSearchForm();
-		$form->setFormValues();
-		foreach my $field (@{$form->{_fields}}) {
-			$url .= $field->{FIELD}."=".uri_escape($field->{VALUE})."&";
-		};
-		$url =~ s/\&$//;
+	foreach my $field (@{$sform->{_fields}}) {
+		next unless $field->{VALUE};
+		next if $field->{FIELD} eq "_search";
+		$url .= $field->{FIELD}."=".uri_escape($field->{VALUE})."&";
 	};
+	return "" unless $url;
+	#$url =~ s/\&$//;
+	$url.="_search=1";
 	return $url;
 };
 
 sub createSearchForm {
-	#TODO: проверить вызов и проверку возврата
 	my $self = shift;
-	if (scalar @{$self->{_searchfields}}) {
-		$self->processFKFields() or return $self->showError("createSearchForm(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
-		$self->processFilters() or return $self->showError("createSearchForm(): Ошибка вызова processFilters()");
-		
-		my $action = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFKParam(),$self->getFilterParam());
-		my $sform = NG::Form->new(
-			FORM_URL  => $action,
-			DOCROOT   => $self->getDocRoot(),
-			CGIObject => $self->q(),
-			DB        => $self->db(),
-			OWNER     => $self,
-		);
-		
-		my $fs = $self->_getIntersectFields($self->{_searchfields}) or return $self->showError("_getIntersectFields(): неизвестная ошибка вызова.");
-		$sform->addfields($fs) or return $self->error($sform->getError());
-		
-		$sform->setFormValues();
-		$sform->setTitle("Поиск");
-		$sform->addfields({FIELD=>"_search",TYPE=>"hidden",VALUE=>"1"});
-		
-		return $sform;
-	};
-	return undef;
+	
+	return $self->{_searchform} if defined $self->{_searchform};
+	$self->{_searchform} = 0;
+	return 0 unless scalar @{$self->{_searchfields}};
+	
+	my $action = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFKParam(),$self->getFilterParam());
+	my $sform = NG::Form->new(
+		FORM_URL  => $action,
+		DOCROOT   => $self->getDocRoot(),
+		CGIObject => $self->q(),
+		DB        => $self->db(),
+		OWNER     => $self,
+	);
+	
+	my $fs = $self->_getIntersectFields($self->{_searchfields}) or return $self->showError("_getIntersectFields(): неизвестная ошибка вызова.");
+	$sform->addfields($fs) or return $self->error($sform->getError());
+	
+	$sform->setFormValues();
+	$sform->setTitle("Поиск");
+	$sform->addfields({FIELD=>"_search",TYPE=>"hidden",VALUE=>"1"});
+	
+	$self->{_searchform} = $sform;
+	return $self->{_searchform};
 };
 
-sub showSearchForm {
+sub showSearchForm { #Action!
 	my ($self,$action,$is_ajax) = (shift,shift,shift);
 	
-	my $form = $self->createSearchForm();
-	if ($form) {
-		$form->{_ajax} = $is_ajax;
-		my $template = undef;
-		unless ($action && $action eq "showsearchform") {
-			$template = $self->tmpl();
-		};
-		$self->opentemplate($self->{_searchformtemplate});
-		#$self->tmpl()->param(IS_AJAX=>$is_ajax);# if (!$self->{_search_popup} || $action eq "showsearchform");
-		$self->tmpl()->param(CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFilterParam(),$self->getFKParam(),$self->getOrderParam()));				
-		$form->print($self->tmpl());
-		my $formhtml = $self->tmpl()->output();
-		if ($is_ajax) {
-			return $self->output($formhtml);
-		};
-		unless ($action && $action eq "showsearchform") {
-			$self->{_template} = $template;
-			$self->tmpl()->param(
-				SEARCHFORMHTML => $formhtml
-			);
-		}
-		else {
-			return $self->output($self->tmpl()->output());
-		};
-	};
+	return $self->showError('showSearchForm(): No search fields configured!') unless scalar @{$self->{_searchfields}};
+	#return $self->showError('showSearchForm(): Non-AJAX load not supported') unless $is_ajax;
+	
+	#Если в описании таблицы есть FK, учитываем их в ссылках и SQL (createSearchForm() использует getFKParam() и getFilterParam())
+	$self->processFKFields() or return $self->showError("showSearchForm(): Ошибка вызова processFKFields()");
+	$self->processFilters() or return $self->showError("showSearchForm(): Ошибка вызова processFilters()");
+	$self->processSorting([]) or return $self->showError("showSearchForm(): Ошибка вызова processSorting()");
+	
+	my $sform = $self->createSearchForm() or return $self->showError("showSearchForm(): Ошибка вызова createSearchForm()");
+
+	$sform->{_ajax} = $is_ajax;
+	my $tmpl = $self->gettemplate($self->{_searchformtemplate});
+	$tmpl->param(CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFilterParam(),$self->getFKParam(),$self->getOrderParam()));
+	$sform->print($tmpl);
+	return $self->output($tmpl);
 };
 
 sub _updateVersionKeys {
@@ -2703,7 +2720,7 @@ sub searchfields { my $self = shift; $self->_pushFields($self->{_searchfields},@
 
 sub filter {
     my $self = shift;
-    my $filterObj = $self->cms()->getObject("NG::Module::List::Filters",$self,@_);
+	my $filterObj = $self->cms()->getObject("NG::Module::List::Filters",$self,@_);
     push @{$self->{_filters}},$filterObj;
     return;
 };
