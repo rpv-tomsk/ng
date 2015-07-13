@@ -547,9 +547,11 @@ sub getPageActiveBlock {
     return $cms->defError("getActiveBlock()","неизвестная ошибка") if $ab eq 0;
     return $ab if ref $ab && UNIVERSAL::isa($ab,'NG::BlockContent');
     return $cms->error("getActiveBlock() модуля ".(ref $pageObj)." вернул некорректное значение (не HASHREF)") unless ref $ab eq "HASH";
-    return $cms->error("getActiveBlock() модуля ".(ref $pageObj)." вернул некорректное значение (отсутствует код BLOCK)") unless $ab->{BLOCK};
+    return $cms->error("getActiveBlock() модуля ".(ref $pageObj)." вернул некорректное значение (отсутствует код BLOCK или CODE)") unless $ab->{BLOCK} || $ab->{CODE};
     
     my $mName = $pageObj->getModuleCode() or return $cms->error();
+    #TODO: Т.к. тут выставляется MODULEOBJ, то в getBlockKeys() / getBlockContent() не будут передаваться $block->{PARAMS} из ng_blocks!
+    #      Возможно, следует реализовать доп. ключ, по которому включать догрузку параметров АБ из ng_blocks.
     if ($ab->{CODE}) {
         $ab->{MODULEOBJ} = $pageObj if $ab->{CODE} =~ /^$mName\_/;
     }
