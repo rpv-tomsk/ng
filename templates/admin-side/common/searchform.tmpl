@@ -50,11 +50,11 @@
                   </TMPL_LOOP>							
                     <div style="text-align: center; padding-bottom: 10px;">		
                         <input type="image" src="/admin-side/img/buttons/search.gif">
-					    <TMPL_IF IS_AJAX>
+					    <TMPL_IF FORM.IS_AJAX>
 					        <a onclick="clear_block('<TMPL_IF CONTAINER><TMPL_VAR CONTAINER escape=html><TMPL_ELSE CONTAINER><TMPL_IF NEW>form0<TMPL_ELSE NEW>form0</TMPL_IF NEW></TMPL_IF CONTAINER>');return false;">
-					    <TMPL_ELSE>
+					    <TMPL_ELSE FORM.IS_AJAX>
 					        <a href="<TMPL_VAR CANCEL_SEARCH_URL>">
-					    </TMPL_IF IS_AJAX>
+					    </TMPL_IF FORM.IS_AJAX>
 					    <img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;"></a>
                     </div>		
                 	
