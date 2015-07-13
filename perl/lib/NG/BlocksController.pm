@@ -325,6 +325,15 @@ sub getABRelated {
     return $aBlock->{KEYS}->{RELATED} || return $self->cms->error("Active Block does not set value to RELATED key");
 };
 
+sub tryABHelper {
+    my $self = shift;
+
+    my $aBlock = $self->{_ablock} or return undef;
+    my $abKeys = $self->_getBlockKeys($aBlock) or return undef;
+    return undef unless exists $abKeys->{HELPER};
+    return $abKeys->{HELPER};
+};
+
 sub getABHelper {
     my $self = shift;
 

@@ -743,6 +743,10 @@ sub getABRelated {
     return $NG::Application::blocksController->getABRelated();
 };
 
+sub tryABHelper {
+    return $NG::Application::blocksController->tryABHelper();
+};
+
 sub getABHelper {
     return $NG::Application::blocksController->getABHelper();
 };
