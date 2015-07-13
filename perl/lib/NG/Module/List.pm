@@ -7,7 +7,6 @@ use Carp;
 use NG::Form 0.4;
 use NG::Field;
 use NG::DBlist 0.4;
-#use NG::PageModule 0.4;
 use NSecure;
 use NGService;
 use URI::Escape;
@@ -471,7 +470,7 @@ sub processForm {
     };
     
     foreach my $field (@{$self->{_fields}}) {
-		if ($field->{TYPE} eq "fkparent") {
+        if ($field->{TYPE} eq "fkparent") {
             my $fkpF = undef;
             if ($field->{EDITABLE}) {
                 $fkpF = $form->getField($field->{FIELD}) or return $self->showError("processForm(): Поле ".$field->{FIELD}." типа fkparent со свойством EDITABLE отсутствует в списке полей формы");
@@ -482,7 +481,7 @@ sub processForm {
             if ($action eq "insf") {
                 $fkpF->setFormValue();
             };
-		};
+        };
         #Тут в форму прокачиваются поля типа filter, в том числе и те, которые ранее имели типы pageId,blockId, etc...
         if ($field->{TYPE} eq "filter") {
             return $self->error("Value not specified for FK field \"".$field->{FIELD}."\"") if is_empty($field->{VALUE});
@@ -562,16 +561,16 @@ sub processForm {
     elsif ($fa eq "insert") {
         $form->modeInsert(); #Наверное требуется для HIDE полей, которые тем не менее пишутся в БД.
     }
-	elsif ($fa eq "update") {
-		my $id = $q->param($self->{_idname});
-    	$form->param($self->{_idname},$id);
+    elsif ($fa eq "update") {
+        my $id = $q->param($self->{_idname});
+        $form->param($self->{_idname},$id);
         $form->loadData() or return $self->error($form->getError());
         
-		if (defined $self->{_searchconfig}) {
-			$oldsuffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
-			return $self->showError() if ($self->cms()->getError('') ne "");
-		};
-	}
+        if (defined $self->{_searchconfig}) {
+            $oldsuffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
+            return $self->showError() if ($self->cms()->getError('') ne "");
+        };
+    }
     elsif ($action eq "formaction"){
         return $self->redirect($self->q()->url()) unless $fa;
         
@@ -601,7 +600,7 @@ sub processForm {
         return $self->error("Incorrect form action: $action"); ## N.R. Если будет выполнение этого кода - значит наверху неверно изменили условия.
     };
 
-	$form->setFormValues();
+    $form->setFormValues();
     
     $self->afterSetFormValues($form,$fa);
     
@@ -905,7 +904,7 @@ sub changeRowValueByForm {
     
     my $form = NG::Form->new(
         FORM_URL  => $formurl,
-		KEY_FIELD => $self->{_idname},
+        KEY_FIELD => $self->{_idname},
         DB        => $self->db(),
         TABLE     => $self->{_table},
         DOCROOT   => $self->getDocRoot(),
@@ -915,7 +914,7 @@ sub changeRowValueByForm {
         IS_AJAX   => 1,
         PREFIX    => $aF->{PREFIX},
         OWNER     => $self,
-	);
+    );
     #Поля
     my $aFields = undef;
     return $self->json_error("Перечень полей EDITFIELDS формы не массив.") if $aF->{EDITFIELDS} && ref $aF->{EDITFIELDS} ne "ARRAY";
@@ -935,7 +934,7 @@ sub changeRowValueByForm {
     $form->addfields($fs) or return $self->error($form->getError());
     
     foreach my $field (@{$self->{_fields}}) {
-		if ($field->{TYPE} eq "fkparent") {
+        if ($field->{TYPE} eq "fkparent") {
             my $fkpF = undef;
             if ($field->{EDITABLE}) {
                 $fkpF = $form->getField($field->{FIELD}) or return $self->showError("processCheckbox(): Поле ".$field->{FIELD}." типа fkparent со свойством EDITABLE отсутствует в списке полей формы");
@@ -943,7 +942,7 @@ sub changeRowValueByForm {
             else {
                 $fkpF = $form->addfields($field) or return $self->error($form->getError());
             };
-		};
+        };
         #Тут в форму прокачиваются поля типа filter, в том числе и те, которые ранее имели типы pageId,blockId, etc...
         if ($field->{TYPE} eq "filter") {
             return $self->error("Value not specified for FK field \"".$field->{FIELD}."\"") if is_empty($field->{VALUE});
@@ -962,7 +961,6 @@ sub changeRowValueByForm {
     
     #$form->setFormValues();
     
-
     my $ret = $sub->($form);
     unless ($ret) {
         $form->cleanUploadedFiles();
@@ -1013,28 +1011,6 @@ sub changeRowValueByForm {
     
     return 1;
 };
-
-=head
-sub _getFullForm {
-    my $self = shift;
-    my $form_url=shift || "";
-    
-    my $q = $self->q();
-    
-    my $form = NG::Form->new(
-        FORM_URL  => $form_url,
-        KEY_FIELD => $self->{_idname},
-        DB        => $self->db(),
-        TABLE     => $self->{_table},
-        DOCROOT   => $self->getDocRoot(),
-        SITEROOT  => $self->getSiteRoot(),
-        CGIObject => $q,
-        REF       => $q->param('ref') || "",
-    );
-    $form->addfields($self->{_fields}) or return $self->error($form->getError());
-    return $form;
-};
-=cut
 
 sub Delete {
     my $self=shift;
@@ -1314,13 +1290,13 @@ sub _makeEvent {
 ##
 
 sub _updateIndex {
-	my $self = shift;
-	my $suffix = shift;
+    my $self = shift;
+    my $suffix = shift;
     
     my $mObj = $self->getModuleObj();
     return $self->error("moduleObj ".ref($mObj)." has no updateSearchIndex() method") unless $mObj->can("updateSearchIndex");
     return $mObj->updateSearchIndex($suffix);
-}
+};
 
 sub getBlockIndex {
     my $self = shift;
@@ -1656,7 +1632,7 @@ sub getBlockIndex {
     $where = ($where)?"where $where":"";
     my $order = $sc->{ORDER};
     $order = "order by $order" if $order;
-	$order ||= "";
+    $order ||= "";
     
     my $sql = "select $sqlfields from $table $where $order";
     my $sth = $dbh->prepare($sql) or return $self->error($DBI::errstr);
@@ -1809,19 +1785,19 @@ sub _analyseFieldTypes {
     foreach my $field (@{$self->{_fields}}) {
         unless ($field->{TYPE}){
             return $self->error("Ошибка конфигурации модуля ".ref($self).": Не указан тип поля ".$field->{FIELD});
-        }
+        };
         if ($field->{TYPE} eq "id") {
             return $self->error("Ошибка в конфигурации: найдено два поля типа \"id\": ".$field->{FIELD}." и ".$self->{_idname}.".") if ($self->{_idname});
             $self->{_idname} = $field->{FIELD};
-        }
+        };
         if ($field->{TYPE} eq "posorder"){
             return $self->error("Ошибка в конфигурации: найдено два поля типа \"posorder\": ".$field->{FIELD}." и ".$self->{_posField}->{FIELD}.".") if ($self->{_posField});
             $self->{_posField} = $field;
             $self->{_has_move_link} = 1;
             if ($field->{READONLY}) {
                 $self->{_hide_move_link} = 1;
-            }
-        }
+            };
+        };
         if ($field->{TYPE} eq "pageLinkId") {
             $field->{VALUE} = $self->getPageLinkId();
             $self->{_contentKey}.= $field->{TYPE}."=".$field->{VALUE};
@@ -1833,12 +1809,12 @@ sub _analyseFieldTypes {
             $self->{_contentKey}.= $field->{TYPE}."=".$field->{VALUE};
             $field->{TYPE} = "filter";
             $self->{_has_pageLangId} = 1;
-        };        
+        };
         if ($field->{TYPE} eq "pageId") {
             $field->{VALUE} = $self->getPageId();
             $self->{_contentKey}.= $field->{TYPE}."=".$field->{VALUE};
             $field->{TYPE} = "filter";
-            $has_pageId  = 1 ;
+            $has_pageId  = 1;
         };
         if ($field->{TYPE} eq "subsiteId") {
             $field->{VALUE} = $self->getSubsiteId();
@@ -1893,34 +1869,31 @@ sub _analyseFieldTypes {
 }
 
 sub getField {
-	my $self = shift;
-	my $fieldname = shift;
-
+    my $self = shift;
+    my $fieldname = shift;
+    
     return {NAME=>"№",TYPE=>"_counter_"} if ($fieldname eq "_counter_");
     
-	foreach my $field (@{$self->{_fields}}) {
-		if ($field->{FIELD} eq $fieldname)  {
-			return $field;
-			last;
-		}
-	}
-	return undef;
-} 
+    foreach my $field (@{$self->{_fields}}) {
+        return $field if $field->{FIELD} eq $fieldname;
+    };
+    return undef;
+};
 
 sub getPosField {
     my $self = shift;
     my $posField = $self->{_posField};
     return $posField if $posField;
     return undef; 
-}
- 
+};
+
 sub _pushCondition {
     my $self = shift;
     my $array = shift;
     my $sql = shift;
     my $fvalue = [];
-   	$fvalue = shift if (scalar @_);
-	
+    $fvalue = shift if (scalar @_);
+
     return unless $sql;
     my $pvalue = [];
     if (ref $fvalue eq 'ARRAY') {
@@ -1955,10 +1928,10 @@ sub pushSearchCondition {
 sub processFKFields {
     my $self = shift;
     
-	#Из какого массива полей брать перечисление полей ?
+    #Из какого массива полей брать перечисление полей ?
     #Может ли ФК поле не участвовать в отображении списка ? - сейчас это значение обязательно. Если надо - перекрывайте метод.
     #Ранее был вариант что список полей брать из _listfields
-	
+
     my $fkparam = "";
     foreach my $field (@{$self->{_fields}}) {
         if ($field->{TYPE} eq "fkparent") {
@@ -2004,7 +1977,7 @@ sub getListFilters {
     my $furlParams = "";  #Параметры, которые надо подставить в форму (фильтры, которые её не используют + $fkp + $op)
     foreach my $filter (@{$self->{_filters}}) {
         $filter->beforeOutput();
-    	my $fconfig = $filter->config();
+        my $fconfig = $filter->config();
 #next unless $fconfig; #По идее, мы должны где-нибудь упасть, но явно тут не требуется тупой игнор. 
         
         my @params = ();
@@ -2014,8 +1987,8 @@ sub getListFilters {
         };
         
         my $type = $filter->type();
-    	my $elements = $filter->elements();
-    	my $urlParams = $filter->getURLParams();
+        my $elements = $filter->elements();
+        my $urlParams = $filter->getURLParams();
         if ($filter->useForm()) {
             $useForm = 1;
         }
@@ -2023,7 +1996,7 @@ sub getListFilters {
             $furlParams.="&" if $furlParams;
             $furlParams.= $urlParams;
         };
-    	push @filters, {
+        push @filters, {
             NAME   => $fconfig->{NAME},
             ACTION => getURLWithParams($self->q()->url(),$self->getOrderParam(),$self->getFKParam(),@params),
             "TYPE_".uc($type)=>1,
@@ -2058,30 +2031,31 @@ sub processSorting {
 
     my $posField = $self->getPosField();
     if ($posField) {
-		push @{$listfields}, $posField;
-		my $order = {};
-		$order->{FIELD} = $posField->{FIELD};
-		$order->{DEFAULTBY} = "DESC" if $posField->{REVERSE};
-		unshift @{$self->{_orders}}, $order;
-	}
+        push @{$listfields}, $posField;
+        my $order = {};
+        $order->{FIELD} = $posField->{FIELD};
+        $order->{DEFAULTBY} = "DESC" if $posField->{REVERSE};
+        unshift @{$self->{_orders}}, $order;
+    };
 
     my $orderfield = "";
     my $dir;
     if ($q->url_param('asc')) {
         $orderfield = $q->url_param('asc');
         $dir = "ASC";
-    } elsif ($q->url_param('desc')) {
+    }
+    elsif ($q->url_param('desc')) {
         $orderfield = $q->url_param('desc');
         $dir = "DESC";
     };
     return NG::Block::M_OK unless scalar @{$self->{_orders}};
     my $default=undef;
     my $found = undef;
-	foreach my $iorder (@{$self->{_orders}}) {
+    foreach my $iorder (@{$self->{_orders}}) {
         if ($iorder->{FIELD} eq $orderfield){
             $found = $iorder;
         };
-		
+        
         return $self->error("Некорректная конфигурация модуля: найдено две записи сортировки по умолчанию.") if ($iorder->{DEFAULT} && $default);
         $default = $iorder if ($iorder->{DEFAULT});
     };
@@ -2095,10 +2069,10 @@ sub processSorting {
     };
     $self->{_shlistActiveOrder} = {ORDER=>$found, DIR=>uc($dir)};
 
-	# Запрещаем позиционирование, если сортировка не по полю позиции
-	$self->{_hide_move_link} = 1 if ($posField && ($found->{FIELD} ne $posField->{FIELD}));
+    # Запрещаем позиционирование, если сортировка не по полю позиции
+    $self->{_hide_move_link} = 1 if ($posField && ($found->{FIELD} ne $posField->{FIELD}));
 
-    return NG::Block::M_OK;        
+    return NG::Block::M_OK;
 };
 
 #Методы построения URL-адресов списка, возвращают куски вида param=value
@@ -2112,12 +2086,12 @@ sub getOrderParam  {
 };
 
 sub getFilterParam {
-	my $self = shift;
-	my @urls = ();
-	foreach my $filter (@{$self->{_filters}}) {
-		push @urls , $filter->getURLParams();
-	};
-	return join("&",@urls);
+    my $self = shift;
+    my @urls = ();
+    foreach my $filter (@{$self->{_filters}}) {
+        push @urls , $filter->getURLParams();
+    };
+    return join("&",@urls);
 };
 
 #Методы построения списка
@@ -2134,8 +2108,8 @@ sub getListColumns {
         push @columns,$field unless ($field->{TYPE} eq "hidden");  # Не включаем в список на отображение
         next if ($field->{FIELD} eq "_counter_");                  ## не включаем в список на выборку
         next if ($field->{'IS_FAKEFIELD'}); #не включаем в выборку вычисляемые поля
-    	$fields .= ",".$field->{FIELD};
-    	$field->{IS_POSORDER} = 1 if ($field->{TYPE} eq "posorder");
+        $fields .= ",".$field->{FIELD};
+        $field->{IS_POSORDER} = 1 if ($field->{TYPE} eq "posorder");
         $field->{ORDER} = getURLWithParams($field->{ORDER},$self->getFilterParam(),$self->getFKParam()) if ($field->{ORDER});
     };
     
@@ -2159,38 +2133,38 @@ sub highlightSortedColumns {
     
     #Если есть несколько столбцов, значит есть дефолтный, значит есть активный
     return NG::Block::M_OK unless $self->{_shlistActiveOrder}; 
-	my $found = $self->{_shlistActiveOrder}->{ORDER};
+    my $found = $self->{_shlistActiveOrder}->{ORDER};
     my $dir   = $self->{_shlistActiveOrder}->{DIR};
-
-	my $myurl = $self->q()->url();
-	foreach my $iorder (@{$self->{_orders}}) {
-		#Ищем соответствующее поле
-		my $field = undef;
-		foreach (@{$listfields}) {
-			if ($_->{FIELD} eq $iorder->{FIELD})  {
-				$field = $_;
-				last;
-			}
-		}
-		if (!defined $field) {
-			last if (scalar @{$self->{_orders}} == 1);
-			return $self->error("Некорректная конфигурация модуля: поле сортировки не найдено в списке столбцов");
-		};
-
-		if ($iorder->{FIELD} eq $found->{FIELD}) {
-			#$field->{SELECTED_ORDER} = 1;
-			$field->{"SELECTED_".$dir} = 1;			
-			if ($dir eq "ASC") {
-				$field->{ORDER} = getURLWithParams($myurl,"desc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
-			} elsif ($dir eq "DESC") {
-				$field->{ORDER} = getURLWithParams($myurl,"asc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
-			};
-		}
-		else {
-			$iorder->{DEFAULTBY} ||= "ASC";
-			$field->{ORDER} = getURLWithParams($myurl,lc($iorder->{DEFAULTBY})."=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
-		};
-	};
+    
+    my $myurl = $self->q()->url();
+    foreach my $iorder (@{$self->{_orders}}) {
+        #Ищем соответствующее поле
+        my $field = undef;
+        foreach (@{$listfields}) {
+            if ($_->{FIELD} eq $iorder->{FIELD})  {
+                $field = $_;
+                last;
+            }
+        }
+        if (!defined $field) {
+            last if (scalar @{$self->{_orders}} == 1);
+            return $self->error("Некорректная конфигурация модуля: поле сортировки не найдено в списке столбцов");
+        };
+    
+        if ($iorder->{FIELD} eq $found->{FIELD}) {
+            #$field->{SELECTED_ORDER} = 1;
+            $field->{"SELECTED_".$dir} = 1;
+            if ($dir eq "ASC") {
+                $field->{ORDER} = getURLWithParams($myurl,"desc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
+            } elsif ($dir eq "DESC") {
+                $field->{ORDER} = getURLWithParams($myurl,"asc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
+            };
+        }
+        else {
+            $iorder->{DEFAULTBY} ||= "ASC";
+            $field->{ORDER} = getURLWithParams($myurl,lc($iorder->{DEFAULTBY})."=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
+        };
+    };
     return NG::Block::M_OK;
 };
 
@@ -2437,34 +2411,12 @@ sub _updateVersionKeys {
     $cms->updateKeysVersion($mObj,\@vk);
 };
 
-=head
-sub checkConfig {
-    my $self = shift;
-
-    if ($self->{_table} eq "") {
-        return $self->error("NG::Module::List: tablename not specified");
-    }
-    if ($self->{_idname} eq "") {
-		return $self->error("NG::Module::List: Table identifier (id field) not specified");
-    }
-
-    foreach my $fieldname (@{$self->{_listfieldnames}}) {
-        if ( $fieldname ne "_counter_" && !defined $self->_getfieldhash($fieldname)) { return $self->error("NG::Module::List->list(): field \"$fieldname\" not found."); };
-    }
-    foreach my $fieldname (@{$self->{_formfieldnames}}) {
-        if (! defined $self->_getfieldhash($fieldname)) { return $self->error("NG::Module::List->form(): field \"$fieldname\" not found."); };
-    }
-    return NG::Block::M_OK;
-}
-=cut
-
 #
 # Интеграция в CMS
 #
 
 sub pageBlockAction {
-    my $self    = shift;
-    my $is_ajax = shift;
+    my ($self,$is_ajax) = (shift,shift);
     
     $self->_analyseFieldTypes() or return $self->showError("pageBlockAction(): Ошибка вызова _analyseFieldTypes()");
     return $self->error("Конфигурация модуля ".(ref $self)." не предусматривает редактирования блоков страницы.") unless ($self->{_pageBlockMode}==1 || $self->{_linkBlockMode}==1);
@@ -2473,8 +2425,7 @@ sub pageBlockAction {
 }
 
 sub blockAction {
-    my $self    = shift;
-	my $is_ajax = shift;
+    my ($self,$is_ajax) = (shift,shift);
     
     $self->_analyseFieldTypes() or return $self->showError("blockAction(): Ошибка вызова _analyseFieldTypes()");
     return $self->error("Конфигурация модуля ".(ref $self)." не предусматривает его работу в режиме CMS-модуля .") if ($self->{_pageBlockMode}==1 || $self->{_templateBlockMode}==1 || $self->{_linkBlockMode}==1);
@@ -2633,25 +2584,24 @@ sub _getDF {
     return @{$self->{_aForms}}[0];
 };
 
-
 sub disableAddlink {
-	my $self = shift;
+    my $self = shift;
     $self->_getDF()->{ADDLINKNAME} = undef;
 };
 
 sub disableEditlink {
-	my $self = shift;
-	$self->_getDF()->{EDITLINKNAME} = undef;
+    my $self = shift;
+    $self->_getDF()->{EDITLINKNAME} = undef;
 };
 
 sub disableDeletelink {
-	my $self = shift;
-	$self->{_has_delete_link} = 0;
+    my $self = shift;
+    $self->{_has_delete_link} = 0;
 };
 
 sub disableMovelink {
-	my $self = shift;
-	$self->{_has_move_link} = 0;
+    my $self = shift;
+    $self->{_has_move_link} = 0;
 };
 
 sub additionalForm {
@@ -2710,8 +2660,8 @@ sub setFormStructure { my $self = shift; $self->_getDF()->{STRUCTURE} = shift; }
 sub setFormTemplate  { my $self = shift; $self->_getDF()->{TEMPLATE} = shift;  };
 
 sub disablePages {
-	my $self = shift;
-	$self->{_disablepages} = 1;
+    my $self = shift;
+    $self->{_disablepages} = 1;
 };
 
 sub tablename {
@@ -2722,22 +2672,22 @@ sub tablename {
 sub _pushFields {
     my $self = shift;
     my $aRef = shift;
-
+    
     my $ref = $_[0];
     if (ref $aRef ne "ARRAY") { die "aRef is not array ref in \$NG::Module::List->_pushFields()."; }; #TODO: fix msg
-	if (!defined $ref) { die "Parameter not specified in \$NG::Module::List->_pushFields()."; }; #TODO: fix msg
+    if (!defined $ref) { die "Parameter not specified in \$NG::Module::List->_pushFields()."; }; #TODO: fix msg
     
-	if (ref $ref eq 'HASH') {
-		foreach my $tmp (@_) {
+    if (ref $ref eq 'HASH') {
+        foreach my $tmp (@_) {
             push @{$aRef}, $tmp;
-		};
-	}
-	elsif (ref $ref eq 'ARRAY') {
-		foreach my $tmp (@{$ref}) {
+        };
+    }
+    elsif (ref $ref eq 'ARRAY') {
+        foreach my $tmp (@{$ref}) {
             if (ref $tmp ne "HASH") { die "Invalid type" }; #TODO: fix msg
-			push @{$aRef}, $tmp;
-		};
-	}
+            push @{$aRef}, $tmp;
+        };
+    }
     else {
         die "NG::Module::List->fields(): invalid parameter type."; #TODO: fix msg
     };
@@ -2752,19 +2702,19 @@ sub editfields { my $self = shift; $self->_pushFields($self->_getDF()->{EDITFIEL
 sub searchfields { my $self = shift; $self->_pushFields($self->{_searchfields},@_); };
 
 sub filter {
-	my $self = shift;
+    my $self = shift;
     my $filterObj = $self->cms()->getObject("NG::Module::List::Filters",$self,@_);
-	push @{$self->{_filters}},$filterObj;
-	return;
+    push @{$self->{_filters}},$filterObj;
+    return;
 };
 
 sub order {
-	my $self = shift;
-	die "Incorect parameters in order() call." if (scalar @_ == 0);
-	
-	if (ref $_[0] eq 'HASH') {      # Нам пришел список hashref
-		@{$self->{_orders}} = (@_);
-	}
+    my $self = shift;
+    die "Incorect parameters in order() call." if (scalar @_ == 0);
+    
+    if (ref $_[0] eq 'HASH') {      # Нам пришел список hashref
+        @{$self->{_orders}} = (@_);
+    }
     elsif (ref $_[0] eq 'ARRAY') {  # Надеемся что в массиве hashref-ы
         $self->{_orders} = $_[0];
     }
@@ -2772,7 +2722,7 @@ sub order {
         my $field = shift;
         my $order = shift || 'ASC';
         push @{$self->{_orders}}, {FIELD=>$field, 'DEFAULTBY'=>$order};
-	};
+    };
 };
 
 sub searchConfig { my $self = shift; $self->{_searchconfig} = shift; };
@@ -2790,24 +2740,24 @@ sub updateKeysVersion {
 };
 
 sub add_url_field {
-	my $self = shift;
-	my $fieldname = shift;
-	my $urlmask = shift;
-	my $title = shift;
-	foreach my $field (@{$self->{_fields}}) {
-		if ($field->{FIELD} eq $fieldname) {
-			$field->{URLMASK} = $urlmask;
-			$field->{TITLE} = $title;
-		};
-	};
+    my $self = shift;
+    my $fieldname = shift;
+    my $urlmask = shift;
+    my $title = shift;
+    foreach my $field (@{$self->{_fields}}) {
+        if ($field->{FIELD} eq $fieldname) {
+            $field->{URLMASK} = $urlmask;
+            $field->{TITLE} = $title;
+        };
+    };
 };
 
 sub add_links {
-	my $self = shift;
-	my $name = shift;
-	my $urlmask = shift;
-	my $ajax = shift;
-	push @{$self->{_extra_links}}, {NAME=>$name,URL=>$urlmask,AJAX=>$ajax};
+    my $self = shift;
+    my $name = shift;
+    my $urlmask = shift;
+    my $ajax = shift;
+    push @{$self->{_extra_links}}, {NAME=>$name,URL=>$urlmask,AJAX=>$ajax};
     carp "WARNING: NG::Module::List::add_links() - method expired, please use addRowLink";
 };
 
