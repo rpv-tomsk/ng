@@ -46,13 +46,16 @@ sub init {
 	$self->{_config}->{SQL}->{PREFIX} ||= "id" if exists $self->{_config}->{SQL};
 	$self->{_config}->{TYPE} ||= "select";
 	$self->{_activeValue} = undef;
+	$self->{_loaded} = 0;
 	$self;
 };
 
 sub load {
-	my $self = shift;
+    my $self = shift;
     my $config = $self->config();
-	
+
+    return $self->error('NG::Module::List::Filters->load(): Already loaded!') if $self->{_loaded};
+    $self->{_loaded} = 1;
     return $self->error("Некорректная конфигурация фильтра. Не указан источник получения данных (VALUES,SQL или LINKEDFIELD)") unless ($config->{VALUES} || $config->{SQL} || $config->{LINKEDFIELD});
     return $self->error("Некорректная конфигурация фильтра. Одновременное использование опций SQL и LINKEDFIELD запрещено.") if ($config->{SQL} && $config->{LINKEDFIELD});
 
