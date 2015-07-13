@@ -318,7 +318,7 @@ sub editAdmin {
         ]);
     };
 
-    my $tmpl = $cms->gettemplate("admin-side/common/universalform.tmpl");
+    my $tmpl = $cms->gettemplate("admin-side/common/universalform.tmpl",{case_sensitive=>1,search_path_on_include=>1});
     $form->print($tmpl);
     my $formhtml = $tmpl->output();
     
