@@ -1,4 +1,4 @@
-<TMPL_IF SUBSITES>
+<TMPL_IF SUBSITES#>
 <form method="post" action="/admin-side/actions/switchsubsite/" id="form">
 <select name="subsiteid" id="town">
 <TMPL_LOOP SUBSITES>
@@ -8,7 +8,7 @@
 <input type="hidden" name="frompageid" value="<TMPL_VAR PAGE_ID>">
 <input type="image" src="/admin-side/img/buttons/query.gif">
 </form>
-</TMPL_IF SUBSITES>
+</TMPL_IF SUBSITES#>
 
 
 

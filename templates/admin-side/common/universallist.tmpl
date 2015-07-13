@@ -65,11 +65,11 @@
         <table id="content" >
             <!--Строка заголовков-->
             <tr>
-                <TMPL_IF MULTIACTIONS>
+                <TMPL_IF MULTIACTIONS#>
                     <td class="title">
                         <div class="list-multiactioncb-all" title="Выбрать/отменить все"></div>
                     </td>
-                </TMPL_IF MULTIACTIONS>
+                </TMPL_IF MULTIACTIONS#>
                 
                 <TMPL_LOOP HEADERS>
                 <TMPL_UNLESS HIDE>
@@ -93,11 +93,11 @@
             <TMPL_LOOP DATA>
                 <!-- data columns -->
                 <tr>
-                <TMPL_IF MULTIACTIONS>
+                <TMPL_IF MULTIACTIONS#>
                 <td class="content">
                     <div class="list-multiactioncb" data-id="<TMPL_VAR ID_VALUE>"></div>
                 </td>
-                </TMPL_IF MULTIACTIONS>
+                </TMPL_IF MULTIACTIONS#>
 
                 <TMPL_LOOP COLUMNS ALIAS=COLUMN>
                     <td class="content"  style="<TMPL_IF COLUMN.WIDTH>width:<TMPL_VAR COLUMN.WIDTH>;</TMPL_IF><TMPL_IF COLUMN.HIGHLIGHT>background:#ffcccc;</TMPL_IF>">
@@ -126,14 +126,14 @@
                 <!-- Строка элементов управления записи -->
                 <tr>
                     <td class="last_line_right_img" colspan="<TMPL_VAR HEADERS_CNT>">
-                        <TMPL_IF ROW_LINKS>
+                        <TMPL_IF ROW_LINKS#>
                         <TMPL_LOOP ROW_LINKS>
                             <nobr>
                             <a href="<TMPL_VAR URL>" <TMPL_IF AJAX>onclick="ajax_url('<TMPL_VAR AJAX_URL>','formb_<TMPL_VAR ID_VALUE>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
                             <TMPL_UNLESS __LAST__>&nbsp;|&nbsp;</TMPL_UNLESS __LAST__>
                             </nobr>
                         </TMPL_LOOP>
-                        </TMPL_IF ROW_LINKS>
+                        </TMPL_IF ROW_LINKS#>
                     </td>
                 </tr>
                 <!--  /Строка элементов управления записи  -->
@@ -146,7 +146,7 @@
             <!-- data rows / -->
         </table>
     </div>
-    <TMPL_IF MULTIACTIONS>
+    <TMPL_IF MULTIACTIONS#>
         <div class="list-multiaction-panel">
             <!--<a href="#" class="mark-all">Отметить все</a> / <a href="#" class="unmark-all">Снять выделение</a>-->
             <!--&nbsp;-->
@@ -159,7 +159,7 @@
             </div>
         </div>
         <div class="mult-ajax-content"></div>
-    </TMPL_IF MULTIACTIONS>
+    </TMPL_IF MULTIACTIONS#>
 
 <TMPL_IF AFTER_LIST_TMPL>
     <TMPL_INCLUDE_VAR AFTER_LIST_TMPL>
@@ -167,7 +167,7 @@
 
     <div id="middle_content_bottom">
         <!-- PAGENAV -->
-        <TMPL_IF PAGES>
+        <TMPL_IF PAGES#>
         Страница:
         <TMPL_LOOP PAGES>
         <TMPL_IF PREV_LIST><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>">&lt;&lt;</a></TMPL_IF>
@@ -175,7 +175,7 @@
         <TMPL_IF NORMAL><a href="<TMPL_VAR URL><TMPL_VAR PAGE_NAME>=<TMPL_VAR PAGE>"><TMPL_VAR PAGE></a></TMPL_IF>
         <TMPL_IF CURRENT><span id="select_page"><TMPL_VAR PAGE></span></TMPL_IF>
         </TMPL_LOOP PAGES>
-        </TMPL_IF PAGES>
+        </TMPL_IF PAGES#>
         <!-- /PAGENAV -->
     </div>
 
@@ -188,7 +188,7 @@
 
 <script>
 $('div#table_content').initClickableCheckboxes({url:'<TMPL_VAR MYBASEURL>'});
-<TMPL_IF MULTIACTIONS>
+<TMPL_IF MULTIACTIONS#>
     var actions = [];
     <TMPL_LOOP MULTIACTIONS>actions.push({
         action:'<TMPL_VAR ACTION ESCAPE=JS>',
@@ -202,5 +202,5 @@ $('div#table_content').initClickableCheckboxes({url:'<TMPL_VAR MYBASEURL>'});
         actions:actions,
         thispage: '<TMPL_VAR THISURL>'
     });
-</TMPL_IF MULTIACTIONS>
+</TMPL_IF MULTIACTIONS#>
 </script>

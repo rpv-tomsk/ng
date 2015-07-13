@@ -310,13 +310,13 @@ $(document).ready(
     <div class="subjects" id="admins">
         <div class="name">Администраторы:</div>
         <div class="list">
-            <TMPL_IF PAGEADMINS>
+            <TMPL_IF PAGEADMINS#>
                 <TMPL_LOOP PAGEADMINS>
                     <p class="link<TMPL_IF CURRENT> selected</TMPL_IF>"><a href="<TMPL_VAR BASEURL><TMPL_VAR PAGEID>/local/?adminId=<TMPL_VAR ID>"><TMPL_VAR FIO> (<TMPL_VAR LOGIN>)</a></p>
                 </TMPL_LOOP PAGEADMINS>
             <TMPL_ELSE PAGEADMINS>
                 <p class="link">Привилегии на страницу администраторам не предоставлены</p>
-            </TMPL_IF PAGEADMINS>
+            </TMPL_IF PAGEADMINS#>
         </div>
         <p class="link" style="float:right;">[<a href="#" onclick="return addSubj('addadmin','addAdmin');" title="Добавить">+</a>]</p>
     </div>

@@ -87,7 +87,7 @@ function addRuleCheckForm(form) {
     </div>
 
     <div class="pageprivileges">
-        <TMPL_IF DATA>
+        <TMPL_IF DATA#>
         <TMPL_LOOP DATA>
         <div class="modulename<TMPL_IF __FIRST__> first</TMPL_IF>">
             <p><TMPL_VAR NAME></p>
@@ -100,9 +100,9 @@ function addRuleCheckForm(form) {
             </div>
             </TMPL_LOOP PRIVS>
         </TMPL_LOOP DATA>
-        <TMPL_ELSE DATA>
+        <TMPL_ELSE DATA#>
             <div class="modulename"><p>Правила наследования не созданы</p></div>
-        </TMPL_IF DATA>
+        </TMPL_IF DATA#>
         
         <div class="addRuleBar">
             <p class="name">Модуль:</p>
