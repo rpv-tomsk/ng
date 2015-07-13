@@ -1983,11 +1983,11 @@ sub processFKFields {
 sub processFilters {
     my $self = shift;
     my $q = $self->q();
- 	foreach my $filter (@{$self->{_filters}}) {
+    foreach my $filter (@{$self->{_filters}}) {
         $filter->load() or return 0;
         $self->pushWhereCondition($filter->getWhereCondition(),$filter->getWhereParams());
- 	};
-	return NG::Block::M_OK;
+    };
+    return NG::Block::M_OK;
 };
 
 sub getListFilters {
