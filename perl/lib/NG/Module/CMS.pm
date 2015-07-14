@@ -29,7 +29,7 @@ sub block_BREADCRUMBS {
     
     return $cms->output("[Parameter 'template' not specified for block ".$self->getModuleCode()."_$action]") unless $params->{template};
     
-    my $pageId  = $keys->{REQUEST}->{pageid};
+    my $pageId  = $keys->{REQUEST}->{pageId};
     my $history = $keys->{REQUEST}->{history};
     my $minLevel = $params->{minlevel};
 
