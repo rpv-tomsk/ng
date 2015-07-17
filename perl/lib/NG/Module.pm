@@ -50,7 +50,7 @@ sub bindResource {
     my $self= shift;
     my $tmplObj = shift;
     my $cms = $self->cms();
-    my $rObj = $cms->getObject("NG::ResourceController",$self) or return $cms->error();
+    my $rObj = $cms->getObject("NG::ResourceController",$self);
     $tmplObj->param(
         RES => $rObj
     );
@@ -81,7 +81,7 @@ sub getResource {
         next if $_->{KEY} && !exists $row->{$_->{KEY}};
         my $module = $cms->confParam("Resource.".$code.($_->{PREFIX}?"_".$_->{PREFIX}.$row->{$_->{KEY}}:""));
         next unless $module;
-        my $obj = $cms->getObject($module) or return $cms->error();
+        my $obj = $cms->getObject($module);
         my $value = $obj->getResource($name,
             {
                 subsite_id => $row->{subsite_id},
@@ -291,7 +291,7 @@ sub runBlock {
     
     my $cms = $self->cms();
     $opts->{MODULEOBJ} =  $self;
-    my $bObj = $cms->getObject($classDef,$opts) or return $cms->error();
+    my $bObj = $cms->getObject($classDef,$opts);
 
     return $cms->error("Модуль ".$classDef->{CLASS}." не содержит метода pageBlockAction") unless $bObj->can("pageBlockAction");
 	return $bObj->pageBlockAction($is_ajax);
@@ -305,7 +305,7 @@ sub runModule {
 
     my $cms = $self->cms();
     $opts->{MODULEOBJ} =  $self;
-    my $bObj = $cms->getObject($classDef,$opts) or return $cms->error();
+    my $bObj = $cms->getObject($classDef,$opts);
 
     return $cms->error("Модуль ".$classDef->{CLASS}." не содержит метода blockAction") unless $bObj->can("blockAction");
 	return $bObj->blockAction($is_ajax);

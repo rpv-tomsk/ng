@@ -950,7 +950,7 @@ sub _getPageModules {
             my $opts = {};
             $opts->{MODULEROW} = $row;
             $opts->{PAGEPARAMS} = $pageObj->getPageRow();
-            my $mObj = $cms->getObject($row->{module},$opts) or return $cms->error();
+            my $mObj = $cms->getObject($row->{module},$opts);
             return $cms->error("showLocalPrivilegesTab(): Модуль ".$row->{module}." ($code) не содержит метода pageModulePrivileges()") unless $mObj->can("pageModulePrivileges");
 
             my $mp = $mObj->pageModulePrivileges();
@@ -1024,7 +1024,7 @@ sub _getModuleH {
         my $opts = {};
         $opts->{MODULEROW} = $mRow;
         $opts->{PAGEPARAMS} = $pageObj->getPageRow();
-        $H->{mObj} = $cms->getObject($mRow->{module},$opts) or return $cms->error();
+        $H->{mObj} = $cms->getObject($mRow->{module},$opts);
         return $cms->error("NG::PagePrivs->_getModuleH(): Модуль ".$mRow->{module}." не содержит метода pageModulePrivileges()") unless $H->{mObj}->can("pageModulePrivileges");
         $H->{mp} = $H->{mObj}->pageModulePrivileges();
         #return $cms->error("NG::PagePrivs->_getModuleH(): Модуль ".(ref $H->{mObj})."($mId) не использует привилегии") unless defined $H->{mp};

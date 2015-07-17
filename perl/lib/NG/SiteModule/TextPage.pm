@@ -55,7 +55,7 @@ sub block_CONTENT {
     my $dbh = $self->dbh();
     my ($textfile,$pagename) = $dbh->selectrow_array('select textfile,full_name from ng_rtfpblocks r,ng_sitestruct s where r.page_id=? and s.id=r.page_id',undef,$page_row->{'id'});
     $textfile = $cms->getSiteRoot().'/static/'.$textfile if ($textfile);
-    my $template = $self->gettemplate('public/textpage/textpage.tmpl') or return $cms->error();
+    my $template = $self->gettemplate('public/textpage/textpage.tmpl');
     $template->param(
         'TEXTFILE' => $textfile,
         'PAGENAME' => $pagename

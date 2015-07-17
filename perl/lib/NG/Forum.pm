@@ -798,7 +798,7 @@ sub gettemplate {
     my $self = shift;
     my $template_file = shift;
     my $cms = $self->cms();
-    my $template = $self->SUPER::gettemplate($self->get_template_dir(). $template_file) or return $cms->error();
+    my $template = $self->SUPER::gettemplate($self->get_template_dir(). $template_file);
     $self->print_to_template($template);
     return $template;
 };
@@ -864,7 +864,7 @@ sub singlenton {
     my $cms = $self->cms();
     
     return $self->{_modules}->{$module} if (exists $self->{_modules}->{$module});
-    my $obj = $cms->getObject($module, $self, @params) or die $cms->getError();
+    my $obj = $cms->getObject($module, $self, @params);
     return $self->{_modules}->{$module} = $obj  if ($obj);
     
     return undef;     
@@ -876,7 +876,7 @@ sub module {
     my @params = @_;
     my $cms = $self->cms();
     
-    my $obj = $cms->getObject($module, $self, @params) or die $cms->getError();
+    my $obj = $cms->getObject($module, $self, @params);
     return $obj;
 };
 

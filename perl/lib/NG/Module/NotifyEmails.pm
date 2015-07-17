@@ -115,7 +115,7 @@ sub moduleBlocks {
 
 Использование списка адресов (Рассылка мессаг):
 
-    my $mails = $cms->getObject({CLASS=>"NG::Module::NotifyEmails",METHOD=>"loadEmails"},$self,'ANOTIFY') or return $cms->error();
+    my $mails = $cms->getObject({CLASS=>"NG::Module::NotifyEmails",METHOD=>"loadEmails"},$self,'ANOTIFY');
     if (scalar @$mails) {
         ...
         #Вариант 1 - Общий заголовок To:

@@ -245,7 +245,7 @@ sub _run {
 			};
 			if ( scalar @$tabs == 0 ){
 				# Если нет доступных блоков - выводим список доступных страниц
-                my $pageObj2 = $cms->getObject("NG::Module::PageSelector") or return $cms->error();
+                my $pageObj2 = $cms->getObject("NG::Module::PageSelector");
                 $status = $pageObj2->moduleAction($is_ajax); #TODO: метод, сам модуль- выверить
                 last;
 			};
@@ -275,7 +275,7 @@ sub _run {
         return $cms->error("Отсутствует доступ к запрошенному модулю") unless $cms->hasModulePrivilege(MODULE_ID=>$mId ,PRIVILEGE=>"ACCESS");
         
         $opts->{MODULEROW} = $mRow;
-        my $mObj = $cms->getObject($mRow->{module},$opts) or return $cms->error();
+        my $mObj = $cms->getObject($mRow->{module},$opts);
         
         while(1) {
             unless ($mObj->can("getModuleTabs")) {

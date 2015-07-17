@@ -395,7 +395,7 @@ sub _getBlockObj {
     $opts->{PLUGINPARAMS} = $block->{PARAMS};
     if ($m) {
         $opts->{MODULEROW}= $block->{MODULEROW};
-        $block->{MODULEOBJ} = $cms->getObject($m,$opts) or return $cms->error();
+        $block->{MODULEOBJ} = $cms->getObject($m,$opts);
         return $block->{MODULEOBJ};
     };
     if ($block->{MODULECODE}) {

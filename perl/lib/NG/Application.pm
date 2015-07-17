@@ -108,7 +108,7 @@ sub getResource {
         my $module = $self->confParam("Resource.CMS".($_->{PREFIX}?"_".$_->{PREFIX}.$row->{$_->{KEY}}:""));
         $module or next;
         
-        my $obj = $self->getObject($module) or return $self->error();
+        my $obj = $self->getObject($module);
         my $value = $obj->getResource($name,
             {
                 subsite_id => $row->{id},
@@ -529,7 +529,7 @@ sub runPageController {
     my $opts = shift;
     
     return $cms->error("runPageController(): pagecontroller options is not HASHREF") if $opts && ref $opts ne "HASH";
-    my $pageObj = $cms->getObject($pageModule,$opts) or return $cms->error();
+    my $pageObj = $cms->getObject($pageModule,$opts);
     return $pageObj->run();
 };
 
@@ -591,7 +591,7 @@ sub buildPage {
         return $cms->error("—траница без активного блока не содержит шаблона. ќтображение невозможно");
     };
     
-    my $bctrl = $cms->getObject("NG::BlocksController",$pageObj) or return $cms->error();
+    my $bctrl = $cms->getObject("NG::BlocksController",$pageObj);
     local $NG::Application::blocksController = $bctrl;
     if ($aBlock) {
         my $abContent = $bctrl->pushABlock($aBlock);
@@ -645,7 +645,7 @@ sub buildPage {
     $bctrl->attachTemplate($tObj) or return $cms->error();
 #NG::Profiler::saveTimestamp("att_layout","buildPage");
     
-    my $rObj = $cms->getObject("NG::ResourceController",$cms) or return $cms->error();
+    my $rObj = $cms->getObject("NG::ResourceController",$cms);
     $tObj->param(
         REGION=>$rContent,
         PAGEROW => $pageObj->getPageRow(),
@@ -1216,7 +1216,7 @@ sub run {
     my $counterClass = $cms->confParam("Site.CounterClass","");
     my $counterObj = undef;
     if ($counterClass) {
-        $counterObj = $cms->getObject($counterClass) or return $cms->showError();
+        $counterObj = $cms->getObject($counterClass);
     };
     
     $ret = $cms->processRequest($url,$subsiteId);

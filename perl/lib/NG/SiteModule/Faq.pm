@@ -37,7 +37,7 @@ sub block_FAQ {
     my $q = $self->q();
     my $db = $self->db();
 
-    my $template = $self->gettemplate('public/faq/faq.tmpl') or return $cms->error();
+    my $template = $self->gettemplate('public/faq/faq.tmpl');
     my $form = $self->getStash('form') || $self->_get_form();
     $form->print($template);
     

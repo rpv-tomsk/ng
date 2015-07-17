@@ -227,7 +227,7 @@ sub showTab {
     
     #Ищем модуль, создаем его объект
     my $mRow = $cms->getModuleRow("id=?",$mId) or return $cms->error("Модуль с кодом $mId не найден");
-    my $mObj = $cms->getObject($mRow->{module},{MODULEROW=>$mRow}) or return $cms->error();
+    my $mObj = $cms->getObject($mRow->{module},{MODULEROW=>$mRow});
     return $cms->error("showTab(): Модуль ".$mRow->{module}." ($mId) не содержит метода modulePrivileges()") unless $mObj->can("modulePrivileges");
     
     my $mp = $mObj->modulePrivileges();

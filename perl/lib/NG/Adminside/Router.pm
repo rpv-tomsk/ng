@@ -178,7 +178,7 @@ sub modules {
 sub default {
     my $self = shift;
     my $cms = $self->cms();
-    my $pageObj = $cms->getObject('NG::Module::MainAdm') or return $cms->error();
+    my $pageObj = $cms->getObject('NG::Module::MainAdm');
     return (NG::Application::M_CONTINUE,{STATUS=>$pageObj->adminModule()});
 };
 
