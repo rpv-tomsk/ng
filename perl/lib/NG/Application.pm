@@ -148,7 +148,7 @@ sub getObject {
         };
     };
     NG::Exception->throw('NG.INTERNALERROR',"Class $class has no constructor $cname().") unless UNIVERSAL::can($class,$cname);
-    return $class->$cname(@_) or NG::Exception->throw('NG.INTERNALERROR',"Error creating $class object");
+    $class->$cname(@_) or NG::Exception->throw('NG.INTERNALERROR',"Error creating $class object");
 };
 
 sub loadSubsite {
