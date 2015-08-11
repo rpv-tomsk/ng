@@ -120,6 +120,11 @@ sub getValue {
     return $self->{HFIELDS}->{uc($fieldname)}->value();
 };
 
+sub number {
+    my $self = shift;
+    return $self->{_index};
+};
+
 sub row {
     my $self = shift;
     return $self->{ROW};
