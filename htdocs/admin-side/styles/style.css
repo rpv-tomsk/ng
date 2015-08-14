@@ -2047,7 +2047,7 @@ div.addRuleBar p.name {
 div.list-checkbox {
     width: 13px;
     height: 13px;
-    background: url(/admin-side/img/checkbox_uncheked.gif) no-repeat bottom right;
+    background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
 }
 div.list-checkbox.clickable {
     cursor: pointer;
@@ -2059,7 +2059,7 @@ div.list-checkbox.checked {
 div.list-multiactioncb {
     width: 13px;
     height: 13px;
-    background: url(/admin-side/img/checkbox_uncheked.gif) no-repeat bottom right;
+    background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
     cursor: pointer;
 }
 div.list-multiactioncb.checked {
@@ -2068,7 +2068,7 @@ div.list-multiactioncb.checked {
 div.list-multiactioncb-all {
     width: 13px;
     height: 13px;
-    background: url(/admin-side/img/checkbox_uncheked.gif) no-repeat bottom right;
+    background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
     cursor: pointer;
 }
 div.list-multiactioncb-all.checked {
