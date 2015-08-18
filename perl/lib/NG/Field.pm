@@ -968,7 +968,7 @@ sub check {
         my $re = $field->{OPTIONS}->{REGEXP};
         return $field->setError("Некорректное значение опции REGEXP") unless ref $re eq "Regexp";
         if ($value !~ $re ) {
-            return $field->setError($field->{OPTIONS}->{REGEXP_MESSAGE});
+            return $field->setError($field->{OPTIONS}->{REGEXP_MESSAGE}) if $field->{OPTIONS}->{REGEXP_MESSAGE};
             return $field->setErrorByCode("REGEXP_FORBIDDEN");
         };
     };
