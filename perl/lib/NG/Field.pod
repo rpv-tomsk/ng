@@ -1,0 +1,69 @@
+Любое поле
+    IS_NOTNULL
+    DEFAULT
+    UNIQUE
+    OPTIONS->REGEXP
+    OPTIONS->REGEXP_MESSAGE
+    CHILDS
+
+    Параметры для метода process()
+    OPTIONS->STEPS
+    OPTIONS->METHOD
+    OPTIONS->PARAMS
+
+
+inttimestamp
+    FORMAT  ("%d.%m.%Y %T")
+
+int / number
+    MIN
+    MAX
+
+file/image ( isFileField()  == 1)
+    UPLOADDIR
+    OPTIONS->FILENAME_MASK
+    OPTIONS->ALLOWED_EXT
+    OPTIONS->DISABLED_EXT
+
+image
+    OPTIONS->IMGRESIZER
+
+
+rtffile / textfile
+    OPTIONS->FILEDIR
+
+rtf / rtffile
+    OPTIONS->IMG_UPLOADDIR
+    OPTIONS->IMG_TABLE
+    OPTIONS->IMG_TABLE_ID_FIELD ("id")
+    OPTIONS->IMG_TABLE_FILENAME_FIELD ("filename")
+    OPTIONS->IMG_TABLE_FIELDS_MAP
+    OPTIONS->IMG_TABLE_EXTRAKEY
+
+rtf / rtffile / text / textfile / textarea
+    LENGTH
+
+fkparent
+    EDITABLE
+    SELECT_OPTIONS
+    OPTIONS->TABLE
+    OPTIONS->QUERY
+
+select/fkselect/radiobutton
+    NULL_VALUE
+    DB_NULL_VALUE
+    SELECT_OPTIONS  (Массив хешей с ключами ID,NAME,SELECTED,DEFAULT,DISABLED,PRIVILEGE)
+    OPTIONS->DEFAULT_FIRST
+    OPTIONS->TEXT_IS_NEW
+    OPTIONS->TEXT_IS_NULL
+    OPTIONS->QUERY
+    OPTIONS->TABLE
+    OPTIONS->WHERE
+    OPTIONS->PARAMS
+    OPTIONS->ORDER
+    OPTIONS->ID_FIELD
+    OPTIONS->NAME_FIELD
+    OPTIONS->NAME_FIELD_QUERY
+    OPTIONS->DISABLE_FIELD
+    OPTIONS->DEFAULT_FIELD
+    OPTIONS->PRIVILEGE_FIELD
