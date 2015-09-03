@@ -83,7 +83,7 @@ sub pushLink {
         $link->{URL} = $self->list()->getBaseURL().$self->list()->getSubURL().$link->{URL};
     };
     
-    $link->{URL} = getURLWithParams($link->{URL},"ref=".$self->{REF});
+    $link->{URL} = getURLWithParams($link->{URL},"ref=".$self->{REF}) unless $link->{NOREF};
     if ($link->{AJAX}) {
         $link->{AJAX_URL} = getURLWithParams($link->{URL},"_ajax=1","rand=".int(rand(10000)));
     };
