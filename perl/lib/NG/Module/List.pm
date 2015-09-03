@@ -2312,7 +2312,21 @@ sub setPagesParam {
 	my $self = shift;
 	my $page = shift || (is_valid_id($self->q()->url_param("page"))?$self->q()->url_param("page"):1);
 	$self->{_shlistPageParam} = "page=".$page;
-}
+};
+
+=comment
+
+#
+# Method obsoleted and removed from codebase.
+# BW compat code (without getSearchParam() params) can be uncommented if strongly needed.
+
+sub buildRefCurrentUrl {
+	my $self = shift;
+	
+	my $refurl = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam());
+	return uri_escape($refurl);
+};
+=cut
 
 sub getSearchParam {
 	my ($self,$sform) = (shift,shift);
