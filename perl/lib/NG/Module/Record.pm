@@ -720,23 +720,26 @@ sub getBlockIndex {
     my $fieldObjs = {};
     #Заполняем ключевые поля данными
     foreach my $field (@{$self->{_fields}}) {
-        unless (exists $keyValues->{$field->{FIELD}}) {
-            next if ($field->{TYPE} ne "filter");
+        my $type = $field->{TYPE};
+        my $fname = $field->{FIELD};
+        if ($type eq "filter") {
+            return $self->error("Отсутствует значение поля $fname типа filter") unless defined $field->{VALUE};
+            if (exists $keyValues->{$field->{FIELD}}) {
+               return $index unless $field->{VALUE} eq $keyValues->{$field->{FIELD}};
+               delete $keyValues->{$field->{FIELD}};
+            };
             $where .= $field->{FIELD}."=? and ";
             push @{$whereParam}, $field->{VALUE};
+            $fieldObjs->{$field->{FIELD}} = 1;
             next;
         };
-        my $v = $keyValues->{$field->{FIELD}};
-        if ($field->{TYPE} eq "id") {
+        next unless exists $keyValues->{$field->{FIELD}};
+        if ($type eq "id" || $type eq "fkparent") {
             $where .= $field->{FIELD}."=? and ";
-            push @{$whereParam}, $v;
-        }
-        elsif ($field->{TYPE} eq "fkparent") {
-            $where .= $field->{FIELD}."=? and ";
-            push @{$whereParam}, $v;
+            push @{$whereParam}, $keyValues->{$field->{FIELD}};
         }
         else {
-            return $self->error("Поле $field не является fkparent или id. Значение ключа из суффикса не может быть игнорировано");
+            return $self->error("Поле $fname (тип $type) не является fkparent или id. Значение ключа из суффикса не может быть игнорировано");
         };
         #Добавляем в список полей поля, описанные в суффиксе.
         #Их значения могут пригодиться в обработчиках, используются при обратном формировании суффикса.
@@ -902,7 +905,8 @@ sub getBlockIndex {
     my $sqlfields = "";
     foreach my $field (keys %{$fieldObjs}) {
         $sqlfields .= $field.",";
-        $fieldObjs->{$field} = $self->getField($field) or return $self->error("В списке полей модуля не найдено поле $field, описанное в конфигурации поиска");
+        my $fh = $self->getField($field) or return $self->error("В списке полей модуля не найдено поле $field, описанное в конфигурации поиска");
+        $fieldObjs->{$field} = NG::Field->new($fh, $self) or return $self->error("Ошибка создания объекта поля $field");
     };
     $sqlfields =~ s/,$//;
     
