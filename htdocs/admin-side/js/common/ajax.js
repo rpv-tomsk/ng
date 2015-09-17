@@ -121,7 +121,7 @@ function putResponseToBlock(params){
     	    JsExecute(response,id);
 		}
 		else {
-		  alert('AJAX error: target block not found');
+		  alert('AJAX error: target block "'+id+'" not found');
 		};
 	};
 	if (onLoad) {
@@ -183,24 +183,9 @@ function ajax_form (id,resid)
 		};
 		
 	};
-	new net.ContentLoader(action,ajax_from_frame_to_block,(resid),ge(id).method,prepare_post(data));
-};
-
-function ajax_from_frame_to_block(id)
-{
-var response = this.req.responseText;
-  
- 
-	//alert(response);
-	if (response.indexOf('redirect:') != -1)
-	{
-		response = response.replace('redirect:','');
-		window.location.href=response;
-	}
-	else {
-		//	alert('qweqweqwe');
-		ge(id).innerHTML = response;
-	}
+	var params = new Array(1);
+	params[0] = resid;
+	new net.ContentLoader(action,putResponseToBlock,params,ge(id).method,prepare_post(data));
 };
 
 function clear_block (id)
