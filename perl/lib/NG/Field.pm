@@ -1368,7 +1368,7 @@ sub _unlink {
 sub clean {
     my $self = shift;
     
-    die 'NG::Field::clean(): OLDDBVALUE not loaded!' unless exists $self->{OLDDBVALUE};
+    die 'NG::Field::clean(): OLDDBVALUE not loaded!' unless exists $self->{OLDDBVALUE} || $self->{_new};
     my $oldDbV = $self->{OLDDBVALUE};
     
     if ($self->isFileField()) {
