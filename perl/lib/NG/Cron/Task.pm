@@ -120,11 +120,50 @@ sub _run {
 sub _lock {
     my $self = shift;
     
-    unless ( sysopen( $self->{_lockfd}, $self->{_lockfile}, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY ) ) {
+    unless ( sysopen( $self->{_lockfd}, $self->{_lockfile}, O_WRONLY | O_CREAT | O_BINARY ) ) {
         NG::Exception->throw('NG.INTERNALERROR',"Unable to open/create lock file ".$self->{_lockfile}." : $!");
     };
-    $self->{_locked} = flock($self->{_lockfd}, LOCK_EX|LOCK_NB);
     
+    my $try = 0;
+    while (1) {
+        $self->{_locked} = flock($self->{_lockfd}, LOCK_EX|LOCK_NB);
+        last if $self->{_locked};
+        last if $try > 0;
+        last unless $self->_unfreeze();
+        $try++;
+    };
+    $self->_closelock() unless $self->{_locked};
+};
+
+sub _unfreeze {
+    my $self = shift;
+    
+    return 0 unless $self->{_config}->{MAX_EXECUTION_TIME};
+    
+    #Not locked and have MAX_EXECUTION_TIME configured. Check running process.
+    my @statFile=stat($self->{_lockfile});
+    return 0 if $statFile[10] > (time() - $self->{_config}->{MAX_EXECUTION_TIME});  # Let it run more...
+    
+    my $config = $self->{_config};
+    
+    #MAX_EXECUTION_TIME => 1800,
+    #ON_EXECUTION_TIMEOUT => (notify|kill),
+
+    my $onTimeout = $config->{ON_EXECUTION_TIMEOUT} || 'notify';
+    my $oldPid = $self->_loadpid();
+    
+    if ($onTimeout eq 'kill') {
+        my $signal = 15;
+        print "Task '$self->{_modulecode}/$config->{TASK}' runs too long. Sent signal $signal to pid $oldPid. Please, pay attention!\n";
+        kill $signal, $oldPid;
+        sleep(5);
+        return 1;
+    }
+    else {
+        #NG::Exception->throw('NG.INTERNALERROR', "Task $self->{_modulecode}/$config->{TASK} run takes too long. Please, pay attention!");
+        print "Task '$self->{_modulecode}/$config->{TASK}' runs too long. Pid $oldPid. Please, pay attention!\n";
+    };
+    return 0;
 };
 
 sub _unlock {
@@ -145,8 +184,24 @@ sub _closelock {
 sub _savepid {
     my $self = shift;
     NG::Exception->throw('NG.INTERNALERROR',"Lockfile not opened ") unless $self->{_lockfd};
-    my $ret = syswrite($self->{_lockfd}, $$);
+
+    my $ret = truncate($self->{_lockfd}, 0);
+    NG::Exception->throw('NG.INTERNALERROR',"Unable to truncate lock file ".$self->{_lockfile}." : $!") unless defined $ret;
+    $ret = seek($self->{_lockfd},0,0);
+    NG::Exception->throw('NG.INTERNALERROR',"Unable to seek lock file ".$self->{_lockfile}." : $!") unless $ret;
+
+    $ret = syswrite($self->{_lockfd}, $$);
     NG::Exception->throw('NG.INTERNALERROR',"Unable to write lock file ".$self->{_lockfile}." : $!") unless defined $ret;
+};
+
+sub _loadpid {
+    my $self = shift;
+
+    open (FH, "<", $self->{_lockfile}) || NG::Exception->throw('NG.INTERNALERROR',"Unable to open lock file ".$self->{_lockfile}." : $!");
+    my $pid = readline(FH);
+    close(FH);
+    $pid = 0 unless $pid;
+    return $pid;
 };
 
 sub _clearpid {
@@ -159,16 +214,6 @@ sub _clearpid {
     $ret = syswrite($self->{_lockfd}, '');
     NG::Exception->throw('NG.INTERNALERROR',"Unable to clear lock file ".$self->{_lockfile}." : $!") unless defined $ret;
 };
-
-#sub _getPid{
-#    my $self = shift;
-#    my $file = shift || return undef;
-#    open (FH, "<", $file) || return undef;
-#    my $pid = readline(FH);
-#    close(FH);
-#    return $pid;
-#}
-
 sub _getStatusRecord {
     my $self = shift;
     $self->{_statusRecord} = $self->dbh->selectrow_hashref('select id, module, task, status, startup from ng_cron_status where module=? and task=?', undef, $self->{_modulecode}, $self->{_config}->{TASK});
