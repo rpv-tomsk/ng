@@ -20,6 +20,8 @@ branches/ng6
     * Удален тип поля float, используйте number.
     * Вынесено $NG::Field::classesMap
     + Метод NG::Field::searchIndexValue()
+    * Таблица ng_ftsindex - добавлено поле disabled для упрощения запроса на странице поиска (убрано связывание с ng_sitestruct по link,link+lang).
+      См. файл docs/ng_ftsindex_disabled.pg.sql
 
 branches/ng-4.3
 
