@@ -377,6 +377,7 @@ sub _setDBValue {
     }
     elsif ($self->{TYPE} eq "checkbox") {
         $self->{CHECKED} = ($value eq $self->{CB_VALUE})?1:0;
+        $self->{VALUE}   = $value;
         $self->{DBVALUE} = $value;
     }
     elsif ($self->{TYPE} eq "datetime") {
