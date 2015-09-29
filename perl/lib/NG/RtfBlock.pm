@@ -91,6 +91,8 @@ sub getBlockContent{
             $pageId  = $self->getPageId();
             $subPage = $opts->{subpage} || 1;
         };
+        return $cms->error('block CONTENT: pageId value is missing') unless $pageId;
+        return $cms->error('block CONTENT: subpage value is missing') unless $subPage;
         my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=? and subpage=?",undef,$pageId,$subPage);
         return $cms->error("Content file name not found in ".(ref $self)."::getBlockContent") unless($file);
         $file = $cms->getSiteRoot().$self->{_rtfdir}.$file if $file;
@@ -130,8 +132,6 @@ sub modulePrivileges {
     return [];
 };
 
-1;
-
 package NG::RtfBlock::Block;
 
 use strict;
@@ -148,7 +148,13 @@ sub config  {
     my $opts = $self->opts();
     my $subp = $opts->{subpage} || 1;
     
-    my $mObj = $self->{_moduleObj};
+    my $mObj;
+    if ($opts->{modulecode}) {
+        $mObj = $self->cms->getModuleByCode($opts->{modulecode});
+    }
+    else {
+        $mObj = $self->{_moduleObj};
+    };
     
     $self->{_table} = $mObj->{_table};
     
@@ -160,7 +166,7 @@ sub config  {
         $self->fields({FIELD=>'subpage',  TYPE=>'subpage', NAME=>'Части страницы:'});
     }
     else {
-        $self->fields({FIELD=>'subpage',  TYPE=>'filter',VALUE=>$subp});
+        $self->fields({FIELD=>'subpage',  TYPE=>'filter', VALUE=>$subp});
     }
     
     $self->fields(
@@ -177,6 +183,64 @@ sub config  {
     #TODO: add searchConfig
 };
 
-
+sub _handleCMSCache {
+    my ($self,$form,$action) = (shift,shift,shift);
+    
+    my $pageId = $form->getParam('page_id');
+    my $subpage = $form->getParam('subpage');
+    
+    my $mCode = $self->opts->{modulecode};
+    unless ($mCode) {
+        $mCode = $self->{_moduleObj}->getModuleCode();
+    };
+    
+    $self->cms->expireCacheContent(undef,[
+        {MODULECODE => $mCode, BLOCK=>'CONTENT', REQUEST => {pageId => $pageId, subpage => $subpage}},
+    ]);
+    
+    return 1;
+};
 
 return 1;
+
+=head
+
+Пример встраивания текстового блока в модуль сайта
+
+
+sub getActiveBlock {
+
+    if ($CONDITION)  {
+        #
+        # В данном запросе этого модуля необходимо отобразить текстовую страницу.
+        # Перенаправляем запрос на другой модуль RTF / блок CONTENT.
+        # При перенаправлении на другой модуль/блок также можно добавить в возвращаемое значение
+        # ключ KEYS => {REQUEST => {pageId=>$self->getPageId(), subpage => XXX}  }
+        # getBlockKeys() для этого блока в этом случае вызываться не будет.
+        #
+        return {CODE=>'RTF_CONTENT',LAYOUT=>'public/textpageLayout.tmpl'} if $url =~ /^${bUrl}terms\/$/;
+        ...
+    }
+}
+
+sub moduleTabs{
+    return [
+        ...
+        {HEADER=>"Страница правил", URL=>"/agreement/"},
+        ...
+    ];
+};
+
+sub moduleBlocks{
+    return [
+        ...
+        # modulecode нужен для указания, в каком модуле брать конфигурацию, а также для эффективной работы с кешем.
+        # (особенность реализации NG::RtfBlock::Block
+        {URL=>"/agreement/", BLOCK=>'NG::RtfBlock::Block', USE=>'NG::RtfBlock', OPTS=>{subpage=>1,modulecode=>'RTF'}},
+        ...
+        
+        #TODO: поддерживать не только subpage, но и pageId...
+    ];
+};
+
+=cut

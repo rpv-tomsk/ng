@@ -177,15 +177,12 @@ sub showPageBlock  {
                     $form->print($self->tmpl());
                     $self->tmpl()->param(
                         SUBPAGES=>\@subpages,
-                    );                
+                    );
                     return $self->output($self->tmpl()->output());
                 };
             };
             
-           
-            
             if ($initialised) {
-            
                 my $ref = $q->param('ref');
                 my ($u, $p) = split /\?/, $ref;
                 my @params = ();
@@ -195,10 +192,11 @@ sub showPageBlock  {
                     push @params, $n.'='.$v;
                 };
                 push @params, 'rand='.int(rand(1000));
-                $ref = $u.'?'.join('&', @params);            
+                $ref = $u.'?'.join('&', @params);
             
                 $self->beforeUpdate($form) or return $self->showError();
                 $form->updateData() or return $self->error($form->getError());
+                $self->_handleCMSCache($form,'update') or return $self->showError();
                 $self->afterUpdate($form) or return $self->showError();
                 $self->_reindexContent($form) or return $self->showError();
                 $self->_makeEvent("update",{});
@@ -207,6 +205,7 @@ sub showPageBlock  {
             } else {
                 $self->beforeInsert($form) or return $self->showError();
                 $form->insertData() or return $self->error($form->getError());
+                $self->_handleCMSCache($form,'insert') or return $self->showError();
                 $self->afterInsert($form) or return $self->showError();
                 $self->_reindexContent($form) or return $self->showError();
                 $self->_makeEvent("insert",{});
@@ -232,6 +231,11 @@ sub showPageBlock  {
     else {
         return $self->showError('Invalid action. Wrong actions configuration.');
     };
+};
+
+sub _handleCMSCache {
+    my ($self,$form,$action) = (shift,shift,shift);
+    return 1;
 };
 
 sub searchConfig {
