@@ -1550,6 +1550,14 @@ sub setCacheData {
     $NG::Application::Cache->setCacheData($key,$data,$expire);
 };
 
+sub deleteCacheData {
+    my ($cms,$module,$key) = (shift,shift,shift);
+    my $mcode = undef;
+    $mcode = $module->getModuleCode() if $module;
+    $key->{MODULECODE} ||= $mcode or die "cms->setCacheData(): Unable to get MODULECODE";
+    $NG::Application::Cache->deleteCacheData($key);
+};
+
 my $digesterInitialized = 0;
 my $fix;
 $fix = sub {
@@ -1736,6 +1744,10 @@ sub getCacheData {
 };
 
 sub setCacheData {
+    return undef;
+};
+
+sub deleteCacheData {
     return undef;
 };
 

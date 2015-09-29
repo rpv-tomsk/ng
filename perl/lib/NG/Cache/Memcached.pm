@@ -218,6 +218,15 @@ sub getCacheData {
     $ret;
 };
 
+sub deleteCacheData {
+    my ($self,$id) = (shift,shift);
+    
+    my $key = $self->cms->getCacheId('data',$id);
+    my $ret = $MEMCACHED->delete("data_".$key);
+    $ret;
+};
+
+
 sub _initMemcached {
     my ($class,$params) = (shift,shift);
     
