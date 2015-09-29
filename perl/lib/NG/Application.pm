@@ -1616,8 +1616,9 @@ sub expireCacheContent {
         die "cms->expireCacheContent(): Wrong array value" unless ref $key eq 'HASH';
         die "cms->expireCacheContent(): Missing REQUEST" unless exists $key->{REQUEST};
         if (exists $key->{BLOCK}) {
-            die "cms->expireCacheContent(): Missing \$module for BLOCK" unless $mcode;
-            $key->{CODE} = $mcode.'_'.(delete $key->{BLOCK});
+            die "cms->expireCacheContent(): keys conflict: CODE and BLOCK" if exists $key->{CODE};
+            my $kmcode = delete $key->{MODULECODE} || $mcode || die "cms->expireCacheContent(): Missing \$module or MODULECODE for BLOCK";
+            $key->{CODE} = $kmcode.'_'.(delete $key->{BLOCK});
         };
         die "cms->expireCacheContent(): Missing CODE" unless exists $key->{CODE};
         die "cms->expireCacheContent(): Wrong keys count in array value" unless scalar keys %$key == 2;
