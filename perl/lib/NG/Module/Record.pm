@@ -691,6 +691,8 @@ sub getBlockIndex {
     $index->{KEYS} = $keys;
     $index->{CATEGORY} = $sc->{CATEGORY};
     $index->{SUFFIX} = $suffix;
+    #Помечает, что к этому индексу нельзя пристыковывать другие индексы, если он пуст.
+    $index->{REQUIRED} = 1 if $sc->{REQUIRED};
 
     #Получаем значения ключевых полей из суффикса
     my $keyValues = $self->getKeyValuesFromSuffixAndMask($suffix,$sc->{SUFFIXMASK});

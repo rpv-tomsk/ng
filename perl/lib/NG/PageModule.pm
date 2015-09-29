@@ -420,7 +420,12 @@ sub updateSearchIndex {
 		};
 		if ($foundIndex) {
 			if ($blockIndex->{REQUIRED} && ! scalar keys %{$blockIndex->{DATA}}) {
+				#Новый индекс REQUIRED и пустой. Удаляем ранее подстыкованные данные.
 				$foundIndex->{DATA} = {};
+				next;
+			};
+			if ($foundIndex->{REQUIRED} && ! scalar keys %{$foundIndex->{DATA}}) {
+				#Старый индекс REQUIRED и пустой. Пропускаем.
 				next;
 			};
 			# Индекс с такими ключами найден, сращиваем индексы
