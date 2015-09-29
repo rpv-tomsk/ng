@@ -9,6 +9,8 @@ branches/ng6
     - NG::Module::List::Row->getComposedKeyValue()
     * NG::Module::List::Row - HCOLUMNS переименовано в HFIELDS
     - NG::Module::List->buildRefCurrentUrl()
+    * NG::Module::List->beforeDelete($id) -> NG::Module::List->beforeDelete($id,$form)
+    * NG::Module::List->afterDelete($id) -> NG::Module::List->afterDelete($id,$form)
 
     * Изменена работа processChilds. Требуется перепроверить все конфигурации полей с заданным CHILDS.
       Поддерживается обратная совместимость только на связке image->image.

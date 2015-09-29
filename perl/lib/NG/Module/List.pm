@@ -1094,7 +1094,7 @@ sub Delete {
     }
     else {
         if($action eq "deletefull") {
-            $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
+            $self->beforeDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
             $form->Delete() or return $self->error($form->getError());
             #TODO: Do $form->loadData() ?
             $self->_updateVersionKeys($form,'delete');
@@ -1103,7 +1103,7 @@ sub Delete {
                 return $self->showError() if ($self->cms()->getError('') ne "");
                 $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
             };
-            $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
+            $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова afterDelete()");
             $self->_makeEvent('delete',{ID=>$id});
             $self->_makeLogEvent({operation=>"Удаление записи",operation_param=>"KEY ".$id});
             return $self->redirect(uri_unescape($q->param("ref")));
@@ -1176,7 +1176,7 @@ sub _maDeleteRecords {
         );
         $form->addfields($self->{_fields}) or return $self->error($form->getError());
         $form->param($self->{_idname},$id);
-        $self->beforeDelete($id) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
+        $self->beforeDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова beforeDelete()");
         $form->Delete() or return $self->error($form->getError());
         #TODO: Do $form->loadData() ?
         $self->_updateVersionKeys($form,'delete');
@@ -1185,7 +1185,7 @@ sub _maDeleteRecords {
             return $self->showError() if ($self->cms()->getError('') ne "");
             $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
         };   
-        $self->afterDelete($id) or return $self->showError("Delete(): Ошибка вызова AfterDelete()");
+        $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова afterDelete()");
         $self->_makeEvent('delete',{ID=>$id});
     };
     return $self->outputJSON({status=>'ok'});
@@ -2534,11 +2534,11 @@ sub _destroyBlock {
         #    т.е. единожды полученный массив хешей конфигов полей можно многократно применять в вызове $form->addfields()
         $form->addfields($self->{_fields}) or return $self->showError("_destroyBlock(): Ошибка вызова form->addfields()");
         
-        $self->beforeDelete($v) or return $self->showError("_destroyBlock(): Ошибка вызова BeforeDelete()");
+        $self->beforeDelete($v,$form) or return $self->showError("_destroyBlock(): Ошибка вызова beforeDelete()");
         $form->Delete() or return $self->error($form->getError());
         #TODO: Do $form->loadData() ?
         $self->_updateVersionKeys($form,'delete');
-        $self->afterDelete($v,$form) or return $self->showError("_destroyBlock(): Ошибка вызова AfterDelete()");
+        $self->afterDelete($v,$form) or return $self->showError("_destroyBlock(): Ошибка вызова afterDelete()");
     };
     $sth->finish();
 
