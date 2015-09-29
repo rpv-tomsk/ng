@@ -296,7 +296,7 @@ sub getIndexSuffixFromFormAndMask {
     my $suffix = $mask; 
     
     while ($suffix =~ /\{(.+?)\}/ ) {
-        my $param = $form->getParam($1) or return $self->showError("getIndexSuffixFromFormAndMask(): Ошибка вызова \$form->getParam()");
+        my $param = $form->getParam($1) or return $self->showError("getIndexSuffixFromFormAndMask(): Ошибка вызова \$form->getParam($1)");
         $suffix =~ s/\{(.+?)\}/$param/;
     };
     return $suffix;
