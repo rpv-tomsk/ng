@@ -1070,7 +1070,7 @@ sub Delete {
         OWNER     => $self,
     );
     $form->addfields($self->{_fields}) or return $self->error($form->getError());
-    $form->setFormValues(); # Чо за гон а кто будет параметры fkparent пихать в форму
+
     $self->{_idname} or return $self->showError("Delete(): Не найдено имя ключевого поля id");
 
     my $id = $q->param($self->{_idname});
@@ -1117,7 +1117,7 @@ sub Delete {
         $form->addCloseButton();
     };
     
-    #Формируем сокращенную форму из ключевых полей
+    #Формируем сокращенную форму из ключевых полей (r2128)
     my @elements = ();   # Массив  
     foreach my $field (@{$form->keyfields()}) {
         $field->prepareOutput() or return $self->error($field->error());
@@ -1335,7 +1335,7 @@ sub _updateIndex {
     return $mObj->updateSearchIndex($suffix);
 };
 
-sub getBlockIndex {
+sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созданном с нуля объекте.
     my $self = shift;
     my $suffix = shift;
 
@@ -1414,21 +1414,27 @@ sub getBlockIndex {
     $index->{KEYS} = $keys;
     $index->{CATEGORY} = $sc->{CATEGORY};
     $index->{SUFFIX} = $suffix;
+    #Помечает, что к этому индексу нельзя пристыковывать другие индексы, если он пуст.
+    $index->{REQUIRED} = 1 if $sc->{REQUIRED};
     
     #Получаем значения ключевых полей из суффикса
     my $keyValues = $self->getKeyValuesFromSuffixAndMask($suffix,$sc->{SUFFIXMASK});
     
     my $fieldObjs = {};
-    #Заполняем ключевые поля данными
+    #Заполняем ключевые поля данными. Обрабатываем поля типа id, filter, fkparent.
+    #Частично этот процесс подобен вызову processFKFIelds(), но тот обычно берет данные для fkparent из $q.
     foreach my $field (@{$self->{_fields}}) {
+        #filter не может быть выставлен из суффикса, задается только в конфигурации модуля.
+        if ($field->{TYPE} eq "filter") {
+            my $param_value = $field->{VALUE};
+            return $self->error("Value not specified for filter field \"".$field->{FIELD}."\"") if is_empty($param_value);
+            $self->pushWhereCondition($field->{FIELD}."=?",$param_value);
+        };
+        #Заполняем остальные поля значениями из суффикса. Если значение есть.
         next unless exists $keyValues->{$field->{FIELD}};
         my $v = $keyValues->{$field->{FIELD}};
-        if ($field->{TYPE} eq "id") {
+        if ($field->{TYPE} eq "id" || $field->{TYPE} eq 'fkparent') {
             $self->pushWhereCondition($field->{FIELD}."=?",$v);
-        }
-        elsif ($field->{TYPE} eq "fkparent") {
-            # TODO: почему присваиваем в DEFAULT ??
-            $field->{DEFAULT} = $v;
         }
         else {
             return $self->error("Поле ".$field->{FIELD}." не является fkparent или id. Значение ключа из суффикса не может быть игнорировано") unless exists $sc->{'SUFFIXFIELD'};
@@ -1449,9 +1455,6 @@ sub getBlockIndex {
         delete $keyValues->{$field->{FIELD}};
     };
     return $self->showError("Ключи, выделенные из суффикса, не сопоставлены с полями таблицы данных:". join(' ',keys %{$keyValues})) if (scalar keys %{$keyValues});
-
-    #Обрабатываем прочие ключевые поля, в т.ч filter, и выставленные ранее значения fkparent
-    $self->processFKFields() or return $self->showError("_getIndexes(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
 
     #Обрабатываем фильтры
     #Получаем список требуемых полей из фильтра
@@ -1969,10 +1972,12 @@ sub processFKFields {
     #Может ли ФК поле не участвовать в отображении списка ? - сейчас это значение обязательно. Если надо - перекрывайте метод.
     #Ранее был вариант что список полей брать из _listfields
 
+    #fkparent + DEFAULT - список - древовидная структура, DEFAULT определяет верхний уровень.
+
     my $fkparam = "";
     foreach my $field (@{$self->{_fields}}) {
         if ($field->{TYPE} eq "fkparent") {
-            my $param_value = $self->q()->param($field->{FIELD});
+            my $param_value = $self->q()->param($field->{FIELD}) || '';
             if ($param_value !~ /^(?:0|[1-9][0-9]*)$/ && !defined ($param_value = $field->{DEFAULT})) {
                 return $self->error("processFKFields(): Value not specified for fkparent field \"".$field->{FIELD}."\"");
             };

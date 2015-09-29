@@ -39,6 +39,7 @@ our $classesMap = {
    field->{HIDE}=1         # Поле не выводится в форму, не принимаются значения из формы.    Ошибки из таких полей выносятся в глобальный контейнер ошибок.
    field->{IS_HIDDEN}=1    # Поле передается в форму как hidden поле (HIDE имеет приоритет). Ошибки из таких полей выносятся в глобальный контейнер ошибок.
    field->{IS_FAKEFIELD}=1 # Поле не является полем основной таблицы формы, флаг используется в операциях _load,_insert,_update для skip-а
+   field->{IS_FKPARENT} =1 # Поле изначально имело тип fkparent
    field->{NEED_LOAD_FOR_UPDATE} = 1 # Для произведения обновления значения поля или удаления записи требуется наличие его DBVALUE
    
    OLDDBVALUE - значение, загруженное из БД. Выставляется в setLoadedValue().
@@ -66,6 +67,7 @@ sub new {
         return $class->set_err("Не указан тип поля")  unless $config->{TYPE};
         
         if ($config->{TYPE} eq "fkparent") {
+            $config->{IS_FKPARENT} = 1;
             if (!exists $config->{EDITABLE}) {
                 my $options = {};
                 $options = $config->{OPTIONS} if (exists $config->{OPTIONS});

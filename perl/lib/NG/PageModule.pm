@@ -419,6 +419,10 @@ sub updateSearchIndex {
 			};
 		};
 		if ($foundIndex) {
+			if ($blockIndex->{REQUIRED} && ! scalar keys %{$blockIndex->{DATA}}) {
+				$foundIndex->{DATA} = {};
+				next;
+			};
 			# Индекс с такими ключами найден, сращиваем индексы
 			foreach my $class (keys %{$blockIndex->{DATA}}) {
 				$foundIndex->{DATA}->{$class} .= " " if ($foundIndex->{DATA}->{$class});

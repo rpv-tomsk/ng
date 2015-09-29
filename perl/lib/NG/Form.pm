@@ -1026,7 +1026,9 @@ sub Delete {
             push @fields, $field->{FIELD};
             next;
         }
-        if ($field->{NEED_LOAD_FOR_UPDATE}) {
+        # IS_FKPARENT загружается, чтобы значение (как часто используемое) было доступно
+        # для построения поискового индекса и устаревания кеша.
+        if ($field->{NEED_LOAD_FOR_UPDATE} || $field->{IS_FKPARENT}) {
             push @loadfields, $field;
         };
     };
