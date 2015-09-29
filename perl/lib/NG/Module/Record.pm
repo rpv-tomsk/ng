@@ -401,28 +401,6 @@ sub initialised {
     return $self->{_initialised};
 };
 
-
-sub getPageBlockContentFilename {
-    my $self = shift;
-    my $pageId = $self->getPageId();
-    my $blockId = $self->getBlockId();
-
-    return $self->{_uploaddir}."page-".$pageId."_".$blockId.".html";
-};
-
-sub getPageBlockContentDir {
-    my $self = shift;
-    return $self->app()->{_docroot}.$self->getPageBlockContentDirWeb();
-};
-
-sub getPageBlockContentDirWeb {
-    my $self = shift;
-    my $pageId = $self->getPageId();
-    my $blockId = $self->getBlockId;
-
-    return "/".$self->{_uploaddir}.$pageId."_".$blockId."/";
-};
-
 sub adminBlock {
     my $self = shift;
     my $is_ajax = shift;
@@ -447,7 +425,6 @@ sub destroyPageBlock {
     $self->_analyseFieldTypes() or return $self->showError();
     return $self->error("Модуль ".(ref $self)." не поддерживает работу в режиме модуля страницы.") unless $self->{_pageBlockMode};
     return $self->_destroyBlock();
-
 }
 
 sub destroyLinkBlock {
@@ -1061,7 +1038,7 @@ sub _makeEvent {
     my $event = NG::Module::Record::Event->new($self,$ename,$eopts);
     $self->cms()->processEvent($event);
 };
-                    
+
 sub blockPrivileges {
     return undef;
 }
