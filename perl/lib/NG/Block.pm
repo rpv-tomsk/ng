@@ -14,10 +14,10 @@ sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->init(@_);    
+    $self->init(@_);
     $self->config();
-    return $self; 
-}
+    return $self;
+};
 
 sub init {
 	my $self = shift;
