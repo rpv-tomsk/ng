@@ -64,7 +64,9 @@ sub processPost {
     }
     else {
         $ctrl = uc($ctrl);
-        $mObj = $cms->getModuleByCode($ctrl) or return $cms->defError("processPost():","Запрошенный контроллер $ctrl не найден");
+        my $opts = {};
+        $opts->{PAGEPARAMS} = $self->getPageRow();
+        $mObj = $cms->getModuleByCode($ctrl,$opts) or return $cms->defError("processPost():","Запрошенный контроллер $ctrl не найден");
     };
     
     return $cms->error("Модуль ".(ref $mObj)." не содержит метода processModulePost") unless $mObj->can("processModulePost");
