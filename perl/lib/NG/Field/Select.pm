@@ -227,6 +227,7 @@ sub _prepare {
             unshift @{$field->{SELECT_OPTIONS}},{
                 ID   => $field->{NULL_VALUE},
                 NAME => $text,
+                NULL => 1,
             };
         };
     }
@@ -238,6 +239,7 @@ sub _prepare {
         unshift @{$field->{SELECT_OPTIONS}},{
             ID   => $field->{NULL_VALUE},
             NAME => $text,
+            NULL => 1,
         };
     };
     $field->{_prepared} = 1;
@@ -252,10 +254,10 @@ sub prepareOutput {
 
 sub _setDBValue {
     my $field = shift;
-	my $value = shift;
-	
-	$field->{DBVALUE} = $value;
-	$field->{VALUE} = $value;
+    my $value = shift;
+
+    $field->{DBVALUE} = $value;
+    $field->{VALUE} = $value;
 
     $field->{_selected_option}=undef;
     if ($field->{SELECT_OPTIONS}) {
@@ -263,7 +265,7 @@ sub _setDBValue {
             delete $opt->{SELECTED};
             if (defined $value && $opt->{ID} eq $value) {
                 $opt->{SELECTED}=1;
-                $field->{_selected_option} = $opt;
+                $field->{_selected_option} = $opt unless $opt->{NULL};
             };
         };
     };
@@ -271,9 +273,8 @@ sub _setDBValue {
 };
 
 sub _setValue {
-	my $field = shift;
-	my $value = shift;
-	
+    my ($field, $value) = (shift,shift);
+
     $field->{VALUE} = $value;
     $field->{DBVALUE} = $value;
 
@@ -283,19 +284,19 @@ sub _setValue {
             delete $opt->{SELECTED};
             if (defined $value && $opt->{ID} eq $value) {
                 $opt->{SELECTED} = 1;
-                $field->{_selected_option} = $opt;
+                $field->{_selected_option} = $opt unless $opt->{NULL};
             };
         };
     };
-    
+
     $field->{_changed} = 1;
     return 1;
 };
 
 sub value {
     #TODO: полностью идентично NG::Field::value()
-	my $field = shift;
-	return $field->{VALUE};
+    my $field = shift;
+    return $field->{VALUE};
 };
 
 sub dbValue {
