@@ -430,7 +430,7 @@ sub print {
         $field->prepareOutput() or return $self->error($field->error());
         $field->{VALUE} = "" unless exists $field->{VALUE};
         
-        $fAll->{$field->{FIELD}} = $field;
+        $fAll->{uc($field->{FIELD})} = $field;
         
         if ($field->{HIDDEN_FIELD} || $field->{HIDE}) { #Перенаправляем ошибки из неотображаемых полей в глобальный контейнер
             my $em = $field->error() || "";
