@@ -32,6 +32,9 @@ sub init {
         }
         $self->{_disconnect} = 1;
     }
+    
+    $self->{ExpireColName} = 'expire';
+    
     return 1;
 }
 
@@ -83,9 +86,10 @@ sub retrieve {
 sub store {
 #    die;
     my $self = shift;
-    my ($sid, $datastr) = @_;
+    my ($sid, $datastr,$etime) = @_;
     croak "store(): usage error" unless $sid && $datastr;
 
+    croak "store(): NOT IMPLEMENTED \$etime SUPPORT!";
 
     my $dbh = $self->{Handle};
     my $sth = $dbh->prepare_cached("SELECT $self->{IdColName} FROM " . $self->table_name . " WHERE $self->{IdColName}=?", undef, 3);

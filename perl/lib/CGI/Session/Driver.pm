@@ -55,6 +55,10 @@ sub traverse {
     croak "traverse(): " . ref($_[0]) . " failed to implement this method!";
 }
 
+sub cleanExpiredSessions {
+    croak "cleanExpiredSessions(): " . ref($_[0]) . " failed to implement this method!";
+}
+
 sub dump {
     require Data::Dumper;
     my $d = Data::Dumper->new([$_[0]], [ref $_[0]]);

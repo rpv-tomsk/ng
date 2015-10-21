@@ -34,7 +34,7 @@ sub init {
 
 sub store {
     my $self = shift;
-    my ($sid, $datastr) = @_;
+    my ($sid, $datastr,$etime) = @_;
     croak "store(): usage error" unless $sid && $datastr;
 
     my $dbh = $self->{Handle};
@@ -50,18 +50,20 @@ sub store {
         # There is a race condition were two clients could run this code concurrently,
         # and both end up trying to insert. That's why we check for "duplicate" below
         my $sth = $dbh->prepare(
-             "INSERT INTO " . $self->table_name . " ($self->{DataColName},$self->{IdColName})  SELECT ?, ? 
+             "INSERT INTO " . $self->table_name . " ($self->{DataColName},$self->{IdColName},$self->{ExpireColName})  SELECT ?, ?, now() + interval '1 sec' * ?
                 WHERE NOT EXISTS (SELECT 1 FROM " . $self->table_name . " WHERE $self->{IdColName}=? LIMIT 1)");
 
         $sth->bind_param(1,$datastr,{ pg_type => $type });
         $sth->bind_param(2, $sid);
-        $sth->bind_param(3, $sid); # in the SELECT statement
+        $sth->bind_param(3, $etime);
+        $sth->bind_param(4, $sid); # in the SELECT statement
         my $rv = '';
         eval { $rv = $sth->execute(); };
         if ( $rv eq '0E0' or (defined $@ and $@ =~ m/duplicate/i) ) {
-            my $sth = $dbh->prepare("UPDATE " . $self->table_name . " SET $self->{DataColName}=? WHERE $self->{IdColName}=?");
+            my $sth = $dbh->prepare("UPDATE " . $self->table_name . " SET $self->{DataColName}=?, $self->{ExpireColName} = now() + interval '1 sec' * ? WHERE $self->{IdColName}=?");
             $sth->bind_param(1,$datastr,{ pg_type => $type });
-            $sth->bind_param(2,$sid);
+            $sth->bind_param(2,$etime);
+            $sth->bind_param(3,$sid);
             $sth->execute;
         } 
         else {
@@ -70,15 +72,28 @@ sub store {
     };
     if ($@) { 
       return $self->set_error( "store(): failed with message: $@ " . $dbh->errstr );
-
     } 
     else {
         return 1;
-
     }
-
-
 }
+
+sub cleanExpiredSessions {
+    my $self = shift;
+
+    my $dbh = $self->{Handle};
+    
+    local $dbh->{RaiseError} = 1;
+    eval {
+        $dbh->do("DELETE FROM ". $self->table_name ." WHERE $self->{ExpireColName} < now()");
+    };
+    if ($@) { 
+        return $self->set_error( "cleanExpiredSessions(): failed with message: $@ " . $dbh->errstr );
+    }
+    else {
+        return 1;
+    };
+};
 
 1;
 
@@ -103,8 +118,10 @@ Before you can use any DBI-based session drivers you need to make sure compatibl
 
     CREATE TABLE sessions (
         id CHAR(32) NOT NULL PRIMARY KEY,
-        a_session BYTEA NOT NULL
+        a_session BYTEA NOT NULL,
+        "expire" TIMESTAMP(0) WITHOUT TIME ZONE, 
     );
+    CREATE INDEX "sessions_idx" ON "sessions" USING btree ("expire");
 
 and within your code use:
 

@@ -158,6 +158,25 @@ sub traverse {
     return 1;
 }
 
+sub cleanExpiredSessions {
+    my $self = shift;
+    
+    my $read_only = 1;
+    my $clean_sub = sub {
+        my ($sid) = @_;
+        my $session = $class->load( $dsn, $sid, $dsn_args, $read_only );
+        unless ( $session ) {
+            return $class->set_error( "cleanExpiredSessions(): couldn't load session '$sid'. " . $class->errstr );
+        }
+        if($session->is_expired()) {
+            $self->remove($sid);
+        };
+    };
+
+    defined($driver_obj->traverse( $clean_sub ))
+        or return $class->set_error( "cleanExpiredSessions(): traverse seems to have failed. " . $driver_obj->errstr );
+    return 1;
+};
 
 sub DESTROY {
     my $self = shift;

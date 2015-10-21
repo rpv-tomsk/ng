@@ -248,7 +248,9 @@ sub flush {
         unless ( defined $datastr ) {
             return $self->set_error( "flush(): couldn't freeze data: " . $serializer->errstr );
         }
-        defined( $driver->store($self->id, $datastr) ) or
+        my $etime = undef;
+        $etime = $self->{_DATA}->{_SESSION_ETIME} if ($self->{_DATA}->{_SESSION_ETIME});
+        defined( $driver->store($self->id, $datastr, $etime) ) or
             return $self->set_error( "flush(): couldn't store datastr: " . $driver->errstr);
         $self->_unset_status(STATUS_NEW | STATUS_MODIFIED);
     }
@@ -403,6 +405,40 @@ sub clear {
     $self->_set_status( STATUS_MODIFIED );
 }
 
+sub cleanExpiredSessions {
+    my $class = shift;
+    
+    my $driver_obj;
+    # $someExistingSession->cleanExpiredSessions()
+    if ( @_ == 0) {
+        $driver_obj = $class->_driver();
+    }
+    # CGI::Session->cleanExpiredSessions($dsn, \%dsn_args)
+    else {
+        my ($dsn, $dsn_args) = @_;
+        
+        my $driver;
+        if ( $dsn ) {
+            my $hashref = $class->parse_dsn( $dsn );
+            $driver     = $hashref->{driver};
+        }
+        $driver ||= "file";
+        my $pm = "CGI::Session::Driver::" . ($driver =~ /(.*)/)[0];
+        eval "require $pm";
+        if (my $errmsg = $@ ) {
+            return $class->set_error( "cleanExpiredSessions(): couldn't load driver." . $errmsg );
+        }
+    
+        my $driver_obj = $pm->new( $dsn_args );
+        unless ( $driver_obj ) {
+            return $class->set_error( "cleanExpiredSessions(): couldn't create driver object. " . $pm->errstr );
+        }
+    }
+    
+    defined($driver_obj->cleanExpiredSessions())
+        or return $class->set_error( "cleanExpiredSessions(): driver->cleanExpiredSessions() seems to have failed. " . $driver_obj->errstr );
+    return 1;
+}
 
 sub find {
     my $class       = shift;

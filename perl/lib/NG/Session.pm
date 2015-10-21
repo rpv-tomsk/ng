@@ -72,26 +72,8 @@ sub _session {
         $NG::Session::errstr = CGI::Session->errstr();
         return undef;
     };
-    $self->cleanSessions($dsn,$dsnargs);
+    $session->cleanExpiredSessions() if ( rand(1000) > 990 );
     return $session;
-};
-
-sub cleanSessions {
-    my $self    = shift;
-    my $dsn     = shift;
-    my $dsnargs = shift;
- 
-    CGI::Session->find(
-        $dsn,
-        sub {
-            my ($sess) = @_;
-            if($sess->is_expired()) {
-                $sess->delete();
-                $sess->flush(); # Recommended practice says use flush() after delete().
-            };
-        },
-        $dsnargs
-    ) if(rand(1000)>900);
 };
 
 sub init {
