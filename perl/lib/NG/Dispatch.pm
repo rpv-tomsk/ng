@@ -150,7 +150,7 @@ sub Content {
         IS_AJAX     => $is_ajax,
         BASEURL     => $self->getBaseURL(),
         NEEDUPDATE  => $needupdate,
-        REF         => $self->q->param('ref') || $self->getBaseURL(),
+        REF         => scalar $self->q->param('ref') || $self->getBaseURL(),
     );
 	
 	$self->output($dlist->tmpl()->output());

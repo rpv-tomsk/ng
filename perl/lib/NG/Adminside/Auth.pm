@@ -137,7 +137,7 @@ sub showLoginForm {
         MESSAGE =>  $self->_statusText(),
         IS_AJAX =>  0,
         URL     =>  $url,
-        LOGIN   =>  $q->param('ng_login') || "",
+        LOGIN   =>  scalar $q->param('ng_login') || "",
         TITLE   =>  $cms->confParam('CMS.SiteName','Сайт')." :: Авторизация",
     );
     return $cms->output($tmpl,-nocache=>1);

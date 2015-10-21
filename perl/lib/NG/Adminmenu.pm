@@ -176,7 +176,7 @@ sub insertAction {
 		DOCROOT   => $self->getDocRoot(),
 		SITEROOT  => $self->getSiteRoot(),
 		CGIObject => $q,
-		REF       => $q->param('ref') || "",
+		REF       => scalar $q->param('ref') || "",
 		IS_AJAX   => $is_ajax,
 	);
     $form->setTitle("Добавление подпункта в меню админки '".$parentNodeValue->{name}."'");
@@ -449,7 +449,7 @@ sub updateAction {
 		DOCROOT   => $self->getDocRoot(),
 		SITEROOT  => $self->getSiteRoot(),
 		CGIObject => $q,
-		REF       => $q->param('ref') || "",
+		REF       => scalar $q->param('ref') || "",
 		IS_AJAX   => $is_ajax,
 	);
 

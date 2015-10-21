@@ -2648,10 +2648,10 @@ sub post_dosearch {
     my @forums = $q->param("forums");
     
     my $search_session = $forum_model->search(
-        keywords=>$q->param("search"),
-        search_in_theme=>$q->param("search_only_in_theme")? 1: 0,
-        search_all_words=>$q->param("search_all_words")? 1: 0,
-        search_in_day=>$q->param("search_in_day")? $q->param("search_in_day"): 0,
+        keywords         => scalar $q->param("search"),
+        search_in_theme  => (scalar $q->param("search_only_in_theme"))?1:0,
+        search_all_words => (scalar $q->param("search_all_words"))?1:0,
+        search_in_day    => (scalar $q->param("search_in_day")?(scalar $q->param("search_in_day")):0),
         forums=>\@forums,    
     );
     
