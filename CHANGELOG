@@ -29,6 +29,7 @@ branches/ng6
     * ƒобавлено поле modulecode в ng_templates, дл€ возможности создавать модульные страницы. SQL:
           ALTER TABLE public.ng_templates ADD COLUMN modulecode VARCHAR(25);
           ALTER TABLE public.ng_templates ALTER COLUMN template DROP NOT NULL;
+    + ƒобавлена патченна€ верси€ CGI::Session (собственна€ реализаци€ устаревани€ и очистки сессий) (основано на CGI::Session 4.48)
     
 
 branches/ng-4.3
