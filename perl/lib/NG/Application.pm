@@ -800,15 +800,16 @@ sub _session {
 	my $params= shift;
 	
 	$self->openConfig();
-	my $session = $self->getObject({CLASS=>"NG::Session",METHOD=>$meth},
-		{
-			App      => $self,
-			ConfName => $cname,
-		},
-		$sid,
-		$params,
-	);
-	
+	my $session = eval {
+		$self->getObject({CLASS=>"NG::Session",METHOD=>$meth},
+			{
+				App      => $self,
+				ConfName => $cname,
+			},
+			$sid,
+			$params,
+		);
+	};
 	unless ($session) {
 		$self->setError($NG::Session::errstr);
 		return undef;
