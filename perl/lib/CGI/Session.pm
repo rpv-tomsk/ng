@@ -407,35 +407,38 @@ sub clear {
 
 sub cleanExpiredSessions {
     my $class = shift;
+    my ($dsn, $dsn_args) = @_;
+
+    return $class->set_error( "called as instance method")    if ref $class;
     
-    my $driver_obj;
-    # $someExistingSession->cleanExpiredSessions()
-    if ( @_ == 0) {
-        $driver_obj = $class->_driver();
+    my $driver;
+    if ( $dsn ) {
+        my $hashref = $class->parse_dsn( $dsn );
+        $driver     = $hashref->{driver};
     }
-    # CGI::Session->cleanExpiredSessions($dsn, \%dsn_args)
-    else {
-        my ($dsn, $dsn_args) = @_;
+    $driver ||= "file";
+    my $pm = "CGI::Session::Driver::" . ($driver =~ /(.*)/)[0];
+    eval "require $pm";
+    if (my $errmsg = $@ ) {
+        return $class->set_error( "cleanExpiredSessions(): couldn't load driver." . $errmsg );
+    }
+
+    my $driver_obj = $pm->new( $dsn_args );
+    unless ( $driver_obj ) {
+        return $class->set_error( "cleanExpiredSessions(): couldn't create driver object. " . $pm->errstr );
+    }
+    
+    my $read_only = 1;
+    my $clean_sub = sub {
+        my ($sid) = @_;
         
-        my $driver;
-        if ( $dsn ) {
-            my $hashref = $class->parse_dsn( $dsn );
-            $driver     = $hashref->{driver};
-        }
-        $driver ||= "file";
-        my $pm = "CGI::Session::Driver::" . ($driver =~ /(.*)/)[0];
-        eval "require $pm";
-        if (my $errmsg = $@ ) {
-            return $class->set_error( "cleanExpiredSessions(): couldn't load driver." . $errmsg );
-        }
+        my $session = $class->load( $dsn, $sid, $dsn_args, $read_only );
+        unless ( $session ) {
+            return $class->set_error( "cleanExpiredSessions(): couldn't load session '$sid'. " . $class->errstr );
+        };
+    };
     
-        my $driver_obj = $pm->new( $dsn_args );
-        unless ( $driver_obj ) {
-            return $class->set_error( "cleanExpiredSessions(): couldn't create driver object. " . $pm->errstr );
-        }
-    }
-    
-    defined($driver_obj->cleanExpiredSessions())
+    defined($driver_obj->cleanExpiredSessions($clean_sub))
         or return $class->set_error( "cleanExpiredSessions(): driver->cleanExpiredSessions() seems to have failed. " . $driver_obj->errstr );
     return 1;
 }

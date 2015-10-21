@@ -72,7 +72,7 @@ sub _session {
         $NG::Session::errstr = CGI::Session->errstr();
         return undef;
     };
-    $session->cleanExpiredSessions() if ( rand(1000) > 990 );
+    CGI::Session->cleanExpiredSessions($dsn,$dsnargs) if ( rand(1000) > 990 );
     return $session;
 };
 

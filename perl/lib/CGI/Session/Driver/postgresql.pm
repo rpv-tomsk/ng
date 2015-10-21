@@ -79,7 +79,7 @@ sub store {
 }
 
 sub cleanExpiredSessions {
-    my $self = shift;
+    my ($self, $traverse_helper_sub) = (shift,shift);
 
     my $dbh = $self->{Handle};
     
