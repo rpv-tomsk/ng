@@ -1053,7 +1053,6 @@ use NG::Block;
 sub init {
     my $self = shift;
     $self->SUPER::init(@_);
-    $self->{_right_template} = "admin-side/common/privileges/local.tmpl";
     $self->register_ajaxaction("","showTab");
     
     $self->register_ajaxaction("addadmin","addSubj");
@@ -1691,19 +1690,19 @@ or id in (select npp1.group_id from ng_page_privs npp1, ng_page_privs npp2 where
     };
     $sth->finish();
     
-	$self->opentemplate($self->{_right_template});
-	$self->tmpl()->param(
-	    PAGENAME => $pageRow->{name},
-	    PAGEADMINS => \@admins,
-	    PAGEGROUPS => \@groups,
+    my $tmpl = $cms->gettemplate("admin-side/common/privileges/local.tmpl");
+    $tmpl->param(
+        PAGENAME => $pageRow->{name},
+        PAGEADMINS => \@admins,
+        PAGEGROUPS => \@groups,
         MODULES    => \@data,
-	    PAGEID => $pageRow->{id},
+        PAGEID => $pageRow->{id},
         BASEURL => $self->getBaseURL(),
-		ADMIN_ID => $adminId,
-		GROUP_ID => $groupId,
+        ADMIN_ID => $adminId,
+        GROUP_ID => $groupId,
         HISTORY  => \@history,
-	);
-	return $self->output($self->tmpl());
+    );
+    return $self->output($tmpl);
 };
 
 sub addSubj {
