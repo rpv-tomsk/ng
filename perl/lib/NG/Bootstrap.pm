@@ -53,6 +53,8 @@ sub importX {
     eval {
         my $app = $class->new(%param);
         $app->run();  # must do $db->connect();
+        #http://www.perlmonks.org/?node_id=891177
+        $app->cleanup();
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
@@ -106,6 +108,7 @@ sub FastCGI {
             };
             my $app = $class->new( %param, CGIObject => $cgi); #   or die $class->errstr;
             $app->run();  # must do $db->connect();
+            $app->cleanup();
         };
         if ($@) {
             if (my $e = NG::Exception->caught($@)) {

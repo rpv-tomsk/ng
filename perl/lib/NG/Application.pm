@@ -69,6 +69,12 @@ sub init {
     $self;
 };
 
+sub cleanup {
+    my $self = shift;
+    $self->{_stash} = undef;
+    $self->{_mstash} = undef;
+};
+
 sub addLinkedPages {
     my ($self,$pages) = (shift,shift);
     my $siteStruct = $self->getObject({CLASS=>'NG::SiteStruct::Block', USE=>'NG::SiteStruct'},{MODULEOBJ=>'NO_MODULE_STUB'});

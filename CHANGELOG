@@ -31,7 +31,7 @@ branches/ng6
           ALTER TABLE public.ng_templates ALTER COLUMN template DROP NOT NULL;
     + Добавлена патченная версия CGI::Session (собственная реализация устаревания и очистки сессий) (основано на CGI::Session 4.48).
     - Удален метод NG::Session->cleanSessions()
-    
+    + Добавлен метод NG::Application->cleanup()
 
 branches/ng-4.3
 
