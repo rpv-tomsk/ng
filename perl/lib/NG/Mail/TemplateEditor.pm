@@ -3,6 +3,12 @@
 ####
 
 =head
+  Конфигурационные переменные:
+  
+  - $NG::Mail::TemplateEditor::rtfConfig
+=cut
+
+=head
   * Реализовать проверку шаблонов при сохранении
   * Переделать отображение списка, за основу брать перечень шаблонов из модуля, а не из БД
     - Добавлять недостающие шаблоны в БД
@@ -27,20 +33,21 @@ sub config {
     if($mObj) {
         $callerCode = $mObj->getModuleCode();
     };
+    
+    my $rtfOptions = {
+        IMG_TABLE            => 'mtemplatesrtfimages',
+        IMG_UPLOADDIR        => '/upload/mtemplates/',
+        IMG_TABLE_FIELDS_MAP => {id => 'parent_id'},
+    };
+    
+    $rtfOptions->{CONFIG} = $NG::Mail::TemplateEditor::rtfConfig if $NG::Mail::TemplateEditor::rtfConfig;
 
     $self->fields(
         {FIELD => 'id',         TYPE => 'id',        NAME => 'Код записи'},
         {FIELD => 'module',     TYPE => 'filter',    NAME => 'mcode',           IS_NOTNULL => 1, VALUE => $callerCode},
         {FIELD => 'name',       TYPE => 'text',      NAME => 'Название',      IS_NOTNULL => 1},
         {FIELD => 'subject',    TYPE => 'text',      NAME => 'Subject',       IS_NOTNULL => 1},
-        {FIELD => 'html',       TYPE => 'rtf',       NAME => 'Текст',         IS_NOTNULL => 1,
-            OPTIONS => {
-                # CONFIG               => 'defaultConfig',
-                IMG_TABLE            => 'mtemplatesrtfimages',
-                IMG_UPLOADDIR        => '/upload/mtemplates/',
-                IMG_TABLE_FIELDS_MAP => {id => 'parent_id'},
-            },
-        },
+        {FIELD => 'html',       TYPE => 'rtf',       NAME => 'Текст',         IS_NOTNULL => 1, OPTIONS => $rtfOptions},
         {FIELD => 'code',      TYPE => 'hidden',      NAME => 'Код',           IS_NOTNULL => 1},
         {FIELD => 'legend',    TYPE => 'text', CLASS => 'NG::Mail::TemplateEditor::LegendField'},
     );
@@ -176,11 +183,13 @@ sub prepareOutput {
     my $metadata = $iface->getTemplateMetadata($code);
     
     my $legend = [];
-    foreach my $var (keys %{$metadata->{VARIABLES}}) {
+    foreach my $var (sort keys %{$metadata->{VARIABLES}}) {
+        my $example = $metadata->{VARIABLES}->{$var}->{EXAMPLE};
+        $example = "" if ref $example;
         push @$legend, {
             VAR => $var,
             NAME => $metadata->{VARIABLES}->{$var}->{NAME},
-            EXAMPLE => $metadata->{VARIABLES}->{$var}->{EXAMPLE},
+            EXAMPLE => $example,
         };
     }
     $field->{LEGEND} = $legend;

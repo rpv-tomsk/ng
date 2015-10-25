@@ -11,9 +11,11 @@ sub new {
     
     $opts ||= {};
     $template->{_caller} = $opts->{CALLER}   if $opts->{CALLER};
+    $template->{_modulecode} = $opts->{MODULECODE} if $opts->{MODULECODE};
+    $template->{_modulecode} ||= $template->{_caller}->getModuleCode() if $template->{_caller};
     $template->{_code}   = $opts->{TEMPLATE} if $opts->{TEMPLATE};
 
-    $template->_load() if $template->{_caller} && $template->{_code};
+    $template->_load() if $template->{_modulecode} && $template->{_code};
     $template;
 };
 
@@ -21,12 +23,15 @@ sub _load {
     my $template = shift;
     
     my $templateCode = $template->{_code};
-    my $callerCode   = $template->{_caller}->getModuleCode();
+    my $moduleCode   = $template->{_modulecode};
+
+    NG::Exception->throw('NG.INTERNALERROR','Не указан MODULECODE или CALLER') unless $moduleCode;
+    NG::Exception->throw('NG.INTERNALERROR','Не указан код шаблона TEMPLATE') unless $templateCode;
     
     my $sql = 'select id, name, subject, html, plain from mtemplates where module = ? and code=?';
     my $sth = $template->dbh()->prepare($sql) or NG::DBIException->throw();
-    $sth->execute($callerCode,$templateCode) or NG::DBIException->throw();
-    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw('NG.INTERNALERROR',"Запись шаблона $templateCode модуля $callerCode не найдена");
+    $sth->execute($moduleCode,$templateCode) or NG::DBIException->throw();
+    my $tmplRow = $sth->fetchrow_hashref() or NG::Exception->throw('NG.INTERNALERROR',"Запись шаблона $templateCode модуля $moduleCode не найдена");
     $sth->finish();
     
     $template->{_plaint} = NG::Mail::TemplateElement->new($tmplRow->{plain},'PLAIN')   if $tmplRow->{plain};
@@ -132,7 +137,7 @@ sub getMailer {
         $nMailer->addHTMLPart(
             Data     => $template->{_htmlt}->output(),
             BaseDir  => $cms->getDocRoot(),
-            Encoding => 'base64'
+            Encoding => 'quoted-printable',
         );
     };
     $nMailer;
@@ -149,13 +154,14 @@ sub new {
     #Предобработка шаблона
     $content =~ s@\[\%(?:var\s+)?\s*(\S+?)\s*\%\]@\[\%var VARS\.$1\%\]@gm;
     $content =~ s@\[\%label\s+(\S+?)\s*\%\]@\[\%var LABELS\.$1\%\]@gm;
+    $content =~ s@\[\%lvar\s+(\S+?)\s*\%\]@\[\%var $1\%\]@gm; #For inner level variables
     
     if ($type eq 'HTML') {
         $content = '<html>'.$content.'</html>' unless ($content =~ /^\s*<html>/im) || ($content =~ /<\/html>\s*$/im);
     };
     
     #Заполнение данными
-    $self->{_template} = $self->cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$content,debug_file=>0});
+    $self->{_template} = $self->cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$content,debug_file=>0,case_sensitive=>1});
     $self->{_vars} = undef;
     $self->{_labels} = undef;
     $self;
@@ -179,13 +185,17 @@ sub check {
     my $message = "";
     
     if ($self->{_vars}) {
-        foreach my $var (keys %{$self->{_vars}->{_data}}) {
+        foreach my $var (sort keys %{$self->{_vars}->{_data}}) {
             next if exists $self->{_vars}->{_used}->{$var};
-            $message.= "Переменная $var не использована\n";
+            $message.= "$var, ";
+        };
+        if ($message) {
+            $message =~ s/\,\ $//;
+            $message = "Не использованы переменные: $message";
         };
     };
     if ($message) {
-        $message = '<font color="red">'.$message.'</font>';
+        $message = '<font color="blue">'.$message.'</font>';
     };
     
     $message ||= '<font color="green">Шаблон абсолютно корректен</font>';
