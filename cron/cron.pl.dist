@@ -2,6 +2,13 @@
 use strict;
 use lib('/web/ng6/perl/lib','/web/site/perl/lib');
 use NG::Bootstrap;
+use POSIX qw(tzset locale_h);
+
+#Set correct timezone
+$ENV{TZ}="Asia/Novosibisk";
+tzset;
+#Set correct locale
+setlocale(LC_CTYPE, "ru_RU.CP1251");
 
 NG::Bootstrap::importX(
    undef,
