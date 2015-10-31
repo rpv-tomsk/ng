@@ -498,6 +498,17 @@ sub clean {
 sub setLoadedValue { return 1}; #Значения для связи берутся из $form.
 sub beforeSave { return 1; };
 
+sub beforeDelete {
+    my $field = shift;
+
+    my $options = $field->{OPTIONS};
+    my $storage = $options->{STORAGE} or return 1;
+    my $h = $field->_getKey($storage) or return 0;
+    my $dbh = $field->dbh() or return $field->showError("beforeDelete(): отсутствует dbh");
+    my $sth = $dbh->do("DELETE FROM ".$storage->{TABLE}.$h->{WHERE},undef,@{$h->{PARAMS}}) or return $field->set_err("beforeDelete(): Ошибка удаления значений: ".$DBI::errstr);
+    return 1;
+};
+
 sub getFieldActions {
     my $self = shift;
     return [
