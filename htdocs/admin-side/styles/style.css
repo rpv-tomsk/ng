@@ -1,1150 +1,1124 @@
 * {
-	margin: 0px;
-	padding: 0px;
+  margin: 0px;
+  padding: 0px;
 }
 html {
-	height: 100%;
-	width: 100%;
+  height: 100%;
+  width: 100%;
 }
 body {
-	min-height: 100%;
-	height: 100%;
-	background: url(/admin-side/img/img_background.gif) repeat-y left;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size: 11px;
-	min-width: 1150px;
-	width: expression((document.documentElement.clientWidth || document.body.clientWidth) < 1020 ? '1021px': 'auto');
-	position: relative;
+  min-height: 100%;
+  height: 100%;
+  background: url(/admin-side/img/img_background.gif) repeat-y left;
+  font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  min-width: 1150px;
+  width: expression((document.documentElement.clientWidth || document.body.clientWidth) < 1020 ? '1021px': 'auto');
+  position: relative;
 }
 .selected {
-	font-weight:bold;
+  font-weight:bold;
 }
 .center {
-	text-align:center;
+  text-align:center;
 }
 table {
-	background: none;
-	border-collapse:collapse;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size: 11px;
-	width: 100%;
+  background: none;
+  border-collapse:collapse;
+  font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  width: 100%;
 }
-#page-all {	
-	height: auto !important;
-	min-height: 100%;
-	height: 100%;
-	background: url(/admin-side/img/img_content.jpg) no-repeat;	
+#page-all {
+  height: auto !important;
+  min-height: 100%;
+  height: 100%;
+  background: url(/admin-side/img/img_content.jpg) no-repeat;
 }
 h3 {
-	color:#3583b7;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size: 14px;
-	padding-bottom:8px;
-	padding-top:8px;
+  color:#3583b7;
+  font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  padding-bottom:8px;
+  padding-top:8px;
 }
 #content_dispatch {
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size:12px;
-	color:#004882;
+  font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+  font-size:12px;
+  color:#004882;
 }
 #but_ok {
-	margin-bottom:15px;
-	margin-top:15px;
+  margin-bottom:15px;
+  margin-top:15px;
 }
 /******************Верхняя часть*******************/
 #top {
-	height: 92px;
+  height: 92px;
 }
 #top_right {
-	text-align: right;
-	padding: 30px 20px 0 0;
-	position: relative;
-	color:#004882;
-	overflow:hidden;
-	float:right;
+  text-align: right;
+  padding: 30px 20px 0 0;
+  position: relative;
+  color:#004882;
+  overflow:hidden;
+  float:right;
 }
 #top_right a {
-	padding-right: 10px;
+  padding-right: 10px;
 }
 /**************************************************/
 div#history {
-	height: 30px;
-	background: url(/admin-side/img/img_top2.jpg) no-repeat left;
-	font-size: 11px;
-	color:#004882;
+  height: 30px;
+  background: url(/admin-side/img/img_top2.jpg) no-repeat left;
+  font-size: 11px;
+  color:#004882;
 }
 div#history a {
-	color:#004882;
+  color:#004882;
 }
 div#history_left {
-	float: left;
-	width: 200px;
-	text-align: left;
-	font-size: 12px;
-	padding:0;
-	line-height: 15px;
-	padding-top:7px;
+  float: left;
+  width: 200px;
+  text-align: left;
+  font-size: 12px;
+  padding:0;
+  line-height: 15px;
+  padding-top:7px;
 }
 div#history_left a {
-	display:block;
-	margin-top: 3px;
+  display:block;
+  margin-top: 3px;
 }
-
 div#history_right {
-	background: url(/admin-side/img/img_top3.jpg) no-repeat right;
-	padding-top: 7px;
-	margin-left: 30px;
-	font-size: 11px;
+  background: url(/admin-side/img/img_top3.jpg) no-repeat right;
+  padding-top: 7px;
+  margin-left: 30px;
+  font-size: 11px;
 }
 span#history_right_title {
-	padding-right: 15px;
+  padding-right: 15px;
 }
 span.history_items {
-	background: url(/admin-side/img/img_list.gif) no-repeat right bottom;
-	padding: 0 11px 0 5px;
+  background: url(/admin-side/img/img_list.gif) no-repeat right bottom;
+  padding: 0 11px 0 5px;
 }
 span.history_select_items {
-	font-weight: bold;
-	padding: 8px 0 0 5px;
+  font-weight: bold;
+  padding: 8px 0 0 5px;
 }
 span.history_items a {
-	color: #4B7495;
+  color: #4B7495;
 }
 /*******************Оснавная часть******************/
 #middle {
-	width: 100%;
-	padding-top: 10px;
-	margin-bottom: 15px;
+  width: 100%;
+  padding-top: 10px;
+  margin-bottom: 15px;
 }
 #middle_top_line_left {
-	height: 15px;
-	background: url(/admin-side/img/img_content_left_top.jpg) top left no-repeat;
+  height: 15px;
+  background: url(/admin-side/img/img_content_left_top.jpg) top left no-repeat;
 }
 #middle_top_line_right {
-	height: 15px;
-	background: url(/admin-side/img/img_content_line.gif) top repeat-x;
+  height: 15px;
+  background: url(/admin-side/img/img_content_line.gif) top repeat-x;
 }
 #wrapper {
-	float:right;
-	width:100%;
+  float:right;
+  width:100%;
 }
 /********************Левая панель*************************/
-
 *html #middle_left {
-	width:360px;
+  width:360px;
 }
 *html #middle_right {
-	margin-left:350px;
-	padding-right: 30px;
+  margin-left:350px;
+  padding-right: 30px;
 }
 #middle_left {
-	float:left;
-	width:320px;
-	margin-right:-100%;
-	padding: 0 0 0 10px;
+  float:left;
+  width:320px;
+  margin-right:-100%;
+  padding: 0 0 0 10px;
 }
 /*********************Активный элемент**************************************/
-
 /*Общие параметры вкладки, центральная часть*/
 span.active, span.atten_active {
-	background: url(/admin-side/img/img_menu_select.gif) repeat-x top;
-	height:22px;
-	line-height: 22px;
-	text-align: center;
-	font-size:12px;
-	color:#004882;
-	font-weight: bold;
-	padding-left: 10px;
-	padding-right: 10px;
-	float: left;
+  background: url(/admin-side/img/img_menu_select.gif) repeat-x top;
+  height:22px;
+  line-height: 22px;
+  text-align: center;
+  font-size:12px;
+  color:#004882;
+  font-weight: bold;
+  padding-left: 10px;
+  padding-right: 10px;
+  float: left;
 }
 span.atten_active {
-	/* Красная средняя  активная */
-	background:url(/admin-side/img/middle_inset_on.gif) repeat-x top;
-	color:#FFFFFF;
-	font-weight:bold;
-	height: 31px;
+  /* Красная средняя  активная */
+  background:url(/admin-side/img/middle_inset_on.gif) repeat-x top;
+  color:#FFFFFF;
+  font-weight:bold;
+  height: 31px;
 }
-
 /*костыль, табы в левой части*/
 #middle_left span {
-	height:15px;
+  height:15px;
 }
 #middle_left span.active {
-	width:310px;
-	padding-left:0px;
-	padding-right:0px;
+  width:310px;
+  padding-left:0px;
+  padding-right:0px;
 }
-
 span.tab {
-	display: inline-block;
-	margin-top:5px;
-	vertical-align:bottom;
+  display: inline-block;
+  margin-top:5px;
+  vertical-align:bottom;
 }
-
 span.active_right, span.atten_active_right {
-	background: url(/admin-side/img/right_angle.gif) no-repeat right top;
-	height: 22px;
-	width: 5px;
-	float: left;
+  background: url(/admin-side/img/right_angle.gif) no-repeat right top;
+  height: 22px;
+  width: 5px;
+  float: left;
 }
-
 span.atten_active_right {
-	/* Красная правая активная */
-	background:url(/admin-side/img/right_inset_on.gif) no-repeat;
-	width: 10px;
+  /* Красная правая активная */
+  background:url(/admin-side/img/right_inset_on.gif) no-repeat;
+  width: 10px;
 }
 /*Общие параметры вкладки, левая часть*/
 span.active_left, span.atten_active_left {
-	background: url(/admin-side/img/left_angle.gif) no-repeat;
-	height:22px;
-	width: 5px;
-	float: left;
+  background: url(/admin-side/img/left_angle.gif) no-repeat;
+  height:22px;
+  width: 5px;
+  float: left;
 }
 span.atten_active_left {
-	/* Красная левая активная */
-	background: url(/admin-side/img/left_inset_on.gif) no-repeat;
-	width: 7px;
+  /* Красная левая активная */
+  background: url(/admin-side/img/left_inset_on.gif) no-repeat;
+  width: 7px;
 }
 /***********************Неактивный элемент****************************************/
 #middle_left_title span.no-active {
-	width:148px;
+  width:148px;
 }
 span.no-active, span.atten_no-active {
-	background: url(/admin-side/img/no-active_center.gif) repeat-x bottom;
-	height: 22px;
-	text-align: center;
-	line-height: 21px;
-	float: left;
+  background: url(/admin-side/img/no-active_center.gif) repeat-x bottom;
+  height: 22px;
+  text-align: center;
+  line-height: 21px;
+  float: left;
 }
 span.atten_no-active {
-	background:url(/admin-side/img/middle_inset.gif) repeat-x bottom;
-	position:relative;
-	margin-top: 8px;
-	height:23px;
-	color:#ffffff;
-	font-weight:bold;
+  background:url(/admin-side/img/middle_inset.gif) repeat-x bottom;
+  position:relative;
+  margin-top: 8px;
+  height:23px;
+  color:#ffffff;
+  font-weight:bold;
 }
 span.no-active a, span.atten_no-active a {
-	font-size:11px;
-	color:#ffffff;
-	font-weight: normal;
-	padding-left: 10px;
-	padding-right: 10px;
+  font-size:11px;
+  color:#ffffff;
+  font-weight: normal;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 span.no-active_right, span.atten_no-active_right {
-	background: url(/admin-side/img/no-active_right.gif) no-repeat right bottom;
-	height:22px;
-	width: 6px;
-	float: left;
+  background: url(/admin-side/img/no-active_right.gif) no-repeat right bottom;
+  height:22px;
+  width: 6px;
+  float: left;
 }
 span.atten_no-active_right {
-	background:url(/admin-side/img/right_inset.gif) right bottom no-repeat;
+  background:url(/admin-side/img/right_inset.gif) right bottom no-repeat;
 }
 span.no-active_left, span.atten_no-active_left {
-	background: url(/admin-side/img/no-active_left.gif) no-repeat bottom;
-	height:22px;
-	width: 6px;
-	float: left;
+  background: url(/admin-side/img/no-active_left.gif) no-repeat bottom;
+  height:22px;
+  width: 6px;
+  float: left;
 }
 span.atten_no-active_left {
-	background: url(/admin-side/img/left_inset.gif) no-repeat bottom;
+  background: url(/admin-side/img/left_inset.gif) no-repeat bottom;
 }
 /********************************Левая панель основная часть***********************/
 #middle_left_tree {
-	background-color: #d6e8f6;
-	width: 298px;
-	_width: 320px;
-	display: block;
-	float: left;
-	text-align: left;
-	border: 1px solid #96c5ec;
-	border-top: none;
-	overflow-y:visible;
-	overflow: auto;
-	scrollbar-face-color:#c3dbef;
-	white-space:nowrap;
-	padding: 0px 0 10px 20px;
-	margin: 0 0 10px 0;
-	min-height: 400px;
+  background-color: #d6e8f6;
+  width: 298px;
+  _width: 320px;
+  display: block;
+  float: left;
+  text-align: left;
+  border: 1px solid #96c5ec;
+  border-top: none;
+  overflow-y:visible;
+  overflow: auto;
+  scrollbar-face-color:#c3dbef;
+  white-space:nowrap;
+  padding: 0px 0 10px 20px;
+  margin: 0 0 10px 0;
+  min-height: 400px;
 }
 #form {
-	margin-bottom:10px;
-	margin-left: -20px;
+  margin-bottom:10px;
+  margin-left: -20px;
 }
 #middle_left_tree select#town {
-	background:#FFFFFF;
-	width:250px;
-	margin-left:20px;
-	margin-right:10px;
-	border:1px solid #7fb4df;
-	color:#004882;
-	float:left;
-	margin-top:2px;
+  background:#FFFFFF;
+  width:250px;
+  margin-left:20px;
+  margin-right:10px;
+  border:1px solid #7fb4df;
+  color:#004882;
+  float:left;
+  margin-top:2px;
 }
 #form input {
-	margin-top:2px;
+  margin-top:2px;
 }
 div.title {
-	padding-left: 24px;
-	padding-top: 0px;
-	padding-bottom:0px;
+  padding-left: 24px;
+  padding-top: 0px;
+  padding-bottom:0px;
 }
-
 #middle_left_tree a {
-	color:#4b7495;
-	font-size: 11px;
-	text-decoration: underline;
+  color:#4b7495;
+  font-size: 11px;
+  text-decoration: underline;
 }
-
 /***********************Правая панель основная часть*********************************************/
 #middle_right {
-    margin-left: 340px;
-    padding-right: 10px;
+  margin-left: 340px;
+  padding-right: 10px;
 }
 #middle_right_header {
-	overflow: hidden;
-	margin-right:4px;
-	_width:100%;
+  overflow: hidden;
+  margin-right:4px;
+  _width:100%;
 }
-
 #line_left {
-	height: 23px;
-	background: url(/admin-side/img/img_middle_right_line.gif) repeat-x bottom;
-	z-index:-100;
-	margin-top:-1px;
-	/*IE decides to show it me...*/
-	/*font-size:1pt;*/
+  height: 23px;
+  background: url(/admin-side/img/img_middle_right_line.gif) repeat-x bottom;
+  z-index:-100;
+  margin-top:-1px;
+  /*IE decides to show it me...*/
+  /*font-size:1pt;*/
 }
 /*
 html:root #line_left {
-	height: 23px;
+  height: 23px;
 }
 */
 #right_items_menu {
-	background: url(/admin-side/img/vertical_line.gif) no-repeat;
+  background: url(/admin-side/img/vertical_line.gif) no-repeat;
 }
 #middle_right_menu {
-	height: 37px;
-	background: url(/admin-side/img/img_right_center.gif) repeat-x;
-	height: 32px;
-	_height: 37px;
-	padding-left: 20px;
-	padding-top: 7px;
+  height: 37px;
+  background: url(/admin-side/img/img_right_center.gif) repeat-x;
+  height: 32px;
+  _height: 37px;
+  padding-left: 20px;
+  padding-top: 7px;
 }
 #menu_content {
-	background: url(/admin-side/img/img_right_1.gif) no-repeat right top;
-	padding-top:2px;
-	border-left: 1px solid #96c5ec;
-	padding-right: 1px;
-	/*width: 100%;*/
-	overflow: hidden;
+  background: url(/admin-side/img/img_right_1.gif) no-repeat right top;
+  padding-top:2px;
+  border-left: 1px solid #96c5ec;
+  padding-right: 1px;
+  /*width: 100%;*/
+  overflow: hidden;
 }
 #menu_content_items {
-	padding-top: 7px;
-	height: 37px;
+  padding-top: 7px;
+  height: 37px;
 }
 #menu_content a {
-	float:left;
+  float:left;
 }
 span.line {
-	background: url(/admin-side/img/vertical_line.gif) no-repeat 14px 3px;
-	width: 30px;
-	height: 14px;
-	float: left;
+  background: url(/admin-side/img/vertical_line.gif) no-repeat 14px 3px;
+  width: 30px;
+  height: 14px;
+  float: left;
 }
 div.selectWrapper {
-	_border:#65A7DD solid 1px;
-	overflow:hidden;
-	float:left;
+  _border:#65A7DD solid 1px;
+  overflow:hidden;
+  float:left;
 }
 div.selectWrapper select {
-	border:#65A7DD solid 1px;
-	_border:none;
-	_margin: -2px;
-	float:left;
+  border:#65A7DD solid 1px;
+  _border:none;
+  _margin: -2px;
+  float:left;
 }
-
 /*Верстка фильтров в листе, universallist.tmpl*/
 span#listFilters {
-	float:right;
-	margin-right: 10px;
+  float:right;
+  margin-right: 10px;
 }
 span#listFilters span.name {
-	float:left;
-	padding-left:10px;
-	color:#4b7495;
+  float:left;
+  padding-left:10px;
+  color:#4b7495;
 }
 span#listFilters span.tabs a {
-	float:none;
+  float:none;
 }
 span#listFilters select{
-	color:#0e75a3;
-	font-size: 10px;
-	height: 16px;
+  color:#0e75a3;
+  font-size: 10px;
+  height: 16px;
 }
 @media all and (min-width: 0) {
-span#listFilters select {
-	font-size: 11px;
-	height: 18px;
-}
+  span#listFilters select {
+    font-size: 11px;
+    height: 18px;
+  }
 }
 span#listFilters div.button {
-	border:none;
-	float:left;
-	margin-left: 10px;
+  border:none;
+  float:left;
+  margin-left: 10px;
 }
 /*******************************************************************/
 #middle_right_content {
-	background-color: #d4e7f6;
+  background-color: #d4e7f6;
 }
 #info_content {
-	border-left: 1px solid #96c5ec;
-	border-right: 1px solid #96c5ec;
-	padding: 15px 10px 0px 10px;
-	padding-top:0px;
-	overflow: hidden;
-	zoom: 1;
+  border-left: 1px solid #96c5ec;
+  border-right: 1px solid #96c5ec;
+  padding: 15px 10px 0px 10px;
+  padding-top:0px;
+  overflow: hidden;
+  zoom: 1;
 }
 @media all and (min-width: 0) {
-#middle_right_content {
- margin-bottom: 15px;
-}
+  #middle_right_content {
+    margin-bottom: 15px;
+  }
 }
 /**********************Основная часть строка таблицы***************/
-
 #middle_right_page_title {
-	height: 24px;
-	_height: 29px;
-	background: #cae2f5;
-	padding-left: 14px;
-	padding-top:5px;
+  height: 24px;
+  _height: 29px;
+  background: #cae2f5;
+  padding-left: 14px;
+  padding-top:5px;
 }
 /*******************Заголовки тыблицы**********************/
 div.items {
-	height: 30px;
-	background-color: #FFF;
-	padding: 5px 0 0 14px;
-	height: 25px;
-	_height: 30px;
+  height: 30px;
+  background-color: #FFF;
+  padding: 5px 0 0 14px;
+  height: 25px;
+  _height: 30px;
 }
 div.items a {
-	color:#004882;
-	font-size: 12px;
+  color:#004882;
+  font-size: 12px;
 }
 span#top_info_left {
-	float:left;
+  float:left;
 }
 div#top_info_right {
-	float:right;
-	text-align:right;
-	padding-right:19px;
+  float:right;
+  text-align:right;
+  padding-right:19px;
 }
 /*********************Основная строка таблицы*************************/
 div#table_content {
-	padding-top: 15px;
-	width:100%;
-	max-width: 100%;
+  padding-top: 15px;
+  width:100%;
+  max-width: 100%;
 }
 .content_table_tree {
-	min-width:700px;
-	overflow:hidden;
-	width:100%;
-	position:relative;
+  min-width:700px;
+  overflow:hidden;
+  width:100%;
+  position:relative;
 }
 table#content {
-	width:100%;
-	height: auto;
-	border:1px solid #65a7dd;
+  width:100%;
+  height: auto;
+  border:1px solid #65a7dd;
 }
 table#content tr {
 }
 /************************Заголовок таблицы**********************/
 .wrapper-table {
-	width: 100%;
+  width: 100%;
 }
 .wrapper-table table {
-	width: 100%;
-	margin-bottom: 20px;
+  width: 100%;
+  margin-bottom: 20px;
 }
 .wrapper-table td {
-	background:#ffffff;
-	padding: 9px 0 9px 10px;
-	vertical-align: middle;
-	border-top:1px solid #65a7dd;
-	color:#225279;
+  background:#ffffff;
+  padding: 9px 0 9px 10px;
+  vertical-align: middle;
+  border-top:1px solid #65a7dd;
+  color:#225279;
 }
 .wrapper-table th {
-	margin-top: 10px;
+  margin-top: 10px;
 }
 td.title, .wrapper-table th {
-	background:#3583b7;
-	height: 30px;
-	border-bottom:1px solid #7fb4df;
-	color:#fff;
-	font-size:12px;
-	font-weight: bold;
-	padding: 3px 5px 5px 5px;
+  background:#3583b7;
+  height: 30px;
+  border-bottom:1px solid #7fb4df;
+  color:#fff;
+  font-size:12px;
+  font-weight: bold;
+  padding: 3px 5px 5px 5px;
 }
 .wrapper-table th.left {
-	text-align: left;
+  text-align: left;
 }
-
 td.title_img {
-	padding: 5px 0 5px 15px;
-	height: 30px;
-	text-align:center;
+  padding: 5px 0 5px 15px;
+  height: 30px;
+  text-align:center;
 }
 td.title a, .wrapper-table a {
-	color:#fff;
-	font-size:12px;
-	font-weight: bold;
+  color:#fff;
+  font-size:12px;
+  font-weight: bold;
 }
 td.title p {
-	color:#fff;
-	font-size:12px;
-	font-weight: bold;
-	padding-top:3px;
+  color:#fff;
+  font-size:12px;
+  font-weight: bold;
+  padding-top:3px;
 }
 td.last {
-	background: url(/admin-side/img/shadow_right.png) repeat-y right;
-	width: 7px;
+  background: url(/admin-side/img/shadow_right.png) repeat-y right;
+  width: 7px;
 }
 td.angle {
-	background: url(/admin-side/img/table_shadow_bottom_right.png) no-repeat right top;
+  background: url(/admin-side/img/table_shadow_bottom_right.png) no-repeat right top;
 }
 /****************Тень последнего столбца**********************/
-
 div.shadow_right {
-	background: none;
-	background: url(/admin-side/img/shadow_right.png) repeat-y right;
-	height:100%;
+  background: none;
+  background: url(/admin-side/img/shadow_right.png) repeat-y right;
+  height:100%;
 }
 div.shadow_right_top {
-	padding:0px 7px 0px 0;
-	height:100%;
+  padding:0px 7px 0px 0;
+  height:100%;
 }
 div.line_title {
-	background:#eaf6ff;
-	height: 100%;
-	padding-top:6px;
-	padding-bottom: 6px;
+  background:#eaf6ff;
+  height: 100%;
+  padding-top:6px;
+  padding-bottom: 6px;
 }
 #img_upp {
-	background: url(/admin-side/img/upp.gif) no-repeat 0px 3px;
-	_background: url(/admin-side/img/upp.gif) no-repeat 0px 5px;
-	height: 15px;
-	margin: 0 10px 0 2px;
+  background: url(/admin-side/img/upp.gif) no-repeat 0px 3px;
+  _background: url(/admin-side/img/upp.gif) no-repeat 0px 5px;
+  height: 15px;
+  margin: 0 10px 0 2px;
 }
 #img_down {
-	background: url(/admin-side/img/down.gif) no-repeat 0px 3px;
-	_background: url(/admin-side/img/down.gif) no-repeat 0px 5px;
-	height: 15px;
-	margin: 0 10px 0 2px;
+  background: url(/admin-side/img/down.gif) no-repeat 0px 3px;
+  _background: url(/admin-side/img/down.gif) no-repeat 0px 5px;
+  height: 15px;
+  margin: 0 10px 0 2px;
 }
 /******************************Основная часть**********************************/
 img.checkbox {
-	margin-right:10px;
+  margin-right:10px;
 }
 div.background_content {
-	background:#ffffff;
-	height: 100%;
+  background:#ffffff;
+  height: 100%;
 }
 td.content, td.content_img {
-	background:#ffffff;
-	padding-left: 10px;
-	padding-top:9px;
-	padding-bottom: 9px;
-	vertical-align: middle;
-	border-top:1px solid #65a7dd;
-	color:#225279;
+  background:#ffffff;
+  padding-left: 10px;
+  padding-top:9px;
+  padding-bottom: 9px;
+  vertical-align: middle;
+  border-top:1px solid #65a7dd;
+  color:#225279;
 }
 table#content tr.checked td.content,
 table#content tr.checked td.content_img {
-    background: #ffffaa;
+  background: #ffffaa;
 }
 td.content_img {
-	text-align:right;
-	text-align:center;
+  text-align:right;
+  text-align:center;
 }
 /********************************/
 td.content_img img.right {
-	margin-top:-13px;
-	_margin-top:0px;
+  margin-top:-13px;
+  _margin-top:0px;
 }
 @media all and (min-width: 0) {
-td.content_img img.right {
- margin-top:0px;
-}
+  td.content_img img.right {
+    margin-top:0px;
+  }
 }
 td.content_img img.number {
-	margin-bottom:0px;
-	_margin-bottom:0px;
+  margin-bottom:0px;
+  _margin-bottom:0px;
 }
 @media all and (min-width: 0) {
-td.content_img img.number {
- margin-bottom:0px;
- padding-top:0px;
-}
+  td.content_img img.number {
+    margin-bottom:0px;
+    padding-top:0px;
+  }
 }
 /****************************/
 td.content a, a.blue {
-	color: #004882;
-	font-size: 12px;
+  color: #004882;
+  font-size: 12px;
 }
 td.content p {
-	color: #004882;
-	font-size: 12px;
+  color: #004882;
+  font-size: 12px;
 }
 /****************************Последняя стока таблицы***************************/
 td.last_line {
-	background:#deeffc;
+  background:#deeffc;
 }
 td.last_line_right_img {
-	text-align:right;
-	vertical-align:middle;
-	height: 14px;
-	padding-right: 10px;
-	background-color:#cfe1ee;
-	border-top:none;
-	font-weight:bold;
-	padding-bottom:4px;
-	padding-top:3px;
-	color:#4b7495;
+  text-align:right;
+  vertical-align:middle;
+  height: 14px;
+  padding-right: 10px;
+  background-color:#cfe1ee;
+  border-top:none;
+  font-weight:bold;
+  padding-bottom:4px;
+  padding-top:3px;
+  color:#4b7495;
 }
 td.last_line_right_img a {
-	color:#4b7495;
-	font-size:11px;
+  color:#4b7495;
+  font-size:11px;
 }
 td.last_line_right_img img {
-	padding-right:15px;
+  padding-right:15px;
 }
 @media all and (min-width: 0) {
-td.last_line_right_img img {
- margin-bottom:2px;
-}
+  td.last_line_right_img img {
+    margin-bottom:2px;
+  }
 }
 div.background_last_line {
-	background: url(/admin-side/img/spacer0.gif) repeat-y;
-	background-color:#cfe1ee;
+  background: url(/admin-side/img/spacer0.gif) repeat-y;
+  background-color:#cfe1ee;
 }
 @media all and (min-width: 0) {
-div.background_last_line {
- padding-bottom:0px;
-}
+  div.background_last_line {
+    padding-bottom:0px;
+  }
 }
 img.content_img {
-	_margin-top:2px;
+  _margin-top:2px;
 }
 img.right {
-	padding-left:5px;
-	padding-top:5px;
-	_padding-top:0px;
+  padding-left:5px;
+  padding-top:5px;
+  _padding-top:0px;
 }
 @media all and (min-width: 0) {
-img.right {
- padding-top:0px;
-}
+  img.right {
+    padding-top:0px;
+  }
 }
 div.left_info {
-	float:left;
+  float:left;
 }
 div.right_info {
-	float:right;
-	padding-right:14px;
-	vertical-align:top;
-	padding-top: 3px;
-	height: 20px;
+  float:right;
+  padding-right:14px;
+  vertical-align:top;
+  padding-top: 3px;
+  height: 20px;
 }
 div.right_info a {
-	padding-left:5px;
+  padding-left:5px;
 }
 img.img_left {
-	padding-top:2px;
-	padding-bottom:10px;
+  padding-top:2px;
+  padding-bottom:10px;
 }
 img.img_numder {
-	padding-top:2px;
-	padding-bottom:10px;
+  padding-top:2px;
+  padding-bottom:10px;
 }
 div.bottom_info {
-	padding-top: 1px;
-	_height:19px;
-	padding-right: 13px;
-	background:#deeffc;
-	text-align: right;
+  padding-top: 1px;
+  _height:19px;
+  padding-right: 13px;
+  background:#deeffc;
+  text-align: right;
 }
 @media all and (min-width: 0) {
-div.bottom_info {
- padding-top: 2px;
-}
+  div.bottom_info {
+    padding-top: 2px;
+  }
 }
 img.img_bottom_info {
-	padding-bottom:2px;
+  padding-bottom:2px;
 }
 /**********************Страницы****************************/
 #middle_content_bottom {
-	padding-top:10px;
-	padding-left: 15px;
-	padding-bottom: 10px;
-	color:#28618f;
-	font-size:12px;
+  padding-top:10px;
+  padding-left: 15px;
+  padding-bottom: 10px;
+  color:#28618f;
+  font-size:12px;
 }
 #middle_content_part {
-	padding-top:10px;
-	padding-left: 12px;
-	padding-bottom: 10px;
-	color:#28618f;
-	font-size:12px;
+  padding-top:10px;
+  padding-left: 12px;
+  padding-bottom: 10px;
+  color:#28618f;
+  font-size:12px;
 }
 #middle_content_bottom a, #middle_content_part a {
-	color:#28618f;
-	font-size:12px;
-	padding-left: 5px;
-	padding-right: 5px;
+  color:#28618f;
+  font-size:12px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 #middle_content_part a {
-	font-size:12px;
+  font-size:12px;
 }
 #select_page {
-	background: #28618f;
-	height: 11px;
-	padding-left: 5px;
-	padding-right: 3px;
-	border-right: 1px solid #4879a2;
-	color:#ffffff;
-	text-align: center;
-	padding-top: 0px;
-	padding-bottom:2px;
-	font-size:11px;
+  background: #28618f;
+  height: 11px;
+  padding-left: 5px;
+  padding-right: 3px;
+  border-right: 1px solid #4879a2;
+  color:#ffffff;
+  text-align: center;
+  padding-top: 0px;
+  padding-bottom:2px;
+  font-size:11px;
 }
 /**********************************************************/
 #middle_bottom_left {
-	background: url(/admin-side/img/middle_bottom_left.gif) no-repeat bottom left;
-	height: 8px;
+  background: url(/admin-side/img/middle_bottom_left.gif) no-repeat bottom left;
+  height: 8px;
 }
 #middle_bottom_right {
-	background: url(/admin-side/img/middle_bottom_right.gif) no-repeat bottom right;
-	height: 8px;
-	_margin-top: -5px;
+  background: url(/admin-side/img/middle_bottom_right.gif) no-repeat bottom right;
+  height: 8px;
+  _margin-top: -5px;
 }
 #middle_bottom {
-	background: url(/admin-side/img/img_middle_right_line.gif) repeat-x bottom;
-	height: 8px;
-	margin-bottom: 20px;
+  background: url(/admin-side/img/img_middle_right_line.gif) repeat-x bottom;
+  height: 8px;
+  margin-bottom: 20px;
 }
 /*********************Нижняя часть************************/
-
 #page-footer-margin {
-	height: 34px;
-	clear: both;
-	overflow: hidden;
-	width: 100%;
+  height: 34px;
+  clear: both;
+  overflow: hidden;
+  width: 100%;
 }
 #footer {
-	/*margin-top: -34px;*/
-	height: 34px;
-	clear: both;
-	background:url(/admin-side/img/footer-back.gif) repeat-x top;
+  /*margin-top: -34px;*/
+  height: 34px;
+  clear: both;
+  background:url(/admin-side/img/footer-back.gif) repeat-x top;
 }
 #footer_left {
-	background: url(/admin-side/img/img_footer.jpg) repeat-y left;
-	height: 30px;
+  background: url(/admin-side/img/img_footer.jpg) repeat-y left;
+  height: 30px;
 }
 #footer_right {
-	background: url(/admin-side/img/bottom_log.jpg) no-repeat top right;
-	height: 20px;
-	padding-left: 33px;
-	padding-top: 10px;
+  background: url(/admin-side/img/bottom_log.jpg) no-repeat top right;
+  height: 20px;
+  padding-left: 33px;
+  padding-top: 10px;
 }
 #footer_right p, #footer_right a {
-	color: #113b5e;
+  color: #113b5e;
 }
 /*********************Форма ввода************************/
 table.component_form {
-	width:100%;
-	border-collapse:collapse;
-	border:1px solid #65a7dd;
-	border-top:none;
-	color:#004882;
-	font-size:12px;
+  width:100%;
+  border-collapse:collapse;
+  border:1px solid #65a7dd;
+  border-top:none;
+  color:#004882;
+  font-size:12px;
 }
 table#content table.component_form {
-	border:none;
+  border:none;
 }
 table.component_form td.title, table.component_form td.component_form, table.component_form td.title_img {
-	border-top:1px solid #65a7dd;
-	vertical-align:middle;
-	padding-top: 5px;
-	background: #cfe1ee;
+  border-top:1px solid #65a7dd;
+  vertical-align:middle;
+  padding-top: 5px;
+  background: #cfe1ee;
 }
 table.component_form td.title_img input {
-	_margin-top:3px;
-	margin-right: 13px;
+  _margin-top:3px;
+  margin-right: 13px;
 }
 html>body table.component_form td.title_img input {
   padding-bottom: 0px;
 }
 td.form_caption {
-	background:#cae2f5;
-	padding-left: 15px;
-	padding-top:5px;
-	padding-bottom: 5px;
-	height: 30px;
+  background:#cae2f5;
+  padding-left: 15px;
+  padding-top:5px;
+  padding-bottom: 5px;
+  height: 30px;
 }
 table.component_form p.comment_input {
-	float: left;
-	margin-top: 0px;
-	color:#4b7495;
-	font-size:12px;
-	font-weight: bold;
+  float: left;
+  margin-top: 0px;
+  color:#4b7495;
+  font-size:12px;
+  font-weight: bold;
 }
 div.form_contener p.comment_input {
-	color:#4b7495;
+  color:#4b7495;
 }
 p.comment_middle {
-	margin-top: 2px;
-	float: left;
+  margin-top: 2px;
+  float: left;
 }
 div.table_form {
-	width:100%;
-	height: 100%;
+  width:100%;
+  height: 100%;
 }
 input.checkbox {
-	margin-top:3px;
+  margin-top:3px;
 }
 td.form {
-	width: auto;
-
+  width: auto;
 }
 td.form div.shadow_right {
-	padding-right:7px;
-	height: 100%;
-	width: 100%;
+  padding-right:7px;
+  height: 100%;
+  width: 100%;
 }
 div.background_form {
-	background:#cae2f5;
-	height: 100%;
-	border-right:1px solid #65a7dd;
-	border-top:1px solid #65a7dd;
-	margin-top: -1px;
-	_margin-top: 0px;
+  background:#cae2f5;
+  height: 100%;
+  border-right:1px solid #65a7dd;
+  border-top:1px solid #65a7dd;
+  margin-top: -1px;
+  _margin-top: 0px;
 }
-
 /***********Ошибки***********/
 div.errormsg {
-	color:#e90b0b;
-	font-weight: bold;
-	font-family: Verdana;
-	font-size: 11px;
-	clear: left;
-	float: none;/*padding-left: 240px;*/
+  color:#e90b0b;
+  font-weight: bold;
+  font-family: Verdana;
+  font-size: 11px;
+  clear: left;
+  float: none;/*padding-left: 240px;*/
 }
 div.service_message {
-	color:#e90b0b;
-	font-weight: bold;
-	font-family: Verdana;
-	font-size: 14px;
-	clear: left;
-	float: none;
+  color:#e90b0b;
+  font-weight: bold;
+  font-family: Verdana;
+  font-size: 14px;
+  clear: left;
+  float: none;
 }
 textarea.info_text {
-	height:500px;
-	overflow-x:visible;
-	overflow: auto;
-	scrollbar-face-color:#f4f4f4;
+  height:500px;
+  overflow-x:visible;
+  overflow: auto;
+  scrollbar-face-color:#f4f4f4;
 }
 textarea.info_textarea {
-	overflow-x:visible;
-	overflow: auto;
-	scrollbar-face-color:#f4f4f4;
-	height:150px;
-	margin-top: 5px;
-	width: 100%;
+  overflow-x:visible;
+  overflow: auto;
+  scrollbar-face-color:#f4f4f4;
+  height:150px;
+  margin-top: 5px;
+  width: 100%;
 }
 /*select в полях формы*/
 select.info_text {
-	background:#ffffff;
-	color:#0e75a3;
-	font-size:11px;
-	font-family: Verdana;
-	height:20px;
+  background:#ffffff;
+  color:#0e75a3;
+  font-size:11px;
+  font-family: Verdana;
+  height:20px;
 }
 p.comment_simbol {
-	text-align:right;
-	float:right;
-	padding-right:2px;
-	_padding-right:0px;
-	margin-right:0px;
-	margin-top:3px;
-	color:#4b7495;
+  text-align:right;
+  float:right;
+  padding-right:2px;
+  _padding-right:0px;
+  margin-right:0px;
+  margin-top:3px;
+  color:#4b7495;
 }
 td.content a, p {
-	white-space:normal;
+  white-space:normal;
 }
 #content_componeta {
-	_width:100%;
+  _width:100%;
 }
 #outside_block {
-	width:100%;
-	padding-bottom:25px;
-	padding-top:15px;
+  width:100%;
+  padding-bottom:25px;
+  padding-top:15px;
 }
 table.data {
-	background:#cfe1ee;
-	border-top:1px solid #65a7dd;
+  background:#cfe1ee;
+  border-top:1px solid #65a7dd;
 }
 table.data h2 {
-	color:#4B7495;
-	font-weight: bold;
-	font-size: 13px;
-	padding: 10px;
+  color:#4B7495;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 10px;
 }
 table.data a {
-	color:#4B7495;
-	font-size:11px;
-	font-weight: bold;
+  color:#4B7495;
+  font-size:11px;
+  font-weight: bold;
 }
 table.data p.comment_input {
-	padding:10px;
+  padding:10px;
 }
 table.data td.input {
-	padding-left:5px;
-	padding-bottom:10px;
+  padding-left:5px;
+  padding-bottom:10px;
 }
 table.component_form a {
-	color:#4b7495;
-	font-weight:bold;
-	font-size:11px;
+  color:#4b7495;
+  font-weight:bold;
+  font-size:11px;
 }
 table.tree_form_table td.title {
-	border:none;
-	padding:0px;
-	margin:0px;
+  border:none;
+  padding:0px;
+  margin:0px;
 }
 div.form_contener p.comment_input, table.tree_form_table td.title p.comment_input, table.tree_form_table td.title a {
-	color:#4b7495;
+  color:#4b7495;
 }
 div.error_message {
-	border:1px solid #3583b7;
-	background-color:#fff;
-	padding: 20px;
-	font-family:verdana;
-	color:red;
+  border:1px solid #3583b7;
+  background-color:#fff;
+  padding: 20px;
+  font-family:verdana;
+  color:red;
 }
 span.color_blue {
-	color:#4b7495;
-	font-weight:bold;
+  color:#4b7495;
+  font-weight:bold;
 }
 div.border_10px {
-	padding:10px 10px 10px 10px;
-	width:100%;
+  padding:10px 10px 10px 10px;
+  width:100%;
 }
 html>body div.border_10px {
-	width:auto;
+  width:auto;
 }
 td.td_border_bottom {
-	_border:1px solid #7fb4df;
-	_border-left:none;
-	_border-right:none;
-	padding-right:20px;
+  _border:1px solid #7fb4df;
+  _border-left:none;
+  _border-right:none;
+  padding-right:20px;
 }
 p.text {
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-size: 12px;
-	margin:10px 0px 10px 0px;
-	color:#28618f;
-	font-weight:bold;
+  font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  margin:10px 0px 10px 0px;
+  color:#28618f;
+  font-weight:bold;
 }
 p.text a {
-	color:#4b7495;
+  color:#4b7495;
 }
 h3 a {
-	color:#3583b7;
+  color:#3583b7;
 }
 div.message_info {
-	margin-bottom:20px;
-	padding:8px;
-	padding-left:40px;
-	border:1px solid #65a7dd;
-	margin-top:5px;
-	background:#fff url(/admin-side/img/message_info.gif) 12px 50% no-repeat;
+  margin-bottom:20px;
+  padding:8px;
+  padding-left:40px;
+  border:1px solid #65a7dd;
+  margin-top:5px;
+  background:#fff url(/admin-side/img/message_info.gif) 12px 50% no-repeat;
 }
 div.message_attention {
-	/*margin-bottom:20px;*/
-	padding:10px;
-	padding-left:40px;
-	border:1px solid #65a7dd;
-	/*margin-top:5px;*/
-	background:#fff url(/admin-side/img/message_attention.gif) 15px 50% no-repeat;
+  /*margin-bottom:20px;*/
+  padding:10px;
+  padding-left:40px;
+  border:1px solid #65a7dd;
+  /*margin-top:5px;*/
+  background:#fff url(/admin-side/img/message_attention.gif) 15px 50% no-repeat;
 }
 div.menu_attention_inactive {
-	background:url(/admin-side/img/menu_attention_inactive.gif) 0px 3px no-repeat;
-	padding-left:10px;
+  background:url(/admin-side/img/menu_attention_inactive.gif) 0px 3px no-repeat;
+  padding-left:10px;
 }
 div.menu_attention_active {
-	background:url(/admin-side/img/menu_attention_active.gif) 0px 5px no-repeat;
-	padding-left:30px;
+  background:url(/admin-side/img/menu_attention_active.gif) 0px 5px no-repeat;
+  padding-left:30px;
 }
 .table_contact td.title {
-	border:none;
+  border:none;
 }
 td.link {
-	padding-right:25px;
+  padding-right:25px;
 }
 td.link a {
-	color:#4b7495;
-	font-size:11px;
-	font-weight:bold;
+  color:#4b7495;
+  font-size:11px;
+  font-weight:bold;
 }
 table.info_new_page {
-	position:relative;
-	border-right:1px solid #65a7dd;
-	margin:10px 10px 10px 0px;
+  position:relative;
+  border-right:1px solid #65a7dd;
+  margin:10px 10px 10px 0px;
 }
 table.info_new_page th {
-	background:#3583b7;
-	color:#ffffff;
-	padding:5px 0px 5px 0px;
-	border:1px solid #65a7dd;
+  background:#3583b7;
+  color:#ffffff;
+  padding:5px 0px 5px 0px;
+  border:1px solid #65a7dd;
 }
 table.info_new_page td {
-	background:#ffffff;
-	padding:5px 0px 5px 7px;
-	color:#004882;
-	border:1px solid #65a7dd;
+  background:#ffffff;
+  padding:5px 0px 5px 7px;
+  color:#004882;
+  border:1px solid #65a7dd;
 }
 /**** #TABLE_TREE definitions ****/
-
-
 #table_tree {
-	background:#FFFFFF;
-	/*width:100%;
-	width:expression((document.documentElement.clientWidth || document.body.clientWidth) < 750? "750px": "auto");*/
-	border-right:1px solid #65a7dd;
+  background:#FFFFFF;
+  /*width:100%;
+  width:expression((document.documentElement.clientWidth || document.body.clientWidth) < 750? "750px": "auto");*/
+  border-right:1px solid #65a7dd;
 }
 #table_tree td {
-	color:#4b7495;
-	font-size:11px;
-	border:1px solid #65a7dd;
-	/*font-weight:bold;*/
+  color:#4b7495;
+  font-size:11px;
+  border:1px solid #65a7dd;
+  /*font-weight:bold;*/
 }
-
 /**** base tree ***/
 .divTree div.element_0 {
-	/*margin-left:0;*/
-	background: url(/admin-side/img/imgForTree/page.gif) no-repeat top left;
-	text-align: left;
-	width: auto;
-	padding: 0 0 4px 0;
+  /*margin-left:0;*/
+  background: url(/admin-side/img/imgForTree/page.gif) no-repeat top left;
+  text-align: left;
+  width: auto;
+  padding: 0 0 4px 0;
 }
 .divTree div.level_0 {
-	background: url("/admin-side/img/imgForTree/folderopen0.gif") top left no-repeat;
+  background: url("/admin-side/img/imgForTree/folderopen0.gif") top left no-repeat;
 }
 .divTree div.new_level_close {
-	background: url(/admin-side/img/imgForTree/img_level1.gif) no-repeat 7px 0px;
-	padding: 2px 0 0 20px;
+  background: url(/admin-side/img/imgForTree/img_level1.gif) no-repeat 7px 0px;
+  padding: 2px 0 0 20px;
 }
 .divTree div.new_level_close_last {
-	background: url(/admin-side/img/imgForTree/img_level1_last.gif) no-repeat 7px 0px;
-	padding: 2px 0 0 20px;
+  background: url(/admin-side/img/imgForTree/img_level1_last.gif) no-repeat 7px 0px;
+  padding: 2px 0 0 20px;
 }
 .divTree div.new_level_background {
-	background: url(/admin-side/img/imgForTree/img_new_level.gif) 7px 0px repeat-y;
+  background: url(/admin-side/img/imgForTree/img_new_level.gif) 7px 0px repeat-y;
 }
 .divTree div.folder_plus {
-	background: url(/admin-side/img/imgForTree/level_closed.gif)  no-repeat 3px 0px;
-	padding: 2px 0 0px 20px;
+  background: url(/admin-side/img/imgForTree/level_closed.gif)  no-repeat 3px 0px;
+  padding: 2px 0 0px 20px;
 }
 /* ++ */
 .divTree div.title {
-	padding-bottom: 4px;
+  padding-bottom: 4px;
 }
-
 .divTree div.folder_mines {
-	background: url(/admin-side/img/imgForTree/level000_new.gif) no-repeat 3px 0px;
-	padding: 2px 0 0 20px;
-	margin-bottom: 0px;
+  background: url(/admin-side/img/imgForTree/level000_new.gif) no-repeat 3px 0px;
+  padding: 2px 0 0 20px;
+  margin-bottom: 0px;
 }
 .divTree div.folder_close {
-	background: url(/admin-side/img/imgForTree/folder_close.gif) no-repeat 0 -1px;
-	text-align: left;
-	padding-bottom: 3px;
+  background: url(/admin-side/img/imgForTree/folder_close.gif) no-repeat 0 -1px;
+  text-align: left;
+  padding-bottom: 3px;
 }
-
 /**** noaccess tree ******/
 .divTree div.noaccess_element_0 {
-	/* TODO: image missing */
-	background: url(/admin-side/img/imgForTree/inactive_element.gif) no-repeat 0 2px;
+  /* TODO: image missing */
+  background: url(/admin-side/img/imgForTree/inactive_element.gif) no-repeat 0 2px;
 }
 .divTree div.noaccess_new_level{
-	/* TODO: image missing */
-	background: url(/admin-side/img/imgForTree/inactive_element.gif) no-repeat 0px -2px;
+  /* TODO: image missing */
+  background: url(/admin-side/img/imgForTree/inactive_element.gif) no-repeat 0px -2px;
 }
 .divTree div.noaccess_new_level_open_last  {
-	background: url(/admin-side/img/imgForTree/noaccess_inactive_folder_m.gif) no-repeat 7px 0px;
+  background: url(/admin-side/img/imgForTree/noaccess_inactive_folder_m.gif) no-repeat 7px 0px;
 }
 .divTree div.noaccess_new_level_close {
-	background: url(/admin-side/img/imgForTree/noaccess_new_level.gif) no-repeat 7px 0px;
+  background: url(/admin-side/img/imgForTree/noaccess_new_level.gif) no-repeat 7px 0px;
 }
 .divTree div.noaccess_new_level_close_last {
-	background: url(/admin-side/img/imgForTree/noaccess_new_level_close.gif) no-repeat 7px 0;
+  background: url(/admin-side/img/imgForTree/noaccess_new_level_close.gif) no-repeat 7px 0;
 }
 .divTree div.noaccess_new_level_open   {
-	background: url(/admin-side/img/imgForTree/noaccess_inactive_folder_o.gif) no-repeat 3px 0px;
+  background: url(/admin-side/img/imgForTree/noaccess_inactive_folder_o.gif) no-repeat 3px 0px;
 }
 .divTree div.noaccess_level_0 {
-	background: url(/admin-side/img/imgForTree/noaccess_inactive_fold.gif) no-repeat 0 4px;
+  background: url(/admin-side/img/imgForTree/noaccess_inactive_fold.gif) no-repeat 0 4px;
 }
 .divTree div.noaccess_folder_plus {
-	background: url(/admin-side/img/imgForTree/noaccess_folder_plus.gif)  no-repeat 3px 0px;
+  background: url(/admin-side/img/imgForTree/noaccess_folder_plus.gif)  no-repeat 3px 0px;
 }
 .divTree div.noaccess_folder_mines {
-	background: url(/admin-side/img/imgForTree/noaccess_inactive_level000.gif)  no-repeat 3px 0px;
+  background: url(/admin-side/img/imgForTree/noaccess_inactive_level000.gif)  no-repeat 3px 0px;
 }
 .divTree div.noaccess_folder_close {
-	background: url(/admin-side/img/imgForTree/noaccess_folder_close.gif) no-repeat 0  -1px;
+  background: url(/admin-side/img/imgForTree/noaccess_folder_close.gif) no-repeat 0  -1px;
 }
 /**** /noaccess tree ******/
-
 /**** inactive tree ******/
 .divTree div.inactive_level_0{
-	background: url(/admin-side/img/imgForTree/inactive_fold.gif) no-repeat 0 4px;
+  background: url(/admin-side/img/imgForTree/inactive_fold.gif) no-repeat 0 4px;
 }
 .divTree div.inactive_new_level {
-	background: url(/admin-side/img/imgForTree/inactive_level000.gif) no-repeat 0px -2px;
+  background: url(/admin-side/img/imgForTree/inactive_level000.gif) no-repeat 0px -2px;
 }
 .divTree div.inactive_new_level_close {
-	background: url(/admin-side/img/imgForTree/inactive_new_level.gif) no-repeat 7px 0px;
+  background: url(/admin-side/img/imgForTree/inactive_new_level.gif) no-repeat 7px 0px;
 }
 .divTree div.inactive_new_level_close_last {
-	background: url(/admin-side/img/imgForTree/inactive_level_close.gif) no-repeat 7px 0;
+  background: url(/admin-side/img/imgForTree/inactive_level_close.gif) no-repeat 7px 0;
 }
 .divTree div.inactive_new_level_open {
-	background: url(/admin-side/img/imgForTree/inactive_folder_o.gif) no-repeat 7px 0px;
+  background: url(/admin-side/img/imgForTree/inactive_folder_o.gif) no-repeat 7px 0px;
 }
 .divTree div.inactive_element_0 {
-	background: url(/admin-side/img/imgForTree/inactive_element0.gif) no-repeat top left;
+  background: url(/admin-side/img/imgForTree/inactive_element0.gif) no-repeat top left;
 }
 .divTree div.inactive_folder_plus {
-	background: url(/admin-side/img/imgForTree/inactive_folder_plus.gif)  no-repeat 3px 0px;
+  background: url(/admin-side/img/imgForTree/inactive_folder_plus.gif)  no-repeat 3px 0px;
 }
 .divTree div.inactive_folder_mines {
-	background: url(/admin-side/img/imgForTree/inactive_level000.gif)  no-repeat 0 0px;
+  background: url(/admin-side/img/imgForTree/inactive_level000.gif)  no-repeat 0 0px;
 }
 .divTree div.inactive_folder_close {
-	background: url(/admin-side/img/imgForTree/inactive_folder_close.gif) no-repeat 0 -1px;
+  background: url(/admin-side/img/imgForTree/inactive_folder_close.gif) no-repeat 0 -1px;
 }
 /**** /inactive tree ******/
-
 /* Прочие стили, общие для всех деревьев */
 .divTree div.level_0 div.title {
-	padding-bottom:2px;
-	padding-top:3px;
+  padding-bottom:2px;
+  padding-top:3px;
 }
-
 /* Переопределения отрисовки дерева для table_tree (деревья в правой части) */
-
 #table_tree div.new_level,
 #table_tree div.new_level div.title,
 #table_tree div.new_level_close,
@@ -1152,447 +1126,443 @@ table.info_new_page td {
 #table_tree div.new_level_open,
 #table_tree div.new_level_open_last,
 #table_tree .title {
-	padding-top:0px;
+  padding-top:0px;
 }
-
 /* Переопределения отрисовки дерева для middle_left_tree (дерево в левой части) */
 #middle_left_tree div.element_0 {
-	padding: 2px 0 0 0px;
-	width: auto;
+  padding: 2px 0 0 0px;
+  width: auto;
 }
-
 /******************/
 #table_tree .title, #table_tree .title a {
-	color:#4b7495;
-	font-size:12px;
+  color:#4b7495;
+  font-size:12px;
 }
 #table_tree th, #table_permissions th {
-	background:#3583b7;
-	color:#FFFFFF;
-	text-align:right;
-	height:30px;
-	padding:0px 0px 0px 0px;
-	font-size:12px;
-	border:1px solid #65a7dd;
+  background:#3583b7;
+  color:#FFFFFF;
+  text-align:right;
+  height:30px;
+  padding:0px 0px 0px 0px;
+  font-size:12px;
+  border:1px solid #65a7dd;
 }
 .info_privileges {
-	margin-left:20px;
-	_width:100%;
+  margin-left:20px;
+  _width:100%;
 }
 #table_tree .info_privileges table {
 }
 #table_tree .info_privileges table td.container_checkbox {
-	border:1px solid #dcedfa;
-	border-left:none;
-	border-top:none;
-	vertical-align:top;
-	width:140px;
-	padding:5px 5px 0px 5px;
-	font-weight:normal;
+  border:1px solid #dcedfa;
+  border-left:none;
+  border-top:none;
+  vertical-align:top;
+  width:140px;
+  padding:5px 5px 0px 5px;
+  font-weight:normal;
 }
 #table_tree .info_privileges table td div {
-	padding-bottom:7px;
+  padding-bottom:7px;
 }
 #table_tree .info_privileges table td div input {
-	margin-right:3px;
+  margin-right:3px;
 }
 #table_tree .info_privileges table .title_privileges {
-	border:1px solid #dcedfa;
-	padding-top:5px;
-	border-left:none;
-	border-top:none;
-	vertical-align:top;
+  border:1px solid #dcedfa;
+  padding-top:5px;
+  border-left:none;
+  border-top:none;
+  vertical-align:top;
 }
 #table_permissions th {
-	height:30px;
+  height:30px;
 }
 #table_permissions td {
-	color:#4b7495;
-	font-size:12px;
-	font-weight:bold;
-	height:30px;
-	border:1px solid #dcedfa;
-	background:#FFFFFF;
-	vertical-align:middle;
-	text-align:center;
+  color:#4b7495;
+  font-size:12px;
+  font-weight:bold;
+  height:30px;
+  border:1px solid #dcedfa;
+  background:#FFFFFF;
+  vertical-align:middle;
+  text-align:center;
 }
 #table_permissions td.text {
-	padding-left:20px;
-	text-align:left;
+  padding-left:20px;
+  text-align:left;
 }
 #table_permissions th#title_permissions {
-	text-align:left;
-	padding-left:10px;
+  text-align:left;
+  padding-left:10px;
 }
 #container_table_permissions {
-	margin-bottom:20px;
-	border:1px solid #639ac6;
-	border-top:none;
+  margin-bottom:20px;
+  border:1px solid #639ac6;
+  border-top:none;
 }
 #container_select_user {
-	width:100%;
-	margin-bottom:20px;
-	border:1px solid #65a7dd;
+  width:100%;
+  margin-bottom:20px;
+  border:1px solid #65a7dd;
 }
 #container_select_user td.select_user {
-	border-left:none;
-	text-align:right;
-	padding-right:20px;
+  border-left:none;
+  text-align:right;
+  padding-right:20px;
 }
 #container_select_user td.select_sait {
-	width:25%;
-	border-left:none;
-	text-align:left;
-	text-align:right;
-	padding-right:20px;
+  width:25%;
+  border-left:none;
+  text-align:left;
+  text-align:right;
+  padding-right:20px;
 }
 #container_select_user #container_button_select {
-	width:25%;
-	padding-bottom:10px;
-	text-align:right;
-	padding-right:20px;
-	padding-top:10px;
+  width:25%;
+  padding-bottom:10px;
+  text-align:right;
+  padding-right:20px;
+  padding-top:10px;
 }
 .title_select_user {
-	width:50%;
-	border-right:none;
-	border-left:none;
+  width:50%;
+  border-right:none;
+  border-left:none;
 }
 #table_tree td.container_link {
-	width:400px;
-	border:none;
-	border-bottom:1px solid #dcedfa;
-	padding:5px 0px 5px 10px;
-	font-weight:normal;
-	border-left:none;
+  width:400px;
+  border:none;
+  border-bottom:1px solid #dcedfa;
+  padding:5px 0px 5px 10px;
+  font-weight:normal;
+  border-left:none;
 }
 #table_tree td.container_link a {
-	color:#0e75a3;
-	font-size:11px;
-	font-weight:normal;
+  color:#0e75a3;
+  font-size:11px;
+  font-weight:normal;
 }
 td.checked_block {
-	background:#e8f4fd;
+  background:#e8f4fd;
 }
 /**
  * Update CSS: 26.11.2008, 16:32:51.
  */
 div.form_contener {
-	width: 230px;
-	float: left;
-	overflow: hidden;
+  width: 230px;
+  float: left;
+  overflow: hidden;
 }
 div.wrapper_info_content {
-	width: 100%;
-	float: right;
-	margin-left: -250px;
-	padding-bottom: 0px;
+  width: 100%;
+  float: right;
+  margin-left: -250px;
+  padding-bottom: 0px;
 }
 div.input_info {
-	overflow: hidden;
-	padding-right: 6px;
+  overflow: hidden;
+  padding-right: 6px;
 }
 div.input_info input {
-	margin-top:2px;
-	_margin-top:0px;
+  margin-top:2px;
+  _margin-top:0px;
 }
 @media all and (min-width: 0) {
-div.input_info input {
- margin-top:0px;
-}
+  div.input_info input {
+   margin-top:0px;
+  }
 }
 /*Для oprea и ff*/
 html>body div.input_info_content {
-	/* width:100%; */
-	padding-left:10px;
-	margin-right: 15px;
+  /* width:100%; */
+  padding-left:10px;
+  margin-right: 15px;
 }
 input {
-	background: #ffffff;
-	height: 20px;
-	color:#0e75a3;
-	font-size:11px;
-	/*padding-top:2px;*/
-	/*padding-left:2px;*/
-	border: 1px solid #65a7dd;
-	margin: 0;
+  background: #ffffff;
+  height: 20px;
+  color:#0e75a3;
+  font-size:11px;
+  /*padding-top:2px;*/
+  /*padding-left:2px;*/
+  border: 1px solid #65a7dd;
+  margin: 0;
 }
 input[type=image] {
-	border: none;
-	height: auto;
+  border: none;
+  height: auto;
 }
 textarea {
-	background: #ffffff;
-	border: 1px solid #65a7dd;
-	color:#0e75a3;
-	font-size:11px;
-	font-family: Verdana;
-	width: 100%%;
-	margin: 0;
-	position: relative;
-	float: left;
- 	overflow: hidden;	
+  background: #ffffff;
+  border: 1px solid #65a7dd;
+  color:#0e75a3;
+  font-size:11px;
+  font-family: Verdana;
+  width: 100%%;
+  margin: 0;
+  position: relative;
+  float: left;
+  overflow: hidden;
 }
 input.info_text {
-	width: 99%;
+  width: 99%;
 }
 input.info_file {
-	_border: 1px solid #65a7dd;
-	width: 30%;
-	padding-right: 10px;
+  _border: 1px solid #65a7dd;
+  width: 30%;
+  padding-right: 10px;
 }
 input.short_text {
-	width: 68px;
-	float: left;/*_margin-left: 4px;*/
+  width: 68px;
+  float: left;/*_margin-left: 4px;*/
 }
 #table_permissions td.mess_attention {
-	background:#FFF url(/admin-side/img/attention.gif) no-repeat 20px 5px;
-	text-align:left;
-	padding-left:45px;
+  background:#FFF url(/admin-side/img/attention.gif) no-repeat 20px 5px;
+  text-align:left;
+  padding-left:45px;
 }
 /**
  * Table for admins
  */
 table.admin-table td.title {
-	font-size: 12px;
-	font-weight: bold;
-	color: #fff;
-	padding-top: 3px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  padding-top: 3px;
 }
 /**
  * Update CSS: 20.12.2008, 21:17:14.
  */
 .namePage {
-	padding-left: 24px;
-	padding-top: 4px;
-	margin-bottom: 5px
+  padding-left: 24px;
+  padding-top: 4px;
+  margin-bottom: 5px
 }
 .inputPage {
-	margin-left: 25px;
-	font-weight: normal;
-	margin-bottom: 3px;
+  margin-left: 25px;
+  font-weight: normal;
+  margin-bottom: 3px;
 }
 .nameModule {
-	margin-top: 5px;
-	margin-left: 25px;
-	margin-bottom: 5px;
+  margin-top: 5px;
+  margin-left: 25px;
+  margin-bottom: 5px;
 }
 .nameModule img {
-	position: relative;
-	top: 3px;
-	left: 3px;
+  position: relative;
+  top: 3px;
+  left: 3px;
 }
 .inputPage input {
-	margin-right: 10px;
+  margin-right: 10px;
 }
-/*** =20.01.2009= 
+/*** =20.01.2009=
 ***/
 #title_search {
-	color: #FFF;
-	padding: 7px 0 7px 15px;
-	font-weight: bold;
-	font-size: 12px;
-	background:#3583b7;
-	border: 1px solid #3583b7;
+  color: #FFF;
+  padding: 7px 0 7px 15px;
+  font-weight: bold;
+  font-size: 12px;
+  background:#3583b7;
+  border: 1px solid #3583b7;
 }
 #panel_search {
-	background: #FFF;
-	border: 1px solid #3583b7;
-	padding: 8px 0 15px 15px;
+  background: #FFF;
+  border: 1px solid #3583b7;
+  padding: 8px 0 15px 15px;
 }
 p {
-	color: #004882;
-	font-size: 12px;
-	margin-bottom: 7px;
+  color: #004882;
+  font-size: 12px;
+  margin-bottom: 7px;
 }
-
 #content #info_content {
-	padding: 0;
+  padding: 0;
 }
 /*** Cool style sve ***/
 .component_new_form {
-	background: #D4E7F6;
+  background: #D4E7F6;
 }
 .component_new_form td, #table_tree .contentTree .component_new_form td {
-	border: 1px solid #8dbee4;
-	vertical-align: top;
-	color: #4B7495;
+  border: 1px solid #8dbee4;
+  vertical-align: top;
+  color: #4B7495;
 }
 .component_new_form td table td, #table_tree .contentTree .component_new_form td table td {
-	border: none;
-	padding: 0 10px 0 0;
+  border: none;
+  padding: 0 10px 0 0;
 }
 .component_new_form td table td.mceIframeContainer,
 .component_new_form td table td.mceStatusbar {
-	padding: 0;
+  padding: 0;
 }
 .component_new_form td.title p, .head-colunm, .row-header, #table_tree .contentTree .component_new_form td.title p {
-	color: #3583B7;
-	font-size: 12px;
-	font-weight: bold;
-	padding-top: 3px;
-	padding: 10px 0px;
+  color: #3583B7;
+  font-size: 12px;
+  font-weight: bold;
+  padding-top: 3px;
+  padding: 10px 0px;
 }
 .component_new_form td.title, #table_tree .contentTree .component_new_form td.title {
-	background: #3583B7;
-	vertical-align:middle;
+  background: #3583B7;
+  vertical-align:middle;
 }
 .component_new_form td.title p, #table_tree .contentTree .component_new_form td.title p {
-	color: #FFF;
+  color: #FFF;
 }
 .component_new_form .row-header, #table_tree .contentTree .component_new_form .row-header {
-	background: #E8F4FD;
+  background: #E8F4FD;
 }
 .component_new_form .row-header, #table_tree .contentTree .component_new_form .row-header {
-	padding: 5px 10px;
-	background: #E8F4FD;
+  padding: 5px 10px;
+  background: #E8F4FD;
 }
 .head-colunm {
-	padding: 5px 0;
+  padding: 5px 0;
 }
 .component_new_form div.wrapper_info_content {
-	margin-left: 0;
+  margin-left: 0;
 }
 .component_new_form .text-head-column {
-	padding-bottom: 10px;
+  padding-bottom: 10px;
 }
 .component_new_form p {
-	display: inline;
-	float: none;
+  display: inline;
+  float: none;
 }
 .component_new_form .form_contener {
-	font-weight: normal;
+  font-weight: normal;
 }
 .component_new_form div.form_contener {
-	width: 120px;
-	padding: 3px 0 0 0;
+  width: 120px;
+  padding: 3px 0 0 0;
 }
 .component_new_form table td td.title, #table_tree .contentTree .component_new_form table td td.title {
-	background: #D4E7F6;
+  background: #D4E7F6;
 }
 .component_new_form table td td.title p, #table_tree .contentTree .component_new_form table td td.title p {
-	color: #4B7495;
-	font-weight: normal;
+  color: #4B7495;
+  font-weight: normal;
 }
 a {
-	color: #4B7495;
+  color: #4B7495;
 }
 .component_new_form td table .no-padding {
-	padding: 0;
+  padding: 0;
 }
 .component_new_form td.container-for-line, #table_tree .contentTree .component_new_form td.container-for-line {
-	padding: 7px 8px 5px 8px;
-	width: auto;
+  padding: 7px 8px 5px 8px;
+  width: auto;
 }
 .info_file {
-	width: 200px;
+  width: 200px;
 }
 .form-line {
-	padding-bottom: 5px;
+  padding-bottom: 5px;
 }
 .rft-component {
-	padding-top: 5px;
-	position: relative;
+  padding-top: 5px;
+  position: relative;
 }
 div.form_contener {
-	color: #4B7495;
-	font: normal 12px Arial, Helvetica, sans-serif;
+  color: #4B7495;
+  font: normal 12px Arial, Helvetica, sans-serif;
 }
 div.input_info input.checkbox {
-	float: left;
-	margin: 0px 3px 0px 5px;
+  float: left;
+  margin: 0px 3px 0px 5px;
 }
 .component_new_form td table .td-for-label {
-	width: 70px;
-	padding: 0;
+  width: 70px;
+  padding: 0;
 }
 .link-for-file {
-	margin-top:7px;
+  margin-top:7px;
 }
 .button-for-polls {
-	text-align: center;
-	padding: 10px 0;
+  text-align: center;
+  padding: 10px 0;
 }
 /*** 29.07.2009 ***/
-
 .styleForButtonApply {
-	/*TODO: закомментировать background, прописать картинку в шаблоны */
-	background: #D4E7F6 url(/admin-side/img/buttons/apply.gif) no-repeat top;
-	width: 122px;
-	height: 23px;
-	text-indent: -200px;
-	vertical-align: top;
-	overflow:hidden;
-	border: none;
-	cursor: pointer;
-	font-size:0;
+  /*TODO: закомментировать background, прописать картинку в шаблоны */
+  background: #D4E7F6 url(/admin-side/img/buttons/apply.gif) no-repeat top;
+  width: 122px;
+  height: 23px;
+  text-indent: -200px;
+  vertical-align: top;
+  overflow:hidden;
+  border: none;
+  cursor: pointer;
+  font-size:0;
 }
 .input_info {
-	font-weight: normal;
+  font-weight: normal;
 }
 .multicheckbox {
-	overflow: hidden;
-	clear: both;
+  overflow: hidden;
+  clear: both;
 }
 .component_new_form div.titleMulticheckbox {
-	width: auto;
-	margin-bottom: 4px;
+  width: auto;
+  margin-bottom: 4px;
 }
 .form .info_new_page {
-	border: 1px solid #65a7dd;
+  border: 1px solid #65a7dd;
 }
 .form .info_new_page td {
-	border-bottom: 1px solid #65a7dd;
-	vertical-align: middle;
-	padding: 5px 0 3px 5px;
+  border-bottom: 1px solid #65a7dd;
+  vertical-align: middle;
+  padding: 5px 0 3px 5px;
 }
 .comment {
-	display: block;
-	margin-top: 3px;
-	float: left;
+  display: block;
+  margin-top: 3px;
+  float: left;
 }
 .comment a {
 }
 .linkGo {
-	float:right;
-	margin-top: 3px;
+  float:right;
+  margin-top: 3px;
 }
 .contentTD {
-	padding: 5px 10px;
+  padding: 5px 10px;
 }
 /*** 22/09/2009 ***/
 .textLabel {
-	margin-bottom: 10px;
-	font-size: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
 }
 .containerForMultiSelect {
-	width: 100%;
-	text-align: center;
-	margin-bottom: 10px;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 10px;
 }
 .containerForMultiSelect table {
-	width: 70%;
-	margin: 0 auto;
+  width: 70%;
+  margin: 0 auto;
 }
 .containerForMultiSelect td {
-	vertical-align: middle;
+  vertical-align: middle;
 }
 .tdForSelect {
-	width: 40%;
-	text-align: center;
+  width: 40%;
+  text-align: center;
 }
 .multiSelect {
-	width: 200px;
-	height: 200px;
-	border:1px solid #3583B7;
-	margin-bottom: 5px;
-	padding-left: 10px;
+  width: 200px;
+  height: 200px;
+  border:1px solid #3583B7;
+  margin-bottom: 5px;
+  padding-left: 10px;
 }
 .multiSelect option {
-	background:#ffffff;
-	font-size: 12px;
-	color:#004882;
-	padding: 2px 0;
+  background:#ffffff;
+  font-size: 12px;
+  color:#004882;
+  padding: 2px 0;
 }
 @-moz-document url-prefix() {
 .multiSelect {
@@ -1603,436 +1573,429 @@ div.input_info input.checkbox {
 }
 }
 .forButton {
-	width: 10%;
-	vertical-align: middle;
-	text-align: center;
+  width: 10%;
+  vertical-align: middle;
+  text-align: center;
 }
 div#history small {
-	color:#1a85b4;
+  color:#1a85b4;
 }
 div#history small a {
-	font-size:9px;
-	color:#0973a1;
-	font-weight: bold;
+  font-size:9px;
+  color:#0973a1;
+  font-weight: bold;
 }
 .checkboxStyle {
-	float: left;
-	margin-right: 10px;
+  float: left;
+  margin-right: 10px;
 }
 div.titleTH, .wrapper-table th {
-	background:#3583b7;
-	border-bottom:1px solid #7fb4df;
-	color:#fff;
-	font-size:12px;
-	font-weight: bold;
-	padding: 6px 0 8px 10px;
+  background:#3583b7;
+  border-bottom:1px solid #7fb4df;
+  color:#fff;
+  font-size:12px;
+  font-weight: bold;
+  padding: 6px 0 8px 10px;
 }
 .userList {
-	text-align: left;
-	width: 200px;
+  text-align: left;
+  width: 200px;
 }
 .permissionsList {
-	vertical-align: top;
-	text-align: left;
-	padding: 0 10px;
+  vertical-align: top;
+  text-align: left;
+  padding: 0 10px;
 }
 .permissionsList table {
-	width: 100%;
-	border:1px solid #65A7DD;
+  width: 100%;
+  border:1px solid #65A7DD;
 }
 .fontBold {
-	font-weight: bold;
-	padding: 5px 10px;
-	border-top: 1px solid #65A7DD;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-top: 1px solid #65A7DD;
 }
 .lineInfo {
-	margin-bottom: 7px;
+  margin-bottom: 7px;
 }
 .textBold {
-	margin-bottom: 10px;
-	font-weight: bold;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
 td.alignTop {
-	vertical-align: top;
+  vertical-align: top;
 }
 /*** =tableTree= ***/
 #table_tree .contentTree {
-	margin: 10px 0 10px 10px;
+  margin: 10px 0 10px 10px;
 }
 #table_tree .contentTree td {
-	border: none;
-	padding: 0;
-	vertical-align: bottom;
+  border: none;
+  padding: 0;
+  vertical-align: bottom;
 }
 #table_tree .contentTree td .floatLeft {
-	float: left;
+  float: left;
 }
 #table_tree .contentTree td .border-bottom {
-	border-bottom: 1px solid #CFE1EE;
-	overflow: hidden;
-	_display: inline-block;
-	padding: 1px 0;
+  border-bottom: 1px solid #CFE1EE;
+  overflow: hidden;
+  _display: inline-block;
+  padding: 1px 0;
 }
 #table_tree .contentTree .linkInTableTree {
-	padding:0;
-	width: 110px;
-	text-align: right;
-	float: right;
-	white-space: nowrap;
+  padding:0;
+  width: 110px;
+  text-align: right;
+  float: right;
+  white-space: nowrap;
 }
 #table_tree .contentTree .noBorder {
-	border: none;
+  border: none;
 }
 #table_tree .styleForTdWidthTree {
-	border-bottom:1px solid #65A7DD;
-	vertical-align: top;
-	padding: 10px;
+  border-bottom:1px solid #65A7DD;
+  vertical-align: top;
+  padding: 10px;
 }
-
 .divConteinerTable {
-	width: 100%;
-	padding: 10px 0 0 0;
-	margin: 0 0 20px 0;
+  width: 100%;
+  padding: 10px 0 0 0;
+  margin: 0 0 20px 0;
 }
 .divConteinerTable #content {
-	padding-top: 0px;
-	margin-top: 0px;
+  padding-top: 0px;
+  margin-top: 0px;
 }
 .linkAccess {
-	padding:0 0 7px 0;
-	font-weight: bold;
-	color:#4a74ad;
-	font-size: 12px;
+  padding:0 0 7px 0;
+  font-weight: bold;
+  color:#4a74ad;
+  font-size: 12px;
 }
 #table_tree .styleForTdWidthTree .td-width-title {
-	border: none;
-	border-bottom: 1px solid #cfe1ee;
+  border: none;
+  border-bottom: 1px solid #cfe1ee;
 }
 .div-left-info-tree {
-	float: left;
-	padding-top: 4px;
+  float: left;
+  padding-top: 4px;
 }
 .div-right-info-tree {
-	float: right;
-	text-align: right;
-	padding: 4px 5px 0 0;
+  float: right;
+  text-align: right;
+  padding: 4px 5px 0 0;
 }
 .div-title-node {
-	margin-left:20px;
-	padding:0 0 2px;
+  margin-left:20px;
+  padding:0 0 2px;
 }
 /* Очень интересный стиль. может быть он всё-таки #middle_left_tree ?? */
 #middle_left div.new_level div.title {
-	padding-bottom: 0;
-	padding-top: 3px;
+  padding-bottom: 0;
+  padding-top: 3px;
 }
-
 .new-line, .new-line table, .new-line table td {
-	width: 100%;
-	overflow: hidden;
+  width: 100%;
+  overflow: hidden;
 }
 .folder {
-	margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 /*** =calendar= ***/
 .calendar {
-	width: 210px;
-	margin: 0 0 12px 20px;
+  width: 210px;
+  margin: 0 0 12px 20px;
 }
 .calendar th {
-	background: #3583B7;
-	color: #FFF;
-	font-weight: bold;
-	padding: 4px 3px;
-	border: 1px solid #65A7DD;
-	text-align: center;
+  background: #3583B7;
+  color: #FFF;
+  font-weight: bold;
+  padding: 4px 3px;
+  border: 1px solid #65A7DD;
+  text-align: center;
 }
 .calendar td {
-	background:#FFF;
-	border: 1px solid #D4E7F6;
-	padding: 3px;
-	text-align: center;
-	color: #3583B7;
+  background:#FFF;
+  border: 1px solid #D4E7F6;
+  padding: 3px;
+  text-align: center;
+  color: #3583B7;
 }
 .calendar a {
-	font-weight: bold;
+  font-weight: bold;
 }
 .calendar .current_day {
-	color: #65A7DD;
-	font-weight: bold;
-	background: #D4E7F6;
+  color: #65A7DD;
+  font-weight: bold;
+  background: #D4E7F6;
 }
 #middle_left_tree .current_day a {
-	color: #65A7DD;
+  color: #65A7DD;
 }
 .calendar .select_day {
-	background: #65A7DD;
+  background: #65A7DD;
 }
 #middle_left_tree .select_day a {
-	color: #fff;
+  color: #fff;
 }
 #middle_left_tree .select_date a {
-	color: #FFF;
-	text-decoration: none;
-	font-weight: bold;
-	font-family: Arial, Helvetica, sans-serif;
-	color: #D4E7F6;
+  color: #FFF;
+  text-decoration: none;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #D4E7F6;
 }
-
 .line_select {
-	overflow: hidden;
-	width: 100%;
+  overflow: hidden;
+  width: 100%;
 }
 .line_select .month {
-	width: 100px;
+  width: 100px;
 }
 .line_select .year {
-	width: 65px;
+  width: 65px;
 }
 .select_date {
-	padding: 5px 0 2px;
-	text-align: center;
-	color: #D4E7F6;
-	background: #65A7DD;
-	margin-top: 7px;
-	_width: 101%;
+  padding: 5px 0 2px;
+  text-align: center;
+  color: #D4E7F6;
+  background: #65A7DD;
+  margin-top: 7px;
+  _width: 101%;
 }
 .border_table {
-	border: 1px solid #65A7DD;
-	_width: 101%;
+  border: 1px solid #65A7DD;
+  _width: 101%;
 }
 .button_go {
-	float: right;
+  float: right;
 }
-
 /*"Таблица" модулей и их привилегий в редакторе страничных привилегий, privileges/local.tmpl*/
 div.pageprivileges {
-	padding-bottom:20px;
+  padding-bottom:20px;
 }
 div.pageprivileges div.modulename {
-	border:1px solid #7FB4DF;
-	background:none repeat scroll 0 0 #3583B7;
-	height:25px;
-	margin-top: 5px;
+  border:1px solid #7FB4DF;
+  background:none repeat scroll 0 0 #3583B7;
+  height:25px;
+  margin-top: 5px;
 }
 div.pageprivileges div.modulename.first {
-	margin-top: 0px;
+  margin-top: 0px;
 }
 div.pageprivileges div.modulename p {
-	padding:5px 0 5px 10px;
-	font-size:12px;
-	font-weight:bold;
-	color:#FFFFFF;
+  padding:5px 0 5px 10px;
+  font-size:12px;
+  font-weight:bold;
+  color:#FFFFFF;
 }
 div.pageprivileges div.privilege {
-	border:1px solid #7FB4DF;
-	border-top:none;
-	padding:2px 5px;
-	/*height:25px;*/
-    overflow: hidden;
+  border:1px solid #7FB4DF;
+  border-top:none;
+  padding:2px 5px;
+  /*height:25px;*/
+  overflow: hidden;
 }
 div.pageprivileges div.privilege p.name{
-	float:left;
-	border-top:none;
-	/*padding: 5px 0 5px 0px;*/
-	padding:0; margin:0;
-	font-weight: bold;
+  float:left;
+  border-top:none;
+  /*padding: 5px 0 5px 0px;*/
+  padding:0; margin:0;
+  font-weight: bold;
 }
 div.pageprivileges div.privilege img.status {
-	/*padding:3px 2px 0 2px;*/
-	padding:0 2px; margin:0;
-	/*float:left;*/
-	display:inline-block;
+  /*padding:3px 2px 0 2px;*/
+  padding:0 2px; margin:0;
+  /*float:left;*/
+  display:inline-block;
 }
 div.pageprivileges div.privilege p.status {
-	border-top:none;
-	float:left;
-	/*padding-top:5px;*/
-	padding:0; margin:0;
+  border-top:none;
+  float:left;
+  /*padding-top:5px;*/
+  padding:0; margin:0;
 }
 div.pageprivileges div.privilege p.links {
-	float:right;
-	border-top:none;
-	/*padding:5px 10px;*/
-	padding:0 10px;  
+  float:right;
+  border-top:none;
+  /*padding:5px 10px;*/
+  padding:0 10px;
 }
 div.pageprivileges div.sources {
-	border:1px solid #7FB4DF;
-	border-top:none;
-	background:none repeat scroll 0 0 #FFFFFF;
-	padding: 0px 5px 10px 5px;
+  border:1px solid #7FB4DF;
+  border-top:none;
+  background:none repeat scroll 0 0 #FFFFFF;
+  padding: 0px 5px 10px 5px;
 }
 div.pageprivileges div.close {
-	text-align:center;
-	padding: 10px 0px 0px 0px;
+  text-align:center;
+  padding: 10px 0px 0px 0px;
 }
 div.pageprivileges div.sources p.subject {
-	font-weight:bold;
-	padding:5px 0px 5px 5px;
+  font-weight:bold;
+  padding:5px 0px 5px 5px;
 }
 div.pageprivileges div.sources div.source {
-	height:20px;
-	margin:0px 10px 0 10px;
-	border-bottom:1px solid gray;
+  height:20px;
+  margin:0px 10px 0 10px;
+  border-bottom:1px solid gray;
 }
 div.pageprivileges div.sources div.source.inactive {
-	background:#dcdcdc;
+  background:#dcdcdc;
 }
 div.pageprivileges div.sources div.source.allow {
-	background:#62c056;
+  background:#62c056;
 }
 div.pageprivileges div.sources div.source.deny {
-	background:#ffaab0;
+  background:#ffaab0;
 }
 div.pageprivileges div.sources div.source p.name {
-	float:left;
-	padding: 2px 0px 5px 5px;
+  float:left;
+  padding: 2px 0px 5px 5px;
 }
 div.pageprivileges div.sources div.source p.links {
-	float:right;
-	padding: 2px 5px 0px 0px;
+  float:right;
+  padding: 2px 5px 0px 0px;
 }
 div.pageprivileges div.sources img.status {
-	padding:0px 5px 3px 0px;
-	background: #fff;
-	float:left;
+  padding:0px 5px 3px 0px;
+  background: #fff;
+  float:left;
 }
 /*Списки администраторов/групп, имеющих права на страницу в редакторе страничных привилегий, privileges/local.tmpl*/
 div.subjects {
-	width:100%;
-	overflow:hidden;
-	padding-bottom:5px;
+  width:100%;
+  overflow:hidden;
+  padding-bottom:5px;
 }
 div.subjects div.name {
-	float:left;
-	font-weight:bold;
+  float:left;
+  font-weight:bold;
 }
 div.subjects div.list {
-	overflow:hidden;
-	max-width:650px;
-	float:left;
+  overflow:hidden;
+  max-width:650px;
+  float:left;
 }
 div.subjects div.list p.link {
-	float:left;
-	padding: 0px 5px 2px 5px;
+  float:left;
+  padding: 0px 5px 2px 5px;
 }
 div.subjects#groups div.name {
-	width:115px;
+  width:115px;
 }
 /* Вкладка наследуемые привилегии, список пользователей/групп, которым предоставлено право*/
 div.pageprivileges div.owners {
-	border:1px solid #7FB4DF;
-	border-top:none;
-	background:none repeat scroll 0 0 #FFFFFF;
-	padding: 5px 5px 10px 10px;
+  border:1px solid #7FB4DF;
+  border-top:none;
+  background:none repeat scroll 0 0 #FFFFFF;
+  padding: 5px 5px 10px 10px;
 }
 div.pageprivileges div.owners p.group{
-	padding: 5px 0 5px 0px;
+  padding: 5px 0 5px 0px;
 }
 div.pageprivileges div.owners div.owner {
-	height:20px;
-	margin:0px 10px 0 0px;
-	border-bottom:1px solid gray;
+  height:20px;
+  margin:0px 10px 0 0px;
+  border-bottom:1px solid gray;
 }
 div.pageprivileges div.owners div.owner.inactive {
-	background:#dcdcdc;
+  background:#dcdcdc;
 }
 div.pageprivileges div.owners div.owner.allow {
-	background:#62c056;
+  background:#62c056;
 }
 div.pageprivileges div.owners div.owner.deny {
-	background:#ffaab0;
+  background:#ffaab0;
 }
 div.pageprivileges div.owners div.owner p {
-	float:left;
-	padding: 2px 0 5px 5px;
+  float:left;
+  padding: 2px 0 5px 5px;
 }
 div.pageprivileges div.owners div.owner p.name {
-	font-weight:bold;
+  font-weight:bold;
 }
 div.pageprivileges div.owners div.owner p.links {
-	float:right;
-	padding: 2px 5px 0px 0px;
+  float:right;
+  padding: 2px 5px 0px 0px;
 }
 div.pageprivileges div.owners img.status {
-	padding:0px 5px 3px 0px;
-	background: #fff;
-	float:left;
+  padding:0px 5px 3px 0px;
+  background: #fff;
+  float:left;
 }
 div.pageprivileges div.owners div.selectWrapper {
-	float: none;
-	padding:10px 0 0 23px;
+  float: none;
+  padding:10px 0 0 23px;
 }
 /* Cписок страниц, на которые распространяется наследованная привилегия */
 div.pageprivileges div.owners div.ownerPages {
-	margin-left:32px;
-	margin-right:10px;
-	margin-bottom:10px;
+  margin-left:32px;
+  margin-right:10px;
+  margin-bottom:10px;
 }
 div.pageprivileges div.owners div.ownerPages p.help {
-	font-weight:bold;
-	padding:5px 0px 5px 5px;
+  font-weight:bold;
+  padding:5px 0px 5px 5px;
 }
 div.pageprivileges div.owners div.ownerPages div.page {
-	min-height:20px;
-	border-bottom:1px solid gray;
+  min-height:20px;
+  border-bottom:1px solid gray;
 }
 div.pageprivileges div.owners div.ownerPages p {
-	padding: 2px 2px 0 2px;
+  padding: 2px 2px 0 2px;
 }
-
 /* addRuleBar privileges/rules.tmpl */
 div.addRuleBar {
-	border:1px solid #65A7DD;
-	background:#fff;
-	margin-bottom:10px;
-	margin-top:20px;
-	padding:5px;
-	overflow:hidden;
+  border:1px solid #65A7DD;
+  background:#fff;
+  margin-bottom:10px;
+  margin-top:20px;
+  padding:5px;
+  overflow:hidden;
 }
 div.addRuleBar p.name {
-	float:left;
-	font-weight:bold;
-	padding:2px 2px 0 2px;
+  float:left;
+  font-weight:bold;
+  padding:2px 2px 0 2px;
 }
 .logout {
-	background: url(/admin-side/img/img_top2_inact.gif) 0 0 no-repeat;
-	width: 73px;
-	height: 43px;
-	display: inline-block;
+  background: url(/admin-side/img/img_top2_inact.gif) 0 0 no-repeat;
+  width: 73px;
+  height: 43px;
+  display: inline-block;
 }
 .logout:hover {
-	background:url(/admin-side/img/img_top2_act.gif) 0 0 no-repeat;
+  background:url(/admin-side/img/img_top2_act.gif) 0 0 no-repeat;
 }
-
 #middle_right_content  #middle_right_menu select {
-	width: 160px;
-	overflow: auto;
+  width: 160px;
+  overflow: auto;
 }
 /*
 #middle_right_header .active {
-	margin-top: 9px;
-	height: 21px;
-	line-height: 21px;
-	color: #1d6798;
+  margin-top: 9px;
+  height: 21px;
+  line-height: 21px;
+  color: #1d6798;
 }
 #middle_right_header .active_left,#middle_right_header .active_right {
-	height: 21px;
-	margin-top: 9px;
+  height: 21px;
+  margin-top: 9px;
 }
 */
 .tab {
-	display: inline-block;
+  display: inline-block;
 }
 #middle_right_header {
-	height: auto;
-	overflow: hidden;
+  height: auto;
+  overflow: hidden;
 }
 #middle_right_content .input_info select {
-	width: auto;	
+  width: auto;
 }
 .withTextArea {
-
 }
 .clearAll {
   height: 1px;
@@ -2040,58 +2003,56 @@ div.addRuleBar p.name {
   clear: both;
   width: 100%;
 }
-
 .left_links{margin-right:200px; overflow:hidden;}
-
 /*Clickable checkbox on List*/
 div.list-checkbox {
-    width: 13px;
-    height: 13px;
-    background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
+  width: 13px;
+  height: 13px;
+  background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
 }
 div.list-checkbox.clickable {
-    cursor: pointer;
+  cursor: pointer;
 }
 div.list-checkbox.checked {
-    background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
+  background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
 }
 /*Clickable group action checkbox on List*/
 div.list-multiactioncb {
-    width: 13px;
-    height: 13px;
-    background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
-    cursor: pointer;
+  width: 13px;
+  height: 13px;
+  background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
+  cursor: pointer;
 }
 div.list-multiactioncb.checked {
-    background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
+  background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
 }
 div.list-multiactioncb-all {
-    width: 13px;
-    height: 13px;
-    background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
-    cursor: pointer;
+  width: 13px;
+  height: 13px;
+  background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
+  cursor: pointer;
 }
 div.list-multiactioncb-all.checked {
-    background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
+  background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
 }
 div.list-multiaction-panel {
-    margin-top: 5px;
-    height: 25px;
+  margin-top: 5px;
+  height: 25px;
 }
 div.list-multiaction-panel select{
-    border: 1px solid #65a7dd;
-    margin-top: 5px;
-    min-width: 150px;
-    float: left;
+  border: 1px solid #65a7dd;
+  margin-top: 5px;
+  min-width: 150px;
+  float: left;
 }
 div.list-multiaction-panel .button {
-    float: left;
-    margin: 4px 0 0 5px;
+  float: left;
+  margin: 4px 0 0 5px;
 }
 div.list-multiaction-panel div.list-multiactioncb-all,
 div.list-multiaction-panel div.list-multiactioncb-all.checked {
-    float: left;
-    height: 25px;
-    width: 50px;
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACYAAAAWCAMAAACbmR4xAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAIdJREFUeNpiYCQKAAQQA3HKAAKIgTgNAAEEl2RgwKcOIIAYEKrwqQMIIAYkVXjUAQQQA7Iq3OoAAohILwAEEJHKAAKISGUAAUSkMoAAIlIZQAARqQwggIhUBhBARCoDCCAilQEEEJIyHAAsCRBARKY3gAAiUhlAABGpDCCAiFQGEEBEKgMIMAAZagMLzQih2gAAAABJRU5ErkJggg==") no-repeat scroll 10px -2px rgba(0, 0, 0, 0);
+  float: left;
+  height: 25px;
+  width: 50px;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACYAAAAWCAMAAACbmR4xAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAIdJREFUeNpiYCQKAAQQA3HKAAKIgTgNAAEEl2RgwKcOIIAYEKrwqQMIIAYkVXjUAQQQA7Iq3OoAAohILwAEEJHKAAKISGUAAUSkMoAAIlIZQAARqQwggIhUBhBARCoDCCAilQEEEJIyHAAsCRBARKY3gAAiUhlAABGpDCCAiFQGEEBEKgMIMAAZagMLzQih2gAAAABJRU5ErkJggg==") no-repeat scroll 10px -2px rgba(0, 0, 0, 0);
 }
