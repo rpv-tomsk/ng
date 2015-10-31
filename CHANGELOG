@@ -41,6 +41,7 @@ branches/ng6
     * Multicheckbox: Удалена поддержка параметра NOLOADDICT.  (Он непонятный и не найден используемым в проектах).
     * Multicheckbox: Убран признак IS_FAKEFIELD
     * Multicheckbox: Реализовано удаление данных из таблицы хранилища связи
+    * Multicheckbox: Реализовано сохранение выбранных значений в STORE_FIELD
 
 branches/ng-4.3
 

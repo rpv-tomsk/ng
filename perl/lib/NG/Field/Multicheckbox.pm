@@ -1,12 +1,10 @@
 package NG::Field::Multicheckbox;
 use strict;
 
-#TODO: удаление связанных значений
 #TODO: readonly
 #TODO: сделать кнопку выбрать все / отменить выбор
 #TODO: добавить параметры связанные с дефолтными значениями
 #TODO: сообщение на пустой справочник
-#TODO: Загрузка сохраненных данных из OPTIONS.STORE_FIELD (работа БЕЗ опции OPTIONS.STORAGE)
 
 use NG::Field;
 use NGService;
@@ -103,9 +101,7 @@ sub init {
         return $field->set_err("Отсутствуют связи в параметре FIELDS_MAP атрибута STORAGE поля $field->{FIELD}") unless scalar keys %{$storage->{FIELDS_MAP}};
     }
     else {
-        return $field->set_err("Отсутствует опция хранилища значений STORAGE или STORE_FIELD") unless $options->{STORE_FIELD};
-        #TODO: Реализовать загрузку из STORE_FIELD.
-        return $field->set_err("Загрузка сохраненных значений из STORE_FIELD не реализована!");
+        $options->{STORE_FIELD} ||= $field->{FIELD};
     };
     
     $field->pushErrorTexts({
@@ -268,7 +264,19 @@ sub afterLoad {
     my $field = shift;
 
     my $options = $field->{OPTIONS};
-    my $storage = $options->{STORAGE} or return $field->showError("afterLoad(): отсутствует опция STORAGE");
+    my $storage = $options->{STORAGE};
+    
+    unless ($storage) {
+        defined $field->{_value_id} or 'afterLoad(): Missing _value_id';
+        
+        $field->{_DATAH} = {};
+        $field->{_DATAA} = [split(/,/,$field->{_value_id})];
+        foreach my $id (@{$field->{_DATAA}}) {
+            $field->{_DATAH}->{$id} = $id;
+        };
+        $field->{_data_loaded} = 1;
+        return 1;
+    };
     
     my $h = $field->_getKey($storage) or return 0;
     my $sql="SELECT ".$storage->{FIELD}." FROM ".$storage->{TABLE}.$h->{WHERE};
@@ -321,6 +329,9 @@ sub afterSave {
     my ($self,$action) = (shift,shift);
     
     return 1 unless $self->changed();
+    
+    my $options = $self->{OPTIONS};
+    my $storage = $options->{STORAGE} or return 1;
 
     #Данные в форму загружены, т.к. LIST делает $form->loadData перед сохранением $form->update()
     unless ($self->{_dict_loaded}) {
@@ -331,8 +342,7 @@ sub afterSave {
     return $self->set_err('DATA(A) not loaded') unless defined $self->{_DATAA}||$self->{_new};
     return $self->set_err('NEW(A) not set') unless defined $self->{_NEWA};
     
-    my $options = $self->{OPTIONS};
-    my $storage = $options->{STORAGE} or return $self->showError("afterSave(): отсутствует опция STORAGE");
+
     my $h = $self->_getKey($storage) or return 0;
     
     my $dbh = $self->dbh() or return $self->showError("afterSave(): отсутствует dbh");
@@ -495,7 +505,15 @@ sub clean {
     #TODO: implement ?
 };
 
-sub setLoadedValue { return 1}; #Значения для связи берутся из $form.
+sub setLoadedValue {
+    my ($self,$row) = (shift,shift);
+    
+    my $options = $self->{OPTIONS};
+    $self->{_value_id} = $row->{$options->{STORE_FIELD}} || '' if $options->{STORE_FIELD};
+    
+    return 1; #Значения для связи берутся из $form.
+}; 
+
 sub beforeSave { return 1; };
 
 sub beforeDelete {
@@ -668,7 +686,7 @@ sub addRecord{
             ORDER => 'order_field',       #Имя поля для сохранения порядка выбранных значений в multivalue
         },
         #Сохранение выбранных значений в поле основной таблицы, в виде строки кодов, разделенных запятой
-        STORE_FIELD => "movie_actor_id",   #Имя поля в основной таблице
+        STORE_FIELD => "movie_actor_id",   #Имя поля в основной таблице. Если STORAGE отсутствует, то STORE_FIELD по-умолчанию равно FIELD
         
         #Сохранение выбранных значений в поле основной таблицы, в виде строки значений с разделителем
         STORE_NAME  => "movie_actor_text", #Имя поля в основной таблице
