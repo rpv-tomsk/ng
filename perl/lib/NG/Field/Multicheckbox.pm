@@ -33,26 +33,22 @@ sub init {
     $field->{_DATAA} = undef; #Выбранные элементы, массив id
     $field->{_NEWH}  = undef; #Сохраняемые элементы (выбранные на форме)
     $field->{_NEWA}  = undef; #Сохраняемые элементы (выбранные на форме), массив id
-    $field->{_DICTH} = {};    #Данные словаря (ключ=значение), хэш, для проверок значений _DATAH и _NEWH
-    $field->{SELECT_OPTIONS} = [];
+    $field->{_DICTA} = undef; #Данные словаря, полный словарь (для вывода multicheckbox)
+    $field->{_DICTH} = undef; #Данные словаря (ключ=значение), хэш, для проверок значений _DATAH и _NEWH
     
     $field->{_value_id}    = undef;   #Выбранные элементы через запятую
     $field->{_value_names} = undef;   #Выбранные элементы через разделитель
     $field->{_processed}   = 0;       #Значения сформированы
+    $field->{_changed}     = 0;       #Признак изменения списка выбранных значений. Может быть undef в процессе работы.
     
     $field->{_dict_loaded} = 0;
     $field->{_data_loaded} = 0;
     
-    my $options = $field->{OPTIONS} || return $field->set_err("Для поля $field->{FIELD} типа multicheckbox не указаны дополнительные параметры");
+    my $options = $field->{OPTIONS} || return $field->set_err("Для поля $field->{FIELD} не указаны дополнительные параметры");
     return $field->set_err("Параметр OPTIONS не является HASHREF") if ref $options ne "HASH";
     
-    my $storage = $options->{STORAGE};
-
-        return $field->set_err("Значение атрибута STORAGE конфигурации поля $field->{FIELD} типа multicheckbox не является ссылкой на хэш") if ref $options->{STORAGE} ne "HASH";
-
-    
     if ($options->{DICT}) {
-        return $field->set_err("Значение атрибута DICT конфигурации поля $field->{FIELD} типа multicheckbox не является ссылкой на хэш") if ref $options->{DICT} ne "HASH";
+        return $field->set_err("Значение атрибута DICT конфигурации поля $field->{FIELD} не является ссылкой на хэш") if ref $options->{DICT} ne "HASH";
         #TODO: проверить на наличие VALUES
         my $dict = $options->{DICT};
         $dict->{ID_FIELD}  ||= "id";
@@ -89,33 +85,38 @@ sub init {
             return $field->set_err("В списке значений VALUES поля $field->{FIELD} отсутствует значение ключа ID ") if (!$id && $id != 0);
             $p->{NAME} || return $field->set_err("В списке значений VALUES поля $field->{FIELD} отсутствует значение ключа NAME");
             $field->{_DICTH}->{$id} = $p->{NAME};
-            $field->{SELECT_OPTIONS} = $options->{VALUES};
         };
+        $field->{_DICTA} = $options->{VALUES};
         $field->{_dict_loaded} = 1;
     }
     else {
         return $field->set_err("Отсутствует опция списка значений DICT или VALUES.");
     };
-    
-    unless ($field->{NOLOADDICT}) {
-        return $field->set_err("Отсутствует атрибут STORAGE поля $field->{FIELD}") unless $storage && (ref $storage eq "HASH");
+
+    my $storage = $options->{STORAGE};
+    if ($storage) {
+        return $field->set_err("Отсутствует атрибут STORAGE поля $field->{FIELD}") unless $storage;
+        return $field->set_err("Значение атрибута STORAGE конфигурации поля $field->{FIELD} не является ссылкой на хэш") if ref $storage ne "HASH";
         return $field->set_err("Не указано имя таблицы (TABLE) в атрибуте STORAGE поля $field->{FIELD}") unless $storage->{TABLE};
         return $field->set_err("Не указано имя поля данных (FIELD) в атрибуте STORAGE поля $field->{FIELD}") unless $storage->{FIELD};
         return $field->set_err("Не указан хэш связи полей основной таблицы и хранилища выбранных вариантов (FIELDS_MAP) в атрибуте STORAGE поля $field->{FIELD}") unless $storage->{FIELDS_MAP};
         return $field->set_err("Параметр FIELDS_MAP в атрибуте STORAGE поля $field->{FIELD} не является хэшем") unless ref $storage->{FIELDS_MAP} eq "HASH";
         return $field->set_err("Отсутствуют связи в параметре FIELDS_MAP атрибута STORAGE поля $field->{FIELD}") unless scalar keys %{$storage->{FIELDS_MAP}};
-    };        
-   
+    }
+    else {
+        return $field->set_err("Отсутствует опция хранилища значений STORAGE или STORE_FIELD") unless $options->{STORE_FIELD};
+        #TODO: Реализовать загрузку из STORE_FIELD.
+        return $field->set_err("Загрузка сохраненных значений из STORE_FIELD не реализована!");
+    };
+    
     $field->pushErrorTexts({
-        NOTHING_CHOOSEN       => "Не выбрано ни одного значения.",
+        NOTHING_CHOOSEN       => "{n}: Не выбрано ни одного значения.",
     });
     
     $field->{HAS_ORDERING} = 0;
     if ($options->{STORE_FIELD} || ($storage && $storage->{ORDER})) {
         $field->{HAS_ORDERING} = (exists $options->{ORDERING})?$options->{ORDERING}:1;
     };
-    
-    $field->{IS_FAKEFIELD}=1;
     return 1;
 };
 
@@ -141,7 +142,6 @@ sub _loadDict {
         push @result, {
             ID=>$id,
             NAME=>$name,
-            SELECTED=>((exists $field->{_DATAH}->{$id}) && ($id eq $field->{_DATAH}->{$id}))?1:0,
         };
         $field->{_DICTH}->{$id} = $name;
     };
@@ -152,7 +152,7 @@ sub _loadDict {
     
     $result[int($cnt/2)]->{HALF} = 1 if $cnt > 1;
     
-    $field->param('SELECT_OPTIONS',\@result);
+    $field->{_DICTA} = \@result;
     $field->{_dict_loaded} = 1;
     return 1;
 };
@@ -160,9 +160,9 @@ sub _loadDict {
 sub prepareOutput {
     my $field = shift;
     
-    return 1 if $field->{_dict_loaded}; #Справочник уже загружен.
-    
     if ($field->{TYPE} eq 'multivalue') { #Делаем частичную загрузку, только выбранные значения
+        warn "Multicheckbox(multivalue): _dict_loaded = 1 warning!" if $field->{_dict_loaded}; #Справочник уже загружен.
+        
         my $options = $field->{OPTIONS};
         return $field->set_err("Отсутствует атрибут DICT") unless $options->{DICT};
         my $dict = $options->{DICT};
@@ -225,9 +225,16 @@ sub prepareOutput {
         
         return 1;
     };
-    #Делаем полную загрузку справочника значений
-    $field->_loadDict() or return undef;
     
+    unless ($field->{_dict_loaded}) {
+        #Делаем полную загрузку справочника значений
+        $field->_loadDict() or return undef;
+    };
+    return $field->set_err('DATA(H) not loaded') unless defined $field->{_DATAH} || $field->{_new};
+    foreach my $elm (@{$field->{_DICTA}}) {
+        $elm->{SELECTED} = (defined $field->{_DATAH} && exists $field->{_DATAH}->{$elm->{ID}})?1:0,
+    };
+    $field->{SELECT_OPTIONS} = $field->{_DICTA};
     return 1;
 };
 
@@ -294,6 +301,7 @@ sub setFormValue {
     $field->{_value_id}    = undef;
     $field->{_value_names} = undef;
     $field->{_processed}   = 0;
+    $field->{_changed}     = undef;   #Необходимо определить наличие изменений/проверить выбранные на форме значения.
     
     if ($field->{TYPE} eq 'multivalue') {
         my $v = $q->param($field->{FIELD})||'';
@@ -313,6 +321,8 @@ sub setFormValue {
 
 sub afterSave {
     my ($self,$action) = (shift,shift);
+    
+    return 1 unless $self->changed();
 
     #Данные в форму загружены, т.к. LIST делает $form->loadData перед сохранением $form->update()
     unless ($self->{_dict_loaded}) {
@@ -356,7 +366,7 @@ sub afterSave {
     };
     foreach my $id (@{$self->{_NEWA}}) {
         return $self->showError("Некорректное состояние: выбрано значение ($id), отсутствующее в справочнике значений") unless exists $self->{_DICTH}->{$id};
-        unless (exists $self->{_DATAH}->{$id} && $self->{_DATAH}->{$id} == $id) {
+        unless (exists $self->{_DATAH}->{$id}) {
             $ins_sth->execute($id, @{$h->{PARAMS}}) or return $self->showError($DBI::errstr);
         };
     };
@@ -420,10 +430,21 @@ sub dbValue {
 
 sub check {
     my $self = shift;
-    
-    return $self->setErrorByCode("NOTHING_CHOOSEN") if $self->{IS_NOTNULL} && ! scalar @{$self->{_NEWA}};
-    
-    return $self->_process();
+    if ($self->{IS_NOTNULL}) {
+        if ($self->{_NEWA}) {
+            #Был вызов setFormValue() но выбрано ничего не было.
+            return $self->setErrorByCode("NOTHING_CHOOSEN") unless scalar @{$self->{_NEWA}};
+            
+            #Проверим, что все выбранные значения существуют в справочнике
+            return $self->_process();
+        }
+        elsif ($self->{_data_loaded}) {
+            #Вызова setFormValue() не было, но была загрузка данных из хранилища. Проверим.
+            return $self->setErrorByCode("NOTHING_CHOOSEN") unless scalar @{$self->{_DATAA}};
+        };
+        #Не было ни загрузки данных из хранилища, ни выставления значений из формы. Проверять нечего.
+    };
+    return 1;
 };
 
 sub process {
@@ -478,10 +499,8 @@ sub clean {
     #TODO: implement ?
 };
 
-sub beforeSave {
-	my $self = shift;
-    return 1;
-};
+sub setLoadedValue { return 1}; #Значения для связи берутся из $form.
+sub beforeSave { return 1; };
 
 sub getFieldActions {
     my $self = shift;
