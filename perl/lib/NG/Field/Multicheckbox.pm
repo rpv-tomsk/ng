@@ -107,7 +107,7 @@ sub init {
     };        
    
     $field->pushErrorTexts({
-        NOTHING_CHOOSEN       => "Не выбраны значения.",
+        NOTHING_CHOOSEN       => "Не выбрано ни одного значения.",
     });
     
     $field->{HAS_ORDERING} = 0;
@@ -128,7 +128,7 @@ sub _loadDict {
     
     return $field->set_err('DATA not loaded') unless defined $field->{_DATAH} || $field->{_new};
     
-    my $sql = $dict->{_SQL} or return $field->set_err("NG::Field::Multicheckbox::prepareOutput(): отсутствует значение запроса. Ошибка инициализации поля.");
+    my $sql = $dict->{_SQL} or return $field->set_err("NG::Field::Multicheckbox::_loadDict(): отсутствует значение запроса. Ошибка инициализации поля.");
     my @params = ();
     @params = @{$dict->{PARAMS}} if (exists $dict->{PARAMS});
     
@@ -160,11 +160,13 @@ sub _loadDict {
 sub prepareOutput {
     my $field = shift;
     
-    my $options = $field->{OPTIONS};
-    return $field->set_err("Отсутствует атрибут DICT") unless $options->{DICT};
-    my $dict = $options->{DICT};
+    return 1 if $field->{_dict_loaded}; #Справочник уже загружен.
     
-    if ($field->{TYPE} eq 'multivalue') {
+    if ($field->{TYPE} eq 'multivalue') { #Делаем частичную загрузку, только выбранные значения
+        my $options = $field->{OPTIONS};
+        return $field->set_err("Отсутствует атрибут DICT") unless $options->{DICT};
+        my $dict = $options->{DICT};
+        
         #Справочник полностью не загружаем, поэтому нужно запросить нужные значения
         my @params = ();
         @params = @{$dict->{PARAMS}} if exists $dict->{PARAMS};
@@ -223,10 +225,9 @@ sub prepareOutput {
         
         return 1;
     };
+    #Делаем полную загрузку справочника значений
+    $field->_loadDict() or return undef;
     
-    unless ($field->{_dict_loaded}) {
-        $field->_loadDict() or return undef;
-    };
     return 1;
 };
 
