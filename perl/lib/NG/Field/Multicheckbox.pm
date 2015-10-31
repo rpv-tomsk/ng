@@ -38,7 +38,6 @@ sub init {
     
     $field->{_value_id}    = undef;   #Выбранные элементы через запятую
     $field->{_value_names} = undef;   #Выбранные элементы через разделитель
-    $field->{_processed}   = 0;       #Значения сформированы
     $field->{_changed}     = 0;       #Признак изменения списка выбранных значений. Может быть undef в процессе работы.
     
     $field->{_dict_loaded} = 0;
@@ -300,7 +299,6 @@ sub setFormValue {
     
     $field->{_value_id}    = undef;
     $field->{_value_names} = undef;
-    $field->{_processed}   = 0;
     $field->{_changed}     = undef;   #Необходимо определить наличие изменений/проверить выбранные на форме значения.
     
     if ($field->{TYPE} eq 'multivalue') {
@@ -444,12 +442,12 @@ sub check {
         };
         #Не было ни загрузки данных из хранилища, ни выставления значений из формы. Проверять нечего.
     };
-    return 1;
+    return $self->process();
 };
 
 sub process {
     my $self = shift;
-    return 1 if $self->{_processed};
+    return 1 if defined $self->{_changed};
     return $self->_process();
 };
 
@@ -459,7 +457,6 @@ sub _process {
     unless (@{$self->{_NEWA}}) {
         $self->{_value_id}    = '';
         $self->{_value_names} = '';
-        $self->{_processed}   = 1;
         $self->{_changed}     = 1;
         $self->{_changed}     = 0 if $self->{_new};
         return 1;
@@ -481,7 +478,6 @@ sub _process {
     
     $self->{_value_id}    = join(',',@{$self->{_NEWA}});
     $self->{_value_names} = join($ns,@names);
-    $self->{_processed}   = 1;
     
     $self->{_changed} = 0;
     $self->{_changed} = 1 if $self->{_new} or join(',',@{$self->{_DATAA}}) ne join(',',@{$self->{_NEWA}});
