@@ -419,8 +419,8 @@ span#listFilters div.button {
 table.content {
   width:100%;
   height: auto;
-  border:1px solid #65a7dd;
-  border-top: none;
+  border-left:1px solid #65a7dd;
+  border-right:1px solid #65a7dd;
   background: #cfe1ee none repeat scroll 0 0;
 }
 table.content.ajax {
@@ -503,6 +503,7 @@ table.content tr td.posorder {
   width: 95px;
 }
 /**/
+table.content.border td,
 table.content tr.border td,
 table.content tr.border th,
 table.content td.border {
