@@ -1270,7 +1270,7 @@ div.input_info input {
 }
 @media all and (min-width: 0) {
   div.input_info input {
-   margin-top:0px;
+    margin-top:0px;
   }
 }
 /*Äëÿ oprea è ff*/
@@ -1565,11 +1565,11 @@ div.input_info input.checkbox {
   padding: 2px 0;
 }
 @-moz-document url-prefix() {
-.multiSelect {
- padding-left: 0;
+  .multiSelect {
+  padding-left: 0;
 }
 .multiSelect option {
- padding-left: 10px;
+  padding-left: 10px;
 }
 }
 .forButton {
