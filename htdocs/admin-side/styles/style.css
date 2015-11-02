@@ -22,6 +22,15 @@ body {
 .center {
   text-align:center;
 }
+.left {
+  text-align:left;
+}
+.right {
+  text-align:right;
+}
+.middle {
+  vertical-align:middle;
+}
 table {
   background: none;
   border-collapse:collapse;
@@ -39,8 +48,7 @@ h3 {
   color:#3583b7;
   font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
   font-size: 14px;
-  padding-bottom:8px;
-  padding-top:8px;
+  margin: 8px 0;
 }
 #content_dispatch {
   font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -400,37 +408,130 @@ span#listFilters div.button {
     margin-bottom: 15px;
   }
 }
-/**********************Основная часть строка таблицы***************/
-#middle_right_page_title {
-  height: 24px;
-  _height: 29px;
-  background: #cae2f5;
-  padding-left: 14px;
-  padding-top:5px;
+/*Мы наш, мы новый мир построим*/
+table.content {
+  width:100%;
+  height: auto;
+  border-left:1px solid #65a7dd;
+  border-right:1px solid #65a7dd;
+  background: #cfe1ee none repeat scroll 0 0;
 }
-/*******************Заголовки тыблицы**********************/
-div.items {
+table.content.ajax {
+  border:none;
+}
+/*Обычная строка контента, разделитель-бордюр снизу*/
+table.content td {
+  background: #ffffff none repeat scroll 0 0;
+  border-bottom: 1px solid #8dbee4;
+  color: #225279;
+  padding-bottom: 9px;
+  padding-left: 10px;
+  padding-top: 9px;
+  vertical-align: middle;
+}
+/*Если таблица начинается строкой контента, а не шапкой*/
+table.content tr:first-child td {
+  border-top: 1px solid #8dbee4;
+}
+/*Строка в лист-е. Отключаем бордюр снизу*/
+table.content tr.list td {
+  border-bottom:none;
+}
+/*Спец стиль для ячейки, в которую аяксом грузится форма*/
+table.content td.formcontainer {
+  border: none;
+  padding: 0;
+}
+/* Заголовок таблицы */
+table.content tr.title td,
+table.content th {
+  background:#3583b7;
   height: 30px;
-  background-color: #FFF;
-  padding: 5px 0 0 14px;
-  height: 25px;
-  _height: 30px;
+  border: 1px solid #3583b7;
+  color:#fff;
+  font-size:12px;
+  font-weight: bold;
+  padding: 3px 0px 5px 5px;
+  text-align:left;
+  vertical-align:middle;
 }
-div.items a {
-  color:#004882;
-  font-size: 12px;
+div#middle_right_content table.content tr td p,
+table.content tr td p {
+  margin: 0;
 }
-span#top_info_left {
-  float:left;
+table.content tr.title p,
+table.content tr.title a,
+table.content th p,
+table.content th a {
+  color:#fff;
+  font-weight: bold;
+  margin: 0;
+  padding-left: 5px;
 }
-div#top_info_right {
-  float:right;
+/* Заголовок второго уровня, используется в админке админов */
+table.content tr.group_l1 td {
+  background: #b8ccff;
+  padding: 4px 0 4px 10px;
+}
+/* Строка ссылок действия с записью в листе*/
+table.content tr.actions td {
   text-align:right;
-  padding-right:19px;
+  vertical-align:middle;
+  height: 14px;
+  padding-right: 10px;
+  background-color:#cfe1ee;
+  border-top:none;
+  border-bottom: 1px solid #65a7dd;
+  font-weight:bold;
+  padding-bottom:4px;
+  padding-top:3px;
+  color:#4b7495;
+  font-size:11px;
 }
+/*Столбец позиционирования записей*/
+table.content tr.title td.posorder,
+table.content tr td.posorder {
+  padding: 0px;
+  text-align: center;
+  width: 95px;
+}
+/**/
+table.content tr.border td,
+table.content tr.border th,
+table.content td.border {
+  border: 1px solid #65a7dd;
+}
+/* Подсвеченные строки таблицы*/
+table.content tr.highlight td {
+  background: #ffcccc;
+}
+/* Строки, выбранные в multiactions*/
+table.content tr.checked td {
+  background: #ffffaa;
+}
+table.content td.buttons {
+  padding: 10px 0;
+  text-align: center;
+  border-bottom: 1px solid #8dbee4;
+  background: none;
+}
+/*Стили центровки контента*/
+table.content tr.center td,
+table.content tr td.center {
+  text-align:center;
+}
+table.content tr.left td,
+table.content tr td.left {
+  text-align:left;
+}
+table.content tr.right td,
+table.content tr td.right {
+  text-align:right;
+}
+/* END */
 /*********************Основная строка таблицы*************************/
 div#table_content {
-  padding-top: 15px;
+  margin-top: 15px;
   width:100%;
   max-width: 100%;
 }
@@ -440,188 +541,19 @@ div#table_content {
   width:100%;
   position:relative;
 }
-table#content {
-  width:100%;
-  height: auto;
-  border:1px solid #65a7dd;
-}
-table#content tr {
-}
-/************************Заголовок таблицы**********************/
-.wrapper-table {
-  width: 100%;
-}
-.wrapper-table table {
-  width: 100%;
-  margin-bottom: 20px;
-}
-.wrapper-table td {
-  background:#ffffff;
-  padding: 9px 0 9px 10px;
-  vertical-align: middle;
-  border-top:1px solid #65a7dd;
-  color:#225279;
-}
-.wrapper-table th {
-  margin-top: 10px;
-}
-td.title, .wrapper-table th {
-  background:#3583b7;
-  height: 30px;
-  border-bottom:1px solid #7fb4df;
-  color:#fff;
-  font-size:12px;
-  font-weight: bold;
-  padding: 3px 5px 5px 5px;
-}
-.wrapper-table th.left {
-  text-align: left;
-}
-td.title_img {
-  padding: 5px 0 5px 15px;
-  height: 30px;
-  text-align:center;
-}
-td.title a, .wrapper-table a {
-  color:#fff;
-  font-size:12px;
-  font-weight: bold;
-}
-td.title p {
-  color:#fff;
-  font-size:12px;
-  font-weight: bold;
-  padding-top:3px;
-}
-td.last {
-  background: url(/admin-side/img/shadow_right.png) repeat-y right;
-  width: 7px;
-}
-td.angle {
-  background: url(/admin-side/img/table_shadow_bottom_right.png) no-repeat right top;
-}
-/****************Тень последнего столбца**********************/
-div.shadow_right {
-  background: none;
-  background: url(/admin-side/img/shadow_right.png) repeat-y right;
-  height:100%;
-}
-div.shadow_right_top {
-  padding:0px 7px 0px 0;
-  height:100%;
-}
-div.line_title {
-  background:#eaf6ff;
-  height: 100%;
-  padding-top:6px;
-  padding-bottom: 6px;
-}
-#img_upp {
+span#img_up {
   background: url(/admin-side/img/upp.gif) no-repeat 0px 3px;
   _background: url(/admin-side/img/upp.gif) no-repeat 0px 5px;
   height: 15px;
   margin: 0 10px 0 2px;
 }
-#img_down {
+span#img_down {
   background: url(/admin-side/img/down.gif) no-repeat 0px 3px;
   _background: url(/admin-side/img/down.gif) no-repeat 0px 5px;
   height: 15px;
   margin: 0 10px 0 2px;
 }
 /******************************Основная часть**********************************/
-img.checkbox {
-  margin-right:10px;
-}
-div.background_content {
-  background:#ffffff;
-  height: 100%;
-}
-td.content, td.content_img {
-  background:#ffffff;
-  padding-left: 10px;
-  padding-top:9px;
-  padding-bottom: 9px;
-  vertical-align: middle;
-  border-top:1px solid #65a7dd;
-  color:#225279;
-}
-table#content tr.checked td.content,
-table#content tr.checked td.content_img {
-  background: #ffffaa;
-}
-td.content_img {
-  text-align:right;
-  text-align:center;
-}
-/********************************/
-td.content_img img.right {
-  margin-top:-13px;
-  _margin-top:0px;
-}
-@media all and (min-width: 0) {
-  td.content_img img.right {
-    margin-top:0px;
-  }
-}
-td.content_img img.number {
-  margin-bottom:0px;
-  _margin-bottom:0px;
-}
-@media all and (min-width: 0) {
-  td.content_img img.number {
-    margin-bottom:0px;
-    padding-top:0px;
-  }
-}
-/****************************/
-td.content a, a.blue {
-  color: #004882;
-  font-size: 12px;
-}
-td.content p {
-  color: #004882;
-  font-size: 12px;
-}
-/****************************Последняя стока таблицы***************************/
-td.last_line {
-  background:#deeffc;
-}
-td.last_line_right_img {
-  text-align:right;
-  vertical-align:middle;
-  height: 14px;
-  padding-right: 10px;
-  background-color:#cfe1ee;
-  border-top:none;
-  font-weight:bold;
-  padding-bottom:4px;
-  padding-top:3px;
-  color:#4b7495;
-}
-td.last_line_right_img a {
-  color:#4b7495;
-  font-size:11px;
-}
-td.last_line_right_img img {
-  padding-right:15px;
-}
-@media all and (min-width: 0) {
-  td.last_line_right_img img {
-    margin-bottom:2px;
-  }
-}
-div.background_last_line {
-  background: url(/admin-side/img/spacer0.gif) repeat-y;
-  background-color:#cfe1ee;
-}
-@media all and (min-width: 0) {
-  div.background_last_line {
-    padding-bottom:0px;
-  }
-}
-img.content_img {
-  _margin-top:2px;
-}
 img.right {
   padding-left:5px;
   padding-top:5px;
@@ -644,14 +576,6 @@ div.right_info {
 }
 div.right_info a {
   padding-left:5px;
-}
-img.img_left {
-  padding-top:2px;
-  padding-bottom:10px;
-}
-img.img_numder {
-  padding-top:2px;
-  padding-bottom:10px;
 }
 div.bottom_info {
   padding-top: 1px;
@@ -745,56 +669,6 @@ img.img_bottom_info {
 #footer_right p, #footer_right a {
   color: #113b5e;
 }
-/*********************Форма ввода************************/
-table.component_form {
-  width:100%;
-  border-collapse:collapse;
-  border:1px solid #65a7dd;
-  border-top:none;
-  color:#004882;
-  font-size:12px;
-}
-table#content table.component_form {
-  border:none;
-}
-table.component_form td.title, table.component_form td.component_form, table.component_form td.title_img {
-  border-top:1px solid #65a7dd;
-  vertical-align:middle;
-  padding-top: 5px;
-  background: #cfe1ee;
-}
-table.component_form td.title_img input {
-  _margin-top:3px;
-  margin-right: 13px;
-}
-html>body table.component_form td.title_img input {
-  padding-bottom: 0px;
-}
-td.form_caption {
-  background:#cae2f5;
-  padding-left: 15px;
-  padding-top:5px;
-  padding-bottom: 5px;
-  height: 30px;
-}
-table.component_form p.comment_input {
-  float: left;
-  margin-top: 0px;
-  color:#4b7495;
-  font-size:12px;
-  font-weight: bold;
-}
-div.form_contener p.comment_input {
-  color:#4b7495;
-}
-p.comment_middle {
-  margin-top: 2px;
-  float: left;
-}
-div.table_form {
-  width:100%;
-  height: 100%;
-}
 input.checkbox {
   margin-top:3px;
 }
@@ -853,15 +727,6 @@ select.info_text {
   font-family: Verdana;
   height:20px;
 }
-p.comment_simbol {
-  text-align:right;
-  float:right;
-  padding-right:2px;
-  _padding-right:0px;
-  margin-right:0px;
-  margin-top:3px;
-  color:#4b7495;
-}
 td.content a, p {
   white-space:normal;
 }
@@ -872,41 +737,6 @@ td.content a, p {
   width:100%;
   padding-bottom:25px;
   padding-top:15px;
-}
-table.data {
-  background:#cfe1ee;
-  border-top:1px solid #65a7dd;
-}
-table.data h2 {
-  color:#4B7495;
-  font-weight: bold;
-  font-size: 13px;
-  padding: 10px;
-}
-table.data a {
-  color:#4B7495;
-  font-size:11px;
-  font-weight: bold;
-}
-table.data p.comment_input {
-  padding:10px;
-}
-table.data td.input {
-  padding-left:5px;
-  padding-bottom:10px;
-}
-table.component_form a {
-  color:#4b7495;
-  font-weight:bold;
-  font-size:11px;
-}
-table.tree_form_table td.title {
-  border:none;
-  padding:0px;
-  margin:0px;
-}
-div.form_contener p.comment_input, table.tree_form_table td.title p.comment_input, table.tree_form_table td.title a {
-  color:#4b7495;
 }
 div.error_message {
   border:1px solid #3583b7;
@@ -925,12 +755,6 @@ div.border_10px {
 }
 html>body div.border_10px {
   width:auto;
-}
-td.td_border_bottom {
-  _border:1px solid #7fb4df;
-  _border-left:none;
-  _border-right:none;
-  padding-right:20px;
 }
 p.text {
   font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
@@ -969,33 +793,34 @@ div.menu_attention_active {
   background:url(/admin-side/img/menu_attention_active.gif) 0px 5px no-repeat;
   padding-left:30px;
 }
-.table_contact td.title {
-  border:none;
-}
-td.link {
-  padding-right:25px;
-}
-td.link a {
-  color:#4b7495;
-  font-size:11px;
-  font-weight:bold;
-}
+/*Таблица списка связанных элементов (страниц), форма добавления, удаления страницы */
 table.info_new_page {
-  position:relative;
-  border-right:1px solid #65a7dd;
-  margin:10px 10px 10px 0px;
+  border: 1px solid #65a7dd;
 }
+#table_tree table.info_new_page th,
 table.info_new_page th {
   background:#3583b7;
   color:#ffffff;
-  padding:5px 0px 5px 0px;
-  border:1px solid #65a7dd;
+  padding:5px 0px 5px 5px;
+  border:none;
+  font-size:11px;
+  text-align:left;
+  height:15px;
 }
-table.info_new_page td {
-  background:#ffffff;
-  padding:5px 0px 5px 7px;
+#table_tree table.info_new_page td,
+td.form table.info_new_page td {
   color:#004882;
-  border:1px solid #65a7dd;
+  border:none;
+  border-bottom: 1px solid #65a7dd;
+  vertical-align: middle;
+  padding: 5px 0 3px 5px;
+  height: auto;
+}
+#table_tree table.info_new_page tr.errormsg td,
+table.info_new_page tr.errormsg td {
+  padding:0;
+  height:auto;
+  border-bottom:none;
 }
 /**** #TABLE_TREE definitions ****/
 #table_tree {
@@ -1141,7 +966,6 @@ table.info_new_page td {
 #table_tree th, #table_permissions th {
   background:#3583b7;
   color:#FFFFFF;
-  text-align:right;
   height:30px;
   padding:0px 0px 0px 0px;
   font-size:12px;
@@ -1285,13 +1109,14 @@ input {
   color:#0e75a3;
   font-size:11px;
   /*padding-top:2px;*/
-  /*padding-left:2px;*/
+  padding-left:2px;
   border: 1px solid #65a7dd;
   margin: 0;
 }
 input[type=image] {
   border: none;
   height: auto;
+  padding: 0;
 }
 textarea {
   background: #ffffff;
@@ -1304,14 +1129,16 @@ textarea {
   position: relative;
   float: left;
   overflow: hidden;
+  padding-left:2px;
 }
 input.info_text {
   width: 99%;
 }
 input.info_file {
   _border: 1px solid #65a7dd;
-  width: 30%;
+  width: 200px;
   padding-right: 10px;
+  padding-left: 0px;
 }
 input.short_text {
   width: 68px;
@@ -1375,20 +1202,90 @@ table.admin-table td.title {
 p {
   color: #004882;
   font-size: 12px;
+  /*margin-bottom: 7px;*/
+}
+div#middle_right_content p {
   margin-bottom: 7px;
 }
-#content #info_content {
-  padding: 0;
-}
 /*** Cool style sve ***/
-.component_new_form {
+table.component_new_form {
   background: #D4E7F6;
-}
-.component_new_form td, #table_tree .contentTree .component_new_form td {
   border: 1px solid #8dbee4;
+}
+table.component_new_form.ajax {
+  border: none;
+}
+table.component_new_form tr:first-child td {
+  border-top: none;
+}
+div#new_subpage table.component_new_form.ajax,
+div#form0 table.component_new_form.ajax {
+  border-left: 1px solid #8dbee4;
+  border-right: 1px solid #8dbee4;
+}
+table.component_new_form td {
+  padding: 3px 5px 5px;
+}
+table.component_new_form tr.title td,
+table.component_new_form tr td.title {
+  background: #3583b7 none repeat scroll 0 0;
+  border: 1px solid #3583b7;
+  padding: 3px 5px 5px;
+  vertical-align: middle;
+}
+table.component_new_form tr.title p,
+table.component_new_form tr td.title p {
+  color: #fff;
+  font-weight: bold;
+  margin: 0;
+  padding-left: 5px;
+}
+
+/* Строка кнопок (закрытия/сохранения) формы */
+table.component_new_form td.buttons {
+  padding: 10px 0;
+  text-align: center;
+  border-bottom: 1px solid #8dbee4;
+}
+table.component_new_form td, 
+#table_tree .contentTree .component_new_form td {
+  border-bottom: 1px solid #8dbee4;
   vertical-align: top;
   color: #4B7495;
+  background: #d4e7f6 none repeat scroll 0 0;
 }
+/* Форма подтверждения удаления и т п*/ 
+table.component_new_form.info td {
+  background: #cfe1ee;
+  height:30px;
+}
+table.component_new_form.info td.buttons {
+  height:25px;
+}
+table.component_new_form.info td p {
+  color: #4b7495;
+  float: left;
+  font-weight: bold;
+  margin: 5px 0 0 15px;
+}
+/*стили центровки*/
+table.component_new_form tr.right td,
+table.component_new_form tr td.right {
+  text-align:right;
+}
+table.component_new_form tr.left td,
+table.component_new_form tr td.left {
+  text-align:left;
+}
+table.component_new_form tr.center td,
+table.component_new_form tr td.center {
+  text-align:center;
+}
+table.component_new_form tr.middle td,
+table.component_new_form tr td.middle {
+  vertical-align:middle;
+}
+/**/
 .component_new_form td table td, #table_tree .contentTree .component_new_form td table td {
   border: none;
   padding: 0 10px 0 0;
@@ -1407,6 +1304,8 @@ p {
 .component_new_form td.title, #table_tree .contentTree .component_new_form td.title {
   background: #3583B7;
   vertical-align:middle;
+  border: 1px solid #3583b7;
+  border-bottom: none;
 }
 .component_new_form td.title p, #table_tree .contentTree .component_new_form td.title p {
   color: #FFF;
@@ -1427,10 +1326,6 @@ p {
 .component_new_form .text-head-column {
   padding-bottom: 10px;
 }
-.component_new_form p {
-  display: inline;
-  float: none;
-}
 .component_new_form .form_contener {
   font-weight: normal;
 }
@@ -1448,15 +1343,9 @@ p {
 a {
   color: #4B7495;
 }
-.component_new_form td table .no-padding {
-  padding: 0;
-}
 .component_new_form td.container-for-line, #table_tree .contentTree .component_new_form td.container-for-line {
   padding: 7px 8px 5px 8px;
   width: auto;
-}
-.info_file {
-  width: 200px;
 }
 .form-line {
   padding-bottom: 5px;
@@ -1479,10 +1368,6 @@ div.input_info input.checkbox {
 }
 .link-for-file {
   margin-top:7px;
-}
-.button-for-polls {
-  text-align: center;
-  padding: 10px 0;
 }
 /*** 29.07.2009 ***/
 .styleForButtonApply {
@@ -1508,14 +1393,6 @@ div.input_info input.checkbox {
   width: auto;
   margin-bottom: 4px;
 }
-.form .info_new_page {
-  border: 1px solid #65a7dd;
-}
-.form .info_new_page td {
-  border-bottom: 1px solid #65a7dd;
-  vertical-align: middle;
-  padding: 5px 0 3px 5px;
-}
 .comment {
   display: block;
   margin-top: 3px;
@@ -1527,56 +1404,7 @@ div.input_info input.checkbox {
   float:right;
   margin-top: 3px;
 }
-.contentTD {
-  padding: 5px 10px;
-}
 /*** 22/09/2009 ***/
-.textLabel {
-  margin-bottom: 10px;
-  font-size: 12px;
-}
-.containerForMultiSelect {
-  width: 100%;
-  text-align: center;
-  margin-bottom: 10px;
-}
-.containerForMultiSelect table {
-  width: 70%;
-  margin: 0 auto;
-}
-.containerForMultiSelect td {
-  vertical-align: middle;
-}
-.tdForSelect {
-  width: 40%;
-  text-align: center;
-}
-.multiSelect {
-  width: 200px;
-  height: 200px;
-  border:1px solid #3583B7;
-  margin-bottom: 5px;
-  padding-left: 10px;
-}
-.multiSelect option {
-  background:#ffffff;
-  font-size: 12px;
-  color:#004882;
-  padding: 2px 0;
-}
-@-moz-document url-prefix() {
-  .multiSelect {
-  padding-left: 0;
-}
-.multiSelect option {
-  padding-left: 10px;
-}
-}
-.forButton {
-  width: 10%;
-  vertical-align: middle;
-  text-align: center;
-}
 div#history small {
   color:#1a85b4;
 }
@@ -1584,10 +1412,6 @@ div#history small a {
   font-size:9px;
   color:#0973a1;
   font-weight: bold;
-}
-.checkboxStyle {
-  float: left;
-  margin-right: 10px;
 }
 div.titleTH, .wrapper-table th {
   background:#3583b7;
@@ -1694,10 +1518,6 @@ td.alignTop {
 #middle_left div.new_level div.title {
   padding-bottom: 0;
   padding-top: 3px;
-}
-.new-line, .new-line table, .new-line table td {
-  width: 100%;
-  overflow: hidden;
 }
 .folder {
   margin-bottom: 5px;
@@ -1995,8 +1815,6 @@ div.addRuleBar p.name {
 #middle_right_content .input_info select {
   width: auto;
 }
-.withTextArea {
-}
 .clearAll {
   height: 1px;
   overflow: hidden;
@@ -2009,6 +1827,7 @@ div.list-checkbox {
   width: 13px;
   height: 13px;
   background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
+  margin-right:10px;
 }
 div.list-checkbox.clickable {
   cursor: pointer;
@@ -2031,6 +1850,7 @@ div.list-multiactioncb-all {
   height: 13px;
   background: url(/admin-side/img/checkbox_unchecked.gif) no-repeat bottom right;
   cursor: pointer;
+  margin-left:5px;
 }
 div.list-multiactioncb-all.checked {
   background: url(/admin-side/img/checkbox_checked.gif) no-repeat bottom right;
@@ -2039,20 +1859,27 @@ div.list-multiaction-panel {
   margin-top: 5px;
   height: 25px;
 }
-div.list-multiaction-panel select{
+div.list-multiaction-panel select {
   border: 1px solid #65a7dd;
-  margin-top: 5px;
+  _margin-top: -2px;
   min-width: 150px;
   float: left;
+  _font-size:11px;
+}
+div.list-multiaction-panel div.selectWrapper {
+  margin-top: 5px;
+  _margin-top: 7px;
+  _height: 17px;
 }
 div.list-multiaction-panel .button {
   float: left;
-  margin: 4px 0 0 5px;
+  margin: 5px 0 0 5px;
 }
 div.list-multiaction-panel div.list-multiactioncb-all,
 div.list-multiaction-panel div.list-multiactioncb-all.checked {
   float: left;
   height: 25px;
   width: 50px;
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACYAAAAWCAMAAACbmR4xAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAIdJREFUeNpiYCQKAAQQA3HKAAKIgTgNAAEEl2RgwKcOIIAYEKrwqQMIIAYkVXjUAQQQA7Iq3OoAAohILwAEEJHKAAKISGUAAUSkMoAAIlIZQAARqQwggIhUBhBARCoDCCAilQEEEJIyHAAsCRBARKY3gAAiUhlAABGpDCCAiFQGEEBEKgMIMAAZagMLzQih2gAAAABJRU5ErkJggg==") no-repeat scroll 10px -2px rgba(0, 0, 0, 0);
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACYAAAAWCAMAAACbmR4xAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAIdJREFUeNpiYCQKAAQQA3HKAAKIgTgNAAEEl2RgwKcOIIAYEKrwqQMIIAYkVXjUAQQQA7Iq3OoAAohILwAEEJHKAAKISGUAAUSkMoAAIlIZQAARqQwggIhUBhBARCoDCCAilQEEEJIyHAAsCRBARKY3gAAiUhlAABGpDCCAiFQGEEBEKgMIMAAZagMLzQih2gAAAABJRU5ErkJggg==") no-repeat bottom right;
+  margin-left: -4px;
 }

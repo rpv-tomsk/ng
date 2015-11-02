@@ -1,14 +1,12 @@
-<table class="component_form" border="0">
+<table class="component_new_form info" border="0">
   <tr>
-    <td class="title">
+    <td>
       <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR KEY_VALUE>"><TMPL_VAR ERRORMSG></div>   
-      
-        <p class="comment_input"><TMPL_VAR DATA></p>	
-
+        <p><TMPL_VAR DATA></p>
     </td>
   </tr>
   <tr>
-    <td class="title_img">
+    <td class="buttons">
       <center>
         <TMPL_IF AJAX><a href="#" onclick="clear_block('formb_<TMPL_VAR KEY_VALUE>');return false;"><TMPL_ELSE><a href="<TMPL_VAR REF>"></TMPL_IF AJAX><img src="/admin-side/img/button_cancel.gif" style="border-width: 0;"></a>
       </center>    

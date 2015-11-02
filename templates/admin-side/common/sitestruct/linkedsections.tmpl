@@ -1,6 +1,6 @@
 <TMPL_IF LINKED_PAGES>
 <tr>
-  <td class="title" style="border:none;"><p class="comment_input">Добавление страниц в связанные разделы</p></td>
+  <td class="title" style="border:none;"><p>Добавление страниц в связанные разделы</p></td>
 </tr>
 
   <tr>
@@ -9,8 +9,8 @@
       
       <table class="info_new_page">
       <tr>
-        <th style="width:100px;"></th>
-        <th style="width:100px;">Язык</th>
+        <th style="width:25px;"></th>
+        <th style="text-align:center; width:50px;">Язык</th>
         <th style="width:100px;">Сайт</th>
         <th>Раздел</th>
         <th>Вариант</th>
@@ -19,18 +19,16 @@
       
         <TMPL_LOOP LINKED_PAGES>
        
-        <tr style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>; width:100%;" id="errortr_<TMPL_VAR ATTRIB.SUBSITE_ID>">
+        <tr class="errormsg" style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>;" id="errortr_<TMPL_VAR ATTRIB.SUBSITE_ID>">
 			<td colspan="5">
 				<div class="errormsg" id="error_<TMPL_VAR ATTRIB.SUBSITE_ID>">Ошибка_<TMPL_VAR ATTRIB.SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
 			</td>
         </tr>
-
-		<!-- TODO: оформить -->
-        <tr style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>; width:100%;" id="messagetr_<TMPL_VAR ATTRIB.SUBSITE_ID>">
+        <tr class="errormsg" style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>;" id="messagetr_<TMPL_VAR ATTRIB.SUBSITE_ID>">
 			<td colspan="5">
 				<div class="errormsg" id="message_<TMPL_VAR ATTRIB.SUBSITE_ID>">Сообщение_<TMPL_VAR ATTRIB.SUBSITE_ID> <TMPL_VAR MESSAGE></div>
 			</td>
-        </tr>            
+        </tr>
         
         <tr>
           <td style="text-align:center;"><input type="checkbox"  class="checkbox" name="doit_<TMPL_VAR ATTRIB.SUBSITE_ID>" id="doit_<TMPL_VAR ATTRIB.SUBSITE_ID>" value="1" <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF>/></td>

@@ -335,6 +335,7 @@ sub buildList {
 	
     $groups = [] unless scalar @$groups > 1;
 	$self->tmpl()->param(
+        SGROUP => $sGroup,
         GROUPS => $groups,
         ADMINS => \@admins,
         URL => $baseUrl,

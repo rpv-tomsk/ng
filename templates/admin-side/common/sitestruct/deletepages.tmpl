@@ -13,38 +13,38 @@
 <input id="_ajax" type="hidden" name="_ajax" value="0">
 
 
-<table class="component_form" ><tbody>
+<table class="component_new_form info<TMPL_IF IS_AJAX> ajax</TMPL_IF IS_AJAX>"><tbody>
 <TMPL_IF LINKED_PAGES>
-<tr><td class="title_img"><p class="comment_input"><b>Выберите страницы, которые хотите удалить:</b></p></td></tr>
+<tr><td class="left"><p><b>Выберите страницы, которые хотите удалить:</b></p></td></tr>
 
 <tr>
-  <td class="title">
+  <td style="padding: 7px 10px;">
    
     <table class="info_new_page">
     <tr>
       <th style="width:25px;"></th>
-      <th style="width:100px;">Язык</th>
+      <th style="width:50px;text-align:center;">Язык</th>
       <th style="width:100px;">Сайт</th>
       <th>Название страницы</th>
     </tr>
     
       <TMPL_LOOP LINKED_PAGES>
      
-      <tr style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>; width:100%;" id="errortr_<TMPL_VAR SUBSITE_ID>">
+      <tr class="errormsg" style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>;" id="errortr_<TMPL_VAR SUBSITE_ID>">
       <td colspan="6">
           <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Ошибка_<TMPL_VAR SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
       </td>
       </tr>            
 
-      <tr style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>; width:100%;" id="messagetr_<TMPL_VAR SUBSITE_ID>">
+      <tr class="errormsg" style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>;" id="messagetr_<TMPL_VAR SUBSITE_ID>">
       <td colspan="6">
           <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Сообщение_<TMPL_VAR SUBSITE_ID> <TMPL_VAR MESSAGE></div>
       </td>
-      </tr>            
+      </tr>
 
       
       <tr>
-        <td style="text-align:center;"><input type="checkbox"  class="checkbox" name="dodelnode_<TMPL_VAR NODE_ID>" id="dodelnode_<TMPL_VAR NODE_ID>" value="1"  <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF> /></td>
+        <td><input type="checkbox"  class="checkbox" name="dodelnode_<TMPL_VAR NODE_ID>" id="dodelnode_<TMPL_VAR NODE_ID>" value="1"  <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF> /></td>
         <td style="text-align:center;">
             <img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" title="<TMPL_VAR LANG_NAME>" alt="<TMPL_VAR LANG_NAME>" style="border:1px solid #cfe1ee;">
 		</td>
@@ -59,16 +59,16 @@
 </tr>
 <TMPL_ELSE LINKED_PAGES>
 	<TMPL_IF MESSAGE>
-		<tr><td class="title_img"><b><TMPL_VAR MESSAGE></b></td></tr>
+		<tr><td><p><TMPL_VAR MESSAGE></p></td></tr>
 	<TMPL_ELSE>
-		<tr><td class="title_img"><b>Вы действительно хотите удалить эту страницу ? </b></td></tr>
+		<tr><td><p>Вы действительно хотите удалить эту страницу ? </p></td></tr>
 	</TMPL_IF>
     
     <input type="hidden" name="dodelnode_<TMPL_VAR ID>" id="dodelnode_<TMPL_VAR ID>" value="1">
 </TMPL_IF LINKED_PAGES>
 
 <tr>
-<td class="title_img">
+<td class="buttons">
 <center>
 	<TMPL_UNLESS MESSAGE>
 		<input type="image" src="/admin-side/img/buttons/delete.gif"  style="border-width: 0;" />
@@ -83,9 +83,8 @@
 	<TMPL_ELSE>
 		<img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;">
 	</TMPL_IF>
-        
         </a>
-</center>    
+</center>
 </td>
 </tr>
 

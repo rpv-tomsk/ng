@@ -20,15 +20,15 @@
                Список получателей тестовой отправки, один получатель на строку&nbsp;*
             </div>
             <div class="clearAll"></div>
-            <div class="input_info withTextArea">
+            <div class="input_info">
                 <textarea name="recipients" class="info_textarea"><TMPL_VAR RCPT ESCAPE=HTML></textarea>
             </div>
             </div>
         </td>
         </tr>
         
-        <tr class="form bottom">
-            <td class="button-for-polls">
+        <tr class="buttons">
+            <td>
                 <button name="formaction" id="action" type="submit" class="styleForButtonApply" style="background: #D4E7F6 url(/admin-side/img/buttons/apply.gif) no-repeat top;" title="Отправить тестовые письма" value="Отправить">Отправить</button>
                 <TMPL_IF IS_AJAX>
                     <a href="#" onclick="clear_block('formb_<TMPL_VAR MAILING_ID>');return false;">

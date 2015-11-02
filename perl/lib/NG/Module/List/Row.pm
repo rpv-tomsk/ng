@@ -32,6 +32,7 @@ sub init {
     $self->{ID_VALUE} = $id;      #В том числе для шаблона
     
     foreach my $field (@{$self->{_listObj}->{_listfields}}) {
+        next if $field->{FIELD} eq "_counter_";
         my $c = NG::Field->new($field,$self) or die $NG::Field::errstr;
         $self->_addColumn($c);
     };
@@ -42,6 +43,11 @@ sub init {
     foreach my $t (@{$self->{COLUMNS}}) {
         $t->{HTML} = $t->{FIELD}->getListCellHTML();
     };
+    if ($self->{_listObj}->{_showCounter}) {
+        unshift @{$self->{COLUMNS}}, {
+            HTML => $self->{_index},
+        };
+    };
 };
 
 #Метод, используемый в унаследованных классах
@@ -51,13 +57,7 @@ sub _addColumn {
     return if ($field->{TYPE} eq "posorder");
     
     $self->{HFIELDS}->{uc($field->{FIELD})} = $field;
-    
-    if ($field->{FIELD} eq "_counter_") {
-        $field->setDBValue($self->number());
-    }
-    else {
-        $field->setDBValue($self->getParam($field->{FIELD}));
-    };
+    $field->setLoadedValue($self->{ROW});
     
     unless ($field->{TYPE} eq "hidden" || $field->{HIDE}) {
         push @{$self->{COLUMNS}}, {

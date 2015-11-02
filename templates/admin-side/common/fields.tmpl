@@ -97,19 +97,19 @@
  <div class="form-line">
 		<table  style="width:100%;">
 			<tr>
-				<td  class="small-width">
+				<td style="border:none;">
 				<div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
 				<div class="form_contener">	
 					<TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF>
 				</div>	
-				<div class="input_info" style="vertical-align:top;">           											
-					<input class="info_file" type="file" style="width: 200px;" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" />
+				<div class="input_info">
+					<input class="info_file" type="file" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" />
 				</div>	
 				</td>
 			</tr>
       <TMPL_IF DBVALUE>
-			<tr>	
-				<td class="no-padding">
+			<tr>
+				<td>
 				<div id="linkdiv_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="text-align:center;margin-top:10px;">
 				<a href="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>">Скачать</a>
 				<TMPL_UNLESS IS_NOTNULL>
@@ -126,19 +126,19 @@
   <div class="form-line">
 		<table  style="width:100%;">
 			<tr>
-				<td class="small-width">
+				<td style="border:none;">
 					<div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
 					<div class="form_contener">	
 						<TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF>
 					</div>
-                    <div class="input_info" style="vertical-align:top;">           											
-    					<input class="info_file" type="file" style="width: 200px;" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" />
+                    <div class="input_info">
+    					<input class="info_file" type="file" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" />
     				</div>	
 				</td>
             </tr>
 			<TMPL_IF DBVALUE>
             <tr>
-				<td class="no-padding">
+				<td>
                 <div id="linkdiv_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="text-align:center;margin-top:10px;">
                 <a href="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>">Скачать</a>
                 <TMPL_UNLESS IS_NOTNULL>
@@ -158,7 +158,7 @@
        <TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF>
 	</div>
 	<div class="clearAll"></div>
-    <div class="input_info withTextArea">
+    <div class="input_info">
     <textarea class="info_textarea" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="<TMPL_IF HEIGHT>height:<TMPL_VAR HEIGHT></TMPL_IF>" ><TMPL_VAR VALUE ESCAPE=HTML></textarea>
     </div>
 </div>

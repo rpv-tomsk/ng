@@ -1,8 +1,7 @@
 <TMPL_IF IS_SELECT>
         <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
 	    <div class="form_contener">
-           <p class="comment_input"><TMPL_VAR NAME></p>
-	       <TMPL_IF IS_NOTNULL><p class="comment_simbol">*</p></TMPL_IF>
+           <TMPL_VAR NAME> <TMPL_IF IS_NOTNULL>*</TMPL_IF>
 	    </div>
         <div class="input_info">
            <div class="selectWrapper">

@@ -66,7 +66,6 @@ sub init {
     $self->{_shlistPageParam}="";
     $self->{_shlistWhere}=[];
     $self->{_shlistSearch}=[];
-    $self->{_shlistFields}=undef;
     
     $self->{_filters} = []; # Список фильтров списка
     $self->{_multiActions} = undef;  #Список возможных действий пользователя над группой записей.
@@ -79,6 +78,7 @@ sub init {
     $self->{_has_move_link} = 0;  ### Живет потому что есть метод disableMoveLink
     $self->{_hide_move_link} = 0;
     $self->{_posField} = undef;   ### Поле типа posorder
+    $self->{_showCounter} = 0;     ### Выводить номер строки БД в списке
     $self->{_delete_link_name} = "Удалить";
     
     $self->{_listtemplate} = "admin-side/common/universallist.tmpl";
@@ -159,14 +159,24 @@ sub buildList {
     # Заполняем описания полей списка описаниями из основного массива
     my $listfields = $self->_getIntersectFields($self->{_listfields}) or return $self->showError("buildList(): Ошибка вызова _getIntersectFields()");
     
+    my $listFObjs = [];
+    foreach my $f (@$listfields) {
+        if ($f->{FIELD} eq '_counter_') {
+            $self->{_showCounter} = $f;
+            next;
+        };
+        my $fObj = NG::Field->new($f,$self);
+        push @$listFObjs, $fObj;
+    };
+    
     $self->processFKFields() or return $self->showError("buildList(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
     $self->processFilters() or return $self->showError("buildList(): Ошибка вызова processFilters()");
-    $self->processSorting($listfields) or return $self->showError("buildList(): Ошибка вызова processSorting()");
+    $self->processSorting() or return $self->showError("buildList(): Ошибка вызова processSorting()");
     $self->setPagesParam();
-    $self->highlightSortedColumns($listfields) or return $self->showError("buildList(): Ошибка вызова highlightSortedColumns()");
     
-    my @columns = $self->getListColumns($listfields);  # Также выставляет список полей для getListSQLFields
-    my $headersCnt = scalar @columns;
+    my @headers = $self->getListHeaders($listFObjs);
+    $self->highlightSortedColumns(\@headers) or return $self->showError("buildList(): Ошибка вызова highlightSortedColumns()");
+    my $headersCnt = scalar @headers;
     
     $headersCnt++ if $self->{_multiActions};
     
@@ -251,7 +261,7 @@ sub buildList {
     my $dblist = NG::DBlist->new(
         db     => $self->db(),
         table  => $self->getListSQLTable(),
-        fields => $self->getListSQLFields(),
+        fields => $self->getListSQLFields($listFObjs),
         where  => $self->getListSQLWhere(),
         order  => $self->getListSQLOrder(),
         pagename=>"page",
@@ -302,9 +312,7 @@ sub buildList {
     
     my $template = $self->template() || return $self->error("NG::Module::List::buildList(): Template not opened");
     $template->param(
-        HEADERS   => \@columns, #TODO: this can be $self->getListHeaders(),
-        #HEADERS_CNT => $headersCnt,
-        HEADERS_CNT_M1 => scalar(@columns)-1,  #Для чего это? (rpv,2014-11-27)
+        HEADERS   => \@headers,
         PAGES     => $pages,
         DATA      => \@arraydata,
         FILTERS    => $self->getListFilters(),
@@ -414,7 +422,7 @@ sub processForm {
     if ($action eq "insf" || $action eq "updf" || (!$is_ajax && $action eq "formaction")) {
         #Построение ссылки возврата после добавления записи
         $self->processFilters() or return $self->showError("processForm(): Ошибка вызова processFilters()");
-        $self->processSorting([]) or return $self->showError("processForm(): Ошибка вызова processSorting()");
+        $self->processSorting() or return $self->showError("processForm(): Ошибка вызова processSorting()");
 
         $formurl = getURLWithParams($formurl,
             $self->getFilterParam(), # На текущий момент не используется в формирования ссылки перехода на добавленную запись
@@ -1191,7 +1199,7 @@ sub _maDeleteRecords {
     return $self->outputJSON({status=>'ok'});
 };
 
- sub afterMove { my ($self, $id, $moveDir) = @_; }
+sub afterMove { my ($self, $id, $moveDir) = @_; }
 
 sub Move {
     my $self = shift;
@@ -1213,8 +1221,7 @@ sub Move {
     my $posField = $self->getPosField() or return $self->showError("Move(): поле позиционирования не найдено");   
     $self->processFKFields() or return $self->showError("Move(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
     $self->processFilters()  or return $self->showError("Move(): Ошибка вызова processFilters()");
-    #TODO: вызов processSorting с [] - это хак.
-    $self->processSorting([])  or return $self->showError("Move(): Ошибка вызова processSorting()");
+    $self->processSorting()  or return $self->showError("Move(): Ошибка вызова processSorting()");
     
     die "Internal error:_shlistActiveOrder not defined." unless $self->{_shlistActiveOrder};
     my $found   = $self->{_shlistActiveOrder}->{ORDER};
@@ -1230,6 +1237,7 @@ sub Move {
     };
 
     my $posFieldName = $posField->{FIELD};
+    return $self->error("Некорректная ссылка перемещения") unless $posFieldName eq $found->{FIELD};
     my $idFieldName  = $self->{_idname};
     
     my @values = $self->getListSQLValues();
@@ -1447,7 +1455,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             else {
               return $self->error("Поле ".$field->{FIELD}." не является fkparent или id. Значение ключа из суффикса не может быть игнорировано.А еще SUFFIXFIELD какой-то не понятный :).");
             };
-         };
+        };
         
         #Добавляем в список полей поля, описанные в суффиксе.
         #Их значения могут пригодиться в обработчиках, используются при обратном формировании суффикса.
@@ -2067,21 +2075,20 @@ sub getListFilters {
 
 sub processSorting {
     my $self = shift;
-    my $listfields = shift or confess "processSorting(): incorrect usage";
     
     my $q = $self->q();
 
     my $posField = $self->getPosField();
     if ($posField) {
-        push @{$listfields}, $posField;
         my $order = {};
         $order->{FIELD} = $posField->{FIELD};
         $order->{DEFAULTBY} = "DESC" if $posField->{REVERSE};
         unshift @{$self->{_orders}}, $order;
     };
+    
+    return NG::Block::M_OK unless scalar @{$self->{_orders}};
 
-    my $orderfield = "";
-    my $dir;
+    my ($orderfield,$dir) = ('','');
     if ($q->url_param('asc')) {
         $orderfield = $q->url_param('asc');
         $dir = "ASC";
@@ -2090,9 +2097,8 @@ sub processSorting {
         $orderfield = $q->url_param('desc');
         $dir = "DESC";
     };
-    return NG::Block::M_OK unless scalar @{$self->{_orders}};
-    my $default=undef;
-    my $found = undef;
+    
+    my ($found,$default) = (undef,undef);
     foreach my $iorder (@{$self->{_orders}}) {
         if ($iorder->{FIELD} eq $orderfield){
             $found = $iorder;
@@ -2137,41 +2143,38 @@ sub getFilterParam {
 };
 
 #Методы построения списка
-sub getListColumns {
+sub getListHeaders {
     my $self = shift;
-    my $listfields = shift or die "getListColumns(): incorrect usage";
+    my $listFObjs = shift or die "getListHeaders(): incorrect usage";
     
-    # Составляем строку-список запрашиваемых полей. При этом контролируем вхождение туда ключевого поля.
-    my @columns=();
-    my $fields = "";
-    my $idfound = 0;
-    foreach my $field (@{$listfields}) {
-        $idfound = 1 if ($field->{TYPE} eq "id");
-        push @columns,$field unless ($field->{TYPE} eq "hidden");  # Не включаем в список на отображение
-        next if ($field->{FIELD} eq "_counter_");                  ## не включаем в список на выборку
-        next if ($field->{'IS_FAKEFIELD'}); #не включаем в выборку вычисляемые поля
-        $fields .= ",".$field->{FIELD};
-        $field->{IS_POSORDER} = 1 if ($field->{TYPE} eq "posorder");
-        $field->{ORDER} = getURLWithParams($field->{ORDER},$self->getFilterParam(),$self->getFKParam()) if ($field->{ORDER});
+    my @headers = ();
+    foreach my $fObj (@{$listFObjs}) {
+        next if $fObj->{TYPE} eq "posorder";
+        #
+        my $headerCell = $fObj->getListHeaderCell();
+        $headerCell->{FIELD} = $fObj->{FIELD};
+        push @headers, $headerCell;
     };
-    
-    if ($idfound == 0) {
-        $fields .= ",".$self->{_idname}; # Если ключевое поле не найдено
-        push @{$listfields}, {
-            TYPE=>"hidden",
-            FIELD=>$self->{_idname},
-            NAME=>$self->{_idname},
+    my $posOrder = $self->getPosField();
+    if ($posOrder) {
+        my $headerCell = {
+            CLASS => 'posorder',
+            NAME  => $posOrder->{NAME} || 'Позиция',
+            FIELD => $posOrder->{FIELD},
+        };
+        push @headers, $headerCell;
+    };
+    if ($self->{_showCounter}) {
+        unshift @headers, {
+            NAME => '№',
         };
     };
-    $fields =~ s/^,//;
-    $self->{_shlistFields} = $fields;
-    return @columns;
+    return @headers;
 };
 
-sub highlightSortedColumns {
-    my $self = shift;
-    my $listfields = shift or confess "highlightSortedColumns(): incorrect usage";
-    #Подсветка столбцов, по которым можно делать сортировку
+sub highlightSortedColumns { #Подсветка столбцов, по которым можно делать сортировку
+    my ($self,$columns) = (shift,shift);
+    $columns or confess "highlightSortedColumns(): incorrect usage";
     
     #Если есть несколько столбцов, значит есть дефолтный, значит есть активный
     return NG::Block::M_OK unless $self->{_shlistActiveOrder};
@@ -2179,46 +2182,60 @@ sub highlightSortedColumns {
     my $dir   = $self->{_shlistActiveOrder}->{DIR};
     
     my $myurl = $self->q()->url();
-    foreach my $iorder (@{$self->{_orders}}) {
-        #Ищем соответствующее поле
-        my $field = undef;
-        foreach (@{$listfields}) {
-            if ($_->{FIELD} eq $iorder->{FIELD})  {
-                $field = $_;
-                last;
-            }
-        }
-        if (!defined $field) {
-            last if (scalar @{$self->{_orders}} == 1);
-            return $self->error("Некорректная конфигурация модуля: поле сортировки не найдено в списке столбцов");
-        };
     
+    #Формируем хеш всех столбцов, которые можно сортировать
+    my $ordered = {};
+    foreach my $iorder (@{$self->{_orders}}) {
+        $ordered->{$iorder->{FIELD}} = $iorder;
+    };
+    
+    foreach my $cell (@$columns) {
+        next unless $cell->{FIELD};
+        my $iorder = delete $ordered->{$cell->{FIELD}};
+        next unless $iorder; #Сортировка по столбцу отсутствует
+        
         if ($iorder->{FIELD} eq $found->{FIELD}) {
-            #$field->{SELECTED_ORDER} = 1;
-            $field->{"SELECTED_".$dir} = 1;
+            $cell->{"SELECTED_".$dir} = 1;
             if ($dir eq "ASC") {
-                $field->{ORDER} = getURLWithParams($myurl,"desc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
+                $cell->{ORDER} = getURLWithParams($myurl,"desc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
             } elsif ($dir eq "DESC") {
-                $field->{ORDER} = getURLWithParams($myurl,"asc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
+                $cell->{ORDER} = getURLWithParams($myurl,"asc=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
             };
         }
         else {
             $iorder->{DEFAULTBY} ||= "ASC";
-            $field->{ORDER} = getURLWithParams($myurl,lc($iorder->{DEFAULTBY})."=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
+            $cell->{ORDER} = getURLWithParams($myurl,lc($iorder->{DEFAULTBY})."=".$iorder->{FIELD},$self->getFKParam(),$self->getFilterParam());
         };
     };
+    
+    if (scalar keys %$ordered) {
+    #    last if (scalar @{$self->{_orders}} == 1);
+        return $self->error("Некорректная конфигурация модуля: поле сортировки ".((keys %$ordered)[0])." не найдено в списке столбцов");
+    };
+    
     return NG::Block::M_OK;
 };
 
-#sub getListHeaders {  ## Prototype only
-#    
-#};
 
 #Методы для компоновки SQL-запроса отображения списка
 sub getListSQLFields {
     my $self = shift;
-    die "Variable \"shlistFields\" is not initialised. Probally you need call getListColumns() method." if !defined $self->{_shlistFields};
-    return $self->{_shlistFields};
+    my $listFObjs = shift or die "getListSQLFields(): incorrect usage";
+    
+    # Составляем строку-список запрашиваемых полей. При этом контролируем вхождение туда ключевого поля.
+    my $fields = "";
+    my $idfound = 0;
+    foreach my $fObj (@$listFObjs) {
+        $idfound = 1 if $fObj->{TYPE} eq "id";
+        my @fieldDbFields = $fObj->dbFields('load');
+        $fields .= ',' if $fields && $fields !~ /\,$/;
+        $fields .= join(",",@fieldDbFields);
+    };
+    if ($idfound == 0) {
+        $fields .= ',' if $fields && $fields !~ /\,$/;
+        $fields .= $self->{_idname}; # Если ключевое поле не найдено
+    };
+    return $fields;
 };
 
 sub getListSQLTable {
@@ -2386,7 +2403,7 @@ sub showSearchForm { #Action!
 	#Если в описании таблицы есть FK, учитываем их в ссылках и SQL (createSearchForm() использует getFKParam() и getFilterParam())
 	$self->processFKFields() or return $self->showError("showSearchForm(): Ошибка вызова processFKFields()");
 	$self->processFilters() or return $self->showError("showSearchForm(): Ошибка вызова processFilters()");
-	$self->processSorting([]) or return $self->showError("showSearchForm(): Ошибка вызова processSorting()");
+	$self->processSorting() or return $self->showError("showSearchForm(): Ошибка вызова processSorting()");
 	
 	my $sform = $self->createSearchForm() or return $self->showError("showSearchForm(): Ошибка вызова createSearchForm()");
 

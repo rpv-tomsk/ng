@@ -15,14 +15,9 @@
 
 <div id="error_<TMPL_VAR FORM.KEY_VALUE>" class="errormsg"><TMPL_VAR FORM.ERRORMSG></div>	
 
-<table class="component_form" ><tbody>
+<table class="component_new_form info<TMPL_IF FORM.IS_AJAX> ajax</TMPL_IF FORM.IS_AJAX>" ><tbody>
 
-<TMPL_IF FORM.TITLE>
-<tr>
-  <td class="title"><p class="comment_input"><TMPL_VAR FORM.TITLE></p></td>
-</tr>
-</TMPL_IF FORM.TITLE>
-<tr><td class="title_img"><p class="comment_input" id="errormsg_<TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR DELETE_MESSAGE></p></td></tr>
+<tr><td><p id="errormsg_<TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR DELETE_MESSAGE></p></td></tr>
 
 <TMPL_LOOP FORM.ELEMENTS>
 <TMPL_IF IS_HIDDEN>
@@ -32,11 +27,9 @@
 </TMPL_IF>
 </TMPL_LOOP FORM.ELEMENTS>
 
-
-
 <TMPL_IF FORM.BUTTONS>
 <tr>
-<td class="title_img">
+<td class="buttons">
 <center>
 
 <TMPL_LOOP FORM.BUTTONS>
@@ -57,8 +50,6 @@
 </td>
 </tr>
 </TMPL_IF FORM.BUTTONS>
-
-
 
 </tbody></table>
 </form>

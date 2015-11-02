@@ -1,7 +1,6 @@
 branches/ng6
 
     * Удалена поддержка METHOD (метода обработки перед сохранением) в описании конфигурации полей NG::Field
-    * Изменилось поведение NG::Field->setLoadedValue(), теперь в него передается вся полученная строка БД
     * NG::Module::List::Row->new() / NG::Module::List::Row->init() - изменено API
     - NG::Module::List::Row->number()
     - NG::Module::List::Row->addColumn()
@@ -11,6 +10,13 @@ branches/ng6
     - NG::Module::List->buildRefCurrentUrl()
     * NG::Module::List->beforeDelete($id) -> NG::Module::List->beforeDelete($id,$form)
     * NG::Module::List->afterDelete($id) -> NG::Module::List->afterDelete($id,$form)
+    * NG::Module::List работает с БД через NG::Field->dbFields
+    * NG::Module::List получает данные вывода из NG::Field->getListCellHTML(), NG::Field->getListHeader()
+    * NG::Module::List->getListSQLFields() - изменена реализация, добавлен параметр вызова
+    - NG::Module::List->getListColumns() - преобразовано в getListHeaders(), вызывает NG::Field->getListHeaderCell()
+    + NG::Module::List->getListHeaders()
+    * NG::Module::List->highlightSortedColumns() - изменена реализация, теперь метод обрабатывает столбцы, полученные из getListHeaders()
+    * NG::Module::List->processSorting() - изменены параметры вызова
 
     * Изменена работа processChilds. Требуется перепроверить все конфигурации полей с заданным CHILDS.
       Поддерживается обратная совместимость только на связке image->image.
@@ -21,7 +27,13 @@ branches/ng6
       Несовместимость: TYPE=>'fkparent' + CLASS=>'Some::Class' - не произойдет замена fkparent -> hidden/select/radiobutton
     * Удален тип поля float, используйте number.
     * Вынесено $NG::Field::classesMap
-    + Метод NG::Field::searchIndexValue()
+    + Метод NG::Field->dbField() - поле может указать, какие поля БД ему нужны
+    * Метод NG::Field->dbValue() - добавлен параметр имени поля БД
+    * Метод NG::Field->setLoadedValue() - поведение изменилось, теперь в него передается вся полученная строка БД.
+      В большинстве случаев загрузка данных в объект поля производится по схеме dbFields(ACTION) -> setLoadedValue(TABLE_ROW)
+    + Метод NG::Field->searchIndexValue()
+    + Метод NG::Field->getListCellHTML()
+    
     * В рамках поддержки актуальных версий HTML::Template::Compiled в админке NG::Block->opentemplate() включена case_sensitive=1.
     * Таблица ng_ftsindex - добавлено поле disabled для упрощения запроса на странице поиска (убрано связывание с ng_sitestruct по link,link+lang).
       См. файл docs/ng_ftsindex_disabled.pg.sql

@@ -3,7 +3,7 @@
   <div style="width:100%;">
     
     <TMPL_IF SUBSITES>
-    <table id="content" style="padding-top:0px;margin-top:0px;" border=1>
+    <table class="content" style="padding-top:0px;margin-top:0px;" border=1>
         <tr>
             <td class="content">
                 <!--div style="float:left;">Подсайт:</div-->
@@ -32,49 +32,48 @@
         </div>	
         </TMPL_IF GREETINGS.ACTIVATE>
         
-        <table id="content">
+        <table class="content">
         <TMPL_LOOP NODEINFO.INFO>
             <TMPL_IF PAGEURL>
-            <tr>
-                <td class="title"><p>Адрес:</p></td>
+            <tr class="border">
+                <th><p>Адрес:</p></td>
                 <td class="content" style="border-bottom:1px solid #65a7dd;"><TMPL_VAR PAGEURL>  (<a href="<TMPL_VAR PAGEURL>">перейти</a>)</td>
             </tr>
             <TMPL_ELSIF STATUS>
             <TMPL_WITH STATUS>
-            <tr>
+            <tr class="border">
             <TMPL_IF ACTIVE>
-                <td class="title"><p>Статус:</p></td>
+                <th><p>Статус:</p></td>
                 <TMPL_IF NO_DEACTIVE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <TMPL_VAR NO_DEACTIVE></td>
+                  <td style="border-bottom:1px solid #65a7dd;">Включена, <TMPL_VAR NO_DEACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR THISNODEURL>?action=disablepage">Выключить</a></td>
+                  <td style="border-bottom:1px solid #65a7dd;">Включена, <a href="<TMPL_VAR THISNODEURL>?action=disablepage">Выключить</a></td>
                 </TMPL_IF NO_DEACTIVE>
             <TMPL_ELSE ACTIVE>
-                <td class="title"><p>Статус:</p></td>
+                <th><p>Статус:</p></td>
                 <TMPL_IF BY_PAGEID>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BY_PAGEID_URL>">разделом</a></td>
+                  <td style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BY_PAGEID_URL>">разделом</a></td>
                 <TMPL_ELSIF BY_PARENT>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BY_PARENT_URL>">страница-родитель</a></td>
+                  <td style="border-bottom:1px solid #65a7dd;">Выключена <a href="<TMPL_VAR BY_PARENT_URL>">страница-родитель</a></td>
                 <TMPL_ELSIF NO_ACTIVE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <TMPL_VAR NO_ACTIVE></td>
+                  <td style="border-bottom:1px solid #65a7dd;">Выключена, <TMPL_VAR NO_ACTIVE></td>
                 <TMPL_ELSE>
-                  <td class="content" style="border-bottom:1px solid #65a7dd;">Выключена, <a href="<TMPL_VAR THISNODEURL>?action=enablepage">Включить</a></td>
+                  <td style="border-bottom:1px solid #65a7dd;">Выключена, <a href="<TMPL_VAR THISNODEURL>?action=enablepage">Включить</a></td>
                 </TMPL_IF>
             </TMPL_IF ACTIVE>
             </tr>
             </TMPL_WITH STATUS>
             <TMPL_ELSE>
-            <tr>
-                <td class="title"><p><TMPL_VAR NAME>:</p></td>
-                <td class="content"><p><TMPL_VAR VALUE></p></td>
+            <tr class="border">
+                <th><p><TMPL_VAR NAME>:</p></td>
+                <td><p><TMPL_VAR VALUE></p></td>
             </tr>
             </TMPL_IF>
         </TMPL_LOOP NODEINFO.INFO>
             
             <!-- Последняя строка таблицы -->
-            <tr>
-                <td class="last_line_right_img"></td>
-                <td class="last_line_right_img">
+            <tr class="actions">
+                <td colspan="2">
                 <TMPL_LOOP NODEINFO.ACTIONS>
                     <TMPL_IF FORM>
                         <a href="<TMPL_VAR FORM_URL>" onclick="ajax_url('<TMPL_VAR AJAX_URL>','new_subpage');return false;"><TMPL_VAR NAME></a>
@@ -87,30 +86,30 @@
             </tr>
         </table>
         
-        <div style="padding-bottom:15px;">
+        <div style="margin-bottom:8px;">
           <div id="new_subpage" style="width:100%;"></div>
         </div>
         
         <TMPL_IF PAGE_LINKEDPAGES>
         <h3>Связанные страницы:</h3>
         
-        <table id="content" border="0" >
-            <tr>
-            <td class="title" style="width:27px;"></td>
-                <td class="title" style="text-align:center;"><p>Язык</p></td>
-                <td class="title" style="width:80px;"><p>Сайт</p></td>
-                <td class="title"><p>Название страницы</p></td>
-                <td class="title"></td>
+        <table class="content" border="0" >
+            <tr class="title">
+            <td style="width:27px;"></td>
+                <td style="text-align:center;"><p>Язык</p></td>
+                <td style="width:80px;"><p>Сайт</p></td>
+                <td><p>Название страницы</p></td>
+                <td></td>
             </tr>
             <TMPL_LOOP PAGE_LINKEDPAGES>
             <tr>
-                <td class="content" style="text-align:left;"><TMPL_IF NODE_DISABLED><img src="/admin-side/img/attention.gif" alt="OFF" title="Страница не активна"></TMPL_IF></td>
-                <td class="content" style="width:48px;">
+                <td style="text-align:left;"><TMPL_IF NODE_DISABLED><img src="/admin-side/img/attention.gif" alt="OFF" title="Страница не активна"></TMPL_IF></td>
+                <td style="width:48px;">
                     <TMPL_IF LANG_IMG><img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" title="<TMPL_VAR LANG_NAME>" alt="<TMPL_VAR LANG_NAME>" style="border:1px solid #cfe1ee;margin-left:10px;"></TMPL_IF LANG_IMG>
                 </td>
-                <td class="content"><p><TMPL_VAR SUBSITE_NAME></p></td>
-                <td class="content"><p><TMPL_VAR NODE_NAME></p></td>
-                <td  class="content link" style="text-align:right;padding-right:25px;"> 
+                <td><p><TMPL_VAR SUBSITE_NAME></p></td>
+                <td><p><TMPL_VAR NODE_NAME></p></td>
+                <td class="right link" style="padding-right:25px;font-weight:bold;"> 
                     <TMPL_IF PRIVILEGE.PROPERTIES><nobr><a href="<TMPL_VAR NODELINK>">Свойства</a>&nbsp;|&nbsp;</TMPL_IF PRIVILEGE.PROPERTIES>
                     <TMPL_IF PRIVILEGE.CONTENT><a href="/admin-side/pages/<TMPL_VAR NODE_ID>/">Контент</a>&nbsp;|&nbsp;</TMPL_IF>
                     <a href="<TMPL_VAR NODE_URL>">Посмотреть</a></nobr></td>
@@ -222,10 +221,7 @@
 			</table>
 		</div>
 		<div class="new-line">
-            <div id='tree_form<TMPL_VAR ID>'></div>
-			<!--table style="border: none;">
-				<tr><td id='tree_form<TMPL_VAR ID>' style="border: none;"></td></tr>
-			</table-->
+            <div id='tree_form<TMPL_VAR ID>' style="margin-left:20px;"></div>
 		</div>
 	<!-- node <TMPL_VAR ID> data end -->
 	

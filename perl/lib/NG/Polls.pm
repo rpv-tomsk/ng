@@ -20,6 +20,10 @@ sub moduleBlocks {
 };
 
 sub pollsConfig {
+    #Keys:
+    # IMAGEFIELDS    - field configuration hash
+    # IMAGEFORROTATE - Require image when 'rotate' set
+    # DISABLE_HIDERESULT - Disable 'visible' field
     return {};
 };
 
@@ -634,14 +638,14 @@ sub config  {
     my $formfields = $m->formfields();
     my $listfields = $m->listfields();
     
-    my $imageFields = $m->pollsConfig()->{IMAGEFIELDS};
+    my $pollsConfig = $m->pollsConfig();
+    my $imageFields = $pollsConfig->{IMAGEFIELDS};
     
     $self->fields(
         {FIELD=>'id',         TYPE=>'id',     NAME=>'Код записи'},
         {FIELD=>'question',   TYPE=>'text',   NAME=>'Текст вопроса', IS_NOTNULL=>1},
         {FIELD=>'start_date', TYPE=>'date',   NAME=>'Дата начала (дд.мм.гггг)',   IS_NOTNULL=>1,DEFAULT=>current_date()},
         {FIELD=>'end_date',   TYPE=>'date',   NAME=>'Дата окончания (дд.мм.гггг)'},
-        {FIELD=>'visible',    TYPE=>'checkbox', NAME=>'Показывать результаты', IS_NOTNULL=>0},
         {FIELD=>'rotate',     TYPE=>'checkbox', NAME=>'Ротировать',IS_NOTNULL=>0},
         {FIELD=>'check_ip',   TYPE=>'checkbox', NAME=>'Проверять IP',         IS_NOTNULL=>0},
         {FIELD=>'multichoice',TYPE=>'checkbox', NAME=>'Несколько вариантов',  IS_NOTNULL=>0},
@@ -649,6 +653,16 @@ sub config  {
         @$fields
     );
     $self->fields($imageFields) if $imageFields;
+    if ($pollsConfig->{DISABLE_HIDERESULT}) {
+        $self->fields(
+            {FIELD=>'visible',    TYPE=>'hidden',   NAME=>'Показывать результаты', IS_NOTNULL=>0, DEFAULT=>1, HIDE=>1},
+        );
+    }
+    else {
+        $self->fields(
+            {FIELD=>'visible',    TYPE=>'checkbox', NAME=>'Показывать результаты', IS_NOTNULL=>0},
+        );
+    };
     
     # Списковая
     $self->listfields(
@@ -765,13 +779,8 @@ sub deleteAnswer {
 		};
 	}
 	else {
-		if ($is_ajax) {
-			return $self->output("<script>parent.document.getElementById('deleteform1_".$answer_id."').style.display='';parent.document.getElementById('deleteform2_".$answer_id."').style.display='';</script>");
-		}
-		else {
-			$q->param("delete_answer_id",$answer_id);
-			return $self->showOrUpdateAnswers("showanswers",0);
-		};
+		$q->param("delete_answer_id",$answer_id);
+		return $self->showOrUpdateAnswers("showanswers",0);
 	};
 };
 
@@ -840,8 +849,8 @@ sub showOrUpdateAnswers {
 	my @new_answers = ();
 	my $has_errors=0;
     while (my $row=$sth->fetchrow_hashref()) {
-		$row->{VOTE_PRC} = 0;
-        $row->{VOTE_PRC} = sprintf("%.2f",($row->{vote_cnt}*100/$poll->{vote_cnt})) if ($poll->{vote_cnt}>0);
+		$row->{vote_prc} = 0;
+        $row->{vote_prc} = sprintf("%.2f",($row->{vote_cnt}*100/$poll->{vote_cnt})) if ($poll->{vote_cnt}>0);
 		if ($is_update) {
             my $error="";
 			#validation
@@ -858,12 +867,12 @@ sub showOrUpdateAnswers {
 				$def = ($q->param("def") && $q->param("def") == $row->{id})?1:0;
 			}
 			push @new_answers, {
-				ID     => $row->{id},
-				ANSWER => $answer,
-				DEF    => $def,
-                ERROR  => $error,
-                VOTE_CNT => $row->{vote_cnt},
-                VOTE_PRC => $row->{VOTE_PRC},
+				id     => $row->{id},
+				answer => $answer,
+				def    => $def,
+                error  => $error,
+                vote_cnt => $row->{vote_cnt},
+                vote_prc => $row->{vote_prc},
 			};
 		};
 		$row->{for_delete} = ($delete_answer_id == $row->{id})?1:0;

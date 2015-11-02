@@ -1,148 +1,116 @@
 <TMPL_UNLESS IS_AJAX>  
-	<div id="menu_content"> </div>
-    <div id="info_content" style="padding-bottom:10px;">	
-	<div style="width:100%;">	
+    <div id="menu_content"> </div>
+    <div id="info_content" style="padding-bottom:10px;">
+    <div style="width:100%;">
 </TMPL_UNLESS IS_AJAX>
-
-
-    <table class="data" style="border-left-width:1px; width:100%;">
-		<tr class="form bottom">
-		<td>
-			<form action="<TMPL_VAR URL>" method="post" id="poll<TMPL_VAR POLL_ID>"  <TMPL_IF IS_AJAX>target="newa_ifr<TMPL_VAR POLL_ID>"</TMPL_IF>>
+            <form action="<TMPL_VAR URL>" method="post" id="poll<TMPL_VAR POLL_ID>"  <TMPL_IF IS_AJAX>target="newa_ifr<TMPL_VAR POLL_ID>"</TMPL_IF>>
             <input type="hidden" name="poll_id" value="<TMPL_VAR POLL_ID>">
             <input type="hidden" name="action" value="updateanswers">
             <input type="hidden" name="ref" value="<TMPL_VAR REF>">            
-            <input type="hidden" name="_ajax" id="_ajax" value="<TMPL_VAR IS_AJAX>"> 	  			
-	            	
-			<table class="component_form"  style="width:100%;">
-			
+            <input type="hidden" name="_ajax" id="_ajax" value="<TMPL_VAR IS_AJAX>">
+	        
+			<table class="component_new_form<TMPL_IF IS_AJAX> ajax</TMPL_IF IS_AJAX>">
 			<TMPL_UNLESS IS_AJAX>
-			<tr style="height:50px;">
-				<td <TMPL_IF ANSWERS_LIST>colspan="5"</TMPL_IF> style="text-align: center;"><p class="comment_input">Опрос: <TMPL_VAR QUESTION></p></td>
+			<tr>
+				<td colspan="5" style="text-align: center; font-weight: bold; padding: 5px 5px 10px;"><p>Опрос: <TMPL_VAR QUESTION></p></td>
 			</tr>
 			</TMPL_UNLESS IS_AJAX>
 			
 			<TMPL_IF ANSWERS_LIST>
-			<tr>
-				<td style="width:auto;"><p class="comment_input">Вариант ответа</p></td>
-				<td style="width:170px;vertical-align:middle;"><p class="comment_input">Результат опроса</p></td>
-				<td>&nbsp;</td>
-				<td style="text-align:center;width:50px;"><p class="comment_input">По умолчанию</p></td>
-				<td>&nbsp;</td>
+			<tr class="title">
+				<td style="width:auto;"><p>Вариант ответа</p></td>
+				<td style="width:170px;"><p>Результат опроса</p></td>
+				<td style="width:75px;">&nbsp;</td>
+				<td style="width:100px;" class="center"><p>По умолчанию</p></td>
+				<td style="width:70px;">&nbsp;</td>
 			</tr>
 	        <TMPL_LOOP ANSWERS_LIST>
-	        <tr class="form buttom">
-	        	
-				<td class="input" style="width:auto;">
-	        		<div id="error_name<TMPL_VAR ID>" style="color:red;font-size:14px;font-weight:normal;"><TMPL_VAR ERROR></div>	
-					<input type="text" name="answer_<TMPL_VAR ID>" value="<TMPL_VAR ANSWER ESCAPE=HTML>" style="width:100%;" class="info_text">
+	        <tr class="center middle">
+				<td class="input">
+	        		<div id="error_name<TMPL_VAR id>" style="color:red;font-size:14px;font-weight:normal;"><TMPL_VAR error></div>	
+					<input type="text" name="answer_<TMPL_VAR id>" value="<TMPL_VAR answer ESCAPE=HTML>" style="width:100%;" class="info_text">
 	        	</td>
-	        	
-	        	<td class="input" style="vertical-align:middle;margin-right:0px;padding-right:10px;width:170px;">
+	        	<td class="input" style="margin-right:0px;padding-right:10px;">
 	        		<div style="width: 100%; background: #f1f9ff;">
-					<div style="width: <TMPL_VAR VOTE_PRC>%; background: #1f6a9c;">&nbsp;</div>
+					<div style="width: <TMPL_VAR vote_prc>%; background: #1f6a9c;">&nbsp;</div>
 					</div>
 	        	</td>
-	        	
-				<td class="input" style="vertical-align:middle;color:#4b7495;width:75px;">
-					<nobr><TMPL_VAR VOTE_CNT> (<TMPL_VAR VOTE_PRC>%)</nobr>
+				<td class="input">
+					<nobr><TMPL_VAR vote_cnt> (<TMPL_VAR vote_prc>%)</nobr>
 				</td>
-			
-				<td style="width:100px;">
-					<center><input type="<TMPL_IF MULTICHOICE>checkbox<TMPL_ELSE>radio</TMPL_IF>" name="def<TMPL_IF MULTICHOICE>_<TMPL_VAR ID></TMPL_IF>" id="def_<TMPL_VAR ID>" value="<TMPL_IF MULTICHOICE>1<TMPL_ELSE><TMPL_VAR ID></TMPL_IF>" <TMPL_IF DEF>CHECKED</TMPL_IF>  /></center>
+				<td>
+					<input type="<TMPL_IF multichoice>checkbox<TMPL_ELSE>radio</TMPL_IF>" name="def<TMPL_IF multichoice>_<TMPL_VAR id></TMPL_IF>" id="def_<TMPL_VAR id>" value="<TMPL_IF multichoice>1<TMPL_ELSE><TMPL_VAR id></TMPL_IF>" <TMPL_IF def>CHECKED</TMPL_IF>  />
 				</td>
-
-				<td style="text-align:center;padding-right:10px;width:70px;">
-					<a style="font-weight:normal;" <TMPL_IF IS_AJAX>target="newa_ifr<TMPL_VAR POLL_ID>"</TMPL_IF IS_AJAX> href="<TMPL_VAR URL>?action=deleteanswer&answer_id=<TMPL_VAR ID>&poll_id=<TMPL_VAR POLL_ID>&ref=<TMPL_VAR REF ESCAPE=URI>" onclick="this.href += '&_ajax=1'" >Удалить</a>
+				<td>
+					<a href="<TMPL_VAR URL>?action=deleteanswer&answer_id=<TMPL_VAR id>&poll_id=<TMPL_VAR POLL_ID>&ref=<TMPL_VAR REF ESCAPE=URI>" onclick="document.getElementById('deleteform1_<TMPL_VAR id>').style.display='';return false;" >Удалить</a>
 				</td>
-                	
 			</tr>
-			
-			<tr id="deleteform1_<TMPL_VAR ID>" style="display:<TMPL_IF FOR_DELETE><TMPL_ELSE>none</TMPL_IF>"><td colspan="5" class="title_img"><p class="comment_input" id="errormsg_<TMPL_VAR KEY_VALUE>">Вы действительно хотите удалить вариант ответа?</p></td></tr>
-			
-			<tr id="deleteform2_<TMPL_VAR ID>" <TMPL_UNLESS FOR_DELETE>style="display:none"</TMPL_UNLESS>>
-			<td colspan="5" class="title_img">
+               
+            <tr>
+            <td colspan="5" style="padding:0px; border:none;">
+			<div id="deleteform1_<TMPL_VAR id>" style="display:<TMPL_IF for_delete><TMPL_ELSE>none</TMPL_IF>;padding: 5px 0 10px 15px; border-bottom: 1px solid #8dbee4; text-align:center;">
+                <p style="color:#4b7495; font-weight: bold;" id="errormsg_<TMPL_VAR KEY_VALUE>">Вы действительно хотите удалить вариант ответа?</p>
+            <div style="text-align:center;padding-top:10px;">
 			<form action="<TMPL_VAR URL>" method="get" <TMPL_IF IS_AJAX>target="newa_ifr<TMPL_VAR POLL_ID>"</TMPL_IF IS_AJAX>>
 				<TMPL_IF IS_AJAX><input type="hidden" name="_ajax" value="1"></TMPL_IF>
-				<input type="hidden" name="answer_id" value="<TMPL_VAR ID>">
+				<input type="hidden" name="answer_id" value="<TMPL_VAR id>">
 				<input type="hidden" name="poll_id" value="<TMPL_VAR POLL_ID>">
 				<input type="hidden" name="action" value="deleteanswer">
 				<input type="hidden" name="confirmation" value="1">
 				<input type="hidden" name="ref" value="<TMPL_VAR REF ESCAPE=URI>">	
-			<center>
-				<input type="image" src="/admin-side/img/buttons/apply.gif"  style="border-width: 0;" />
-				<TMPL_IF IS_AJAX>
-					<a href="#" onclick="document.getElementById('deleteform1_<TMPL_VAR ID>').style.display='none';document.getElementById('deleteform2_<TMPL_VAR ID>').style.display='none';return false;">
-				<TMPL_ELSE>
-					<a href="<TMPL_VAR REF>">
-				</TMPL_IF IS_AJAX>
+				<input type="image" src="/admin-side/img/buttons/delete.gif"  style="border-width: 0;" />
+                <a href="<TMPL_VAR REF>" onclick="document.getElementById('deleteform1_<TMPL_VAR id>').style.display='none';return false;">
 				<img src="/admin-side/img/buttons/cancel.gif" style="border-width: 0;"></a>
-				<br><br>
-			</center>
 			</form>
-			</td>
-			</tr>
-			
+            </div>
+			</div>
 	        </TMPL_LOOP>
-	        
-			<tr class="form bottom">
-				<td class="input" <TMPL_IF ANSWERS_LIST>colspan="5"</TMPL_IF> style="text-align: center;">
-					<input type="image" src="/admin-side/img/buttons/apply.gif" style="border-width: 0;margin-top:10px;margim-bottom:10px;"/ >
+			<tr>
+				<td class="buttons" colspan="5">
+					<input type="image" src="/admin-side/img/buttons/apply.gif">
 				</td>
   			</tr>
-			
 			<TMPL_ELSE>
-			<tr class="form bottom">
-			   <td style="text-align: center;padding:10px"><b>Варианты ответа не занесены</b></td>
+			<tr>
+			   <td class="buttons" colspan="5"><b>Варианты ответа не занесены</b></td>
 			</tr>
 			</TMPL_IF>
-
-			</table>
 			</form>
 			
-			<div>
-			<table class="component_form" border="0" style="width:100%;">
-			<tr class="form bottom">	
-			<td>
+			<tr>
+            <td colspan="5">
 				<form action="<TMPL_VAR URL>" method="post" id="poll<TMPL_VAR POLL_ID>"  <TMPL_IF IS_AJAX>target="newa_ifr<TMPL_VAR POLL_ID>"</TMPL_IF>>
 				<input type="hidden" name="poll_id" value="<TMPL_VAR POLL_ID>">
 				<input type="hidden" name="action"  value="addanswer">
 				<input type="hidden" name="ref" value="<TMPL_VAR REF>">
 				<input type="hidden" name="_ajax" id="_ajax" value="<TMPL_VAR IS_AJAX>">
-				<table width="100%" border=0> 
-				<tr>
-					<td class="input" colspan="2" width=100% style="" style="padding-left: 10px;">
-						<div id="new_answer<TMPL_VAR POLL_ID>" style="color:red;font-size:14px;font-weight:normal;"><TMPL_VAR NEW_A_ERROR></div>
-						<input type="text" name="question" style="width: 100%;" class="info_text" />
-					</td>
-					<td class="input">
-						<input type="image" src="/admin-side/img/buttons/add.gif" style="border-width: 0;margin-left:20px;margin-right:20px;" />
-					</td>
-				</tr>
-				</table>  
+				<div id="new_answer<TMPL_VAR POLL_ID>" style="color:red;font-size:14px;font-weight:normal;"><TMPL_VAR NEW_A_ERROR></div>
+                <div style="width: 100%; float: right;">
+                    <div style="margin-right: 140px;">
+                      <input type="text" style="width: 100%;" name="question">
+                    </div>
+                </div>
+                <div style="float: right; margin-right: -100%;">
+                  <input type="image" src="/admin-side/img/buttons/add.gif" style="float: left;">
+                </div>
 				</form>
 			</td>
 			</tr>
 			
-			<tr class="form bottom">
-				<td class="button-for-polls">
+			<tr>
+				<td class="buttons" colspan="5">
 					<TMPL_IF IS_AJAX>
 						<a href="#" onclick="clear_block('formb_<TMPL_VAR POLL_ID>');return false;">
 					<TMPL_ELSE>
 						<a href="<TMPL_VAR REF>">
 					</TMPL_IF IS_AJAX>
-						<img src="/admin-side/img/buttons/close.gif" style="border-width: 0;">
+						<img src="/admin-side/img/buttons/close.gif">
 						</a>
 				</td>
 			</tr>
 			</table>
-			</div>			
-			
-		</td>
-		</tr>   
-	</table>
 
-	<iframe name='newa_ifr<TMPL_VAR POLL_ID>' style="display: none;"></iframe>  				
+	<iframe name='newa_ifr<TMPL_VAR POLL_ID>' style="display: none;"></iframe>
 
 
 <TMPL_UNLESS IS_AJAX>
@@ -151,7 +119,7 @@
 	<div id="middle_bottom">
 			<div id="middle_bottom_left">
 				<div id="middle_bottom_right"></div>
-			</div>	
+			</div>
 	</div>
 </TMPL_UNLESS IS_AJAX>
 

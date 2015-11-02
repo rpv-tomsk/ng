@@ -46,10 +46,10 @@
 
 <div id="info_content">
 		<TMPL_IF GROUPS#>
-		<div style="width:100%; padding-top:15px;">
-        <table id="content" style="padding-top:0px;margin-top:0px;">
+		<div style="width:100%; margin-top:15px; margin-bottom:15px;">
+        <table class="content">
         	<tr>
-                <td class="content">
+                <td class="border">
         			<form action="<TMPL_VAR URL>" method="GET">
                             <div class="selectWrapper" style="margin-right:5px;margin-top:2px;">
 							<select name="group_id">
@@ -79,47 +79,40 @@
 
 
     <div id="table_content">
-		
-		<table id="content" class="admin-table">
-        	
+        <p>Группа: <TMPL_VAR SGROUP.NAME></p>
+		<table class="content">
             <!-- Строка заголовков -->
+            <tr class="title">
+             <td>Логин</td>
+             <td>ФИО</td>
+            </tr>
 
             <!-- /Строка заголовков -->
             
             
-            	<!-- data rows -->
-	    		<TMPL_LOOP ADMINS>
-				<!-- data columns -->
-				<TMPL_IF NEWGROUP>
-				<tr>
-					<td colspan="2" class="title"><p>Группа: <TMPL_VAR GROUP_NAME></p></td>
-				</tr>
-				</TMPL_IF>
-				<TMPL_IF NEWLEVEL>
-				<tr>
-					<td colspan="2" class="title"><p>Уровень: <TMPL_VAR LEVEL></p></td>
-				</tr>
-	            <tr>            
-						<td class="title"><p>Логин</p></td>
-						<td class="title"><p>ФИО</p></td>
-	            </tr>				
-				</TMPL_IF>				
-				<tr >					
-					<td class="content"><TMPL_VAR login></td>
-					<td class="content"><TMPL_VAR fio></td>
-				</tr> 
-				
+                <!-- data rows -->
+                <TMPL_LOOP ADMINS>
+                <!-- data columns -->
+                <TMPL_IF newlevel>
+                <tr class="group_l1">
+                    <td colspan="2"><p>Уровень: <TMPL_VAR level></p></td>
+                </tr>
+                </TMPL_IF newlevel>
+                <tr class="list">
+                    <td><TMPL_VAR login></td>
+                    <td><TMPL_VAR fio></td>
+                </tr> 
+                
                 <!-- /Строка элементов управления записи -->
-                <tr>
-                 
-                    <td class="last_line_right_img" colspan="2">
+                <tr class="actions">
+                    <td colspan="2">
                         <TMPL_LOOP EXTRA_LINKS>
 						<nobr>
-                            <a href="<TMPL_VAR URL>" <TMPL_IF AJAX_URL>onclick="ajax_url('<TMPL_VAR AJAX_URL>','admin_<TMPL_VAR ID>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
+                            <a href="<TMPL_VAR URL>" <TMPL_IF AJAX_URL>onclick="ajax_url('<TMPL_VAR AJAX_URL>','admin_<TMPL_VAR id>');return false;"</TMPL_IF AJAX_URL>><TMPL_VAR NAME></a>
 							&nbsp;|&nbsp;
                         </TMPL_LOOP>
-                        <TMPL_IF EDIT_URL><a href="<TMPL_VAR EDIT_URL>" <TMPL_IF AJAX_EDIT_URL>onclick="ajax_url('<TMPL_VAR AJAX_EDIT_URL>','admin_<TMPL_VAR ID>');return false;"</TMPL_IF>>Редактировать</a>&nbsp;|&nbsp;</TMPL_IF EDIT_URL>
-                        <TMPL_IF DELETE_URL><a href="<TMPL_VAR DELETE_URL>" <TMPL_IF AJAX_DELETE_URL>onclick="ajax_url('<TMPL_VAR AJAX_DELETE_URL>','admin_<TMPL_VAR ID>');return false;"</TMPL_IF>>Удалить</a></TMPL_IF DELETE_URL>
+                        <TMPL_IF EDIT_URL><a href="<TMPL_VAR EDIT_URL>" <TMPL_IF AJAX_EDIT_URL>onclick="ajax_url('<TMPL_VAR AJAX_EDIT_URL>','admin_<TMPL_VAR id>');return false;"</TMPL_IF>>Редактировать</a>&nbsp;|&nbsp;</TMPL_IF EDIT_URL>
+                        <TMPL_IF DELETE_URL><a href="<TMPL_VAR DELETE_URL>" <TMPL_IF AJAX_DELETE_URL>onclick="ajax_url('<TMPL_VAR AJAX_DELETE_URL>','admin_<TMPL_VAR id>');return false;"</TMPL_IF>>Удалить</a></TMPL_IF DELETE_URL>
     					</nobr>	             
 				    </td>
 					
@@ -127,7 +120,7 @@
                 <!-- /Строка элементов управления записи -->
 
 				<!-- form container -->
-	        	<tr><td id="admin_<TMPL_VAR ID>" colspan="2" style="padding:0px;border:none;"></td></tr>				
+	        	<tr><td class="formcontainer" id="admin_<TMPL_VAR id>" colspan="2"></td></tr>				
 	        	<!-- form container / -->
 				
 	    	</TMPL_LOOP>			

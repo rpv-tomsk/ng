@@ -44,7 +44,8 @@ our $classesMap = {
    
    OLDDBVALUE - значение, загруженное из БД. Выставляется в setLoadedValue().
    DBVALUE    - значение, загруженное из БД или подготовленное для сохранения в БД.
-   VALUE      - значение, соответствующее текущему значению DBVALUE (ключ не обязательный)
+   VALUE      - значение, соответствующее текущему значению DBVALUE 
+                (ключ не обязательный, однако может использоваться в шаблонах форм, если пользоваться $form->print($tmpl)... Хотя для этого есть sub VALUE {}.)
               - Ключи DBVALUE и VALUE меняются синхронно, в функциях _setValue() и _setDBValue()
    _new       - Признак, что строка новая.
 =cut
@@ -1449,6 +1450,21 @@ sub getListCellHTML {
         $ret .= $url?"</a>":'</p>';
         return $ret;
     }
+};
+
+sub getListHeaderCell {
+    my $field = shift;
+    my ($type) = ($field->{TYPE});
+    
+    my $class = '';
+    $class =  'center'   if $type eq 'checkbox';
+    $class =  'posorder' if $type eq 'posorder';
+    return {
+        NAME  => $field->{NAME},
+        CLASS => $class,
+        TEMPLATE => $field->{HEADER_TEMPLATE}, #BW compat
+        WIDTH    => $field->{WIDTH},
+    };
 };
 
 sub getFieldActions {

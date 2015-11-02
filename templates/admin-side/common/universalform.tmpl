@@ -16,12 +16,12 @@
 
 <div id="error_<TMPL_VAR FORM.KEY_VALUE>" class="errormsg"><TMPL_VAR FORM.ERRORMSG></div>	
 
-<table class="component_new_form">
+<table class="component_new_form<TMPL_IF FORM.IS_AJAX> ajax</TMPL_IF FORM.IS_AJAX>" border="0">
 <tbody>
 
 <TMPL_IF FORM.TITLE>
 <tr>
-  <td class="title"><p class="comment_input"><TMPL_VAR FORM.TITLE></p></td>
+  <td class="title"><p><TMPL_VAR FORM.TITLE></p></td>
 </tr>
 </TMPL_IF FORM.TITLE>
 <!--  -->
@@ -39,7 +39,7 @@
 
 <TMPL_IF FORM.BUTTONS#>
 <tr>
-<td class="title_img">
+<td class="buttons">
 <center>
 &nbsp;
 <TMPL_LOOP FORM.BUTTONS>
