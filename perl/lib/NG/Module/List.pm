@@ -2150,6 +2150,7 @@ sub getListHeaders {
     my @headers = ();
     foreach my $fObj (@{$listFObjs}) {
         next if $fObj->{TYPE} eq "posorder";
+        next if $fObj->{TYPE} eq "hidden";
         #
         my $headerCell = $fObj->getListHeaderCell();
         $headerCell->{FIELD} = $fObj->{FIELD};
@@ -2208,8 +2209,7 @@ sub highlightSortedColumns { #Подсветка столбцов, по которым можно делать сортир
         };
     };
     
-    if (scalar keys %$ordered) {
-    #    last if (scalar @{$self->{_orders}} == 1);
+    if (scalar keys %$ordered > 1) {
         return $self->error("Некорректная конфигурация модуля: поле сортировки ".((keys %$ordered)[0])." не найдено в списке столбцов");
     };
     
