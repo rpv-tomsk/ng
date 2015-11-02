@@ -415,6 +415,24 @@ span#listFilters div.button {
   margin: 8px 0;
   overflow:hidden;
 }
+/* —тиль "бела€ таблица" в контентной части (список фильмов)*/
+#info_content table.white {
+  border:none;
+}
+#info_content table.content table.white th,
+#info_content table.white th {
+  padding: 0 0 5px 0;
+  background: white;
+  color: #225279;
+  border: none;
+  height: auto;
+}
+#info_content table.content table.white td,
+#info_content table.white td {
+  padding: 0;
+  height:auto;
+  border:none;
+}
 /*ћы наш, мы новый мир построим*/
 table.content {
   width:100%;
@@ -1240,13 +1258,14 @@ table.component_new_form tr td.title {
   border: 1px solid #3583b7;
   padding: 3px 5px 5px;
   vertical-align: middle;
+  height: 30px;
 }
-table.component_new_form tr.title p,
-table.component_new_form tr td.title p {
+div#middle_right_content table.component_new_form tr.title p,
+div#middle_right_content table.component_new_form tr td.title p {
   color: #fff;
   font-weight: bold;
   margin: 0;
-  padding-left: 5px;
+  padding: 0 0 0 5px;
 }
 
 /* —трока кнопок (закрыти€/сохранени€) формы */
