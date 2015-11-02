@@ -408,12 +408,19 @@ span#listFilters div.button {
     margin-bottom: 15px;
   }
 }
+/* Вспомогательные стили для оформления различных админок*/
+#info_content div.separator {
+  background: #96c5ec none repeat scroll 0 0;
+  height: 1px;
+  margin: 8px 0;
+  overflow:hidden;
+}
 /*Мы наш, мы новый мир построим*/
 table.content {
   width:100%;
   height: auto;
-  border-left:1px solid #65a7dd;
-  border-right:1px solid #65a7dd;
+  border:1px solid #65a7dd;
+  border-top: none;
   background: #cfe1ee none repeat scroll 0 0;
 }
 table.content.ajax {
