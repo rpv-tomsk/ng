@@ -2151,6 +2151,7 @@ sub getListHeaders {
     foreach my $fObj (@{$listFObjs}) {
         next if $fObj->{TYPE} eq "posorder";
         next if $fObj->{TYPE} eq "hidden";
+        next if $fObj->{HIDE};
         #
         my $headerCell = $fObj->getListHeaderCell();
         $headerCell->{FIELD} = $fObj->{FIELD};
