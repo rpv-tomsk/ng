@@ -4,6 +4,7 @@
     
     <TMPL_IF SUBSITES>
     <table class="content" style="padding-top:0px;margin-top:0px;" border=1>
+    <tbody>
         <tr>
             <td class="content">
                 <!--div style="float:left;">Подсайт:</div-->
@@ -20,6 +21,7 @@
                 </form>
             </td>
         </tr>
+    </tbody>
     </table>
     </TMPL_IF SUBSITES>
     
@@ -33,6 +35,7 @@
         </TMPL_IF GREETINGS.ACTIVATE>
         
         <table class="content">
+        <tbody>
         <TMPL_LOOP NODEINFO.INFO>
             <TMPL_IF PAGEURL>
             <tr class="border">
@@ -84,6 +87,7 @@
                 </TMPL_LOOP NODEINFO.ACTIONS>
                 </td>
             </tr>
+        </tbody>
         </table>
         
         <div style="margin-bottom:8px;">
@@ -93,7 +97,8 @@
         <TMPL_IF PAGE_LINKEDPAGES>
         <h3>Связанные страницы:</h3>
         
-        <table class="content" border="0" >
+        <table class="content" border="0">
+        <tbody>
             <tr class="title">
             <td style="width:27px;"></td>
                 <td style="text-align:center;"><p>Язык</p></td>
@@ -115,6 +120,7 @@
                     <a href="<TMPL_VAR NODE_URL>">Посмотреть</a></nobr></td>
             </tr>
             </TMPL_LOOP PAGE_LINKEDPAGES>
+        </tbody>
         </table>
         <br>
         </TMPL_IF PAGE_LINKEDPAGES>

@@ -62,7 +62,8 @@
 
     <!-- -->
     <div id="table_content">
-        <table class="content" >
+        <table class="content">
+            <tbody>
             <!--Строка заголовков-->
             <tr class="title">
                 <TMPL_IF MULTIACTIONS#>
@@ -149,6 +150,7 @@
                 
             </TMPL_LOOP DATA>
             <!-- data rows / -->
+            </tbody>
         </table>
     </div>
     <TMPL_IF MULTIACTIONS#>
