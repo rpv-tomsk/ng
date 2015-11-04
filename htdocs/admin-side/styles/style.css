@@ -445,7 +445,7 @@ td.formcontainer table.content {
   border:none;
 }
 /*Обычная строка контента, разделитель-бордюр снизу*/
-table.content td {
+table.content > tbody > tr > td {
   background: #ffffff none repeat scroll 0 0;
   border-bottom: 1px solid #8dbee4;
   color: #225279;
@@ -1274,7 +1274,6 @@ table.component_new_form td,
   border-bottom: 1px solid #8dbee4;
   vertical-align: top;
   color: #4B7495;
-  background: #d4e7f6 none repeat scroll 0 0;
 }
 /* Форма подтверждения удаления и т п*/ 
 table.component_new_form.info td {
