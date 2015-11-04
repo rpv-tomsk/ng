@@ -48,6 +48,7 @@
 		<TMPL_IF GROUPS#>
 		<div style="width:100%; margin-top:15px; margin-bottom:15px;">
         <table class="content">
+            <tbody>
         	<tr>
                 <td class="border">
         			<form action="<TMPL_VAR URL>" method="GET">
@@ -62,6 +63,7 @@
         			</form>
         		</td>
         	</tr>
+        	</tbody>
 		</table>
 		</div>
 		</TMPL_IF GROUPS#>
@@ -81,6 +83,7 @@
     <div id="table_content">
         <p>Группа: <TMPL_VAR SGROUP.NAME></p>
 		<table class="content">
+		<tbody>
             <!-- Строка заголовков -->
             <tr class="title">
              <td>Логин</td>
@@ -125,14 +128,7 @@
 				
 	    	</TMPL_LOOP>			
 	    	<!-- data rows / -->
-
-
-                <!-- Тень -->
-         						
-
-
-
-
+	    </tbody>
         </table>
     </div>		
 </div>			
