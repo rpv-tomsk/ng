@@ -811,6 +811,10 @@ div.message_attention {
   /*margin-top:5px;*/
   background:#fff url(/admin-side/img/message_attention.gif) 15px 50% no-repeat;
 }
+.formcontainer > div.message_attention {
+  border:none;
+  display:none;
+}
 div.menu_attention_inactive {
   background:url(/admin-side/img/menu_attention_inactive.gif) 0px 3px no-repeat;
   padding-left:10px;
