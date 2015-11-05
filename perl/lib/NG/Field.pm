@@ -620,6 +620,7 @@ sub genNewFileName {
         $field->{TMP_FILENAME} =~ /([^\\\/]+?)\.?$ext$/;
         my $ts = ts($1);
         $ts =~ s/[^a-zA-Z0-9]/_/gi;
+        $fname ||= "{f}_{k}_{r}{e}" if $field->{TYPE} eq 'image';
         $fname ||= "{t}_{f}_{k}_{r}{e}";
         
         $fname =~ s@\{t\}@$ts@;
@@ -1409,9 +1410,9 @@ sub getListCellHTML {
             else {
                 $link = $field->{UPLOADDIR}.$field->{DBVALUE};
             };
-        }
+        };
         
-        return "<div><img src='$link'></div>" if $link;
+        return "<div><img src='$link'".($field->{LIST_WIDTH}?' width="'.$field->{LIST_WIDTH}.'"':'').($field->{LIST_WIDTH}?' height="'.$field->{LIST_HEIGHT}.'"':'')."></div>" if $link;
         return '';
     }
     elsif ($type eq 'checkbox') {

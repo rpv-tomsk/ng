@@ -17,6 +17,7 @@ branches/ng6
     + NG::Module::List->getListHeaders()
     * NG::Module::List->highlightSortedColumns() - изменена реализация, теперь метод обрабатывает столбцы, полученные из getListHeaders()
     * NG::Module::List->processSorting() - изменены параметры вызова
+    * NG::Module::List - вывод полей изображений поддерживает field->{LIST_WIDTH} и field->{LIST_HEIGHT}
 
     * Изменена работа processChilds. Требуется перепроверить все конфигурации полей с заданным CHILDS.
       Поддерживается обратная совместимость только на связке image->image.
