@@ -127,13 +127,15 @@ sub hasPageAccess {
 ##
 
 sub _getRightBlockContentAsErrorMessage {
-	my $app = shift;
-	my $error = shift;
+	my ($app,$error,$is_ajax) = (shift,shift,shift);
 	$error ||= "_getRightBlockContentAsErrorMessage(): Вызов без указания текста сообщения.";
 	#$app->{_rightSelector} = [{HEADER=> "Ошибка",SELECTED=>1}] unless scalar(@{$app->{_rightSelector}});
 	
 	my $tmpl = $app->gettemplate("admin-side/common/error.tmpl")  || return "Не могу открыть шаблон отображения ошибки. Текст ошибки: $error";
-	$tmpl->param(ERROR => $error );
+	$tmpl->param(
+		ERROR => $error,
+		IS_AJAX => $is_ajax,
+	);
 	return $tmpl->output();
 }
 
@@ -353,7 +355,7 @@ sub _run {
         
         return $cms->outputJSON({status=>'error', error=>$error},{-nocache=>1}) if $is_ajax && $is_ajax eq 'json';
         
-        $rightBlock = $cms->_getRightBlockContentAsErrorMessage($error);
+        $rightBlock = $cms->_getRightBlockContentAsErrorMessage($error,$is_ajax);
         return $cms->output($rightBlock,{-nocache=>1}) if ($is_ajax);
 	};
 
