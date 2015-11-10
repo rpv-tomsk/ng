@@ -596,6 +596,9 @@ sub value {
 };
 *VALUE = \&value;
 
+#Accesssor for new H:T:C
+sub field { return shift->{FIELD} };
+
 sub searchIndexValue {
     my $field = shift;
     
