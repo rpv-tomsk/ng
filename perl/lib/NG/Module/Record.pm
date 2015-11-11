@@ -23,6 +23,7 @@ sub init {
     $self->{_fields} = [];                          # Массив хешей всех обрабатываемых модулем полей таблицы
     $self->{_table} = "";              # Имя таблицы с описаниями блоков
     $self->{_searchconfig} = undef;
+    $self->{_versionKeys}  = undef;    #Список ключей кеша, которые надо обновить при действии с записью
     
     #Режим работы модуля
     $self->{_pageBlockMode} = 0;
@@ -233,10 +234,6 @@ sub showPageBlock  {
     };
 };
 
-sub _handleCMSCache {
-    my ($self,$form,$action) = (shift,shift,shift);
-    return 1;
-};
 
 sub searchConfig {
     my $self = shift;
@@ -302,6 +299,50 @@ sub _pushFields {
 };
 
 sub fields { shift->_pushFields('_fields',@_); };
+
+sub updateKeysVersion {
+    my $self = shift;
+    $self->{_versionKeys}||=[];
+    $self->_pushFields('_versionKeys',@_);
+};
+
+sub _handleCMSCache {
+    my ($self,$form,$action) = (shift,shift,shift);
+    $self->_updateVersionKeys($form,$action);
+    return 1;
+};
+
+sub _updateVersionKeys {
+    my ($self,$form,$fa) = (shift,shift,shift);
+    
+    return unless $self->{_versionKeys};
+    
+    my $cms  = $self->cms();
+    my $mObj = $self->getModuleObj() or die "ASSERT: Unable to getModuleObj()!";
+
+    my $params = {};
+    my @vk = map +{%$_}, @{$self->{_versionKeys}};
+    foreach my $vk (@vk) {
+        foreach my $key (keys %$vk) {
+            if (ref $vk->{$key} eq 'CODE') {
+                my $sub = $vk->{$key};
+                $vk->{$key} = &$sub($form,$fa);
+                next;
+            };
+            while ($vk->{$key} =~ /\{(.+?)\}/i) {
+                my $value = undef;
+                if (exists $params->{$1}) {
+                    $value = $params->{$1};
+                }
+                else {
+                    $value = $params->{$1} = $form->getParam($1);
+                };
+                $vk->{$key} =~ s/\{(.+?)\}/$value/i;
+            };
+        };
+    };
+    $cms->updateKeysVersion($mObj,\@vk);
+};
 
 sub canEditPageBlock {
     my $self = shift;
