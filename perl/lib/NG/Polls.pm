@@ -930,7 +930,7 @@ sub showOrUpdateAnswers {
 		IS_AJAX      => $is_ajax,
 		REF          => $ref,
         NEW_A_ERROR  => $newAError,
-		MULTICHOICE => $poll->{multichoice}
+		multichoice => $poll->{multichoice}
     );
 	return $self->output($tmpl->output());
 }
