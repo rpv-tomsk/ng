@@ -204,14 +204,16 @@ sub _get_poll_fields {
 };
 
 sub keys_SQLPOLLSLIST {
-    my ($self,$sqlWhere,$keysParams) = (shift,shift,shift);
+    my ($self,$keysParams) = (shift,shift);
+
+    $keysParams or die 'Internal error';
+    $keysParams->{sqlWhere} ||= '1=1';
+    my $sqlWhere = $keysParams->{sqlWhere};
     
     my $cms = $self->cms();
     
     my $req = {};
-    
     my $ctx = [];
-    
     my $today = Date::Simple->new()->as_iso();
     
     my $items;
@@ -258,7 +260,7 @@ sub keys_SQLPOLLSLIST {
             push @$versionKeys, {key=>'votingresult', id => $voting->{id}} if $voting->{visible};
         };
     };
-    return {REQUEST=>$req, VERSION_KEYS => $versionKeys, HELPER=>{'polls:sqlWhere'=> $sqlWhere, 'polls:items'=> $items, 'polls:keysParams'=> $keysParams}};
+    return {REQUEST=>$req, VERSION_KEYS => $versionKeys, HELPER=>{'polls:items'=> $items, 'polls:keysParams'=> $keysParams}};
 };
 
 sub block_SQLPOLLSLIST {
@@ -269,7 +271,7 @@ sub block_SQLPOLLSLIST {
     my $baseURL = $self->getBaseURL();
     
     my $items = $keys->{HELPER}->{'polls:items'};
-    my $sqlWhere = $keys->{HELPER}->{'polls:sqlWhere'} or die 'Internal error';
+    my $sqlWhere = $keys->{HELPER}->{'polls:keysParams'}->{sqlWhere} or die 'Internal error';
     $params->{template} or die 'Internal error: missing template';
     
     unless ($items) {
@@ -318,7 +320,7 @@ sub block_SQLPOLLSLIST {
 
 sub keys_SLIDER {
     my ($self,$action) = (shift,shift);
-    return $self->keys_SQLPOLLSLIST('rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))',{});
+    return $self->keys_SQLPOLLSLIST({sqlWhere => 'rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))'});
 };
 
 sub block_SLIDER {
