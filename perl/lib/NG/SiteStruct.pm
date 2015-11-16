@@ -355,7 +355,7 @@ sub action_showAddForm {
 			};
 		};
 		$form->hideButtons();
-		my $tmpl = $cms->gettemplate("admin-side/common/universalform.tmpl")  || return $cms->error();
+		my $tmpl = $self->gettemplate("admin-side/common/universalform.tmpl")  || return $cms->error();
 		$form->print($tmpl) or return $self->error($form->getError());
 		return $cms->output($tmpl);
 	};
@@ -621,7 +621,7 @@ $canAddLinkedSubnode = 1;
 	}
 	
 	# Выводим форму, если еще не делалось добавление страниц или возврат ошибок делается не аяксом.
-	my $tmpl = $cms->gettemplate("admin-side/common/universalform.tmpl")  || return $cms->error();
+	my $tmpl = $self->gettemplate("admin-side/common/universalform.tmpl")  || return $cms->error();
 
 	$form->print($tmpl) or return $self->error($form->getError());
 
@@ -1673,7 +1673,7 @@ sub action_updateNode {
     };
     
     if ($action eq "editnodeform" || $form->has_err_msgs()) {
-        my $tmpl = $cms->gettemplate("admin-side/common/universalform.tmpl") or return $cms->error();
+        my $tmpl = $self->gettemplate("admin-side/common/universalform.tmpl") or return $cms->error();
         $form->print($tmpl) or return $self->error($form->getError());
         return $self->output($tmpl->output());
     };
@@ -1884,7 +1884,7 @@ $canDelThisPage = 1;
     };
    
     my $showAll = $self->{_showAll};
-    my $tmpl = $cms->gettemplate("admin-side/common/sitestruct/deletepages.tmpl")  || return $cms->error();
+    my $tmpl = $self->gettemplate("admin-side/common/sitestruct/deletepages.tmpl")  || return $cms->error();
     my $baseUrl = $self->getBaseURL();
     $tmpl->param(
         FORM_URL     => $baseUrl.$subUrl."?action=deletenode",
