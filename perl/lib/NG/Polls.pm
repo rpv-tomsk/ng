@@ -188,63 +188,10 @@ sub _runHandler {
     };
 };
 
-sub keys_SLIDER {
+sub _get_poll_fields {
     my $self = shift;
     
-    my $cms = $self->cms();
-    my $q  = $self->q();
-    my $req = {};
-    
-    my $ctx = [];
-    
-    my $today = Date::Simple->new()->as_iso();
-    
-    my $versionKeys = [];
-    
-    my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
-    if ($anyPollVersion && $anyPollVersion->[0]) {  #Кеширование включено
-        my $sliderItems = $cms->getCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0],today=>$today});
-        unless ($sliderItems) {
-            $sliderItems = $self->dbh()->selectall_arrayref("SELECT id,visible,check_ip FROM polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))",{Slice => {}});
-            $cms->setCacheData($self,{key=>'sliderItems_'.$anyPollVersion->[0]},$sliderItems);
-        };
-        
-        $req->{anyvv} = $anyPollVersion->[0]; #Зависимость от ключа anyvoting
-        $req->{today} = $today;
-        $req->{items} = {};  #Перечень отображаемых элементов
-        
-        foreach my $si (@$sliderItems) {
-            my $voting = {
-                id       => $si->{id},
-                visible  => $si->{visible},
-                check_ip => $si->{check_ip},
-                can_vote => 1,
-                active   => 1,
-            };
-            
-            $self->_runHandler($voting,'CANVOTE',$ctx);
-            
-            next unless $voting->{can_vote} || $voting->{visible};
-            
-            $req->{items}->{$voting->{id}} = {
-                visible  => $voting->{visible},
-                can_vote => $voting->{can_vote},
-            };
-            
-            push @$versionKeys, {key=>'votingresult', id => $voting->{id}} if $voting->{visible};
-        };
-    };
-    return {REQUEST=>$req, VERSION_KEYS => $versionKeys};
-};
-
-sub block_SLIDER {
-    my ($self,$action,$keys) = (shift,shift,shift);
-    
-    my $cms = $self->cms();
-    my $dbh = $self->dbh();
-    my $baseURL = $self->getBaseURL();
-    
-    my $sql = "select p.id,p.question,p.multichoice,p.vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip";
+    my $sql = "p.id,p.question,p.multichoice,p.vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip";
     
     my $imageFields = $self->pollsConfig()->{IMAGEFIELDS};
     if ($imageFields) {
@@ -253,29 +200,106 @@ sub block_SLIDER {
             $sql.=",p.".$if->{FIELD};
         };
     };
+    return $sql;
+};
+
+sub keys_SQLPOLLSLIST {
+    my ($self,$sqlWhere,$keysParams) = (shift,shift,shift);
     
-    $sql.=" FROM polls p WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW())) ORDER BY start_date DESC";
-    my $sth = $dbh->prepare($sql);
-    $sth->execute();
+    my $cms = $self->cms();
+    
+    my $req = {};
+    
+    my $ctx = [];
+    
+    my $today = Date::Simple->new()->as_iso();
+    
+    my $items;
+    my $versionKeys = [];
+    
+    my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
+    if ($anyPollVersion && $anyPollVersion->[0]) {  #Кеширование включено
+        $items = $cms->getCacheData($self,{where=> $sqlWhere, key=>'items_'.$anyPollVersion->[0], today=>$today});
+        unless ($items) {
+            my $fields = $self->_get_poll_fields();
+            $items = $self->dbh()->selectall_arrayref("SELECT $fields FROM polls p WHERE $sqlWhere ORDER BY p.start_date DESC",{Slice => {}});
+            foreach my $item (@$items) {
+                $self->_isVotingActive($item,$today);
+            };
+            $cms->setCacheData($self,{where=>$sqlWhere, key=>'items_'.$anyPollVersion->[0], today=>$today}, $items);
+        };
+        
+        $req->{anyvv} = $anyPollVersion->[0]; #Зависимость от ключа anyvoting
+        $req->{today} = $today;
+        $req->{showItems} = {};  #Перечень отображаемых элементов
+        
+        #TODO: Разбивка на страницы. Конфигурация разбивки задается в $keysParams
+        
+        foreach my $item (@$items) {
+            my $voting = {
+                id       => $item->{id},
+                visible  => $item->{visible},
+                check_ip => $item->{check_ip},
+                active   => $item->{active},
+                can_vote => 1,
+            };
+            
+            $voting->{can_vote} = 0 unless $voting->{active};
+            
+            $self->_runHandler($voting,'CANVOTE',$ctx) if $voting->{can_vote};
+            
+            next unless $voting->{can_vote} || $voting->{visible};
+            
+            $req->{showItems}->{$voting->{id}} = {
+                visible  => $voting->{visible},
+                can_vote => $voting->{can_vote},
+            };
+            
+            push @$versionKeys, {key=>'votingresult', id => $voting->{id}} if $voting->{visible};
+        };
+    };
+    return {REQUEST=>$req, VERSION_KEYS => $versionKeys, HELPER=>{'polls:sqlWhere'=> $sqlWhere, 'polls:items'=> $items, 'polls:keysParams'=> $keysParams}};
+};
+
+sub block_SQLPOLLSLIST {
+    my ($self,$action,$keys,$params) = (shift,shift,shift,shift);
+    
+    my $cms = $self->cms();
+    my $dbh = $self->dbh();
+    my $baseURL = $self->getBaseURL();
+    
+    my $items = $keys->{HELPER}->{'polls:items'};
+    my $sqlWhere = $keys->{HELPER}->{'polls:sqlWhere'} or die 'Internal error';
+    $params->{template} or die 'Internal error: missing template';
+    
+    unless ($items) {
+        my $fields = $self->_get_poll_fields();
+        #TODO: Разбивка на страницы
+        $items = $dbh->selectall_arrayref("SELECT $fields FROM polls p WHERE $sqlWhere ORDER BY p.start_date DESC",{Slice => {}});
+        foreach my $item (@$items) {
+            $self->_isVotingActive($item,undef);
+        };
+    };
     
     my @polls = ();
     my $ctx = [];
-    while (my $voting = $sth->fetchrow_hashref()) {
-        $voting->{active}   = 1;
-        
-        if ($keys->{REQUEST}->{items}) {
-            #Кеш есть.
-            next unless exists $keys->{REQUEST}->{items}->{$voting->{id}};
+    
+    foreach my $voting (@$items) {
+        if ($keys->{REQUEST}->{showItems}) {
+            #Кеш есть...
+            next unless exists $keys->{REQUEST}->{showItems}->{$voting->{id}}; #..а элемента нет
         }
         else {
             #Кеша нет
             $voting->{can_vote} = 1;
-            $self->_runHandler($voting,'CANVOTE',$ctx);
+            $voting->{can_vote} = 0 unless $voting->{active};
+            
+            $self->_runHandler($voting,'CANVOTE',$ctx) if $voting->{can_vote};
             
             next unless $voting->{can_vote} || $voting->{visible};
         };
         
-        $self->_loadVoting($voting);
+        $self->_handleVoting($voting);
         $self->_loadAnswers($voting);
         next unless @{$voting->{answers}};
         
@@ -284,15 +308,39 @@ sub block_SLIDER {
     
     return $cms->output('') unless @polls;
     
-    my $template = $self->gettemplate("public/polls/slider.tmpl");
+    my $template = $self->gettemplate($params->{template});
     $template->param(
-        SLIDER=>\@polls,
-        BASEURL=>$baseURL,
+        POLLS   => \@polls,
+        BASEURL => $baseURL,
     );
     return $cms->output($template);
+}
+
+sub keys_SLIDER {
+    my ($self,$action) = (shift,shift);
+    return $self->keys_SQLPOLLSLIST('rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()))',{});
 };
 
-sub _loadVoting {
+sub block_SLIDER {
+    my ($self,$action,$keys) = (shift,shift,shift);
+    
+    return $self->block_SQLPOLLSLIST($action,$keys,{template=>"public/polls/slider.tmpl"});
+};
+
+sub _isVotingActive {
+    my ($self, $voting, $today) = (shift,shift,shift);
+    
+    die '_isVotingActive: Internal error' unless exists $voting->{start_date};
+    my ($sdate,$edate);
+    $sdate = Date::Simple->new($voting->{start_date});
+    $edate = Date::Simple->new($voting->{end_date}) if $voting->{end_date};
+    $today ||= Date::Simple::today();
+    $edate ||= $today;
+    
+    $voting->{active} = ($sdate<=$today && $edate>=$today)?1:0;
+}
+
+sub _handleVoting {
     my ($self,$voting) = (shift,shift);
     
     my $db = $self->db();
@@ -310,13 +358,6 @@ sub _loadVoting {
     $voting->{start_date}    = $db->date_from_db($voting->{start_date});
     $voting->{end_date}      = $db->date_from_db($voting->{end_date});
     
-    my ($sdate,$edate);
-    $sdate = Date::Simple->new($voting->{db_start_date});
-    $edate = Date::Simple->new($voting->{db_end_date}) if $voting->{db_end_date};
-    my $today = Date::Simple::today();
-    $edate ||= $today;
-    
-    $voting->{active} = ($sdate<=$today && $edate>=$today)?1:0;
     $voting;
 };
 
@@ -453,7 +494,8 @@ sub _doVote {
         $ret->{errorCode} = 'invalidId';
         return $ret;
     };
-    $self->_loadVoting($voting);
+    $self->_isVotingActive($voting);
+    $self->_handleVoting($voting);
     $self->_loadAnswers($voting);
     
     unless (@{$voting->{answers}}) {
