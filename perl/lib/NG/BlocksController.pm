@@ -116,7 +116,10 @@ sub _pushBlock {
           Для АБ:
             RELATED          - Данные для подчиненных блоков, выставляются при формировании контента.
             HASRELATED       - выставляется в getBlockKeys(), признак, что в getBlockContent() или из кеша в RELATED будут выставлены данные.
-            ABFIRST          - ??
+            ABFIRST          - Флаг, если контент АБ необходимо получить до формирования остальных блоков. Используется, например, если блок выставляет хлебные крошки.
+                               HASRELATED и ABFIRST нужны, т.к. getBlockKeys не-АБ блоков может использовать значения, выставленные АБ.
+                               Поэтому необходимо иметь достоверные данные, полученные либо из кеша либо вызовом getBlockContent AB.
+                               При отсутствии флага контент АБ строится в общей фазе получения контента, после фазы получения ключей.
             REDIRECT         - АБ говорит что его строить не надо, а нужен редирект.
             HELPER           - стандартизированный ключ АБ, значение которого можно использовать в прочих (не-АБ) блоках. В кеш не сохраняется.
     
@@ -832,7 +835,7 @@ sub _getTmplBlockContent {
         $block = $self->{_hblocks}->{$blockCode};
     };
     
-    warn "Block $blockCode is not loaded from a template" if ($block->{SOURCE} ne "tmpl");
+    warn "Block $blockCode is not loaded from a template. Source: ".$block->{SOURCE} if ($block->{SOURCE} ne "tmpl");
     warn "Block $blockCode requested from PLUGINS but it is MODULE" if $isPlugin &&  $block->{TYPE}!=1;
     warn "Block $blockCode requested from MODULES but it is PLUGIN" if !$isPlugin && $block->{TYPE}!=0;
     
