@@ -63,19 +63,40 @@ sub open {
 
     $where = ($where)?"where $where":"";
     
-    my $sth = $dbh->prepare("select count(*) from $table $where") or return 0;
-    $sth->execute(@params) or return 0;
-    $self->{_size} = $sth->fetchrow();
-    $sth->finish();
-	
-	if ($self->{_disable_pages} == 1) {
-		$sth = $dbh->prepare("select $fields from $table $where $order") or return 0;
-	}
-	else {
-		$sth = $dbh->prepare($self->{_db}->sqllimit("select $fields from $table $where $order",$self->{_onpage}*($self->{_page}-1),$self->{_onpage})) or return 0;
-	};
-    $sth->execute(@params) or return 0;
-    $self->{_sth} = $sth;
+    my $ret = 0;
+    while (1) {
+        my $sth = $dbh->prepare("select count(*) from $table $where") or last;
+        $sth->execute(@params) or last;
+        $self->{_size} = $sth->fetchrow();
+        $sth->finish();
+        $ret = 1;
+        last;
+    };
+    unless ($ret) {
+        warn "DBlist: open() failed. Query: 'select count(*) from $table $where'";
+        return $ret;
+    };
+    
+    my $sql;
+    if ($self->{_disable_pages} == 1) {
+        $sql = "select $fields from $table $where $order";
+    }
+    else {
+        $sql = $self->{_db}->sqllimit("select $fields from $table $where $order",$self->{_onpage}*($self->{_page}-1),$self->{_onpage});
+    };
+    #warn $sql;
+    $ret = 0;
+    while (1) {
+        my $sth = $dbh->prepare($sql) or last;
+        $sth->execute(@params) or last;
+        $self->{_sth} = $sth;
+        $ret = 1;
+        last;
+    };
+    unless ($ret) {
+        warn "DBlist: open() failed. Query: '$sql'";
+        return $ret;
+    };
     $self->{_opened} = 1;
     return 1;
 }
