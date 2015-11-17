@@ -76,14 +76,19 @@ sub init {
         return $field->set_err("Значение атрибута VALUES конфигурации поля $field->{FIELD} типа multicheckbox не является ссылкой на массив") if ref $options->{VALUES} ne "ARRAY";
         return $field->set_err("Режим multivalue и опция VALUES не совместимы") if $field->{TYPE} eq 'multivalue';
         
+        $field->{_DICTA} = [];
         foreach my $p (@{$options->{VALUES}}) {
             return $field->set_err("Значение массива VALUES поля $field->{FIELD} не является хэшем.") if ref $p ne "HASH";
             my $id = $p->{ID};
             return $field->set_err("В списке значений VALUES поля $field->{FIELD} отсутствует значение ключа ID ") if (!$id && $id != 0);
             $p->{NAME} || return $field->set_err("В списке значений VALUES поля $field->{FIELD} отсутствует значение ключа NAME");
             $field->{_DICTH}->{$id} = $p->{NAME};
+            push @{$field->{_DICTA}}, {
+                ID      => $id,
+                NAME    => $p->{NAME},
+                DEFAULT => $p->{DEFAULT},
+            };
         };
-        $field->{_DICTA} = $options->{VALUES};
         $field->{_dict_loaded} = 1;
     }
     else {
@@ -227,7 +232,7 @@ sub prepareOutput {
     };
     return $field->set_err('DATA(H) not loaded') unless defined $field->{_DATAH} || $field->{_new};
     foreach my $elm (@{$field->{_DICTA}}) {
-        $elm->{SELECTED} = (defined $field->{_DATAH} && exists $field->{_DATAH}->{$elm->{ID}})?1:0,
+        $elm->{SELECTED} = ((defined $field->{_DATAH} && exists $field->{_DATAH}->{$elm->{ID}})||($field->{_new} && $elm->{DEFAULT}))?1:0,
     };
     $field->{SELECT_OPTIONS} = $field->{_DICTA};
     return 1;
