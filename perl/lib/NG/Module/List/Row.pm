@@ -96,6 +96,10 @@ sub buildLinks {
     my $deletelink = $self->list()->getDeleteLink();
     my $extralinks = $self->list()->getExtraLinks();
     foreach my $link (@{$extralinks}) {
+        if ($link->{CONDITION}) {
+            my $sub = $link->{CONDITION};
+            next unless &$sub($self);
+        };
         $self->pushLink($link);
     };
     $self->pushLink($deletelink) if ($deletelink);
