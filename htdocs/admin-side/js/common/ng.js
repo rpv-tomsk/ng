@@ -77,11 +77,13 @@ function CloseEditors(tparentid) {
 		
 function UseEditor(tname,thandler,tparentid,tconfig) {
     var elem = NgEditors[tparentid];
-    if (!elem) {
-        elem = NgEditors[tparentid] = Array();
+    if (elem) {
+        for (e in elem) {
+            tinyMCE.remove(tinyMCE.get(elem[e]));
+        };
     }
+    elem = NgEditors[tparentid] = Array();
     elem.push(tname);
-    
     
     //конфигурация по умолчанию
     params={
