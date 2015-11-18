@@ -1,6 +1,5 @@
 branches/ng6
 
-    * Удалена поддержка METHOD (метода обработки перед сохранением) в описании конфигурации полей NG::Field
     * NG::Module::List::Row->new() / NG::Module::List::Row->init() - изменено API
     - NG::Module::List::Row->number()
     - NG::Module::List::Row->addColumn()
@@ -18,8 +17,16 @@ branches/ng6
     * NG::Module::List->highlightSortedColumns() - изменена реализация, теперь метод обрабатывает столбцы, полученные из getListHeaders()
     * NG::Module::List->processSorting() - изменены параметры вызова
     * NG::Module::List - вывод полей изображений поддерживает field->{LIST_WIDTH} и field->{LIST_HEIGHT}
+    * NG::Module::List->addRowLink() - добавлена поддержка условия добавления ссылки путем передачи ссылки на процедуру проверки в ключе CONDITION.
+      Параметром процедуре проверки передается объект NG::Module::List::Row
+    * NG::Module::List - Исправлена ошибка JS - если форма редактирования с RTF-редактором вызывалась аяксом дважды, то закрытие
+      формы не происходило из-за ошибки JS - объект редактора уничтожался также дважды, вторая попытка (на уничтоженном объекте)
+      вызывала ошибку.
+      
+    * NG::Module::Record: Добавлен метод updateKeysVersion(), аналогично NG::Module::List.
 
-    * Изменена работа processChilds. Требуется перепроверить все конфигурации полей с заданным CHILDS.
+    * NG::Field - Удалена поддержка METHOD (метода обработки перед сохранением) в описании конфигурации полей NG::Field
+    * NG::Field - Изменена работа processChilds. Требуется перепроверить все конфигурации полей с заданным CHILDS.
       Поддерживается обратная совместимость только на связке image->image.
       В случае связки file->file при (пере)заливке содержимого основного поля подчиненные будут пустыми (очищены).
       
@@ -47,20 +54,24 @@ branches/ng6
     + Добавлен метод NG::Application->cleanup()
     
     * Multicheckbox: Изменены правила проверки check().
-      Если значение не было выставлено setFormValue(), то проверяется
-      загруженное из хранилища значение (если оно было загружено).
+      Если значение не было выставлено setFormValue(), то проверяется загруженное из хранилища значение (если оно было загружено).
       Функционал нужен для работы частично редактируемой формы, например в processCheckbox() List-а.
     * Multicheckbox: Исправлено вычисление SELECTED (если справочник задан через VALUES)
     * Multicheckbox: Удалена поддержка параметра NOLOADDICT.  (Он непонятный и не найден используемым в проектах).
     * Multicheckbox: Убран признак IS_FAKEFIELD
     * Multicheckbox: Реализовано удаление данных из таблицы хранилища связи
     * Multicheckbox: Реализовано сохранение выбранных значений в STORE_FIELD
+    * Multicheckbox: Добавлена поддержка DEFAULT в описании справочника OPTIONS.VALUES
+    
+    * Изменена верстка админки (переработаны стили оформления лист-а и форм). Кастомные шаблоны потребуют (несложной) адаптации.
+    
+    + NG::Mailer::Mailgun mail delivery module
 
 branches/ng-4.3
 
 ===
     ЗАМЕЧАНИЯ!
-    
+     
     1) NG::Module::List->setFormStructure(), NG::Module::Record->formStructure()   --- ?
     
     2) NG::Module::Record - CheckData(), BeforeInsert(), AfterInsert(), BeforeUpdate(), AfterUpdate() - переименовать согласно NG::Module::List ?
