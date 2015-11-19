@@ -611,8 +611,8 @@ sub addRecord{
     my $text = $q->param("value") || "";
     $text = Encode::decode("utf-8", $text);
     $text = Encode::encode("windows-1251", $text);
-    $text =~s/\s$//;
-    $text =~s/^\s//;
+    $text =~s/\s+$//;
+    $text =~s/^\s+//;
     $text =~ s/ +/ /g;
     
     return create_json({error=>'Добавляемое значение не указано'}) unless $text && !is_empty($text);
