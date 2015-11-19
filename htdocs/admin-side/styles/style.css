@@ -454,6 +454,11 @@ table.content > tbody > tr > td {
   padding-top: 9px;
   vertical-align: middle;
 }
+/*Стиль строки под форму*/
+table.content > tbody > tr.form > td {
+  background: #D4E7F6;
+  padding-right: 5px;
+}
 /*Если таблица начинается строкой контента, а не шапкой*/
 table.content tr:first-child td {
   border-top: 1px solid #8dbee4;
