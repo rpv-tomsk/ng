@@ -97,6 +97,7 @@ sub split_cost {
                 $t .= "null";
             }
             else {
+				$var =~ s/\\/\\\\/g;
 				$var =~ s/\"/\\\"/g;
 				$var =~ s/[\x0a\x0d]{1,2}/\\n/g;
 				$t .= "\"$var\"";
