@@ -14,7 +14,7 @@
 
 
 <table class="component_new_form info"><tbody>
-<TMPL_IF LINKED_PAGES>
+<TMPL_IF LINKED_PAGES#>
 <tr><td class="left"><p><b>¬ыберите страницы, которые хотите удалить:</b></p></td></tr>
 
 <tr>
@@ -57,7 +57,7 @@
 
   </td>
 </tr>
-<TMPL_ELSE LINKED_PAGES>
+<TMPL_ELSE LINKED_PAGES#>
 	<TMPL_IF MESSAGE>
 		<tr><td><p><TMPL_VAR MESSAGE></p></td></tr>
 	<TMPL_ELSE>
@@ -65,7 +65,7 @@
 	</TMPL_IF>
     
     <input type="hidden" name="dodelnode_<TMPL_VAR ID>" id="dodelnode_<TMPL_VAR ID>" value="1">
-</TMPL_IF LINKED_PAGES>
+</TMPL_IF LINKED_PAGES#>
 
 <tr>
 <td class="buttons">
