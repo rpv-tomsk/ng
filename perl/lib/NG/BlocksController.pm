@@ -826,10 +826,9 @@ sub _getTmplBlockContent {
     my $blockCode = shift;
     my $isPlugin = shift || 0;
 
-    $self->{_tmplAttached} = 0;  #Disabled block unregistration due to possible errors from new block
-
     my $block = $self->{_hblocks}->{$blockCode};
     unless ($block) {
+        $self->{_tmplAttached} = 0;  #Disabled block unregistration process due to possible errors from new block
         my $e = $self->_regTmplBlock($blockCode,$isPlugin);
         return $e if $e;
         $block = $self->{_hblocks}->{$blockCode};
