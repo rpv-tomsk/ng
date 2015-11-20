@@ -1,4 +1,7 @@
 branches/ng6
+    CMS:
+    * Èçìåíåí ìåòîä ïîèñêà ÷ïó-øíûõ ñòğàíèö, âûãğóçêà âñåõ ÷ïó-ñòğàíèö è ïîèñê íà êëèåíòå çàìåíåíà íà ôîğìèğîâàíèå çàïğîñà url IN (URLS)
+    * Óäàëåíà (çàêîììåíòèğîâàíà) ïîääåğæêà ng_rewrite / catch = 1
 
     * NG::Module::List::Row->new() / NG::Module::List::Row->init() - èçìåíåíî API
     - NG::Module::List::Row->number()

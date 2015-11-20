@@ -357,7 +357,13 @@ sub findPageRowByURL {
     
     my $dbh = $cms->dbh();
     
-	#Загружаем свойства страницы
+    #Merge slashes
+    $url =~ s/\/\/+/\//g;
+
+    #Remove trailing part
+    $url =~ s/[^\/]+$//;
+    
+    #Загружаем свойства страницы
     my $fields = $cms->getPageFields();
     return $cms->error() if $fields eq "0"; ##cms->error
     my $sql = "select $fields from ng_sitestruct where url = ? and disabled=0";
@@ -372,64 +378,70 @@ sub findPageRowByURL {
     my $row = $sth->fetchrow_hashref();
     $sth->finish();
     
-    unless($row) { #чпу?
-        #Ищем в структуре все ЧПУ-обработчики
-        @params=();
-        $sql="select $fields from ng_sitestruct where catch>0 and disabled=0";
-        if($ssId) {
-            push @params, $ssId;
-            $sql.= " and subsite_id = ?";
-        }; 
-        $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
-        $sth->execute(@params) or return $cms->error($DBI::errstr);
-        my $data = $sth->fetchall_hashref('url');
-        $sth->finish();
-
-        my $lurl = $url;
-        $lurl=~s@[^\/]+$@@; #вырезаем текст после последнего слеша
-        return $cms->error("Некорректная ссылка") unless $lurl =~ /^\//; #проверяем корректность
-        #Ищем максимальное совпадение,отрезая куски ссылок
-        while ($lurl ne "/") {
-            next if ($lurl=~s%\/\/$%\/%);
-            unless (exists $data->{$lurl}) {
-                $lurl=~s%[^\/]+\/$%%;
-                next;
-            };
-            $row=$data->{$lurl};
-            $row->{'pageBaseUrl'}=$lurl; #TODO: для чего это?
-            last();
-        };
-        return undef unless $row;
-        #catch == 0 - ЧПУ отсутствует
-        #catch == 1 - ЧПУ с обработкой параметров через ng_rewrite
-        #catch == 2 - ЧПУ с обработкой параметров внутри модуля
-        #catch == 3 - ЧПУ с обработкой параметров внутри модуля, с поддержкой обработки "файловых" ссылок
-        if ($row->{catch}==1) {
-            $sql="select id,pageid,cp.regexp,paramnames from ng_rewrite cp where pageid=? or link_id=? order by id";
-            $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
-            $sth->execute($row->{'id'},$row->{'link_id'}) or return $cms->error($DBI::errstr);
-            $lurl = $url;
-            $lurl =~ s/^$row->{url}//;
-            my $f = 0;
-            while (my $crow=$sth->fetchrow_hashref()) {
-                my @tt=(); 
-                my $regexp=$crow->{regexp};
-                if (@tt=$lurl=~m@$regexp@) {
-                    $f = 1;
-                    my @params=split(',',$crow->{'paramnames'});
-                    for(my $i=0;$i<scalar @params;$i++) {
-                        $cms->q()->param($params[$i],$tt[$i]);
-                    };
-                    last();
-                };
-            };
-            return undef unless $f;
-        };
+    return $row if $row;
+    
+    #ЧПУ
+    my $ph = "";
+    @params = ();
+    my $stack = "";
+    my $i = 0;
+    foreach my $ss (split /\//,$url) {
+        return $cms->error('URI Too long') if ++$i > 30;
+        $stack.=$ss."/";
+        $ph .= "?,";
+        push @params, $stack;
+        #print "'$ss' - $stack - $ph\n";
     };
-
-    return undef unless($row);
+    $ph =~ s/,$//;
+    
+    #catch == 0 - ЧПУ отсутствует
+    #catch == 1 - ЧПУ с обработкой параметров через ng_rewrite (не поддерживается в ng6/)
+    #catch == 2 - ЧПУ с обработкой параметров внутри модуля
+    #catch == 3 - ЧПУ с обработкой параметров внутри модуля, с поддержкой обработки "файловых" ссылок
+    
+    $sql="SELECT $fields FROM ng_sitestruct WHERE catch>0 AND disabled=0 AND url IN ($ph)";
+    if($ssId) {
+        push @params, $ssId;
+        $sql.= " and subsite_id = ?";
+    }; 
+    $sql .= " ORDER BY LENGTH(url) DESC LIMIT 1";
+    
+    $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
+    $sth->execute(@params) or return $cms->error($DBI::errstr);
+    $row = $sth->fetchrow_hashref();
+    $sth->finish();
+    
     return $row;
 };
+
+=head
+sub processNGRewrite {
+    my ($self,$pageRow) = (shift,shift);
+    
+    if ($pageRow->{catch}==1) {
+        $sql="select id,pageid,cp.regexp,paramnames from ng_rewrite cp where pageid=? or link_id=? order by id";
+        $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
+        $sth->execute($pageRow->{'id'},$pageRow->{'link_id'}) or return $cms->error($DBI::errstr);
+        my $lurl = $url;
+        $lurl =~ s/^$pageRow->{url}//;
+        my $f = 0;
+        while (my $crow=$sth->fetchrow_hashref()) {
+            my @tt=(); 
+            my $regexp=$crow->{regexp};
+            if (@tt=$lurl=~m@$regexp@) {
+                $f = 1;
+                my @params=split(',',$crow->{'paramnames'});
+                for(my $i=0;$i<scalar @params;$i++) {
+                    $cms->q()->param($params[$i],$tt[$i]);
+                };
+                last();
+            };
+        };
+        return undef unless $f;
+    };
+    return $row;
+};
+=cut
     
 sub processRequest {
     my $cms = shift;
