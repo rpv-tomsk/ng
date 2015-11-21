@@ -20,6 +20,7 @@ sub init {
 	$self->{_fields}   = $param{fields} || die "NG::DBlist::init(): 'fields' parameter missing";
 	$self->{_where}    = $param{where}  || "";
 	$self->{_order}    = $param{order}  || "";
+	$self->{_orderParams} = $param{orderParams} || [];
 	$self->{_page}     = $param{page}   || 1;
 	$self->{_onpage}   = $param{onpage} || 10;
 	$self->{_onlist}   = $param{onlist} || 10;
@@ -86,7 +87,7 @@ sub open {
             $self->{_sth}->execute(@params) or last;
         }
         else {
-            $self->{_sth} = $self->{_db}->open_range($sql,$self->{_onpage}*($self->{_page}-1),$self->{_onpage},@params) or last;
+            $self->{_sth} = $self->{_db}->open_range($sql,$self->{_onpage}*($self->{_page}-1),$self->{_onpage},@params,@{$self->{_orderParams}}) or last;
         }
         $ret = 1;
         last;
