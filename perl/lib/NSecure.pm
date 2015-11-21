@@ -123,7 +123,7 @@ sub leap_year {
 #    return $days_in_month[leap_year($y)][$m];
 #}
 
-sub validate ($$$) {
+sub validate_ymd ($$$) {
     my ($y, $m, $d)= @_;
     # any +ve integral year is valid
     return 0 if (!defined $y || $y != abs int $y);
@@ -134,14 +134,10 @@ sub validate ($$$) {
 
 sub is_valid_date {
 	my $date = shift;
-	#if (defined $date || $date =~ /^(\d{1,2})[\.\-](\d{1,2})[\.\-](\d{4})$/) {
 	if (defined $date && $date =~ /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/) {
-		#use Date::Simple ();   ## 
-		#return Date::Simple->new("$3-$2-$1");
-		return validate($3,$2,$1)==1;
-	} else {
-		return 0;
+		return validate_ymd($3,$2,$1);
 	};
+	return 0;
 }
 
 sub is_valid_time {
@@ -152,9 +148,8 @@ sub is_valid_time {
         return 1 unless defined $3;
 		return 0 unless (0 <= $3) and ($3 <= 59);
         return 1;
-	} else {
-		return 0;
 	};
+	return 0;
 }
 
 sub is_valid_datetime {
@@ -163,25 +158,20 @@ sub is_valid_datetime {
 		return 0 unless (0 <= $4) and ($4  < 24);
 		return 0 unless (0 <= $5) and ($5 <= 59);
 		return 0 unless (defined $6) and (0 <= $6) and ($6 <= 59);
-		return validate($3,$2,$1)==1;
-	} else {
-		return undef;
+		return validate_ymd($3,$2,$1);
 	};
+	return 0;
 }
 
 sub is_valid_timestamp {
 	my $date = shift;
-	#if (defined $date || $date =~ /^(\d{1,2})[\.\-](\d{1,2})[\.\-](\d{4})$/) {
 	if (defined $date && $date =~ /^(\d{1,2})\.(\d{1,2})\.(\d{4}) (\d{1,2})\:(\d{1,2})(?:\:(\d{1,2}))?$/) {
-		#use Date::Simple ();   ## 
-		#return Date::Simple->new("$3-$2-$1");
 		return 0 unless (0 <= $4) and ($4  < 24);
 		return 0 unless (0 <= $5) and ($5 <= 59);
 		return 0 unless (defined $6) and (0 <= $6) and ($6 <= 59);
-		return validate($3,$2,$1)==1;
-	} else {
-		return undef;
+		return validate_ymd($3,$2,$1);
 	};
+	return 0;
 }
 
 sub is_valid_cidr {
