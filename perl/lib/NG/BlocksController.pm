@@ -943,7 +943,7 @@ sub _regTmplBlock {
     return "[Блок $bCode не является модулем]"  if !$isPlugin && $block->{TYPE} != 0;
      
     if ($NG::BlocksController::config::skipBlockToTemplateRegistration) {
-        warn "Block $bCode does not registered into template '$self->{_tmplFile} due to skipBlockToTemplateRegistration=1 flag.'";
+        warn "Block $bCode does not registered into template '$self->{_tmplFile}' due to skipBlockToTemplateRegistration=1 flag.";
     }
     else {
         warn "Block $bCode found, registering it into template '$self->{_tmplFile}'";
@@ -982,8 +982,13 @@ warn "Layout '".$self->{_tmplFile}."' $aBlock : NG::PlugCtrl - no one module use
         next if $block->{fixed};
         next if $block->{disabled};
         
-        warn "Block ".$block->{CODE}."(".$block->{ID}.") is not used in template '".$self->{_tmplFile}."' and was unregistered.";
-        $dbh->do("DELETE FROM ng_tmpl_blocks WHERE template=? AND block_id=?", undef, $self->{_tmplFile}, $block->{ID}) or warn "Error unregistering block: ".$DBI::errstr;
+        if ($NG::BlocksController::config::skipBlockToTemplateRegistration) {
+            warn "Block ".$block->{CODE}."(".$block->{ID}.") is not used in template '".$self->{_tmplFile}."' and should be unregistered. (Skipped deregistering due to skipBlockToTemplateRegistration=1 flag.";
+        }
+        else {
+            warn "Block ".$block->{CODE}."(".$block->{ID}.") is not used in template '".$self->{_tmplFile}."' and was unregistered.";
+            $dbh->do("DELETE FROM ng_tmpl_blocks WHERE template=? AND block_id=?", undef, $self->{_tmplFile}, $block->{ID}) or warn "Error unregistering block: ".$DBI::errstr;
+        };
     };
     return 1;
 };
