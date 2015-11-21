@@ -982,8 +982,8 @@ warn "Layout '".$self->{_tmplFile}."' $aBlock : NG::PlugCtrl - no one module use
         next if $block->{fixed};
         next if $block->{disabled};
         
-        warn "Block ".$block->{CODE}." is not used in template '".$self->{_tmplFile}."' and was unregistered.";
-        $dbh->do("DELETE FROM ng_tmpl_blocks WHERE template=? AND block_id=?", undef, $self->{_tmplFile}, $blockId) or warn "Error unregistering block: ".$DBI::errstr;
+        warn "Block ".$block->{CODE}."(".$block->{ID}.") is not used in template '".$self->{_tmplFile}."' and was unregistered.";
+        $dbh->do("DELETE FROM ng_tmpl_blocks WHERE template=? AND block_id=?", undef, $self->{_tmplFile}, $block->{ID}) or warn "Error unregistering block: ".$DBI::errstr;
     };
     return 1;
 };
