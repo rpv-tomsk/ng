@@ -61,11 +61,11 @@ sub open {
         @params = @_;
     };
 
-    $where = ($where)?"where $where":"";
+    $where = ($where)?"WHERE $where":"";
     
     my $ret = 0;
     while (1) {
-        my $sth = $dbh->prepare("select count(*) from $table $where") or last;
+        my $sth = $dbh->prepare("SELECT count(*) FROM $table $where") or last;
         $sth->execute(@params) or last;
         $self->{_size} = $sth->fetchrow();
         $sth->finish();
@@ -77,19 +77,17 @@ sub open {
         return $ret;
     };
     
-    my $sql;
-    if ($self->{_disable_pages} == 1) {
-        $sql = "select $fields from $table $where $order";
-    }
-    else {
-        $sql = $self->{_db}->sqllimit("select $fields from $table $where $order",$self->{_onpage}*($self->{_page}-1),$self->{_onpage});
-    };
+    my $sql = "SELECT $fields FROM $table $where $order";
     #warn $sql;
     $ret = 0;
     while (1) {
-        my $sth = $dbh->prepare($sql) or last;
-        $sth->execute(@params) or last;
-        $self->{_sth} = $sth;
+        if ($self->{_disable_pages}) {
+            $self->{_sth} = $dbh->prepare($sql) or last;
+            $self->{_sth}->execute(@params) or last;
+        }
+        else {
+            $self->{_sth} = $self->{_db}->open_range($sql,$self->{_onpage}*($self->{_page}-1),$self->{_onpage},@params) or last;
+        }
         $ret = 1;
         last;
     };
