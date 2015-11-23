@@ -180,10 +180,10 @@ sub buildList {
     
     $headersCnt++ if $self->{_multiActions};
     
-    my $refURL = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam());
     #Сохраняем исходный ref. We need to go deeper!
-    my $urlRef = $q->url_param('ref');
-    $refURL = getURLWithParams($refURL,'ref='.uri_escape($urlRef)) if $urlRef;
+    my $refParam = $q->url_param('ref');
+    $refParam = 'ref='.uri_escape($refParam) if $refParam ne '';
+    my $refURL = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$refParam);
     
     #Обрабатываем функцию поиска
     my $sform = undef;
@@ -199,7 +199,8 @@ sub buildList {
                 CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),
                     $self->getFilterParam(),
                     $self->getFKParam(),
-                    $self->getOrderParam()
+                    $self->getOrderParam(),
+                    $refParam
                 )
             );
             $sform->print($tmpl);
@@ -214,8 +215,8 @@ sub buildList {
         unless ($self->{_search_popup}) {
             push @{$self->{_topbar_links}}, {
                 NAME    => $self->{_search_link_name},
-                URL     => getURLWithParams($myurl,"showsearchform=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),"ref=".$refURL),
-                AJAX_URL=> getURLWithParams($myurl,"action=showsearchform","_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),"ref=".$refURL),
+                URL     => getURLWithParams($myurl,"showsearchform=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),$refParam),
+                AJAX_URL=> getURLWithParams($myurl,"action=showsearchform","_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),$refParam),
             };
         };
         $refURL = getURLWithParams($refURL, $searchParam);
@@ -2414,7 +2415,9 @@ sub showSearchForm { #Action!
 
 	$sform->{_ajax} = $is_ajax;
 	my $tmpl = $self->gettemplate($self->{_searchformtemplate});
-	$tmpl->param(CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFilterParam(),$self->getFKParam(),$self->getOrderParam()));
+	my $refParam = $self->q->url_param('ref');
+	$refParam = 'ref='.uri_escape($refParam) if $refParam ne '';
+	$tmpl->param(CANCEL_SEARCH_URL => getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getFilterParam(),$self->getFKParam(),$self->getOrderParam(),$refParam));
 	$sform->print($tmpl);
 	return $self->output($tmpl);
 };
