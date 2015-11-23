@@ -181,6 +181,9 @@ sub buildList {
     $headersCnt++ if $self->{_multiActions};
     
     my $refURL = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam());
+    #Сохраняем исходный ref. We need to go deeper!
+    my $urlRef = $q->url_param('ref');
+    $refURL = getURLWithParams($refURL,'ref='.uri_escape($urlRef)) if $urlRef;
     
     #Обрабатываем функцию поиска
     my $sform = undef;
@@ -841,7 +844,7 @@ sub processForm {
             );
         }
         else {
-            $ref = uri_unescape($q->param('ref'));
+            $ref = $q->param('ref');
         };
     }
     elsif($self->{_options}->{INSERT_REDIRECTMODE} eq "url") {
@@ -854,7 +857,7 @@ sub processForm {
         $ref =~ s/\{(.+?)\}/$data->{$1}/gi;
     }
     else {
-        $ref = uri_unescape($q->param('ref'));
+        $ref = $q->param('ref');
     };
     
     if ($is_ajax) {
@@ -1114,7 +1117,7 @@ sub Delete {
             $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова afterDelete()");
             $self->_makeEvent('delete',{ID=>$id});
             $self->_makeLogEvent({operation=>"Удаление записи",operation_param=>"KEY ".$id});
-            return $self->redirect(uri_unescape($q->param("ref")));
+            return $self->redirect($q->param("ref"));
         };
         $form->hideButtons();
         $form->addButton({
@@ -2342,6 +2345,7 @@ sub setPagesParam {
 #
 # Method obsoleted and removed from codebase.
 # BW compat code (without getSearchParam() params) can be uncommented if strongly needed.
+# NOTE: not supported url_param('ref'), this needs to be fixed here.
 
 sub buildRefCurrentUrl {
 	my $self = shift;
