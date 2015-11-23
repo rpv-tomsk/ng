@@ -199,7 +199,7 @@ sub throw {
         $message .= "\nIncorrect parameters passed to ".__PACKAGE__."->throw()";
     };
     my $code = "NG.DBIEXCEPTION";
-    $code = $params->{exceptionCode} if ($params && $params->{exceptionCode});
+    $code = $params->{exceptionCode} if $params->{exceptionCode};
     
     if ($params->{rollback}) {
         eval {
@@ -216,8 +216,20 @@ sub throw {
             $message.= "\n".$rm;
         };
     };
+    $prefix||='';
     $Carp::Internal{'NG::DBIException'}++;
     $class->SUPER::throw($code,$prefix.$message);
+};
+
+package NG::InternalError;
+use strict;
+our @ISA = qw(NG::Exception);
+
+sub throw {
+    my ($class,$text) = (shift,shift);
+    $text = $NG::Application::cms->{_error} . ($text?" ($text)":"") if $NG::Application::cms->{_error};
+    $Carp::Internal{'NG::InternalError'}++;
+    $class->SUPER::throw('NG.INTERNALERROR', $text);
 };
 
 1;
