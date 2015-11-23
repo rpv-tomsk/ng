@@ -12,12 +12,15 @@ use vars qw(@ISA);
 @ISA = qw(NG::Module);
 
 sub loadEmails {
-    my ($class,$mObj,$subcode) = (shift,shift,shift);
+    my ($class,$module,$subcode) = (shift,shift,shift);
     my $cms = $class->cms();
-    return $cms->error("NG::Module::NotifyEmails->loadEmails(): missing moduleObj") unless $mObj && UNIVERSAL::can($mObj,"getModuleCode");
-    return $cms->error("NG::Module::NotifyEmails->loadEmails(): missing subcode") unless $subcode;
-    my $mCode = $mObj->getModuleCode() or return $cms->defError("loadEmails():","Не могу определить код модуля ".(ref $mObj));
-    my $mails = $cms->dbh->selectall_arrayref('select email from ng_emails where mcode =? and subcode = ?', {Slice=>{}},$mCode,$subcode) or return $cms->error($DBI::errstr);
+    if (ref $module) {
+        NG::InternalError->throw("Missing moduleObj/moduleObj->getModuleCode") unless UNIVERSAL::can($module,"getModuleCode");
+        $module = $module->getModuleCode() or NG::InternalError->throw('Не могу определить код модуля '.(ref $module));
+    }
+    NG::InternalError->throw('Missing moduleobj/modulecode') unless $module;
+    NG::InternalError->throw('Missing subcode') unless $subcode;
+    my $mails = $cms->dbh->selectall_arrayref('SELECT email FROM ng_emails WHERE mcode =? AND subcode = ?', {Slice=>{}},$module,$subcode) or NG::DBIException->throw();
     my @mails = map {$_->{email}} @$mails;
     return \@mails;
 };
@@ -115,7 +118,10 @@ sub moduleBlocks {
 
 Использование списка адресов (Рассылка мессаг):
 
+    #Внимание! loadEmails() может выдать Exception.
+    #my $mails = $cms->getObject({CLASS=>"NG::Module::NotifyEmails",METHOD=>"loadEmails"},'MODULECODE','ANOTIFY');
     my $mails = $cms->getObject({CLASS=>"NG::Module::NotifyEmails",METHOD=>"loadEmails"},$self,'ANOTIFY');
+    
     if (scalar @$mails) {
         ...
         #Вариант 1 - Общий заголовок To:
@@ -140,6 +146,14 @@ CREATE TABLE ng_emails (
 ) 
 WITH (oids = false);
 
+CREATE TABLE IF NOT EXISTS `ng_emails` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `email` varchar(50) NOT NULL,
+  `mcode` varchar(25) NOT NULL,
+  `subcode` varchar(25) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `mcode` (`mcode`,`subcode`,`email`)
+) ENGINE=MyISAM DEFAULT CHARSET=cp1251 AUTO_INCREMENT=1;
 =cut
 
 1;
