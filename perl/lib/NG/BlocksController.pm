@@ -961,6 +961,8 @@ sub DESTROY {
 
     return 1 unless $self->{_tmplFile};
     return 1 unless $self->{_tmplAttached};
+    return 1 if ($self->{_ablock} && scalar @{$self->{_blocks}} == 1);
+    return 1 if (scalar @{$self->{_blocks}} == 0);
     #TODO: Обработать ситуацию, когда в вызове незарегистрированного блока происходит die.
     #      Тогда часть блоков может быть не вызвана из шаблона, и она будет считаться неиспользуемой.
     #      Нужно выставлять флажок _inside если вызывается запрос контента незарегистированного блока
