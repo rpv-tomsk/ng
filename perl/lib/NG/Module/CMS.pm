@@ -14,6 +14,10 @@ sub keys_BREADCRUMBS {
     $req->{pageId}  = $pageRow->{id};
     $req->{history} = $self->cms->getBreadcrumbs() if $NG::Application::blocksController->hasAB();
     
+    if ($req->{history} && ref $req->{history} eq 'HASH' && $req->{history}->{DISABLE}) {
+        return {REQUEST => {disable=>1}, VERSION_KEYS => []};
+    };
+    
     return {
         REQUEST=>$req,
         VERSION_KEYS=> [
@@ -27,6 +31,7 @@ sub block_BREADCRUMBS {
     
     my $cms = $self->cms();
     
+    return $cms->output('') if $keys->{REQUEST}->{disable};
     return $cms->output("[Parameter 'template' not specified for block ".$self->getModuleCode()."_$action]") unless $params->{template};
     
     my $pageId  = $keys->{REQUEST}->{pageId};

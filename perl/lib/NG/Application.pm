@@ -791,6 +791,11 @@ sub setBreadcrumbs {
     return $NG::Application::blocksController->setABBreadcrumbs($breadcrumbs);
 };
 
+sub disableBreadcrumbs {
+    my ($cms,$breadcrumbs) = (shift,shift);
+    return $NG::Application::blocksController->setABBreadcrumbs({DISABLE=>1});
+};
+
 sub getBreadcrumbs {
     return $NG::Application::blocksController->getABBreadcrumbs();
 };
