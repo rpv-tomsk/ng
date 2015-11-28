@@ -361,7 +361,8 @@ sub findPageRowByURL {
     $url =~ s/\/\/+/\//g;
 
     #Remove trailing part
-    $url =~ s/[^\/]+$//;
+    $url =~ s/([^\/]+)$//;
+    my $suffix = $1 || '';
     
     #Загружаем свойства страницы
     my $fields = $cms->getPageFields();
@@ -378,6 +379,7 @@ sub findPageRowByURL {
     my $row = $sth->fetchrow_hashref();
     $sth->finish();
     
+    return undef if $row && $suffix && $row->{catch} != 3;
     return $row if $row;
     
     #ЧПУ
@@ -411,6 +413,7 @@ sub findPageRowByURL {
     $row = $sth->fetchrow_hashref();
     $sth->finish();
     
+    return undef if $row && $suffix && $row->{catch} != 3;
     return $row;
 };
 
@@ -455,7 +458,7 @@ sub processRequest {
     return $cms->error() if defined $row && !$row;
 #NG::Profiler::saveTimestamp("findPRbURL","processRequest");
 
-    if ((!defined $row || ($row->{catch} != 0 && $row->{catch} != 3)) && $url !~ /\/$/) {
+    if (!defined $row && $url !~ /\/$/) {
         return $cms->redirect(-uri=>$url.'/',-status=>301);
     };
 
