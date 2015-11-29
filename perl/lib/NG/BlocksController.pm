@@ -36,7 +36,6 @@ sub init {
     $self->{_regions} = {};
     $self->{_tmplAttached} = 0; #Флаг разрешения процедуры автоматической разрегистрации блока
     $self->{_insideAB} = 0;     #Флаг выполнения getBlockKeys()/getBlockContent() для АБ
-    $self->{_insideABKeys} = 0; #Флаг выполнения getBlockKeys() для АБ
     
     $self;
 };
@@ -232,12 +231,7 @@ sub pushABlock {
     
     local $self->{_insideAB} = 1;
     #Запросим ключи АБ для дальнейших действий
-    my $abKeys;
-    {
-        local $self->{_insideABKeys} = 1;
-        $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
-    };
-    
+    my $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
     #Специальный костылек для удобного возврата перенаправлений из АБ
     return $self->cms->redirect($abKeys->{REDIRECT}) if $abKeys->{REDIRECT};
     #Проверяем возможность кеширования.
@@ -362,13 +356,11 @@ sub setABBreadcrumbs {
     my ($self,$breadcrumbs) = (shift,shift);
     
     $self->{_ablock} or die "setABBreadcrumb(): No AB found!";
-    unless ($self->{_insideABKeys}) {
-        my $abKeys = $self->{_ablock}->{KEYS} or die "setABBreadcrumb(): No AB KEYS found!";
-        
-        local @CARP_NOT = qw(NG::Application);
-        croak "setBreadcrumbs() not allowed from non-AB blocks" unless $self->{_insideAB};
-        croak "AB must have HASRELATED key to use setBreadcrumbs()" if ($abKeys->{REQUEST} && !($abKeys->{HASRELATED} || $abKeys->{ABFIRST}));
-    };
+    my $abKeys = $self->{_ablock}->{KEYS} or die "setABBreadcrumb(): No AB KEYS found!";
+    
+    local @CARP_NOT = qw(NG::Application);
+    croak "setBreadcrumbs() not allowed from non-AB blocks" unless $self->{_insideAB};
+    croak "AB must have HASRELATED key to use setBreadcrumbs()" if ($abKeys->{REQUEST} && !($abKeys->{HASRELATED} || $abKeys->{ABFIRST}));
     
     $self->{_ablock}->{BREADCRUMBS} = $breadcrumbs;
 };
