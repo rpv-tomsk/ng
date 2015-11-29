@@ -35,7 +35,8 @@ sub init {
     #
     $self->{_regions} = {};
     $self->{_tmplAttached} = 0; #Флаг разрешения процедуры автоматической разрегистрации блока
-    $self->{_insideAB} = 0;     #Флаг выполнения getBlockKeys()/getBlockContent() для АБ
+    $self->{_insideAB} = 0;     #Флаг выполнения getBlockContent() для АБ
+    $self->{_insideABKeys} = 0; #Флаг выполнения getBlockKeys() для АБ
     
     $self;
 };
@@ -135,6 +136,7 @@ sub _pushBlock {
             LM               -
             
             BREADCRUMBS       - кешированное значение, которое АБ может выставить вызовом cms->setBreadcrumbs()
+            BREADCRUMBSNOCACHE- признак запрета кеширования BREADCRUMBS если он был выставлен из AB->getBlockKeys().
         
      BREADCRUMBS - значение, выставленное вызовом cms->setBreadcrumb() (только для АБ)
      CONTENT
@@ -229,9 +231,13 @@ sub pushABlock {
     
 #NG::Profiler::saveTimestamp("pushABlock begin: ".ref($block->{MODULEOBJ})."_".$block->{ACTION},"pushABlock");
     
-    local $self->{_insideAB} = 1;
     #Запросим ключи АБ для дальнейших действий
-    my $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
+    my $abKeys;
+    {
+        local $self->{_insideABKeys} = 1;
+        $abKeys = $self->_getBlockKeys($block) or return $self->cms->error();
+    }
+    
     #Специальный костылек для удобного возврата перенаправлений из АБ
     return $self->cms->redirect($abKeys->{REDIRECT}) if $abKeys->{REDIRECT};
     #Проверяем возможность кеширования.
@@ -293,6 +299,7 @@ sub pushABlock {
             #Ура, контент получен
             $self->_setContentFromCache($block,$content->[0]);
             if ($block->{CACHEKEYS}->{BREADCRUMBS}) {
+                local $self->{_insideAB} = 1;
                 $self->cms->setBreadcrumbs($block->{CACHEKEYS}->{BREADCRUMBS});
             };
             return $block->{CONTENT};
@@ -355,12 +362,19 @@ sub getABHelper {
 sub setABBreadcrumbs {
     my ($self,$breadcrumbs) = (shift,shift);
     
-    $self->{_ablock} or die "setABBreadcrumb(): No AB found!";
-    my $abKeys = $self->{_ablock}->{KEYS} or die "setABBreadcrumb(): No AB KEYS found!";
-    
     local @CARP_NOT = qw(NG::Application);
-    croak "setBreadcrumbs() not allowed from non-AB blocks" unless $self->{_insideAB};
-    croak "AB must have HASRELATED key to use setBreadcrumbs()" if ($abKeys->{REQUEST} && !($abKeys->{HASRELATED} || $abKeys->{ABFIRST}));
+    croak "setBreadcrumbs() allowed only from AB->getBlockContent() (cacheable) or AB->getBlockKeys() (not cacheable)." unless $self->{_insideAB} || $self->{_insideABKeys};
+    $self->{_ablock} or croak "setABBreadcrumb(): No AB found!";
+    
+    $self->{_ablock}->{BREADCRUMBS} && croak "setABBreadcrumb(): BREADCRUMBS already set!";
+    
+    if ($self->{_insideABKeys}) {
+        $self->{_ablock}->{BREADCRUMBSNOCACHE} = 1; #Незачем кешировать выставленное из getBlockKeys()
+    }
+    else {
+        my $abKeys = $self->{_ablock}->{KEYS} or croak "setABBreadcrumb(): No AB KEYS found!";
+        croak "AB must have HASRELATED key to use setBreadcrumbs() from AB->getBlockContent()" if ($abKeys->{REQUEST} && !($abKeys->{HASRELATED} || $abKeys->{ABFIRST}));
+    }
     
     $self->{_ablock}->{BREADCRUMBS} = $breadcrumbs;
 };
@@ -651,7 +665,7 @@ sub _prepareCacheContent {
     };
     #Сохраняемые параметры для подчиненных блоков
     $metadata->{RELATED} = $block->{KEYS}->{RELATED} if exists $block->{KEYS}->{RELATED};
-    $metadata->{BREADCRUMBS} = $block->{BREADCRUMBS} if exists $block->{BREADCRUMBS};
+    $metadata->{BREADCRUMBS} = $block->{BREADCRUMBS} if exists $block->{BREADCRUMBS} && !$block->{BREADCRUMBSNOCACHE};
     #Сохраняемые параметры для проверки устаревания
     $metadata->{VERSIONS} = $block->{VERSIONS} if exists $block->{VERSIONS};
     $metadata->{ETAG}    = $block->{KEYS}->{ETAG} if exists $block->{KEYS}->{ETAG};
