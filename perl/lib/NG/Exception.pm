@@ -14,19 +14,22 @@ sub defaultCode {
     return 'NG.INTERNALERROR';
 };
 
+# NG::Exception->new(CODE,MESSAGE[,DETAILS])
+# NG::Exception->new({CODE=>CODE,PARAMS=>PARAMS},MESSAGE[,DETAILS]) #TODO:
 sub new {
     my $class = shift;
     
     my $self = {};
     bless $self,$class;
     
-    unless (scalar @_ == 2) {
+    unless (scalar @_ == 2 || scalar @_ == 3) {
         $self->{code} = $class->defaultCode();
         $self->{message} = 'Incorrect '.$class.'->throw() call';
     }
     else {
         $self->{code} = shift;
         $self->{message} = shift;
+        $self->{details} = shift;
     };
     $self->{message} = join(': ',@messagePrepend,$self->{message});
     $self->{carpmessage} = "";
@@ -36,7 +39,9 @@ sub new {
         eval { require Carp::Heavy; };
         unless ($@) {
             $Carp::Internal{'NG::Exception'}++;
-            $self->{carpmessage} = Carp::longmess_heavy($self->getText());
+            $self->{carpmessage} .= $self->getText();
+            $self->{carpmessage} .= $class->processSpecificator($self->{details},$self)->{text} if $self->{details};
+            $self->{carpmessage} .= Carp::longmess_heavy('');
         };
     };
     $self;
@@ -91,6 +96,56 @@ sub getText {
     };
 };
 
+sub processSpecificator {
+    my ($class,$spec,$exc) = (shift,shift,shift);
+    
+    my $v = {};
+    my $ref = ref $spec;
+
+    if ($ref eq 'HASH') {
+        if (exists $spec->{DUMP}) {
+            $ref  = 'DUMP';
+            $spec = $spec->{DUMP};
+        }
+        else {
+            $ref = $spec->{type};
+            $spec = $spec->{spec};
+            
+            $v->{text} = 'HASH Specificator: "type" or "spec" is missing' unless $ref && $spec;
+            $v->{text} = 'HASH Specificator: "type" has forbidden value '.$ref if $ref eq 'HASH' || $ref eq 'CODE';
+        };
+    };
+
+    if ($ref eq 'CODE') {
+        $v = eval {$spec->($exc)};
+    }
+    else {
+        my $code = $NG::Exception::specificatorProcessors->{$ref};
+        if ($code) {
+            $v = eval {$code->($spec,$exc)};
+        }
+        elsif ($ref eq '') {
+            $v->{text} = $spec."\n";
+            $@ = '';
+        }
+        else {
+            $v->{text} = "Not found CODE for specificator type $ref";
+            $@ = '';
+        };
+    };
+    if (my $ee = $@ || ref $v ne 'HASH') {
+        my $eeText = "";
+        if (NG::Exception->caught($ee)) {
+            $eeText = $ee->getText();
+        }
+        else {
+            $eeText = $ee;
+        };
+        return {text => "EXCEPTION $eeText WHILE GETTING VALUE FROM EXCEPTION SPECIFICATOR '$ref'"};
+    };
+    $v;
+};
+
 sub notify {
     my ($class, $exc,$opName) = (shift,shift,shift);
     
@@ -98,9 +153,11 @@ sub notify {
     my $excMsg  = '';
     my $subj = '';
     
+    my $details = undef;
     if (NG::Exception->caught($exc)) {
         $excCode = $exc->code();
         $excMsg  = $exc->message();
+        $details = $exc->{details};
     }
     elsif (ref $exc){
         $excMsg = "Неизвестное исключение класса ".(ref $exc);
@@ -108,45 +165,11 @@ sub notify {
     else {
         $excMsg = $exc;
     };
-    
-    foreach my $spec (@NG::Exception::specificators) {
-        my $v = {};
-        my $ref = ref $spec;
-        my $parentRef = undef;
-
-        if ($ref eq 'HASH') {
-            $parentRef = $ref;
-            $ref = $spec->{type};
-            $spec = $spec->{spec};
-
-            $v->{text} = 'HASH Specificator: "type" or "spec" is missing' unless $ref && $spec;
-            $v->{text} = 'HASH Specificator: "type" has forbidden value '.$ref if $ref eq 'HASH' || $ref eq 'CODE';
-        };
-
-        if ($ref eq 'CODE') {
-            $v = eval {$spec->($exc)};
-        }
-        else {
-            my $code = $NG::Exception::specificatorProcessors->{$ref};
-            if ($code) {
-                $v = eval {$code->($spec,$exc)};
-            }
-            else {
-                $v->{text} = "Not found CODE for specificator type $ref";
-                $@ = "";
-            };
-        };
-        if (my $ee = $@) {
-            my $eeText = "";
-            if (NG::Exception->caught($ee)) {
-                $eeText = $ee->getText();
-            }
-            else {
-                $eeText = $ee;
-            };
-            $excMsg .= "EXCEPTION $eeText WHILE GETTING VALUE FROM EXCEPTION SPECIFICATOR '$ref'\n";
-            next;
-        };
+    $excMsg.="\n";
+    foreach my $spec ($details, @NG::Exception::specificators) {
+        next unless defined $spec;
+        my $v = $class->processSpecificator($spec,$exc);
+        
         $excMsg .= "\n".$v->{text};
         $subj .= " ".$v->{subj} if exists $v->{subj};
     };
