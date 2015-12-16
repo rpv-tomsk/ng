@@ -1008,7 +1008,6 @@ sub getChilds {
 sub processChilds {
     my $self = shift;
     
-    my $defConvMethod = "_setValueFromField";
     my $convMethods = {
         'image_image' => '_image2image',    #Специальный обработчик (костыль) для поддержки обработки изображений различными процессорами (неэффективно!)
         'file_image'  => '',                #Не используемые конфигурации
@@ -1030,12 +1029,8 @@ sub processChilds {
             $convMethod = $convMethods->{$self->type()."_".$child->type()};
         };
         
-        if (defined $convMethod) {
-            next  if $convMethod eq '';
-        }
-        else {
-            $convMethod = $defConvMethod;
-        };
+        next unless defined $convMethod;
+        next if $convMethod eq '';
         
         NG::Exception->throw('NG.INTERNALERROR', "Класс ".ref($child)." поля ".$child->{FIELD}." не содержит метода ".$convMethod." для копирования данных из поля ".$self."(".ref($self).")") unless $child->can($convMethod);
         $child->$convMethod($self,$ch) or NG::Exception->throw('NG.INTERNALERROR',"Ошибка выставления значения из ".$self->{FIELD}." подчиненному полю ".$child->{FIELD}." :".$child->error());
@@ -1245,7 +1240,7 @@ sub beforeDelete {
     my $field = shift;
     
     my $type = $field->{TYPE};
-    if ($field->isFileField()) {
+    if ($field->isFileField() && !$field->{IS_FAKEFIELD}) {
         return $field->setError("Не указано значение опции UPLOADDIR для поля {f}") unless $field->{UPLOADDIR};
         return $field->setError("Значение файлового поля {f} не загружено") unless $field->{_loaded};
         my $dbv = $field->dbValue();
@@ -1370,20 +1365,22 @@ sub _unlink {
         };
     };
     
-    unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbValue or warn "Could not unlink $field->{UPLOADDIR}$dbValue: $!";;
+    unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbValue or warn "Could not unlink $field->{UPLOADDIR}$dbValue: $!";
 };
 
 sub clean {
     my $self = shift;
     
-    die 'NG::Field::clean(): OLDDBVALUE not loaded!' unless exists $self->{OLDDBVALUE} || $self->{_new};
-    my $oldDbV = $self->{OLDDBVALUE};
-    
     if ($self->isFileField()) {
+        die 'NG::Field::clean(): OLDDBVALUE not loaded!' unless exists $self->{OLDDBVALUE} || $self->{_new};
+        my $oldDbV = $self->{OLDDBVALUE};
+        
         $self->_unlink($oldDbV) if $oldDbV;
+        return $self->setValue('');
     };
-    $self->setValue("");
-    $self->{DBVALUE} = undef;
+    return $self->setValue(undef) if !$self->{IS_NOTNULL};
+    return $self->setValue(0) if ($self->{TYPE} eq "number" || $self->{TYPE} eq "int");
+    return $self->setValue("");
 };
 
 
@@ -1580,7 +1577,7 @@ sub deleteFile {
     my $is_ajax = shift;
     
     my $ret = eval {
-        my $ret = $field->parent()->cleanField($field);
+        $field->parent()->cleanField($field);
     };
     if (my $exc = $@) {
         my $excMsg  = "";
