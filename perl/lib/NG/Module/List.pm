@@ -622,6 +622,7 @@ sub processForm {
         
         #Обрабатываем экшны полей.
         my $ret = $self->doFormAction($form,$fa,$is_ajax);
+        $self->_updateVersionKeys($form,$fa) if $ret;
         
         if ($is_ajax) {
             #NB: doFormAction может сам возвращать AJAX-ответ в случае ошибки.
