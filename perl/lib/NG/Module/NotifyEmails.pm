@@ -20,7 +20,7 @@ sub loadEmails {
     }
     NG::InternalError->throw('Missing moduleobj/modulecode') unless $module;
     NG::InternalError->throw('Missing subcode') unless $subcode;
-    my $mails = $cms->dbh->selectall_arrayref('SELECT email FROM ng_emails WHERE modulecode =? AND subcode = ?', {Slice=>{}},$module,$subcode) or NG::DBIException->throw();
+    my $mails = $cms->dbh->selectall_arrayref('SELECT email FROM ng_emails WHERE mcode =? AND subcode = ?', {Slice=>{}},$module,$subcode) or NG::DBIException->throw();
     my @mails = map {$_->{email}} @$mails;
     return \@mails;
 };
@@ -50,7 +50,7 @@ sub config {
     my @fields = ();
     push @fields, {FIELD=>'id',    TYPE=>'id',     NAME=>'Код',IS_NOTNULL=>1};
     push @fields, {FIELD=>'email', TYPE=>'email',   NAME=>'E-Mail',IS_NOTNULL=>1,WIDTH=>"100%"};
-    push @fields, {FIELD=>'modulecode',  TYPE=>'filter', NAME=>'Filter',IS_NOTNULL=>1,WIDTH=>"100%",VALUE=>$mObj->getModuleCode()};
+    push @fields, {FIELD=>'mcode',  TYPE=>'filter', NAME=>'Filter',IS_NOTNULL=>1,WIDTH=>"100%",VALUE=>$mObj->getModuleCode()};
     #
     my @formfields = ();
     push @formfields, {FIELD=>'id'};
@@ -65,7 +65,7 @@ sub config {
                 TABLE => 'ng_emails_subcodes',
                 ORDER => 'id',
                 ID_FIELD=>'subcode',
-                WHERE => 'modulecode = ?',
+                WHERE => 'mcode = ?',
                 PARAMS => [$mObj->getModuleCode()],
             },
         };
@@ -78,6 +78,7 @@ sub config {
     };
     $self->fields( @fields );
     $self->listfields([
+        {FIELD=>'id'},
         {FIELD=>'email'},
     ]);
     $self->formfields( \@formfields );
@@ -85,7 +86,7 @@ sub config {
     $self->{_onlist} = 20;
     $self->order(
         {FIELD=>"email",DEFAULT=>0,ORDER_ASC=>"email",ORDER_DESC=>"email desc",DEFAULTBY=>'DESC'},
-        #{FIELD=>"id",DEFAULT=>0,ORDER_ASC=>"id",ORDER_DESC=>"id desc",DEFAULTBY=>'DESC'},
+        {FIELD=>"id",DEFAULT=>0,ORDER_ASC=>"id",ORDER_DESC=>"id desc",DEFAULTBY=>'DESC'},
     );
 #    $self->{_pageBlockMode}=1;
 };
@@ -107,10 +108,10 @@ sub moduleBlocks {
     return [
         ...
         #Все адреса модуля с фильтром по группам
-        {URL=>"/emailA/", BLOCK=>"NG::Module::NotifyEmails::Block",USE=>'NG::Module::NotifyEmails', TYPE=>'moduleBlock'},
+        {URL=>"/emailA/", BLOCK=>"NG::Module::NotifyEmails::Block",USE=>'NG::Module::NotifyEmails'},
         ...
         #Определенный сабкод (группа) адресов 
-        {URL=>"/emailB/", BLOCK=>"NG::Module::NotifyEmails::Block",USE=>'NG::Module::NotifyEmails',OPTS=>{subcode=>'ANOTIFY'}, TYPE=>'moduleBlock'},
+        {URL=>"/emailB/", BLOCK=>"NG::Module::NotifyEmails::Block",USE=>'NG::Module::NotifyEmails',OPTS=>{subcode=>'ANOTIFY'}},
         ...
     ];
 };
@@ -138,9 +139,9 @@ sub moduleBlocks {
 CREATE TABLE ng_emails (
   id SERIAL,
   email VARCHAR(50) NOT NULL,
-  modulecode VARCHAR(25) NOT NULL,
+  mcode VARCHAR(25) NOT NULL,
   subcode VARCHAR(25) NOT NULL,
-  CONSTRAINT ng_emails_idx UNIQUE(email, modulecode, subcode),
+  CONSTRAINT ng_emails_idx UNIQUE(email, mcode, subcode),
   CONSTRAINT ng_emails_pkey PRIMARY KEY(id)
 ) 
 WITH (oids = false);
