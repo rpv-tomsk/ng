@@ -336,7 +336,7 @@ sub getABRelated {
         return $self->cms->error("Active Block ".$aBlock->{CODE}." does not set HASRELATED key. This can lead to floating errors on production site.");
     };
     return $aBlock->{CACHEKEYS}->{RELATED} if exists $aBlock->{CACHEKEYS} && $aBlock->{CACHEKEYS}->{RELATED};
-    return $aBlock->{KEYS}->{RELATED} || return $self->cms->error("Active Block does not set value to RELATED key");
+    return $aBlock->{KEYS}->{RELATED} || return $self->cms->error("Active Block ".$aBlock->{CODE}." does not set value to RELATED key");
 };
 
 sub tryABHelper {
