@@ -558,7 +558,9 @@ sub setFormValue {
     $is_utf8++ if $contentType =~ /utf\-?8/i; # application/x-www-form-urlencoded; charset=UTF-8
     $is_utf8++ if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest";
     
-    my $value = ($is_utf8) ? _convert($q->param($field->{FIELD})) : $q->param($field->{FIELD});
+    my $value = $q->param($field->{FIELD});
+    return 1 unless defined $value;
+    $value = ($is_utf8) ? _convert($value) : $value;
 
     if ($field->{ESCAPE} && $field->{ESCAPE} eq "HTML") {
         $value = htmlspecialchars($value);
