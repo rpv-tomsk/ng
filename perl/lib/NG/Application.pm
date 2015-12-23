@@ -351,10 +351,9 @@ sub getModuleFields {
 };
 
 sub findPageRowByURL {
-    my $cms = shift;
-    my $url  = shift;
-    my $ssId = shift || 0;
+    my ($cms,$url,$ssId) = (shift,shift,shift);
     
+    $ssId ||= 0;
     my $dbh = $cms->dbh();
     
     #Merge slashes
@@ -379,8 +378,9 @@ sub findPageRowByURL {
     my $row = $sth->fetchrow_hashref();
     $sth->finish();
     
-    return undef if $row && $suffix && $row->{catch} != 3;
+    return $cms->redirect(-uri=>$url.$suffix.'/',-status=>301) if $row && $suffix && $row->{catch} != 3;
     return $row if $row;
+    return undef if $url eq '/'; #404.
     
     #вос
     my $ph = "";
@@ -413,8 +413,9 @@ sub findPageRowByURL {
     $row = $sth->fetchrow_hashref();
     $sth->finish();
     
-    return undef if $row && $suffix && $row->{catch} != 3;
-    return $row;
+    return $cms->redirect(-uri=>$url.$suffix.'/',-status=>301) if $row && $suffix && $row->{catch} != 3;
+    return $row if $row;
+    return undef; #404.
 };
 
 =head
@@ -447,20 +448,15 @@ sub processNGRewrite {
 =cut
     
 sub processRequest {
-    my $cms = shift;
-    my $url = shift;
-    my $ssId = shift || 0;
+    my ($cms,$url,$ssId) = (shift,shift,shift);
     
     my $dbh = $cms->dbh();
     
 #NG::Profiler::saveTimestamp("begin","processRequest");    
     my $row = $cms->findPageRowByURL($url,$ssId);
     return $cms->error() if defined $row && !$row;
+    return $row if ref $row && UNIVERSAL::isa($row,'NG::BlockContent');
 #NG::Profiler::saveTimestamp("findPRbURL","processRequest");
-
-    if (!defined $row && $url !~ /\/$/) {
-        return $cms->redirect(-uri=>$url.'/',-status=>301);
-    };
 
     return $cms->notFound() unless defined $row;
     
