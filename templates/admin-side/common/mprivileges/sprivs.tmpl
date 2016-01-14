@@ -225,9 +225,9 @@ function doModulePrivilege (action,privilege) {
     <div class="subjects" id="admins">
         <div class="name">Администраторы:</div>
         <div class="list">
-            <TMPL_IF PAGEADMINS>
+            <TMPL_IF PAGEADMINS#>
                 <TMPL_LOOP PAGEADMINS>
-                    <p class="link<TMPL_IF CURRENT> selected</TMPL_IF>"><a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/?adminId=<TMPL_VAR ID>"><TMPL_VAR FIO> (<TMPL_VAR LOGIN>)</a></p>
+                    <p class="link<TMPL_IF current> selected</TMPL_IF>"><a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/?adminId=<TMPL_VAR id>"><TMPL_VAR fio> (<TMPL_VAR login>)</a></p>
                 </TMPL_LOOP PAGEADMINS>
             <TMPL_ELSE PAGEADMINS>
                 <p class="link">Привилегии на модуль администраторам не предоставлены</p>
@@ -240,9 +240,9 @@ function doModulePrivilege (action,privilege) {
     <div class="subjects" id="groups" style="border:0px dashed red;">
         <div class="name">Группы:</div>
         <div class="list" style="border:0px solid blue;">
-            <TMPL_IF PAGEGROUPS>
+            <TMPL_IF PAGEGROUPS#>
                 <TMPL_LOOP PAGEGROUPS>
-                    <p class="link<TMPL_IF CURRENT> selected</TMPL_IF CURRENT>"><a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/?groupId=<TMPL_VAR ID>"><TMPL_VAR NAME></a></p>
+                    <p class="link<TMPL_IF current> selected</TMPL_IF current>"><a href="<TMPL_VAR BASEURL><TMPL_VAR MID>/?groupId=<TMPL_VAR id>"><TMPL_VAR name></a></p>
                 </TMPL_LOOP PAGEGROUPS>
             <TMPL_ELSE PAGEGROUPS>
                 <p class="link">Привилегии на модуль группам не предоставлены</p>
