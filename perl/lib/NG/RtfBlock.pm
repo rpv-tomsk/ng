@@ -128,10 +128,6 @@ sub moduleBlocks {
     ];
 };
 
-sub modulePrivileges {
-    return [];
-};
-
 package NG::RtfBlock::Block;
 
 use strict;
