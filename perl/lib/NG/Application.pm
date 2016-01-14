@@ -534,7 +534,7 @@ sub getModuleRow {
     my $sth = $dbh->prepare("select $fields from ng_modules where $where") or NG::DBIException->throw();
     $sth->execute(@_) or NG::DBIException->throw();
     my $mRow = $sth->fetchrow_hashref();# or NG::Exception->throw('NG.INTERNALERROR', "getModuleRow(): «апрошенный модуль не найден");
-    $sth->fetchrow_hashref() and NG::Exception->throw('NG.INTERNALERROR', "getModuleRow(): ”словие запроса не определ€ет уникальной записи в ng_modules");
+    $mRow && $sth->fetchrow_hashref() and NG::Exception->throw('NG.INTERNALERROR', "getModuleRow(): ”словие запроса не определ€ет уникальной записи в ng_modules");
     $sth->finish();
     return $mRow;
 };
@@ -1002,7 +1002,7 @@ sub _header {
 #http://osdir.com/ml/modperl.perl.apache.org/2009-08/msg00005.html
 
     my $r = $self->q()->r();
-    if ($r && $params->{-status} =~ /^404/) {
+    if ($r && ($params->{-status} =~ /^404/ || $params->{-status} =~ /^5/)) {
        #ErrorDocument directive, mod_perl2 and 404 status and mod_deflate does not like each other. Disable mod_deflate.
        $r->subprocess_env('no-gzip' => 1);
        #Without rflush we got a 200 status instead of 404 on pages with weight equal or more than 8kb and print CGI::headers().
