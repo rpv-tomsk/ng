@@ -158,22 +158,29 @@ sub run {
     my $is_ajax  = $q->param('_ajax') || $q->url_param('_ajax') || 0;
     $cms->openConfig() || return $cms->showError();
     
-    my $ret ; 
-    while (1)   {
+    my $ret = eval {
         #Получаем объект авторизации.
         my $class = $cms->confParam("Admin-side.SiteAuthClass",$cms->{_defaultAuthClass});
-        $ret = $cms->error("Отсутствует параметр Admin-side.SiteAuthClass") unless $class;
-        
-        $self->{_authObj} = $cms->getObject($class,{BASEURL=>$cms->{_baseURL}});
-        unless ($self->{_authObj}) {
-            $ret = $cms->defError("SiteAuthClass:", "Ошибка создания объекта класса");
-            last;
+        return $cms->error("Отсутствует параметр Admin-side.SiteAuthClass") unless $class;
+
+        {
+            local @NG::Exception::messagePrepend = @NG::Exception::messagePrepend;
+            push  @NG::Exception::messagePrepend, "Admin-side.SiteAuthClass: Ошибка создания объекта класса $class";
+            $self->{_authObj} = $cms->getObject($class,{BASEURL=>$cms->{_baseURL}});
         };
-        $ret = $self->{_authObj}->Authenticate($is_ajax);
+
+        my $ret = $self->{_authObj}->Authenticate($is_ajax);
         $ret ||= $cms->defError("Authenticate","Ошибка авторизации");
-        last if $ret ne NG::Application::M_CONTINUE;
-        $ret = $cms->_run($is_ajax);
-        last;
+        return $ret if $ret ne NG::Application::M_CONTINUE;
+        $cms->_run($is_ajax);
+    };
+    if ($@) {
+        if (my $e = NG::Exception->caught($@)) {
+            $ret = $cms->error($e->getText());
+        }
+        else {
+            $ret = $cms->error($@);
+        };
     };
     return $cms->processResponse($ret);
 };
