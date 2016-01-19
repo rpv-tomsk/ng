@@ -559,6 +559,8 @@ sub setFormValue {
     $is_utf8++ if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest";
     
     my $value = $q->param($field->{FIELD});
+    $value = 0 if !defined $value && $field->{TYPE} eq 'checkbox'; #Browsers do not send unchecked checkboxes at all.
+
     return 1 unless defined $value;
     $value = ($is_utf8) ? _convert($value) : $value;
 
