@@ -193,12 +193,12 @@
    		<TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF>
 	</div>
        <div class="input_info">                   
-        <span id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>">
+        <span id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" class="radiobutton">
             <TMPL_LOOP SELECT_OPTIONS>
-            <div>
+            <label class="radiobutton">
               <input type="radio" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>_<TMPL_VAR ID>"  value="<TMPL_VAR ID>" <TMPL_IF SELECTED>checked</TMPL_IF> <TMPL_IF DISABLED>disabled</TMPL_IF>>
-              <TMPL_VAR NAME>
-            </div>
+              <span><TMPL_VAR NAME></span>
+            </label>
             </TMPL_LOOP>
 		</span>
 	 </div>	  
