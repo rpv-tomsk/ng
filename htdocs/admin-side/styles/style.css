@@ -1179,6 +1179,20 @@ input.short_text {
   width: 68px;
   float: left;/*_margin-left: 4px;*/
 }
+/*Radiobuttons in form*/
+div.input_info span.radiobutton label {
+    display:block;
+}
+div.input_info span.radiobutton label input {
+    vertical-align: middle;
+    display: inline-block;
+}
+div.input_info span.radiobutton label span {
+    vertical-align:middle;
+    display: inline-block;
+    line-height: 21px;
+}
+
 #table_permissions td.mess_attention {
   background:#FFF url(/admin-side/img/attention.gif) no-repeat 20px 5px;
   text-align:left;
