@@ -447,7 +447,17 @@ sub print {
     
     if ($self->{_structure}) {
         return $self->error("_structure is not ARRAYREF") unless ref $self->{_structure} eq "ARRAY";
+        
+        #ƒопустимы следующие ключи в элементах массива:
+        # {HEADER  => 'string' }    - строка-заголовок
+        # {FIELD   => 'field1'},    - одно поле в строке
+        # {FIELDS  => ['field1','field2','field3']} - упрощенна€ запись перечислени€ полей, каждое поле в одной строке (NOT IMPLEMENTED!!!)
+        # {COLUMNS => [...]}        - строка из нескольких столбцов
+          
+        
+        my $header = undef;
         foreach my $e (@{$self->{_structure}}) {
+            $e->{TYPE} = 'row' unless exists $e->{TYPE};
             return $self->error("incorrect TYPE (".$e->{TYPE}.") in structure record") unless $e->{TYPE} eq "row";
             return $self->error("FIELDS недопустимо дл€ типа row in structure record") if exists $e->{FIELDS};
             if (exists $e->{FIELD}) {
@@ -459,6 +469,8 @@ sub print {
                 delete $fHash->{$e->{FIELD}};
                 
                 my $f = $field->param();
+                $e->{HEADER} = $header if defined $header;
+                $header = undef;
                 push @elements, {ROW_START=>1,ROW=>$e};
                 push @elements, $f;
                 push @elements, {ROW_END=>1,ROW=>$e};
@@ -467,9 +479,12 @@ sub print {
                 return $self->error("structure record: COLUMNS is not ARRAYREF") unless ref $e->{COLUMNS} eq "ARRAY";
                 return $self->error("structure record: COLUMNS array is empty") unless scalar @{$e->{COLUMNS}};
                 
+                $e->{HEADER} = $header if defined $header;
+                $header = undef;
                 push @elements, {ROW_START=>1,ROW=>$e};
                 push @elements, {COLUMNS_START=>1};
                 foreach my $c (@{$e->{COLUMNS}}) {
+                    $c->{TYPE} = 'column' unless exists $c->{TYPE};
                     return $self->error("incorrect TYPE (".$c->{TYPE}.") in COLUMNS description") unless $c->{TYPE} eq "column";
                     my $fields = [];
                     if (exists $c->{FIELD}) {
@@ -498,6 +513,9 @@ sub print {
                 };
                 push @elements, {COLUMNS_END=>1};
                 push @elements, {ROW_END=>1,ROW=>$e};
+            }
+            elsif (exists $e->{HEADER}) {
+                $header = $e->{HEADER};
             }
             else {
                 #Something strange
