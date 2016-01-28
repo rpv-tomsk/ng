@@ -423,7 +423,7 @@ sub print {
     $u =~ s/_ajax=1//;
 
     my @elements = ();   # Массив  
-    my $fHash = {};      # Hash of not hidden and not showed fields
+    my $fHash = {};      # Хеш полей, которые необходимо вывести как элементы формы
     my $fAll  = {};
     my $globalError = "";
     foreach my $field (@{$self->fields()}) {
@@ -437,10 +437,6 @@ sub print {
             $globalError .= $em;
             
             next if $field->{HIDE};
-            
-            my $f = $field->param();   # Возвращает копию поля в виде хэшреф
-            push @elements, $f;        # Добавляет поле на отображение как скрытое.
-            next;
         };
         $fHash->{$field->{FIELD}} = $field; # Добавляем маркер что поле нужно отобразить в форме
     };
@@ -471,9 +467,9 @@ sub print {
                 my $f = $field->param();
                 $e->{HEADER} = $header if defined $header;
                 $header = undef;
-                push @elements, {ROW_START=>1,ROW=>$e};
+                push @elements, {ROW_START=>1, ROW=>$e}  unless $f->{IS_HIDDEN};
                 push @elements, $f;
-                push @elements, {ROW_END=>1,ROW=>$e};
+                push @elements, {ROW_END=>1, ROW=>$e}    unless $f->{IS_HIDDEN};
             }
             elsif (exists $e->{COLUMNS}) {
                 return $self->error("structure record: COLUMNS is not ARRAYREF") unless ref $e->{COLUMNS} eq "ARRAY";
