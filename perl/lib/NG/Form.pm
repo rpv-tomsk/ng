@@ -451,7 +451,6 @@ sub print {
         # {COLUMNS => [...]}        - строка из нескольких столбцов
           
         
-        my $header = undef;
         foreach my $e (@{$self->{_structure}}) {
             $e->{TYPE} = 'row' unless exists $e->{TYPE};
             return $self->error("incorrect TYPE (".$e->{TYPE}.") in structure record") unless $e->{TYPE} eq "row";
@@ -465,8 +464,8 @@ sub print {
                 delete $fHash->{$e->{FIELD}};
                 
                 my $f = $field->param();
-                $e->{HEADER} = $header if defined $header;
-                $header = undef;
+
+                push @elements, {ROW_HEADER => $e->{HEADER}} if $e->{HEADER};
                 push @elements, {ROW_START=>1, ROW=>$e}  unless $f->{IS_HIDDEN};
                 push @elements, $f;
                 push @elements, {ROW_END=>1, ROW=>$e}    unless $f->{IS_HIDDEN};
@@ -475,8 +474,7 @@ sub print {
                 return $self->error("structure record: COLUMNS is not ARRAYREF") unless ref $e->{COLUMNS} eq "ARRAY";
                 return $self->error("structure record: COLUMNS array is empty") unless scalar @{$e->{COLUMNS}};
                 
-                $e->{HEADER} = $header if defined $header;
-                $header = undef;
+                push @elements, {ROW_HEADER => $e->{HEADER}} if $e->{HEADER};
                 push @elements, {ROW_START=>1,ROW=>$e};
                 push @elements, {COLUMNS_START=>1};
                 foreach my $c (@{$e->{COLUMNS}}) {
@@ -511,7 +509,7 @@ sub print {
                 push @elements, {ROW_END=>1,ROW=>$e};
             }
             elsif (exists $e->{HEADER}) {
-                $header = $e->{HEADER};
+                push @elements, {ROW_HEADER => $e->{HEADER}};
             }
             else {
                 #Something strange

@@ -26,7 +26,8 @@
 </TMPL_IF FORM.TITLE>
 <!--  -->
 <TMPL_LOOP FORM.ELEMENTS>
-    <TMPL_IF ROW_START><TMPL_IF ROW.HEADER><tr><td class="row-header"><TMPL_VAR ROW.HEADER></td></tr></TMPL_IF ROW.HEADER><tr><td class="container-for-line form"></TMPL_IF ROW_START>
+    <TMPL_IF ROW_HEADER><tr><td class="row-header"><TMPL_VAR ROW_HEADER></td></tr></TMPL_IF ROW_HEADER>
+    <TMPL_IF ROW_START><tr><td class="container-for-line form"></TMPL_IF ROW_START>
     <TMPL_IF COLUMNS_START><table border="0"><tr></TMPL_IF COLUMNS_START>    
     <TMPL_IF COLUMN_START><td class="head-colunm" <TMPL_IF COLUMN.WIDTH>style="width:<TMPL_VAR COLUMN.WIDTH>"</TMPL_IF COLUMN.WIDTH>><TMPL_IF COLUMN.HEADER><div class="text-head-column"><TMPL_VAR COLUMN.HEADER></div></TMPL_IF COLUMN.HEADER></TMPL_IF COLUMN_START>
     <TMPL_IF FIELD><TMPL_INCLUDE_VAR NAME="TEMPLATE"></TMPL_IF FIELD>
