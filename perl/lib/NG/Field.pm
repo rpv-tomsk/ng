@@ -163,7 +163,6 @@ sub init {
     }
     elsif ($type eq "filter") {
         $field->{HIDE} = 1;
-        #$field->{IS_HIDDEN} = 1;
     }
     elsif ($type eq "rtf") {
         $field->{IS_RTF} = 1;
@@ -186,9 +185,6 @@ sub init {
     elsif ($type eq "checkbox") {
         if (!exists $field->{CB_VALUE}) { $field->{CB_VALUE} = 1; };
         $field->{IS_CHECKBOX} = 1;
-    }
-    elsif ($type eq "internal") {
-         $field->{IS_INTERNAL} = 1; #внутренний тип. Ќе отображаетс€ в шаблоне
     }
     else {
         my $is_type = uc("IS_".$field->{TYPE});
@@ -1321,7 +1317,7 @@ sub getJSShowError {
     my $fd = $field->{FIELD};
     my $em = escape_js $field->error();
     
-    if (($field->{TYPE} eq "id") || $field->{TYPE} eq "hidden" || ($field->{TYPE} eq "filter") || ($field->{HIDE})) {
+    if ( $field->{IS_HIDDEN} || $field->{HIDE} ) {
         return (undef,$em);
     };
     

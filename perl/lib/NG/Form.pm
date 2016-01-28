@@ -432,7 +432,7 @@ sub print {
         
         $fAll->{uc($field->{FIELD})} = $field;
         
-        if ($field->{HIDDEN_FIELD} || $field->{HIDE}) { #Перенаправляем ошибки из неотображаемых полей в глобальный контейнер
+        if ($field->{IS_HIDDEN} || $field->{HIDE}) { #Перенаправляем ошибки из неотображаемых полей в глобальный контейнер
             my $em = $field->error() || "";
             $globalError .= $em;
             
