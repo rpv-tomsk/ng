@@ -44,6 +44,7 @@ branches/ng6
       При указанном CLASS проверка типа TYPE в new() не производится. (несколько бесполезно, т.к. List все еще проверяет TYPE при analyze)
       Несовместимость: TYPE=>'fkparent' + CLASS=>'Some::Class' - не произойдет замена fkparent -> hidden/select/radiobutton
     * Удален тип поля float, используйте number.
+    * Удалена поддержка флага HIDDEN_FIELD в NG::Form/NG::Field;
     * Вынесено $NG::Field::classesMap
     + Метод NG::Field->dbField() - поле может указать, какие поля БД ему нужны
     * Метод NG::Field->dbValue() - добавлен параметр имени поля БД
