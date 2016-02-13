@@ -237,12 +237,32 @@ sub Logout {
     return $cms->redirect($baseUrl."/");
 }
 
-sub _getCookieValue {
-    my ($self) = (shift);
+sub _setCookieParams {
+    my ($self,$cookie) = (shift,shift);
 
     my $domain = $self->cms->q->virtual_host();
 
-    my $v = $self->cms->q->cookie(-name=>COOKIENAME.'_'.$domain) || "";
+    $cookie->{-name} = COOKIENAME.'_'.$domain;
+
+    return $cookie unless $NG::Adminside::Auth::config::CookieDomain;
+
+    my $v = $NG::Adminside::Auth::config::CookieDomain;
+    $v = [$v] unless ref $v eq 'ARRAY';
+
+    foreach my $d (@$v) {
+        my $re = $d;
+        $re =~ s/\./\\\./g;
+        next unless $domain =~ /$re$/;
+        $cookie->{-name} = COOKIENAME.'_'.$d;
+        $cookie->{-domain} = $d;
+        return $cookie;
+    };
+};
+
+sub _getCookieValue {
+    my ($self) = (shift);
+
+    my $v = $self->cms->q->cookie($self->_setCookieParams({})) || "";
     return $v;
 }
 
@@ -252,8 +272,8 @@ sub _addCookie {
     my $domain = $self->cms->q->virtual_host();
 
     $cookie->{-path} = $self->{_topURL}.'/';
-    $cookie->{-name} = COOKIENAME.'_'.$domain;
     $cookie->{-httponly} = 1;
+    $self->_setCookieParams($cookie);
 
     $self->cms->addCookie($cookie);
 }
@@ -273,22 +293,22 @@ sub _clearCookies {
         push @top, $stack;
         $stack .= '/';
         push @top, $stack;
-    }
-
-    my $domain = $self->cms->q->virtual_host();
+    };
 
     my $cookie = {};
     $cookie->{-value} = '';
-    $cookie->{-name} = COOKIENAME.'_'.$domain;
     $cookie->{-expires} = '-1d';
+    $self->_setCookieParams($cookie); #Set cookie -name based on domain and settings
 
     #Cookies w/o -domain
+    delete $cookie->{-domain};
     foreach (@top) {
         $cookie->{-path} = $_;
         $self->cms->addCookie($cookie);
     };
 
     #Cookies on each domain up to TLD
+    my $domain = $self->cms->q->virtual_host();
     my @x = reverse split /\./, $domain;
     return unless scalar(@x) >= 2;
 
