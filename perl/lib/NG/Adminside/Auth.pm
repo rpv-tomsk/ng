@@ -80,6 +80,7 @@ sub Authenticate {
         return $self->Logout() if $subUrl eq  "logout/";
         return $self->editAdmin() if $subUrl eq "editadmin/";
         return $self->cms()->notFound() if $subUrl;
+        return $self->cms()->redirect($baseUrl) if $self->{_auth_status} == C_AUTH_OK;
         return $self->AuthenticateByLogin($is_ajax);
     };
     #Check if user authenticated
