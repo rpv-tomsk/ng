@@ -40,8 +40,9 @@ sub Authenticate {
     
     my $q = $self->q();
     my $dbh = $self->dbh();
-    my $cookievalue = $q->cookie(-name=>COOKIENAME) || "";
-    
+
+    my $cookievalue = $self->_getCookieValue();
+
     $self->{_auth_status} = C_AUTH_NOCOOKIE;
     while (1) {
         last unless $cookievalue;
@@ -84,7 +85,10 @@ sub Authenticate {
         return $self->AuthenticateByLogin($is_ajax);
     };
     #Check if user authenticated
-    return $self->showLoginForm($is_ajax) if ($self->{_auth_status} != C_AUTH_OK);
+    if ($self->{_auth_status} != C_AUTH_OK) {
+        $self->_clearCookies() if $cookievalue;
+        return $self->showLoginForm($is_ajax);
+    };
     $self->doObvyazka() unless $is_ajax;
     return NG::Application::M_CONTINUE;
 };
@@ -190,7 +194,10 @@ sub AuthenticateByLogin {
         $admin->{sessionkey} = generate_session_id();
         $admin->{last_online} = time();
         $dbh->do("update ng_admins set sessionkey=?,last_online=?,last_ip=? where id=?",undef,$admin->{sessionkey},$admin->{last_online},$q->remote_addr(),$admin->{id}) or die $DBI::errstr;
-        $cms->addCookie(-name=>COOKIENAME,-value=>$admin->{sessionkey},-domain=>$q->virtual_host(),-path=>$baseUrl.'/');
+
+        $self->_addCookie({
+            -value => $admin->{sessionkey},
+        });
         $self->{_auth_status} = C_AUTH_OK;
         #$self->_makeLogEvent($self,{operation=>"Вход в систему",module_name=>"Система"});
         $self->{_admin} = $admin;
@@ -212,7 +219,8 @@ sub Logout {
     my $cms = $self->cms();
     my $dbh = $cms->dbh();
     my $q = $cms->q();
-    my $cookievalue = $q->cookie(-name=>COOKIENAME) || "";
+    my $cookievalue = $self->_getCookieValue();
+
     my $baseUrl = $self->{_topURL};
     
     if ($cookievalue) {
@@ -221,17 +229,80 @@ sub Logout {
         $sth->finish();
     };
     
-    $cms->addCookie(
-        -name=>COOKIENAME,
+    $self->_addCookie({
         -value=>"",
-        -domain=>$q->virtual_host(),
         -expires=>'-1d',
-        -path=>$baseUrl.'/',
-    );
+    });
     #$self->_makeLogEvent($self,{operation=>"Выход из системы",module_name=>"Система"});
     return $cms->redirect($baseUrl."/");
 }
 
+sub _getCookieValue {
+    my ($self) = (shift);
+
+    my $domain = $self->cms->q->virtual_host();
+
+    my $v = $self->cms->q->cookie(-name=>COOKIENAME.'_'.$domain) || "";
+    return $v;
+}
+
+sub _addCookie {
+    my ($self,$cookie) = (shift,shift);
+
+    my $domain = $self->cms->q->virtual_host();
+
+    $cookie->{-path} = $self->{_topURL}.'/';
+    $cookie->{-name} = COOKIENAME.'_'.$domain;
+    $cookie->{-httponly} = 1;
+
+    $self->cms->addCookie($cookie);
+}
+
+sub _clearCookies {
+    my ($self) = (shift);
+
+    my @x =split /\//, $self->{_topURL};
+    shift(@x); #empty value if _topURL starts from /
+
+    #Build all possible top-level urls
+    my @top = ();
+    my $stack = '/';
+    push @top, $stack;
+    while (defined(my $ss = shift(@x))) {
+        $stack = $stack.$ss;
+        push @top, $stack;
+        $stack .= '/';
+        push @top, $stack;
+    }
+
+    my $domain = $self->cms->q->virtual_host();
+
+    my $cookie = {};
+    $cookie->{-value} = '';
+    $cookie->{-name} = COOKIENAME.'_'.$domain;
+    $cookie->{-expires} = '-1d';
+
+    #Cookies w/o -domain
+    foreach (@top) {
+        $cookie->{-path} = $_;
+        $self->cms->addCookie($cookie);
+    };
+
+    #Cookies on each domain up to TLD
+    my @x = reverse split /\./, $domain;
+    return unless scalar(@x) >= 2;
+
+    my $stack = shift(@x);
+    while (defined(my $ss = shift(@x))) {
+        $stack = $ss.'.'.$stack;
+
+        $cookie->{-domain} = $stack;
+        foreach (@top) {
+            $cookie->{-path} = $_;
+            $self->cms->addCookie($cookie);
+        };
+    };
+};
 
 sub _statusText {
     my $self = shift;
