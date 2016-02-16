@@ -126,6 +126,12 @@ function putResponseToBlock(params){
 	};
 	if (onLoad) {
 		onLoad.call(this);
+	};
+	if (id == 'middle_right_content') {
+		$(window).triggerHandler('ngTabChangedAjax');
+	}
+	else {
+		$(window).triggerHandler('ngAjaxContentLoaded');
 	}
 };
 

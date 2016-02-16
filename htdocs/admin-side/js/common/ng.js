@@ -62,29 +62,33 @@ function en_s(pageid,moduleid) {
 };
 
 //Поддержка rtf-редакторов в универсальных формах
-var NgEditors = {};
+var NgOpenedEditors = {};  //grouped by tparentid
+var NgNewEditors = Array();
+
 function CloseEditors(tparentid) {
-    var elem = NgEditors[tparentid];
+    var elem = NgOpenedEditors[tparentid];
     if (!elem) {
         return;
     };
 
-    for (e in elem) {
-        tinyMCE.remove(tinyMCE.get(elem[e]));
+    while ( elem.length ) {
+        var e = elem.shift();
+        tinyMCE.remove(e);
     };
-    NgEditors[tparentid] = Array();
 };
-		
+
 function UseEditor(tname,thandler,tparentid,tconfig) {
-    var elem = NgEditors[tparentid];
+    var elem = NgOpenedEditors[tparentid];
     if (elem) {
-        for (e in elem) {
-            tinyMCE.remove(tinyMCE.get(elem[e]));
+        while ( elem.length ) {
+            var e = elem.shift();
+            tinyMCE.remove(e);
         };
     }
-    elem = NgEditors[tparentid] = Array();
-    elem.push(tname);
-    
+    else {
+        elem = NgOpenedEditors[tparentid] = Array();
+    }
+
     //конфигурация по умолчанию
     params={
         theme : "advanced",
@@ -109,14 +113,48 @@ function UseEditor(tname,thandler,tparentid,tconfig) {
         extended_valid_elements :"a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name|style],font[face|size|color|style],span[class|align|style],br[clear]",
         theme_advanced_blockformats : "h1,h2"
         //content_css : css_file,
-    };  
+    };
+    params.setup = function(ed){
+        ed.onInit.add(function(ed) {
+            elem.push(ed);
+        });
+    };
+
+    var newEditor = Array(2);
+    newEditor[1]=params;
+
     if (tconfig) {
-        tconfig(params);
+       newEditor[0] = tconfig;
     }
     else {
-        tinyMCE.init(params);
+       newEditor[0] = tinyMCE.init;
     };
-}; 
+    NgNewEditors.push(newEditor);
+};
+
+var initializePendingEditors = function() {
+    while ( NgNewEditors.length ) {
+        var elem = NgNewEditors.shift();
+        elem[0](elem[1]);
+    };
+};
+
+var removeAllOpenedEditors = function() {
+    console.log('removeAllOpenedEditors');
+    for (tparentid in NgOpenedEditors) {
+        CloseEditors(tparentid);
+    };
+    NgOpenedEditors = {};
+};
+
+$(document).ready(function() {
+    initializePendingEditors();
+    $(window).bind('ngAjaxContentLoaded', initializePendingEditors);
+    $(window).bind('ngTabChangedAjax', function() {
+        removeAllOpenedEditors();
+        initializePendingEditors();
+    });
+});
 
 $.fn.initClickableCheckboxes = function(options) {
     return this.each(function() {
