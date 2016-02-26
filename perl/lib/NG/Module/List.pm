@@ -40,6 +40,7 @@ sub init {
     $self->SUPER::init(@_);
     # ¬нутренние объекты и переменные класса
     $self->{_recordname} = "записи";
+    $self->{_listInfo}   = "";   # ќписание раздела вверху списка
     
     # ѕеременные, определ€ющие основную конфигурацию класса
     $self->{_table} = "";        # »м€ таблицы, из которой читаем, в которую пишем
@@ -321,6 +322,7 @@ sub buildList {
         DATA      => \@arraydata,
         FILTERS    => $self->getListFilters(),
         TOP_LINKS => $self->{_topbar_links},
+        LIST_INFO => $self->{_listInfo},
         MYBASEURL => $myurl,
         THISURL   => getURLWithParams($myurl,"_ajax=1",$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$searchParam,$self->getPagesParam(),"ref=".$refURL),
         MULTIACTIONS => $ma,
@@ -2787,6 +2789,7 @@ sub order {
     };
 };
 
+sub setListInfo      { my $self = shift; $self->{_listInfo} = shift;     };
 sub searchConfig { my $self = shift; $self->{_searchconfig} = shift; };
 
 sub multiactions {
