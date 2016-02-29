@@ -244,9 +244,9 @@ sub _setCookieParams {
 
     $cookie->{-name} = COOKIENAME.'_'.$domain;
 
-    return $cookie unless $NG::Adminside::Auth::config::CookieDomain;
+    return $cookie unless $NG::Adminside::Auth::config::cookieDomain;
 
-    my $v = $NG::Adminside::Auth::config::CookieDomain;
+    my $v = $NG::Adminside::Auth::config::cookieDomain;
     $v = [$v] unless ref $v eq 'ARRAY';
 
     foreach my $d (@$v) {

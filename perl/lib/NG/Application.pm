@@ -198,6 +198,9 @@ sub loadSubsite {
 =cut
 sub findSubsite {
     my $cms=shift;
+    
+    return ( NG::Application::M_OK, $NG::Application::config::forceSubsiteId ) if defined $NG::Application::config::forceSubsiteId;
+    
     my $q = $cms->q();
     my $dbh = $cms->db()->dbh();
 	

@@ -1,0 +1,4 @@
+$NG::BlocksController::config::skipBlockToTemplateRegistration
+$NG::Application::config::forceSubsiteId
+$NG::ImageProcessor::config::quality
+$NG::Adminside::Auth::config::cookieDomain
