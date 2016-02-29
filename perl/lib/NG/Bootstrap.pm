@@ -58,13 +58,27 @@ sub importX {
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
-            die $e->getText()."\n";
+            if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
+                CGI::Carp::fatalsToBrowser($e->getText());
+            }
+            else {
+                print "Status: 500\n";
+                print "Content-Type: text/plain; charset=windows-1251;\n\n";
+                print $e->getText();
+            };
         }
         else {
-            die $@;
+            if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
+                CGI::Carp::fatalsToBrowser($@);
+            }
+            else {
+                print "Status: 500\n";
+                print "Content-Type: text/plain; charset=windows-1251;\n\n";
+                print $@;
+            };
         };
     };
-}
+};
 
 sub fcgi_error {
     my $msg = shift;
