@@ -389,9 +389,9 @@ sub block_ONMAIN {
     my $cms = $self->cms();
     my $dbh = $self->dbh();
     my $db = $self->db();
-    
+
     my $random_function = $db->isa('NG::DBI::Mysql')? 'rand' : 'random';
-    
+
     my ($poll_id) = $dbh->selectrow_array("SELECT id FROM polls WHERE rotate=1 AND (start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW())) ORDER BY ".$random_function."() limit 1",undef);
     my $poll = undef;
     $poll = $self->_loadPoll($poll_id) if (is_valid_id($poll_id));
@@ -406,11 +406,11 @@ sub block_ONMAIN {
 sub _loadPoll {
     my $self = shift;
     my $id = shift;
-    
+
     my $dbh = $self->dbh();
     my $db = $self->db();
     my $q = $self->q();
-    
+
     my $answers = $dbh->selectall_arrayref("select a.id,a.polls_id,a.answer,a.def,a.vote_cnt,p.question,p.multichoice,p.vote_cnt as total_vote_cnt,p.start_date,p.end_date,p.visible,p.check_ip from polls_answers a,polls p where p.id=? and a.polls_id=p.id order by a.id",{Slice=>{}},$id);
     my $poll = undef;
     if (defined $answers and ref $answers eq 'ARRAY' && scalar @$answers) {
@@ -443,9 +443,9 @@ sub _loadPoll {
         my $edate = Date::Simple::today();
         $edate = Date::Simple->new($poll->{db_end_date}) if $poll->{db_end_date};
         my $today = Date::Simple::today();
-        
+
         $poll->{active} = ($sdate<=$today && $edate>=$today)?1:0;
-        
+
         $poll->{canvote} = $poll->{active} eq "0"?0:1;
         if ($poll->{canvote} == 1 && $poll->{check_ip}) {
             my $sth = $dbh->prepare("select count(*) from polls_ip where ip=? and polls_id=?") or return undef;
@@ -458,7 +458,6 @@ sub _loadPoll {
     else {
         $poll = undef;
     };
-    
     return $poll;
 };
 =cut
