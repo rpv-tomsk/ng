@@ -424,13 +424,17 @@ sub getAdminBlock {
           $mR = qr@^$mR@;
         };
         
-        if ((my @ttt=$url =~ $mR) && ( length($&) >= length($prevMatch))) {
+        if ((my @ttt=$url =~ $mR) && ( length($&) > length($prevMatch))) {
             @tt = @ttt; 
             $submodule = $subm;
             $prevMatch = $&;
         };
 #use Data::Dumper;
 #warn "URL=$url mR=$mR base=$myBaseUrl  s: ".$subm->{MODULE}." u: ".$subm->{URL}." match: ".(($submodule eq $subm)?"1":"0")." TT=".Dumper(@tt)."\n";
+    };
+    
+    if ($submodule->{FORBIDDEN}) {
+        return $cms->redirect($myBaseUrl);
     };
     
     if ($submodule->{'URLPARAM'}) {
@@ -456,6 +460,7 @@ sub _adminModule {
         my $e = $cms->getError("Вызов метода getAdminBlock() класса ".(ref $self)." не вернул блока");
         return $cms->error($e);
     };
+    return $submodule if ref $submodule && UNIVERSAL::isa($submodule,'NG::BlockContent');
     if (ref $submodule && (ref $submodule ne "HASH" || !$submodule->{BLOCK})) {
         return $cms->error("Вызов метода getAdminBlock() класса ".(ref $self)." вернул некорректное значение");
     };
