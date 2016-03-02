@@ -59,7 +59,8 @@
 	    <div class="input_info"> 											
 	   		<input class="short_text" type="text" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR VALUE ESCAPE=HTML>"<TMPL_IF READONLY> readonly</TMPL_IF>/>       			
 	   	</div>	
-   </div>    
+   </div>
+   <TMPL_IF DATEPICKER><script type="text/javascript">$('#<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>').datepicker(<TMPL_VAR DATEPICKER>);</script></TMPL_IF DATEPICKER>
 </TMPL_IF IS_DATE>
 <TMPL_IF IS_DATETIME>
     <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
@@ -113,13 +114,14 @@
 				<td>
 				<div id="linkdiv_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" style="text-align:center;margin-top:10px;">
 				<a href="<TMPL_VAR UPLOADDIR><TMPL_VAR DBVALUE>">Скачать</a>
+				<TMPL_IF PERMALINK>&nbsp;|&nbsp;<a href="<TMPL_VAR PERMALINK>">Постоянная ссылка</a></TMPL_IF>
 				<TMPL_UNLESS IS_NOTNULL>
 				<span class="color_blue">&nbsp;|&nbsp;</span><a onclick="if (window.confirm('Вы действительно хотите удалить файл?')) {ajax_url('<TMPL_VAR FORM.URLFA>formaction=<TMPL_VAR FIELD>_deletefile&<TMPL_VAR FORM.KEY_PARAM>&_ajax=1','linkdiv_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>');};return false;" href="#">Удалить файл</a>
 				</TMPL_UNLESS IS_NOTNULL>
 				</div>
-				</td>			
+				</td>
 			</tr>
-			</TMPL_IF DBVALUE>   
+			</TMPL_IF DBVALUE>
 		</table>
 	</div>
 </TMPL_IF IS_FILE>

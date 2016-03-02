@@ -8,8 +8,8 @@ use File::Path;
 use NHtml;
 
 my $converter = undef;
-my $DEFAULT_IMAGES_RE  = qr@jpg|jpeg|gif|bmp|png@i;
-my $DISABLED_FILES_RE = qr@pl|php|exe|cgi|bat|com|asp@i;
+our $DEFAULT_IMAGES_RE  = qr@jpg|jpeg|gif|bmp|png@i;
+our $DISABLED_FILES_RE = qr@pl|php|exe|cgi|bat|com|asp@i;
 
 $NG::Field::VERSION = 0.1;
 
@@ -212,8 +212,46 @@ sub afterLoad {
     return 1;
 };
 
+sub _fileBuildPermalink {
+    my $field = shift;
+    
+    my $link = $field->{OPTIONS}->{PERMALINK_MASK};
+    my $p = $field->parent();
+    
+    if ($link =~ /\{page:url\}/) {
+        my $moduleObj = $p->owner()->getModuleObj();
+        my $pageUrl = $moduleObj->pageParam('url');
+        $link =~ s/\{page:url\}/$pageUrl/gi;
+    };
+    
+    while ($link =~ /\{(.+?)\}/) {
+        my $f = $p->getField($1) or die("Field $1 not found for PERMALINK_MASK");
+        my $value = $f->value();
+        warn "NG::Field::_fileBuildPermalink(): no value for field $1 in PERMALINK_MASK of field $field->{FIELD}" unless $value;
+        #TODO: При необходимости реализовать через поддержку маски вида ts:FIELD
+        #$value = ts($value);
+        #$value =~ s/[^a-zA-Z0-9]/_/gi;
+        $link =~ s/\{.+?\}/$value/;
+    };
+    
+    $field->{PERMALINK} = $link;
+};
+
 sub prepareOutput {
-    #TODO: this
+    my $field = shift;
+    
+    if ($field->{TYPE} eq 'date') {
+        if (exists $field->{OPTIONS}->{DATEPICKER} && !exists $field->{DATEPICKER}) {
+            $field->{DATEPICKER} = create_json($field->{OPTIONS}->{DATEPICKER});
+        };
+    };
+    
+    if ($field->{TYPE} eq 'file') {
+        if (exists $field->{OPTIONS}->{PERMALINK_MASK}) {
+            $field->_fileBuildPermalink();
+        };
+    };
+    
     return 1;
 };
 
