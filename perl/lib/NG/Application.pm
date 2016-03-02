@@ -1127,6 +1127,69 @@ sub exit {
     return NG::BlockContent->exit(@_);
 };
 
+#
+#  -locaton
+#  -filename
+#  -attachment
+#  -type
+#  Content-Disposition
+
+sub sendFile {
+    my ($self, $param) = (shift,shift);
+    
+    my $file;
+    my $headers = {};
+    if (ref $param eq "HASH") {
+        $headers = $param;
+        $file = delete $headers->{-location};
+    }
+    elsif (ref $param) {
+        die 'Internal error: Wrong argument';
+    }
+    else {
+        $file = $param;
+    };
+    
+    die 'sendFile(): Missing file' unless $file;
+    
+    #
+    unless (exists $headers->{'Content-Disposition'}) {
+        my $filename = $file;
+        $filename=~s/^.*\///;
+        $filename=~s/\"/\'\'/g;
+        $filename=~s/\#/%23/gi;
+
+        my $disposition = 'inline'; #inline/attachment
+        $disposition = 'attachment' if $headers->{-attachment};
+
+        $filename = $headers->{-filename} if exists $headers->{-filename};
+
+        $headers->{'Content-Disposition'} = $disposition.'; filename="'.$filename.'"';
+    };
+    
+    #Clean
+    delete $headers->{-filename};
+    delete $headers->{-attachment};
+
+    if ($NG::Application::config::sendFileXAccelRedirect) {
+        unless ($headers->{-type}) {
+            require MIME::Types;
+            my $mimetypes = MIME::Types->new; #TODO: this needs to be optimized!
+            $file =~ /.*\.([^\.]*?)$/;
+            if ($1) {
+                my $def = $mimetypes->mimeTypeOf($1);
+                $headers->{-type} = $def->simplified;
+            };
+            $headers->{-charset} = '';
+        };
+        $headers->{'X-Accel-Redirect'} = $file;
+    }
+    else {
+        $headers->{-location} = $file;
+    };
+    return $self->exit('', $headers);
+};
+
 sub outputJSON {
     my ($self,$data,$headers) = (shift,shift,shift);
     die "cms->outputJSON(): headers is not HASHREF" if $headers and ref $headers ne "HASH";
