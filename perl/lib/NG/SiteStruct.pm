@@ -410,6 +410,15 @@ sub action_showAddForm {
 	
 	#Вычисляем наличие связанных страниц
 	my $linkedParentPages = $self->_getLinkedPages($pageObj) or return $self->showError("_getLinkedPages(): method returns unknown error");
+	{
+	my $pRow = $pageObj->getPageRow();
+	if (!exists $linkedParentPages->{$pRow->{subsite_id}}) {
+		return $self->showError("_getLinkedPages(): Обнаружено повреждение БД, в списке связанных страница не найдена запись страницы-родителя");
+	};
+	if ($pRow->{id} != $linkedParentPages->{$pRow->{subsite_id}}->{node_id}) {
+		return $self->showError("_getLinkedPages(): Обнаружено повреждение БД, в списке связанных выявлено несоответствие значений для записи страницы-родителя");
+	};
+	};
 	
 	#my $allSubsitesPrivileges = $dbh->selectall_hashref("select subsite_id,privilege from ng_subsite_privs where admin_id = ? and (privilege='ACCESS' or privilege='NEWPAGE')",["subsite_id","privilege"],undef,$adminId);
 	
