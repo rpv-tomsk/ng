@@ -290,6 +290,8 @@ sub block_SQLPOLLSLIST {
         if ($keys->{REQUEST}->{showItems}) {
             # еш есть...
             next unless exists $keys->{REQUEST}->{showItems}->{$voting->{id}}; #..а элемента нет
+            $voting->{can_vote} = $keys->{REQUEST}->{showItems}->{$voting->{id}}->{can_vote};
+            $voting->{visible}  = $keys->{REQUEST}->{showItems}->{$voting->{id}}->{visible};
         }
         else {
             # еша нет
@@ -297,9 +299,9 @@ sub block_SQLPOLLSLIST {
             $voting->{can_vote} = 0 unless $voting->{active};
             
             $self->_runHandler($voting,'CANVOTE',$ctx) if $voting->{can_vote};
-            
-            next unless $voting->{can_vote} || $voting->{visible};
         };
+
+        next unless $voting->{can_vote} || $voting->{visible};
         
         $self->_handleVoting($voting);
         $self->_loadAnswers($voting);
