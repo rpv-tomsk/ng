@@ -19,7 +19,7 @@ Module = "NG::Session::file"
 
 [Turing]
 Session = "Turing"
-CacheDir = /web/site.ru/turcache
+CacheDir = /web/site.ru/.turcache
 
 cookieName = "SESSTURING"
 width = 200
@@ -31,7 +31,9 @@ lineColor = #000
 fontColor = #BEDCFA
 bgcolor = #aaaaaa
 scramble = 1
-font = "/web/ng4/perl/lib/verdanab.ttf"
+#font = "/web/ng4/perl/lib/verdanab.ttf"
+useNumbers = 1
+useLetters = 0
 
 [SessionTuring]
 Module = "NG::Session::file"
@@ -87,14 +89,14 @@ sub init {
 	$self->config();
 		
 	foreach my $param (qw(width height lines ptsize bgcolor scramble font)) {
-		my $v = $self->confParam($self->{_config}->{configSection}.".".$param);
+		my $v = $self->confParam($param);
 		next unless defined $v;
 		next if exists $gdConf{$param} && exists $self->{_gdConfig}->{$param} && $gdConf{$param} ne $self->{_gdConfig}->{$param};
 		$self->{_gdConfig}->{$param} = $v;
 	};
 		
 	foreach my $param (qw(length cookieName lineColor fontColor expire)) {
-		my $v = $self->confParam($self->{_config}->{configSection}.".".$param);
+		my $v = $self->confParam($param);
 		next unless $v;
 		next if exists $conf{$param} && exists $self->{_config}->{$param} && $conf{$param} ne $self->{_config}->{$param};
 		$self->{_config}->{$param} = $v;
@@ -103,10 +105,10 @@ sub init {
 	#$self->{_config}->{length} = $self->{_gdConfig}->{rndmax} if exists $self->{_gdConfig}->{rndmax};
 	$self->{_gdConfig}->{rndmax} ||= $self->{_config}->{length};
     
-    $self->{_sname} = $self->confParam($self->{_config}->{configSection}.".Session");
+    $self->{_sname} = $self->confParam("Session");
 	$self->{_sname} or return $self->cms->error("NGTuring::getSession(): Parameter ".$self->{_config}->{configSection}.".Session is not configured");
 	
-	$self->{_useGD} = $self->confParam($self->{_config}->{configSection}.".UseGD",0);
+	$self->{_useGD} = $self->confParam("UseGD", 0);
 	if ($self->{_useGD}) {
 		eval "use GD::SecurityImage use_gd => 1;";
 	}
@@ -118,8 +120,9 @@ sub init {
 };
 
 sub confParam {
-    my $self = shift;
-    return $self->cms()->confParam(@_);
+    my ($self, $param) = (shift, shift);
+    $param = $self->{_config}->{configSection}.".".$param;
+    return $self->cms()->confParam($param, @_);
 };
 
 sub config {};
@@ -157,14 +160,29 @@ sub _loadTSession {
 };
 
 sub random {
-	my $self = shift;
-	my $count = $self->{_config}->{length};
-	my $numbers="";
-	srand();
-	for (my $i=0;$i<$count;$i++) {
-		$numbers.=int(rand(9));
-	};
-	return $numbers;
+    my $self = shift;
+    my $count = $self->{_config}->{length};
+    
+    my @characters = ();
+    
+    push @characters, (
+        "1","2","3","4","5","6","7","8","9","0"
+    ) if $self->confParam('useNumbers', 1);
+    
+    push @characters, (
+        "A","B","C","D","E","F","G","H","I","J",
+        "K","L","M","N","O","P","Q","R","S","T",
+        "U","V","W","X","Y","Z"
+    ) if $self->confParam('useLetters', 0);
+    
+    my $length = scalar @characters;
+    
+    my $numbers="";
+    srand();
+    for (my $i=0; $i < $count; $i++) {
+        $numbers .= $characters[rand($length)];
+    };
+    return $numbers;
 };
 
 sub resetSession {
@@ -187,13 +205,14 @@ sub checkTuringInput {
 
     my $number = $session->param('number');
     $self->resetSession();
-    return S_INCORRECT unless $args{number} && $number && $number eq $args{number};
+warn "$number ".$args{number};
+    return S_INCORRECT unless $args{number} && $number && $number eq uc($args{number});
     return S_SUCCESS;
 };
 
 sub _getCacheDir {
     my $self = shift;
-    my $cacheDir = $self->confParam($self->{_config}->{configSection}.".CacheDir") or return undef;
+    my $cacheDir = $self->confParam("CacheDir") or return undef;
     $cacheDir .= "/" unless $cacheDir =~ /\/$/;
     return $cacheDir;
 };

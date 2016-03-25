@@ -29,7 +29,6 @@ sub check {
 	my $cms = $field->cms();
 	my $tObj = $cms->getObject("NGTuring");
 	
-	
 	my $session = $tObj->_getTSession();
 	my $number = $session->param('number');
 	
@@ -37,11 +36,9 @@ sub check {
     if (is_empty($value)) {
         return $field->setErrorByCode("IS_EMPTY");
     };
-	
-	if ($number ne $value) {
-		$tObj->resetSession();
-		return $field->setErrorByCode("CODE_NOT_MATCH");
-	};
+    if ($tObj->checkTuringInput(number => $value) != 1) {
+        return $field->setErrorByCode("CODE_NOT_MATCH");
+    }
 	$tObj->resetSession() unless $field->{NORESETONSUCCESS};
 	return 1;
 };

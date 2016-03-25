@@ -10,6 +10,8 @@ branches/ng6
     
     * DBlist: Äîáàâëåíà ïîääåğæêà orderParams
     * Âêëş÷åíî àâòîìàòè÷åñêîå ğàçğåãèñòğèğîâàíèå íåèñïîëüçóåìûõ áëîêîâ øàáëîíîâ
+    
+    * NGTuring: Äîáàâëåíà ïîääåğæêà áóêâ
 
     * NG::Module::List::Row->new() / NG::Module::List::Row->init() - èçìåíåíî API
     - NG::Module::List::Row->number()
