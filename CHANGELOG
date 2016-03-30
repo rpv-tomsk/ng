@@ -67,6 +67,8 @@ branches/ng6
     * Добавлено поле modulecode в ng_templates, для возможности создавать модульные страницы. SQL:
           ALTER TABLE public.ng_templates ADD COLUMN modulecode VARCHAR(25);
           ALTER TABLE public.ng_templates ALTER COLUMN template DROP NOT NULL;
+    * Добавлено (опциональное) поле page_type в ng_sitestruct и его поддержка в вариантах добавления страниц.
+      Активируется $NG::SiteStruct::config::hasPageType
     + Добавлена патченная версия CGI::Session (собственная реализация устаревания и очистки сессий) (основано на CGI::Session 4.48).
     - Удален метод NG::Session->cleanSessions()
     + Добавлен метод NG::Application->cleanup()

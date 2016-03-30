@@ -474,6 +474,11 @@ sub canDeactivate {
 	return 1;
 };
 
+sub getPageTypeName {
+    my ($self,$pageType) = (shift, shift);
+    return '';
+};
+
 sub getPageAddVariants {
 	my $self = shift;
 	my $cms = $self->cms();
@@ -529,6 +534,7 @@ sub processNewSubpages {
     unless ($variant->{TEMPLATE_ID}) {
         #Страница сделана не на основе шаблона, модуль содержит свой getPageAddVariants()
         return $cms->error("processNewSubpages(): variant has no TEMPLATE_ID parameter") if $self->_isBaseClass() && !$variant->{MODULECODE}; #ASSERT
+        return $cms->error("processNewSubpages(): variant has PAGETYPE but feature not activated") if $variant->{PAGETYPE} && !$NG::SiteStruct::config::hasPageType;
         
         my $module_id = $self->pageParam('module_id');
         if ($variant->{MODULECODE}) {
@@ -544,6 +550,7 @@ sub processNewSubpages {
 			$page->{PAGEROW}->{print_template} = $variant->{print_template} if $variant->{print_template};
 			$page->{PAGEROW}->{module_id} = $module_id;
 			$page->{PAGEROW}->{subptmplgid} = $variant->{subptmplgid} if $variant->{subptmplgid};
+			$page->{PAGEROW}->{page_type} = $variant->{PAGETYPE} if $variant->{PAGETYPE} && $NG::SiteStruct::config::hasPageType;
 			$page->{ACTIVE} = 1;
 		};
 		return 1;

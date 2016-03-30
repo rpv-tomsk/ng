@@ -332,6 +332,10 @@ sub getPageFields {
 	my $app = shift;
 	my $pageFields = "id,parent_id,name,full_name,keywords,description,title,url,template,print_template,module_id,subptmplgid,disabled,subsite_id,lang_id,link_id,tree_order,level,catch";
 	
+	if ($NG::SiteStruct::config::hasPageType) {
+		$pageFields .=",page_type";
+	};
+	
 	my $baseClass = $app->confParam('CMS.DefaultPageClass','');
 	if ($baseClass) {
 		my $obj = $app->getObject($baseClass);

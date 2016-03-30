@@ -3,3 +3,4 @@ $NG::Application::config::forceSubsiteId
 $NG::Application::config::sendFileXAccelRedirect = 1;
 $NG::ImageProcessor::config::quality
 $NG::Adminside::Auth::config::cookieDomain
+$NG::SiteStruct::config::hasPageType = 0;  #Will be set to 1 by default and removed in ng6.1

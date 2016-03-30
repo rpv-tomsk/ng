@@ -306,6 +306,7 @@ sub action_showAddForm {
             #return $self->error("В списке вариантов добавления страницы отсутствует ID варианта") unless $v->{ID};
             #return $self->error("В списке вариантов добавления страницы присутствует недопустимый ключ ID") if exists $v->{ID};
 			return $self->error("В списке вариантов добавления страницы обнаружены дублирующиеся значения ID варианта (".$v->{ID}.")") if (exists $variantIds->{$v->{ID}});
+			return $self->error("В варианте добавления страницы присутствует ключ PAGETYPE, но функция не активирована!") if exists $v->{PAGETYPE} && !$NG::SiteStruct::config::hasPageType;
 			$variantIds->{$v->{ID}} = 1;
 			$variant = $v if ($v->{ID} eq $variantId);
 		};
@@ -318,7 +319,7 @@ sub action_showAddForm {
 	
 	$form->addfields([
 		{
-			NAME=>"Варианты новой страницы",
+			NAME=>"Вариант новой страницы",
 			FIELD=>"variantId",
 			TYPE=>"select",
 			IS_NOTNULL=>1,
@@ -485,6 +486,7 @@ $canAddLinkedSubnode = 1;
 		$subpagesControl->{$subsiteId} = $cpage;
         
         $variantControl->{MODULECODE} = $variant->{MODULECODE};
+        $variantControl->{PAGETYPE} = $variant->{PAGETYPE};
 	};
 	
 	my $res = $pageObj->processNewSubpages($newSubpages,$variant) or return $cms->error();
@@ -502,6 +504,7 @@ $canAddLinkedSubnode = 1;
 			|| $page->{PARENTROW}->{url}     ne $cpage->{PARENTROW}->{url}
 			|| $page->{READONLY} ne $cpage->{READONLY}
             || $variantControl->{MODULECODE} ne $variant->{MODULECODE}
+            || $variantControl->{PAGETYPE} ne $variant->{PAGETYPE}
 		   ) {
 			return $cms->error("processNewSubpages(): method corrupts page parameters");
 		};
@@ -1228,6 +1231,32 @@ sub action_structPage {
         
         push @{$nodeInfo->{INFO}}, {NAME => 'Код страницы',      VALUE => $pageRow->{id}    };
         push @{$nodeInfo->{INFO}}, {NAME => 'Название страницы', VALUE => $pageRow->{name}  };
+        if ($pageRow->{module_id}) {
+            my $mName = "";
+            my $mRow  = $dbh->selectrow_hashref("select name, code, module, base from ng_modules where id = ?", undef, $pageRow->{module_id});
+            $mName = $mRow->{name} if $mRow && $mRow->{name};
+            
+            if ($cms->debug()) {
+                if ($mRow) {
+                    $mName .= " (".$mRow->{code}." ; ".$mRow->{module};
+                    $mName .= " ; base: ".$mRow->{base} if $mRow->{base};
+                    $mName .= ")";
+                }
+                else {
+                    $mName = "Module id:".$pageRow->{module_id}." not found in ng_modules";
+                };
+            };
+
+            push @{$nodeInfo->{INFO}}, {NAME => 'Модуль',        VALUE => $mName  } if $mName;
+
+            if ($NG::SiteStruct::config::hasPageType && $pageRow->{page_type} && $pageObj->can('getPageTypeName')) {
+                my $type = $pageObj->getPageTypeName($pageRow->{page_type});
+                if ($cms->debug()) {
+                    $type .= " (".$pageRow->{page_type}.")";
+                };
+                push @{$nodeInfo->{INFO}}, {NAME => 'Тип страницы', VALUE => $type  } if $type;
+            };
+        };
         #push @{$nodeInfo->{INFO}}, {NAME => 'Основной шаблон',   VALUE => $pageTemplateName };
         push @{$nodeInfo->{INFO}}, {NAME => 'Адрес', PAGEURL => $siteUrl.$pageRow->{url}    };
         
