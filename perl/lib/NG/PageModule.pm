@@ -372,7 +372,7 @@ sub checkIndex {
         return $cms->error("В ключах индекса нет ни ключа pageid, ни ключа linkid.");
     };
     return 1;
-};
+}; # checkIndex
 
 sub updateSearchIndex {
     my ($self, $suffix) = (shift, shift);
@@ -446,12 +446,17 @@ sub updateSearchIndex {
     my $st = $db->updatePageIndexes($indexes);
     return $cms->error($db->errstr()) unless $st;
     return 1;
-}
+}; # updateSearchIndex
+
+#sub searchResultURL {
+#    my ($self, $suffix) = (shift, shift);
+#    my $pageRow = $self->getPageRow()
+#    return $pageRow->{url}."?".$suffix;
+#}; # searchResultURL
 
 ##
 ##  Управление созданием страниц
 ##
-
 
 # Для создания страницы
 sub canAddPage {
@@ -614,8 +619,6 @@ sub processNewSubpages {
     };
     return 1; #TODO: change this ?
 };
-
-
 
 sub initialisePage {
     my $self = shift;

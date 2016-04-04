@@ -39,7 +39,7 @@ sub init {
     $self->{_cookies} = [];
     $self->{_charset} = "windows-1251";
     $self->{_echarset} = "windows-1251";
-	$self->{_type} = "text/html";
+    $self->{_type} = "text/html";
 
     $self->{_debug} = $param{Debug} || 0;
 
@@ -60,7 +60,6 @@ sub init {
     $self->{_mstash} = {};   ##Stash for NG::Module stash methods.
     $self->{_mrowC}  = {};   # Cache for ng_modules rows.  ( _mrowC->{CODE} = $moduleRow; )
     $self->{_mrowR}  = {};   # Flag what all modules for REF is loaded ( _mrowR->{REF} = 1; )
-	
     
     $NG::Application::cms = $self;
     $NG::Application::pageObj = undef;
@@ -162,7 +161,7 @@ sub loadSubsite {
     my $ssId = shift;
     
     my $q = $cms->q();
-    my $dbh = $cms->db()->dbh();
+    my $dbh = $cms->dbh();
     
     my $hasSubsites  = $cms->confParam("CMS.hasSubsites",0);
     my $hasLanguages = $cms->confParam('CMS.hasLanguages',0);
@@ -202,7 +201,7 @@ sub findSubsite {
     return ( NG::Application::M_OK, $NG::Application::config::forceSubsiteId ) if defined $NG::Application::config::forceSubsiteId;
     
     my $q = $cms->q();
-    my $dbh = $cms->db()->dbh();
+    my $dbh = $cms->dbh();
 	
     #TODO: исправить выход и интерфейс вызова.
 
@@ -484,32 +483,31 @@ sub processRequest {
 };
 
 sub getPageRowById {
-	my $cms = shift;
-	my $pageId = shift || return $cms->error("getPageRowById(): Отсутствует параметр pageId");
+    my $cms = shift;
+    my $pageId = shift || return $cms->error("getPageRowById(): Отсутствует параметр pageId");
 
-	my $pageFields = $cms->getPageFields();
+    my $pageFields = $cms->getPageFields();
     return $cms->error() if $pageFields eq "0"; ##cms->error
-	
-    my $dbh = $cms->db()->dbh();
-    
-	my $sth = $dbh->prepare("select $pageFields from ng_sitestruct where id=?") or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
-	$sth->execute($pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
-	my $pRow = $sth->fetchrow_hashref();
-	$sth->finish();
-	return $cms->error("getPageRowById(): Страница не найдена") unless $pRow;
-	return $pRow;
+
+    my $dbh = $cms->dbh();
+
+    my $sth = $dbh->prepare("select $pageFields from ng_sitestruct where id=?") or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
+    $sth->execute($pageId) or return $cms->error("getPageRowById(): Error in pageRow query: ".$DBI::errstr);
+    my $pRow = $sth->fetchrow_hashref();
+    $sth->finish();
+    return $cms->error("getPageRowById(): Страница не найдена") unless $pRow;
+    return $pRow;
 };
 
 sub getPageObjById {
     my $cms = shift;
     my $pageId = shift || return $cms->error("getPageObjById(): Отсутствует параметр pageId");
     my $opts = shift;
-    
+
     my $pageRow = $cms->getPageRowById($pageId) or return $cms->error();
     return $cms->getPageObjByRow($pageRow,$opts);
 };
-    
-    
+
 sub getPageObjByRow {
     my $cms = shift;
     my $pageRow = shift || return $cms->error("getPageObjByRow(): Отсутствует параметр pageRow");
@@ -777,6 +775,8 @@ sub buildPage {
     
 };
 
+### Взаимодействие с АБ
+
 sub getABRelated {
     return $NG::Application::blocksController->getABRelated();
 };
@@ -788,6 +788,8 @@ sub tryABHelper {
 sub getABHelper {
     return $NG::Application::blocksController->getABHelper();
 };
+
+### Поддержка хлебных крошек
 
 sub setBreadcrumbs {
     my ($cms,$breadcrumbs) = (shift,shift);
@@ -873,38 +875,38 @@ sub processEvent {
     my $self = shift;
     my $event = shift;
 
-	my $class = ref $event;
+    my $class = ref $event;
     my $name = $event->name();
     my $sender = ref $event->sender();
-	
+
     die "This module already send such event" if (
-		   exists $self->{_events}->{$sender}
-		&& exists $self->{_events}->{$sender}->{$class}
-		&& exists $self->{_events}->{$sender}->{$class}->{$name}
-	);
+           exists $self->{_events}->{$sender}
+        && exists $self->{_events}->{$sender}->{$class}
+        && exists $self->{_events}->{$sender}->{$class}->{$name}
+    );
     $self->{_events}->{$sender}->{$class}->{$name} = 1;
 
-	$self->{_events_cache} ||= {};
+    $self->{_events_cache} ||= {};
     if (!exists $self->{_events_cache}->{$class}) {
-		my $cache = {};
-		
-        my $sth = $self->db()->dbh()->prepare("select id,name,sender,handler from ng_events where class=? or class =''") or die $DBI::errstr;
+        my $cache = {};
+
+        my $sth = $self->dbh()->prepare("select id,name,sender,handler from ng_events where class=? or class =''") or die $DBI::errstr;
         $sth->execute($class) or die $DBI::errstr;
         while (my $row = $sth->fetchrow_hashref()) {
             die "processEvent(): Handler not defined in table ng_events (id = ".$row->{id}.")" if is_empty($row->{handler});
-			$row->{name} ||= "";
+            $row->{name} ||= "";
             $row->{sender} ||= "";
             $cache->{$row->{handler}}->{$row->{name}}->{$row->{sender}} = 1;
         };
         $sth->finish();
-		
-		$self->{_events_cache}->{$class} = $cache;
+
+        $self->{_events_cache}->{$class} = $cache;
     };
-	#$self->{_events_cache}->{$class}->{$handler}->{$name}->{$sender}
-    
+    #$self->{_events_cache}->{$class}->{$handler}->{$name}->{$sender}
+
     my $cache = $self->{_events_cache}->{$class};
     foreach my $handler (keys %{$cache}) {
-		my $eventRow = $cache->{$handler};
+        my $eventRow = $cache->{$handler};
         if (
             (exists $eventRow->{$name} && (exists $eventRow->{$name}->{$sender} || exists $eventRow->{$name}->{""}))
             || (exists $eventRow->{""} && (exists $eventRow->{""}->{$sender} || exists $eventRow->{""}->{""}))
@@ -1020,7 +1022,6 @@ sub _header {
     return 1;
 };
 
-
 sub setError {
     my $self = shift;
     my $error = shift;
@@ -1041,14 +1042,14 @@ sub defError {
 };
 
 sub getError {
-	my $self = shift;
-	return $self->{_error} || shift;
+    my $self = shift;
+    return $self->{_error} || shift;
 };
 
 sub showError {
     my $self = shift;
     my $text = $self->{_error} || shift || "Неизвестная ошибка"; 
-	
+
     my $h = {};
     $h->{-nocache} = 1;
     $h->{-charset} = $self->{_echarset};
@@ -1061,8 +1062,8 @@ sub showError {
 };
 
 sub notFound {
-	my $self = shift;
-	return NG::BlockContent->notFound(@_);
+    my $self = shift;
+    return NG::BlockContent->notFound(@_);
 };
 
 sub _do404 {
@@ -1109,7 +1110,7 @@ sub _do404 {
         $ret = $cms->output("Страница не найдена. При обработке страницы 404 произошла ошибка: ".$cms->getError());
     };
     $ret->{_headers}->{-status} = "404 Not Found";
-	return $cms->_doOutput($ret);
+    return $cms->_doOutput($ret);
 };
 
 =head
@@ -1122,8 +1123,8 @@ return $cms->output($outputData, -type=>"text/xml", -charset=>"utf-8", -status=>
 =cut
 
 sub output {
-	my $self = shift;
-	return NG::BlockContent->output(@_);
+    my $self = shift;
+    return NG::BlockContent->output(@_);
 };
 
 sub exit {
@@ -1170,7 +1171,7 @@ sub sendFile {
 
         $headers->{'Content-Disposition'} = $disposition.'; filename="'.$filename.'"';
     };
-    
+
     #Clean
     delete $headers->{-filename};
     delete $headers->{-attachment};
@@ -1203,13 +1204,13 @@ sub outputJSON {
 };
 
 sub _doOutput {
-    my $self = shift;
-	my $ret = shift;
-	my $params = $ret->headers() || {};
-	my $cookies = $ret->cookies();
+    my ($self, $ret) = (shift, shift);
+
+    my $params = $ret->headers() || {};
+    my $cookies = $ret->cookies();
     $params->{-cookie} = $cookies;
 
-	$self->_header($params) or return;
+    $self->_header($params) or return;
     print $ret->getOutput();
     return 1;
 };
@@ -1232,28 +1233,28 @@ sub redirectRefererOr {
     my $redirect_url = $self->q->referer();
     if (!defined $redirect_url || $redirect_url eq "")  {
         if (defined $backup_url && $backup_url ne "") {
-                $redirect_url = $self->q->url(-base=>1).$backup_url;
+            $redirect_url = $self->q->url(-base=>1).$backup_url;
         } else {
-                $redirect_url = $self->q->url(-base=>1)."/";
+            $redirect_url = $self->q->url(-base=>1)."/";
         };
     };
     return NG::BlockContent->redirect($redirect_url);
 };
 
 sub _doRedirect {
-	my $self = shift;
-	my $ret = shift; 
-	
+    my $self = shift;
+    my $ret = shift; 
+
     my $uri = $ret->getRedirectUrl();
-	my $params = $ret->headers() || {};
-	my $cookies = $ret->cookies();
-	
+    my $params = $ret->headers() || {};
+    my $cookies = $ret->cookies();
+
     $uri = $self->q()->url(-base=>1).$uri if($uri !~ /^(http|https|ftp)\:\/\/.+$/);
-	
-	$params->{-uri} = $uri;
-	$params->{-cookie} = [];
-	push @{$params->{-cookie}}, @{$self->{_cookies}} if $self->{_cookies};
-	push @{$params->{-cookie}}, @$cookies if $cookies;
+
+    $params->{-uri} = $uri;
+    $params->{-cookie} = [];
+    push @{$params->{-cookie}}, @{$self->{_cookies}} if $self->{_cookies};
+    push @{$params->{-cookie}}, @$cookies if $cookies;
 
     print $self->q->redirect( %$params );
     return 1;
@@ -1262,24 +1263,24 @@ sub _doRedirect {
 sub processResponse {
     my $cms = shift;
     my $ret = shift;
-	
-	if ($ret && ref $ret ne "NG::BlockContent") {
-		return $cms->showError("processResponse(): Некорректный объект ответа");
-	};
-	
-	if (!$ret || $ret->is_error) {
-		$cms->{_error} = $ret->getError() if $ret;
-		return $cms->showError("Ошибка контроллера");
-	}
+
+    if ($ret && ref $ret ne "NG::BlockContent") {
+        return $cms->showError("processResponse(): Некорректный объект ответа");
+    };
+
+    if (!$ret || $ret->is_error) {
+        $cms->{_error} = $ret->getError() if $ret;
+        return $cms->showError("Ошибка контроллера");
+    }
     elsif ($ret->is_output() || $ret->is_exit()) {
         return $cms->_doOutput($ret);
     }
     elsif ($ret->is_redirect) {
         return $cms->_doRedirect($ret);
     }
-	elsif ($ret->is_404){
-		return $cms->_do404($ret);
-	}
+    elsif ($ret->is_404){
+        return $cms->_do404($ret);
+    }
     else {
         return $cms->showError("Ошибка контроллера - неизвестный код возврата");
     };
@@ -1451,12 +1452,12 @@ sub getModulesIterator {
 sub getModuleInstance ($$) {
     my $cms  = shift;
     my $code = shift;
-    
+
     unless (exists $cms->{_moduleInstances}->{$code}) {
-		my $mObj = $cms->getModuleByCode($code);
+        my $mObj = $cms->getModuleByCode($code);
         $cms->{_moduleInstances}->{$code} = $mObj;
     };
-    
+
     return $cms->{_moduleInstances}->{$code};
 };
 
@@ -1728,28 +1729,27 @@ sub expireCacheContent {
     $NG::Application::Cache->expireCacheContent($keys);
 };
 
-=head
-=cut
+### Реализация глобально-доступных методов
 
 {
-	package UNIVERSAL;
-	
+    package UNIVERSAL;
+
     ## "Адресное" пространство конфига
     ## [%NG::Module%_%GROUP%]
     ## [MODULE_%MODULECODE%]
     ## [BLOCK_%BLOCKCODE%]
     ## [CMS]
-    
-	# универсальная работа с конфигом
-	# значение из группы -  $self->confParam('group','option','default');  #[NG::Module_GROUP]
-	# значение без группы - $self->confParam(null,'option','default');     #Param=value
-	# как метод CMS: $cms->confParam($param,$default)
-	# как метод CMS: NG::Application->confParam($param,$default)
+
+    # универсальная работа с конфигом
+    # значение из группы -  $self->confParam('group','option','default');  #[NG::Module_GROUP]
+    # значение без группы - $self->confParam(null,'option','default');     #Param=value
+    # как метод CMS: $cms->confParam($param,$default)
+    # как метод CMS: NG::Application->confParam($param,$default)
     # как метод модуля (наследник NG::Module)->confParam($param,$default)  #[MODULE_%MODULECODE%].param=value
-	sub confParam {
-		my $invoker = shift;
-		my $param = shift;
-		
+    sub confParam {
+        my $invoker = shift;
+        my $param = shift;
+
         my @c = caller(0);
         my $cobj = $NG::Application::cms->{_confObj};
         if (ref $invoker && $invoker->isa("NG::Module")) {
@@ -1760,21 +1760,21 @@ sub expireCacheContent {
             #Do nothing
         }
         else {
-			$invoker = ref $invoker if ref $invoker;
-			my $group = $param;
-			$param = shift;
-			$param = $invoker . ( $group ? '_'.$group : '' ).'.'.$param;
-		};
-		
-		die $c[3]."($param) config not opened and no default value at ".$c[0]." line ".$c[2] unless $cobj || scalar @_;
-		
-		my $defaultValue = shift;
-		return $defaultValue unless $cobj;
+            $invoker = ref $invoker if ref $invoker;
+            my $group = $param;
+            $param = shift;
+            $param = $invoker . ( $group ? '_'.$group : '' ).'.'.$param;
+        };
+
+        die $c[3]."($param) config not opened and no default value at ".$c[0]." line ".$c[2] unless $cobj || scalar @_;
+
+        my $defaultValue = shift;
+        return $defaultValue unless $cobj;
         my $v = $cobj->param($param);
         defined $v or return $defaultValue;
         $v;
-	};
-    
+    };
+
     sub cms { return $NG::Application::cms; };
     sub db  { return $NG::Application::cms->{_db}; };
     sub dbh { shift; return $NG::Application::cms->{_db}->dbh(@_); };
