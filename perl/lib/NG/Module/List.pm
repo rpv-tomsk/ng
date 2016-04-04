@@ -1332,7 +1332,7 @@ sub _makeEvent {
     my $self = shift;
     my $ename = shift;
     my $eopts = shift;
-    
+
     my $event = NG::Module::List::Event->new($self,$ename,$eopts);
     $self->cms()->processEvent($event);
 };
@@ -1344,7 +1344,7 @@ sub _makeEvent {
 sub _updateIndex {
     my $self = shift;
     my $suffix = shift;
-    
+
     my $mObj = $self->getModuleObj();
     return $self->error("moduleObj ".ref($mObj)." has no updateSearchIndex() method") unless $mObj->can("updateSearchIndex");
     return $mObj->updateSearchIndex($suffix);
@@ -1893,10 +1893,9 @@ sub _analyseFieldTypes {
     return $self->error("Ошибка в конфигурации модуля ".(ref $self)." - использование pageId или parentPageId исключает использование полей объединения страниц.")
         if ($self->{_pageBlockMode} && $self->{_linkBlockMode});
     # Одновременное использование subsiteId && pageLangId не запрещено, хотя и излишне.
-    return $self->error("Ошибка в конфигурации модуля ".(ref $self)." - использование subsiteId исключает использование pageLinkId и parentLinkId.")	
+    return $self->error("Ошибка в конфигурации модуля ".(ref $self)." - использование subsiteId исключает использование pageLinkId и parentLinkId.")
         if ($has_subsiteId && ($has_pageLinkId || $has_parentLinkId));
-        
-    
+
     return NG::Block::M_OK;
 }
 
