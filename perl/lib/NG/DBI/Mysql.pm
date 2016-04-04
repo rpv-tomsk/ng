@@ -154,7 +154,7 @@ sub insertFTSIndex {
     $data->{D} ||= "";
     
     my $sth = $self->dbh()->prepare_cached("insert into ng_ftsindex (id,text,header,date,category,link_id,lang_id,page_id,subsite_id,suffix) values (?,?,?,?,?,?,?,?,?,?)");
-    my $res = $sth->execute($id,$data->{TEXT},$data->{HEADER},$data->{DATE},$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX});
+    my $res = $sth->execute($id,$data->{TEXT},$data->{HEADER},$self->date_to_db($data->{DATE}),$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX});
     unless ($res) {
         $self->{_errstr} = "NG::Mysql::Mysql::insertFTSIndex(): Ошибка запроса: ".$DBI::errstr;
         return 0;
@@ -183,7 +183,7 @@ sub updateFTSIndex {
     
     my $sql = "update ng_ftsindex set text=?,header=?,date=?,category=?,link_id=?,lang_id=?,page_id=?,subsite_id=?,suffix=? where id = ?";
     my $sth = $self->dbh()->prepare_cached($sql);
-    my $res = $sth->execute($data->{TEXT},$data->{HEADER},$data->{DATE},$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$index->{ID});
+    my $res = $sth->execute($data->{TEXT},$data->{HEADER},$self->date_to_db($data->{DATE}),$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$index->{ID});
     unless ($res) {
         $self->{_errstr} = "NG::DBI::Mysql::updateFTSIndex(): Ошибка запроса: ".$DBI::errstr;
         $sth->finish();
