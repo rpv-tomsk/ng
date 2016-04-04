@@ -1570,6 +1570,8 @@ sub getNeighbourBlocks {
     return \@blocks;
 };
 
+### Функции работы с кешем
+
 =head
     $cms->updateKeysVersion($moduleObj,
         [
