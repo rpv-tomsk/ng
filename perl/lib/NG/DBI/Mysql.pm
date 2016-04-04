@@ -153,8 +153,8 @@ sub insertFTSIndex {
     $data->{C} ||= "";
     $data->{D} ||= "";
     
-    my $sth = $self->dbh()->prepare_cached("insert into ng_ftsindex (id,text,header,date,category,link_id,lang_id,page_id,subsite_id,suffix) values (?,?,?,?,?,?,?,?,?,?)");
-    my $res = $sth->execute($id,$data->{TEXT},$data->{HEADER},$self->date_to_db($data->{DATE}),$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX});
+    my $sth = $self->dbh()->prepare_cached("insert into ng_ftsindex (id,text,header,date,category,link_id,lang_id,page_id,subsite_id,suffix,module) values (?,?,?,?,?,?,?,?,?,?,?)");
+    my $res = $sth->execute($id,$data->{TEXT},$data->{HEADER},$self->date_to_db($data->{DATE}),$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$index->{OWNER});
     unless ($res) {
         $self->{_errstr} = "NG::Mysql::Mysql::insertFTSIndex(): Ошибка запроса: ".$DBI::errstr;
         return 0;
@@ -181,9 +181,9 @@ sub updateFTSIndex {
     $data->{D} ||= "";
     undef $data->{DATE} unless $data->{DATE};
     
-    my $sql = "update ng_ftsindex set text=?,header=?,date=?,category=?,link_id=?,lang_id=?,page_id=?,subsite_id=?,suffix=? where id = ?";
+    my $sql = "update ng_ftsindex set text=?,header=?,date=?,category=?,link_id=?,lang_id=?,page_id=?,subsite_id=?,suffix=?,module=? where id = ?";
     my $sth = $self->dbh()->prepare_cached($sql);
-    my $res = $sth->execute($data->{TEXT},$data->{HEADER},$self->date_to_db($data->{DATE}),$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$index->{ID});
+    my $res = $sth->execute($data->{TEXT},$data->{HEADER},$self->date_to_db($data->{DATE}),$index->{CATEGORY},$index->{LINKID},$index->{LANGID},$index->{PAGEID},$index->{SUBSITEID},$index->{SUFFIX},$index->{OWNER},$index->{ID});
     unless ($res) {
         $self->{_errstr} = "NG::DBI::Mysql::updateFTSIndex(): Ошибка запроса: ".$DBI::errstr;
         $sth->finish();
