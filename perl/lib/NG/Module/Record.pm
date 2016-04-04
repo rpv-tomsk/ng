@@ -671,8 +671,8 @@ sub getBlockIndex {
     my $rFunc = undef;  #Метод, строящий индекс, если задан параметр RFUNC.
 
     if (exists $sc->{CLASSES}) {
-        return $self->error('Cвойство CLASSES в конфигурации поиска не является HASHREF.') if (ref($sc->{CLASSES}) ne 'HASH');
-        return $self->error('_getIndexes(): Отсуствует описание классов в свойстве CLASSES в конфигурации поиска.') unless scalar keys %{$sc->{CLASSES}};
+        return $self->error('Параметр CLASSES в конфигурации поиска не является HASHREF.') if (ref($sc->{CLASSES}) ne 'HASH');
+        return $self->error('_getIndexes(): Отсутствует описание классов в параметре CLASSES в конфигурации поиска.') unless scalar keys %{$sc->{CLASSES}};
         return $self->error('_getIndexes(): Одновременное использование CLASSES и RFUNC в конфигурации поиска недопустимо.') if exists $sc->{RFUNC};
         return $self->error('_getIndexes(): Без указания параметра RFUNC использование параметра RFUNCFIELDS невозможно.') if exists $sc->{RFUNCFIELDS};
     }
@@ -684,28 +684,7 @@ sub getBlockIndex {
     }
     else {
         return $self->error('_getIndexes(): Без указания параметра RFUNC использование параметра RFUNCFIELDS невозможно.') if exists $sc->{RFUNCFIELDS};
-        if (exists $sc->{DATAINDEXFIELDS}) {
-            return $self->error('Некорректное значение свойства DATAINDEXFIELDS в конфигурации поиска') if (ref($sc->{DATAINDEXFIELDS}) ne 'ARRAY');
-            $sc->{CLASSES} = {};
-            foreach my $t (@{$sc->{DATAINDEXFIELDS}}) {
-                return $self->error('В списке полей свойства DATAINDEXFIELDS отсутствует имя поля') unless $t->{FIELD};
-                return $self->error('В списке полей свойства DATAINDEXFIELDS отсутствует имя класса') unless $t->{CLASS};
-                $sc->{CLASSES}->{$t->{CLASS}} ||= [];
-                push @{$sc->{CLASSES}->{$t->{CLASS}}}, {FIELD=>$t->{FIELD}};
-            }
-            if ($sc->{PAGEINDEXFIELDS}) {
-                return $self->error('Некорректное значение свойства PAGEINDEXFIELDS в конфигурации поиска') if (ref($sc->{PAGEINDEXFIELDS}) ne 'ARRAY');
-                foreach my $t (@{$sc->{PAGEINDEXFIELDS}}) {
-                    return $self->error('В списке полей свойства PAGEINDEXFIELDS отсутствует имя поля') unless $t->{FIELD};
-                    return $self->error('В списке полей свойства PAGEINDEXFIELDS отсутствует имя класса') unless $t->{CLASS};
-                    $sc->{CLASSES}->{$t->{CLASS}} ||= [];
-                    push @{$sc->{CLASSES}->{$t->{CLASS}}}, {PFIELD=>$t->{FIELD}};
-                }
-            }
-        }
-        else {
-            return $self->error('Не указаны свойства CLASSES или RFUNC в конфигурации поиска');
-        }
+        return $self->error('Не указан параметр CLASSES или RFUNC в конфигурации поиска.');
     }
 
     #Формируем значения ключа индекса
