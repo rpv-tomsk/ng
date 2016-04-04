@@ -1199,12 +1199,12 @@ sub _maDeleteRecords {
             my $suffix = $self->getIndexSuffixFromFormAndMask($form,$self->{_searchconfig}->{SUFFIXMASK});
             return $self->showError() if ($self->cms()->getError('') ne "");
             $self->_updateIndex($suffix) or return $self->showError("Delete(): Ошибка обновления индекса");
-        };   
+        };
         $self->afterDelete($id,$form) or return $self->showError("Delete(): Ошибка вызова afterDelete()");
         $self->_makeEvent('delete',{ID=>$id});
     };
     return $self->outputJSON({status=>'ok'});
-};
+}; # _maDeleteRecords
 
 sub afterMove { my ($self, $id, $moveDir) = @_; }
 
@@ -1803,6 +1803,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
     };
     $sth->finish();
     
+    #Возвращаем "пустой" индекс, с заполненными ключами KEYS / CATEGORY / SUFFIX / REQUIRED и пустым DATA
     return $index unless scalar keys %{$index->{DATA}};
 
     foreach my $class (keys %{$beforeData}) {
