@@ -333,122 +333,119 @@ sub adminPage {
 ##
 
 sub checkIndex {
-    my $self = shift;
-    my $index = shift;
-    my $suffix = shift;
-    
+    my ($self, $index, $suffix) = (shift, shift, shift);
+
     my $cms = $self->cms();
-    
     return $cms->error("Отсутствует значение категории индекса.") unless defined $index->{CATEGORY};
-    
+
     # В пришедших индексах проверяем суффикс, если индекс был запрошен с суффиксом.
     # ## expired ## Если запрошен индекс без суффикса - не проверяем, можно вернуть любой, в т.ч и пустой.
-    return $cms->error("возвращенный суффикс (".$index->{SUFFIX}.") не совпадает с запрошенным ($suffix).") if ($suffix && ($index->{SUFFIX} ne $suffix));
+    return $cms->error("Возвращенный суффикс '".$index->{SUFFIX}."' не совпадает с запрошенным '$suffix'.") if ($suffix && ($index->{SUFFIX} ne $suffix));
     return $cms->error("Отсутствует описание ключей индекса.") unless $index->{KEYS};
-	return $cms->error("Описание ключей индекса (KEYS) не является ARRAYREF.") unless ref($index->{KEYS}) eq "ARRAY";
+    return $cms->error("Описание ключей индекса (KEYS) не является ARRAYREF.") unless ref $index->{KEYS} eq "ARRAY";
+
     my ($linkId,$langId,$pageId) = (0,0,0);
     foreach my $key (@{$index->{KEYS}}) {
         $linkId = $self->getPageLinkId() if lc($key) eq "linkid";
         $langId = $self->getPageLangId() if lc($key) eq "langid";
-        $pageId = $self->getPageId() if lc($key) eq "pageid";
+        $pageId = $self->getPageId()     if lc($key) eq "pageid";
     };
-    return $cms->error("В ключах присутствует недопустимая комбинация pageid + langid.") if ($pageId && $langId);
-    return $cms->error("В ключах присутствует недопустимая комбинация pageid + linkid.") if ($pageId && $linkId);
-        
+    return $cms->error("В ключах присутствует недопустимая комбинация: pageid + langid.") if ($pageId && $langId);
+    return $cms->error("В ключах присутствует недопустимая комбинация: pageid + linkid.") if ($pageId && $linkId);
+
     $index->{KEYTYPE} = 0;
     $index->{KEYTYPE} += 1 if ($linkId);
     $index->{KEYTYPE} += 2 if ($langId);
     $index->{KEYTYPE} += 4 if ($pageId);
     $index->{KEYTYPE} += 8 if ($index->{SUFFIX});
-    
-	## LANGID используется либо как денормализационное поле в случае pageId, либо как ключевое в случае linkId
-	$index->{LANGID} = $self->getPageLangId(); 
-	if ($linkId) {
-		$index->{LINKID} = $linkId;
-	}
-	elsif ($pageId) {
-		$index->{PAGEID} = $pageId;
-		$index->{SUBSITEID} = $self->getSubsiteId();
-	}
-	else {
-		return $cms->error("В ключах нет ни ключа pageid, ни ключа linkid.");
-	};
+
+    ## LANGID используется либо как денормализационное поле в случае pageId, либо как ключевое в случае linkId
+    $index->{LANGID} = $self->getPageLangId();
+    if ($linkId) {
+        $index->{LINKID} = $linkId;
+    }
+    elsif ($pageId) {
+        $index->{PAGEID} = $pageId;
+        $index->{SUBSITEID} = $self->getSubsiteId();
+    }
+    else {
+        return $cms->error("В ключах индекса нет ни ключа pageid, ни ключа linkid.");
+    };
     return 1;
 };
 
 sub updateSearchIndex {
-	my $self = shift;
-	my $suffix = shift;
-    
+    my ($self, $suffix) = (shift, shift);
+
     my $cms = $self->cms();
-    
+
     my $submodules = $self->moduleBlocks();
     return $cms->error("Класс ".(ref $self)." не содержит метода moduleBlocks(), не могу получить список блоков страницы для индексации") unless defined $submodules;
 
     my $baseurl = $self->getAdminBaseURL();
-    
-    my $indexes = [];	
+
+    my $indexes = [];
     foreach my $subm (@{$submodules}) {
         $subm->{BLOCK} or return $cms->error("Модуль ".(ref $self)." в описании блоков модуля отсутствует значение ключа BLOCK");
         my $opts = $subm->{OPTS} || {};
         return $cms->error("Параметр OPTS блока не является HASHREF") unless ref $opts eq "HASH";
-        
+
         #Дубль кода в _adminModule() NG::Module
         $subm->{URL} = $self->getAdminSubURL() unless exists $subm->{URL};
         $subm->{URL} =~ s@^/@@;
         $opts->{ADMINBASEURL} = $baseurl. $subm->{URL};
-        
+
         $opts->{MODULEOBJ} =  $self;
-        
+
         my $classDef = {CLASS=>$subm->{BLOCK}};
         $classDef->{USE}= $subm->{USE} if exists $subm->{USE};
         my $bObj = $cms->getObject($classDef,$opts);
-        
-        return $cms->error("Block ".ref($bObj)." has no getBlockIndex() method") unless $bObj->can("getBlockIndex");
-        
-		my $blockIndex = $bObj->getBlockIndex($suffix) || return $cms->error();
-		next if (scalar(keys %{$blockIndex}) == 0); # Функция возвращает {} если не надо обновлять/индексировать, нет индекса и тд
-        
-        $blockIndex->{KEYS} ||= ['pageid'];
-        
-		$self->checkIndex($blockIndex,$suffix) || return $cms->error("Ошибка в индексе, возвращенном модулем ".ref($bObj).": ".$cms->getError());
-		
-		my $foundIndex;
-		foreach my $tmpindex (@{$indexes}){
-			if ($tmpindex->{KEYTYPE} == $blockIndex->{KEYTYPE}) {
-				$foundIndex = $tmpindex;
-				last;
-			};
-		};
-		if ($foundIndex) {
-			if ($blockIndex->{REQUIRED} && ! scalar keys %{$blockIndex->{DATA}}) {
-				#Новый индекс REQUIRED и пустой. Удаляем ранее подстыкованные данные.
-				$foundIndex->{DATA} = {};
-				$foundIndex->{REQUIRED} = 1;
-				next;
-			};
-			if ($foundIndex->{REQUIRED} && ! scalar keys %{$foundIndex->{DATA}}) {
-				#Старый индекс REQUIRED и пустой. Пропускаем.
-				next;
-			};
-			# Индекс с такими ключами найден, сращиваем индексы
-			foreach my $class (keys %{$blockIndex->{DATA}}) {
-				$foundIndex->{DATA}->{$class} .= " " if ($foundIndex->{DATA}->{$class});
-				$foundIndex->{DATA}->{$class} .= $blockIndex->{DATA}->{$class};
-				#Считаем что допинфа недопустима.
-			}
-		}
-		else {
-			# Индекс с такими ключами не найден, просто добавляем
-			$blockIndex->{OWNER} = $self->getModuleCode();
-			push @{$indexes}, $blockIndex;
-		}
-	};
 
-	my $db = $cms->db();
-	my $st = $db->updatePageIndexes($indexes);
-	return $cms->error($db->errstr()) unless $st;
-	return 1;
+        return $cms->error("Block ".ref($bObj)." has no getBlockIndex() method") unless $bObj->can("getBlockIndex");
+
+        my $blockIndex = $bObj->getBlockIndex($suffix) || return $cms->error();
+        next if (scalar(keys %{$blockIndex}) == 0); # Функция возвращает {} если не надо обновлять/индексировать, нет индекса и тд
+
+        $blockIndex->{KEYS} ||= ['pageid'];
+
+        $self->checkIndex($blockIndex,$suffix) || return $cms->error("Ошибка в индексе, возвращенном модулем ".ref($bObj).": ".$cms->getError());
+
+        my $foundIndex;
+        foreach my $tmpindex (@{$indexes}){
+            if ($tmpindex->{KEYTYPE} == $blockIndex->{KEYTYPE}) {
+                $foundIndex = $tmpindex;
+                last;
+            };
+        };
+        if ($foundIndex) {
+            if ($blockIndex->{REQUIRED} && ! scalar keys %{$blockIndex->{DATA}}) {
+                #Новый индекс REQUIRED и пустой. Удаляем ранее подстыкованные данные.
+                $foundIndex->{DATA} = {};
+                $foundIndex->{REQUIRED} = 1;
+                next;
+            };
+            if ($foundIndex->{REQUIRED} && ! scalar keys %{$foundIndex->{DATA}}) {
+                #Старый индекс REQUIRED и пустой. Пропускаем.
+                next;
+            };
+            # Индекс с такими ключами найден, сращиваем индексы
+            foreach my $class (keys %{$blockIndex->{DATA}}) {
+                $foundIndex->{DATA}->{$class} .= " " if ($foundIndex->{DATA}->{$class});
+                $foundIndex->{DATA}->{$class} .= $blockIndex->{DATA}->{$class};
+                #Считаем что допинфа недопустима.
+            }
+        }
+        else {
+            # Индекс с такими ключами не найден, просто добавляем
+            $blockIndex->{OWNER} = $self->getModuleCode();
+            push @{$indexes}, $blockIndex;
+        }
+    };
+
+    my $db = $cms->db();
+    my $st = $db->updatePageIndexes($indexes);
+    return $cms->error($db->errstr()) unless $st;
+    return 1;
 }
 
 ##
@@ -458,36 +455,36 @@ sub updateSearchIndex {
 
 # Для создания страницы
 sub canAddPage {
-	my $self = shift;
-	
-	my $pageRow = $self->getPageRow();
-	return 1 if ($pageRow->{subptmplgid});
-	return 0;
+    my $self = shift;
+
+    my $pageRow = $self->getPageRow();
+    return 1 if ($pageRow->{subptmplgid});
+    return 0;
 };
 
 sub canActivate {
-	my $self = shift;
-	return 1;
+    my $self = shift;
+    return 1;
 };
 
 sub canDeactivate {
-	my $self = shift;
-	return 1;
+    my $self = shift;
+    return 1;
 };
 
 sub getPageTypeName {
-    my ($self,$pageType) = (shift, shift);
+    my ($self, $pageType) = (shift, shift);
     return '';
 };
 
 sub getPageAddVariants {
-	my $self = shift;
-	my $cms = $self->cms();
-	my $dbh = $cms->db()->dbh();
-	my $pageRow = $self->getPageRow();
-	
+    my $self = shift;
+    my $cms = $self->cms();
+    my $dbh = $cms->db()->dbh();
+    my $pageRow = $self->getPageRow();
+
     return $cms->error("Данная страница не поддерживает добавление подстраниц") unless $pageRow->{subptmplgid};
-	
+
     my @variants = ();
     #Запрашиваем список шаблонов группы, делаем left join ng_tmpllink для целей
     #проверки корректности данных (корректности денормализации)
@@ -495,9 +492,9 @@ sub getPageAddVariants {
     #и значение link_id должно совпадать с ng_templates.link_id
     my $sth = $dbh->prepare("select t.id,t.name, t.link_id as t_link_id, l.link_id from ng_templates t left join ng_tmpllink l on t.id = l.template_id where t.group_id=?") or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
     $sth->execute($pageRow->{subptmplgid}) or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
-	
+
     my $ttl = {}; # $ttl->{$template_id} = $link_id  -- Хеш для проверки
-    
+
     while (my $row = $sth->fetchrow_hashref()) {
         if ($row->{link_id} && $row->{t_link_id} != $row->{link_id}) {
             return $cms->error("ng_templates.link_id != nt_tmpllink.link_id for template ".$row->{id});
@@ -506,7 +503,7 @@ sub getPageAddVariants {
             return $cms->error("Found different link_id for template ".$row->{id}) if $ttl->{$row->{id}} && $row->{link_id} && $ttl->{$row->{id}} != $row->{link_id};
         };
         $ttl->{$row->{id}} = $row->{link_id};
-        
+
         push @variants, {
             ID=>$row->{id},
             NAME=>$row->{name},
@@ -517,113 +514,112 @@ sub getPageAddVariants {
 };
 
 sub processNewSubpages {
-	my $self = shift;
-	my $newSubpages = shift;
-	my $variant = shift;
-	
-    my $cms = $self->cms();
-    
-	## Cool-ьные мысли.
-	## getPageAddVariants() должен выставлять флаг, что он использовал значение pageRow->{subptmplgid} для построения списка вариантов.
-	## processNewSubpages(), в случае если добавляемая страница не связана с другими страницами (keys $newSubpages == 1), то
-	##                        разрешаем указывать в варианте добавления страницы аттрибуты print_template_id, subptmplgid, module
+    my $self = shift;
+    my $newSubpages = shift;
+    my $variant = shift;
 
-	return $cms->error("processNewSubpages(): newSubpages is not HASHREF") unless ref $newSubpages eq "HASH";
-	return $cms->error("processNewSubpages(): variant is not HASHREF") unless ref $variant eq "HASH";
-	
-    
+    my $cms = $self->cms();
+
+    ## Cool-ьные мысли.
+    ## getPageAddVariants() должен выставлять флаг, что он использовал значение pageRow->{subptmplgid} для построения списка вариантов.
+    ## processNewSubpages(), в случае если добавляемая страница не связана с другими страницами (keys $newSubpages == 1), то
+    ##                        разрешаем указывать в варианте добавления страницы аттрибуты print_template_id, subptmplgid, module
+
+    return $cms->error("processNewSubpages(): newSubpages is not HASHREF") unless ref $newSubpages eq "HASH";
+    return $cms->error("processNewSubpages(): variant is not HASHREF") unless ref $variant eq "HASH";
+
     unless ($variant->{TEMPLATE_ID}) {
         #Страница сделана не на основе шаблона, модуль содержит свой getPageAddVariants()
         return $cms->error("processNewSubpages(): variant has no TEMPLATE_ID parameter") if $self->_isBaseClass() && !$variant->{MODULECODE}; #ASSERT
         return $cms->error("processNewSubpages(): variant has PAGETYPE but feature not activated") if $variant->{PAGETYPE} && !$NG::SiteStruct::config::hasPageType;
-        
+
         my $module_id = $self->pageParam('module_id');
         if ($variant->{MODULECODE}) {
             #Модуль запросил создание страницы на основе другого модуля
             my $mRow = $cms->getModuleRow("code=?",$variant->{MODULECODE}) or return $cms->defError("processNewSubpages():","Запрошенный модуль '".$variant->{MODULECODE}."' не найден");
             $module_id = $mRow->{id};
         };
-        
-		#TODO: прототип.
-		foreach my $subsiteId (keys %{$newSubpages}) {
-			my $page = $newSubpages->{$subsiteId};
-			$page->{PAGEROW}->{template} = $variant->{template} if $variant->{template};
-			$page->{PAGEROW}->{print_template} = $variant->{print_template} if $variant->{print_template};
-			$page->{PAGEROW}->{module_id} = $module_id;
-			$page->{PAGEROW}->{subptmplgid} = $variant->{subptmplgid} if $variant->{subptmplgid};
-			$page->{PAGEROW}->{page_type} = $variant->{PAGETYPE} if $variant->{PAGETYPE} && $NG::SiteStruct::config::hasPageType;
-			$page->{ACTIVE} = 1;
-		};
-		return 1;
-	};
-	
-	my $dbh = $cms->db()->dbh();
 
-	my $singleTemplate = undef;
-	my $linkedTemplates = undef;
-	
-	if ($cms->confParam("CMS.hasSubsites")) {
-		# Загружаем список подсайтов, для которых можем создавать аналогичные страницы, по признаку связанности шаблона
-		my $sql = "select	
-				ng_tmpllink.subsite_id as subsite_id,
-				ng_tmpllink.template_id as template_id,
-				ng_templates.name as template_name,
-				ng_templates.subptmplgid,
-				ng_templates.print_template,
-				ng_templates.modulecode
-			from
-				ng_tmpllink,ng_templates
-			where
-				ng_templates.id = ng_tmpllink.template_id 
-				and ng_tmpllink.link_id = (select link_id from ng_templates where id = ?)";
+        #TODO: прототип.
+        foreach my $subsiteId (keys %{$newSubpages}) {
+            my $page = $newSubpages->{$subsiteId};
+            $page->{PAGEROW}->{template} = $variant->{template} if $variant->{template};
+            $page->{PAGEROW}->{print_template} = $variant->{print_template} if $variant->{print_template};
+            $page->{PAGEROW}->{module_id} = $module_id;
+            $page->{PAGEROW}->{subptmplgid} = $variant->{subptmplgid} if $variant->{subptmplgid};
+            $page->{PAGEROW}->{page_type} = $variant->{PAGETYPE} if $variant->{PAGETYPE} && $NG::SiteStruct::config::hasPageType;
+            $page->{ACTIVE} = 1;
+        };
+        return 1;
+    };
 
-		my $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
-		$sth->execute($variant->{TEMPLATE_ID}) or return $cms->error($DBI::errstr);
-		$linkedTemplates = $sth->fetchall_hashref(['subsite_id']);
-		$sth->finish();
-	};
+    my $dbh = $cms->dbh();
 
-	unless (scalar keys %{$linkedTemplates}) {
-		$linkedTemplates = undef;
-		my $lsth = $dbh->prepare("select id as template_id,name as template_name,subptmplgid,template,print_template,modulecode from ng_templates where id = ?") or return $cms->error($DBI::errstr); 
-		$lsth->execute($variant->{TEMPLATE_ID}) or return $cms->error($DBI::errstr);
-		$singleTemplate = $lsth->fetchrow_hashref();
-		$lsth->finish();
-	};
-	
-	foreach my $subsiteId (keys %{$newSubpages}) {
+    my $singleTemplate = undef;
+    my $linkedTemplates = undef;
+
+    if ($cms->confParam("CMS.hasSubsites")) {
+        # Загружаем список подсайтов, для которых можем создавать аналогичные страницы, по признаку связанности шаблона
+        my $sql = "select
+                ng_tmpllink.subsite_id as subsite_id,
+                ng_tmpllink.template_id as template_id,
+                ng_templates.name as template_name,
+                ng_templates.subptmplgid,
+                ng_templates.print_template,
+                ng_templates.modulecode
+            from
+                ng_tmpllink,ng_templates
+            where
+                ng_templates.id = ng_tmpllink.template_id 
+                and ng_tmpllink.link_id = (select link_id from ng_templates where id = ?)";
+
+        my $sth=$dbh->prepare($sql) or return $cms->error($DBI::errstr);
+        $sth->execute($variant->{TEMPLATE_ID}) or return $cms->error($DBI::errstr);
+        $linkedTemplates = $sth->fetchall_hashref(['subsite_id']);
+        $sth->finish();
+    };
+
+    unless (scalar keys %{$linkedTemplates}) {
+        $linkedTemplates = undef;
+        my $lsth = $dbh->prepare("select id as template_id,name as template_name,subptmplgid,template,print_template,modulecode from ng_templates where id = ?") or return $cms->error($DBI::errstr); 
+        $lsth->execute($variant->{TEMPLATE_ID}) or return $cms->error($DBI::errstr);
+        $singleTemplate = $lsth->fetchrow_hashref();
+        $lsth->finish();
+    };
+
+    foreach my $subsiteId (keys %{$newSubpages}) {
         my $page = $newSubpages->{$subsiteId};
-	
-		$page->{ACTIVE} = 1;
-		my $template = undef;
-		if (exists $linkedTemplates->{$subsiteId}) {
-			$template = $linkedTemplates->{$subsiteId};
-		}
-		elsif ($singleTemplate) {
-			$template = $singleTemplate;
-		}
-		else {
-			$page->{ACTIVE} = 0;
-			$page->{MESSAGE} ||= "Отсутствует шаблон для добавляемой страницы";
-		};
-		$page->{ATTRIB}->{VARIANT_NAME} = $template->{template_name};
-		$page->{PAGEROW}->{template} = $template->{template};
-		$page->{PAGEROW}->{print_template} = $template->{print_template};
-		$page->{PAGEROW}->{subptmplgid} = $template->{subptmplgid};
-		
-		if ($template->{modulecode}) {
-		    my $mRow = $cms->getModuleRow("code=?",$template->{modulecode}) or return $cms->defError("processNewSubpages():","Запрошенный модуль '".$template->{modulecode}."' не найден");
-		    $page->{PAGEROW}->{module_id} = $mRow->{id};
-		};
-	};
-	return 1; #TODO: change this ?
+
+        $page->{ACTIVE} = 1;
+        my $template = undef;
+        if (exists $linkedTemplates->{$subsiteId}) {
+            $template = $linkedTemplates->{$subsiteId};
+        }
+        elsif ($singleTemplate) {
+            $template = $singleTemplate;
+        }
+        else {
+            $page->{ACTIVE} = 0;
+            $page->{MESSAGE} ||= "Отсутствует шаблон для добавляемой страницы";
+        };
+        $page->{ATTRIB}->{VARIANT_NAME} = $template->{template_name};
+        $page->{PAGEROW}->{template} = $template->{template};
+        $page->{PAGEROW}->{print_template} = $template->{print_template};
+        $page->{PAGEROW}->{subptmplgid} = $template->{subptmplgid};
+
+        if ($template->{modulecode}) {
+            my $mRow = $cms->getModuleRow("code=?",$template->{modulecode}) or return $cms->defError("processNewSubpages():","Запрошенный модуль '".$template->{modulecode}."' не найден");
+            $page->{PAGEROW}->{module_id} = $mRow->{id};
+        };
+    };
+    return 1; #TODO: change this ?
 };
 
 
 
 sub initialisePage {
-	my $self = shift;
-=head	
+    my $self = shift;
+=head
 	$self->initPageStructure({
 		BUILD_EDITABLEBLOCKS=>1,
 		SKIP_BLOCKPRIVS =>1,
