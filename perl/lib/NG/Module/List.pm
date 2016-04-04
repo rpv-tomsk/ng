@@ -1360,9 +1360,9 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
     my $dbh = $self->db()->dbh();
     my $sc = $self->{_searchconfig} or return {};
     $sc->{SUFFIXMASK} ||= "";
-    
+
     return {} unless $self->isMaskMatchSuffix($sc->{SUFFIXMASK},$suffix);
-        
+
     return $self->error("Отсутвует значение категории индекса в конфигурации поиска") unless defined $sc->{CATEGORY};
 
     my $rFunc = undef;  #Метод, строящий индекс, если задан параметр RFUNC.
@@ -1381,7 +1381,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
     }
     else {
         return $self->error('_getIndexes(): Без указания параметра RFUNC использование параметра RFUNCFIELDS невозможно.') if exists $sc->{RFUNCFIELDS};
-        return $self->error('Не указаны свойства CLASSES или RFUNC в конфигурации поиска.');
+        return $self->error('Не указан параметр CLASSES или RFUNC в конфигурации поиска.');
     };
 
     #Формируем значения ключа индекса
@@ -1410,10 +1410,10 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
     $index->{SUFFIX} = $suffix;
     #Помечает, что к этому индексу нельзя пристыковывать другие индексы, если он пуст.
     $index->{REQUIRED} = 1 if $sc->{REQUIRED};
-    
+
     #Получаем значения ключевых полей из суффикса
     my $keyValues = $self->getKeyValuesFromSuffixAndMask($suffix,$sc->{SUFFIXMASK});
-    
+
     my $fieldObjs = {};
     #Заполняем ключевые поля данными. Обрабатываем поля типа id, filter, fkparent.
     #Частично этот процесс подобен вызову processFKFIelds(), но тот обычно берет данные для fkparent из $q.
@@ -1431,18 +1431,18 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             $self->pushWhereCondition($field->{FIELD}."=?",$v);
         }
         else {
-            return $self->error("Поле ".$field->{FIELD}." не является fkparent или id. Значение ключа из суффикса не может быть игнорировано") unless exists $sc->{'SUFFIXFIELD'};
+            return $self->error("Поле ".$field->{FIELD}." не является fkparent или id. Значение ключа из суффикса не может быть игнорировано") unless exists $sc->{SUFFIXFIELD} && exists $sc->{SUFFIXFIELD}->{$field->{FIELD}};
             if ($sc->{'SUFFIXFIELD'}->{$field->{FIELD}} eq "ignore") {
-               #
+                 #
             }
             elsif ($sc->{'SUFFIXFIELD'}->{$field->{FIELD}} eq "check") {
-              $self->pushWhereCondition($field->{FIELD}."=?",$v);
+                $self->pushWhereCondition($field->{FIELD}."=?", $v);
             }
             else {
-              return $self->error("Поле ".$field->{FIELD}." не является fkparent или id. Значение ключа из суффикса не может быть игнорировано.А еще SUFFIXFIELD какой-то не понятный :).");
+                return $self->error("Поле ".$field->{FIELD}." не является fkparent или id. Значение ключа из суффикса не может быть игнорировано.");
             };
         };
-        
+
         #Добавляем в список полей поля, описанные в суффиксе.
         #Их значения могут пригодиться в обработчиках, используются при обратном формировании суффикса.
         $fieldObjs->{$field->{FIELD}} = 1;
@@ -1509,7 +1509,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             };
         };
     };
-    
+
     # Обрабатываем классы
     # Формируем список полей, на основе которых будем строить индекс
     # Вызываем нестрочные функции/методы
@@ -1570,14 +1570,13 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             };
         };
     };
-    
-    
+
     #Догружаем требуемые поля из свойств страницы
     if (scalar keys %{$pFields}) {
         my $sqlfields = join(',',keys %{$pFields});
         $sqlfields =~ s/,$//;
         my $sql = "select $sqlfields from ng_sitestruct where id=?";
-        my $row = $self->db()->dbh()->selectrow_hashref($sql,undef,$self->getPageId()) or return $self->showError("_getIndexes(): Ошибка получения свойств страницы: ".$DBI::errstr);
+        my $row = $self->dbh()->selectrow_hashref($sql,undef,$self->getPageId()) or return $self->showError("_getIndexes(): Ошибка получения свойств страницы: ".$DBI::errstr);
         foreach my $field (keys %{$pFields}) {
             $pFieldValues->{$field} = $row->{$field};
         };
@@ -1588,11 +1587,9 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
     my $beforeData = {}; # $beforeData->{$class}
     foreach my $class (keys %{$sc->{CLASSES}}) {
         my $ccfg = $sc->{CLASSES}->{$class};
-        
         my $state = 0; # (0,1,2) == (before,data,after)
-       
         my $classData = [];
-        
+
         foreach my $param (@{$ccfg}) {
             my $loop = 0;
             if (exists $param->{FIELD} || exists $param->{RFUNC}) {
@@ -1604,16 +1601,16 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             else {
                 return $self->showError("_getIndexes(): Неизвестный тип правила формирования класса в параметре CLASS.$class");
             };
-            
+
             if ($state == 0 && $loop == 1) {
                 $state = 1;
             }
             elsif ($state == 1 && $loop == 0) { # $state == 1 || $loop == 0
                 $state = 2;
             };
-            
+
             return $self->showError("_getIndexes(): Не могу сгруппировать правила класса $class") if ($state == 2 && $loop == 1);
-            
+
             if ($state == 0 || $state == 2)  {
                 my $v = "";
                 if (exists $param->{PFIELD}) {
@@ -1660,18 +1657,18 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
         $fieldObjs->{$field} = NG::Field->new($fh, $self) or return $self->error("Ошибка создания объекта поля $field");
     };
     $sqlfields =~ s/,$//;
-    
+
     my $table = $self->getListSQLTable();
     my $where = $self->getListSQLWhere();
     $where = ($where)?"where $where":"";
     my $order = $sc->{ORDER};
     $order = "order by $order" if $order;
     $order ||= "";
-    
+
     my $sql = "select $sqlfields from $table $where $order";
     my $sth = $dbh->prepare($sql) or return $self->error($DBI::errstr);
     $sth->execute($self->getListSQLValues()) or return $self->error($DBI::errstr);
-    #die "ooops!!!";
+
     while (my $row=$sth->fetchrow_hashref()) {
         # Вызываем фильтровую функцию
         if ($filterRFunc) {
@@ -1687,7 +1684,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
                 next;
             };
         };
-        
+
         #Проверяем фильтры
         my $allowed = 1;
         foreach my $ffield (keys %{$filterFValues}) {
@@ -1705,7 +1702,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             };
         };
         next unless $allowed;
-        
+
         #Строим строковый индекс
         if ($rFunc) {
             my $rowindex = undef;
@@ -1781,7 +1778,7 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
         };
     };
     $sth->finish();
-    
+
     #Возвращаем "пустой" индекс, с заполненными ключами KEYS / CATEGORY / SUFFIX / REQUIRED и пустым DATA
     return $index unless scalar keys %{$index->{DATA}};
 
@@ -1790,15 +1787,15 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
         $index->{DATA}->{$class} = " ".$index->{DATA}->{$class} if ($index->{DATA}->{$class});
         $index->{DATA}->{$class} = $beforeData->{$class}.$index->{DATA}->{$class};
     };
-    
+
     foreach my $class (keys %{$afterData}) {
         next unless $afterData->{$class};
         $index->{DATA}->{$class} .= " " if ($index->{DATA}->{$class});
         $index->{DATA}->{$class} .= $afterData->{$class};
     };
-    
+
     return $index;
-};
+}; # getBlockIndex
 
 ##  /Код, ответственный за индексирование блока
 
