@@ -13,8 +13,6 @@ use vars qw(@ISA);
 
 $NG::Module::Record::VERSION = 0.5;
 
-
-
 sub init {
     my $self = shift;
     $self->SUPER::init(@_);
@@ -232,23 +230,15 @@ sub showPageBlock  {
     else {
         return $self->showError('Invalid action. Wrong actions configuration.');
     };
-};
+}; # showPageBlock
 
-
-sub searchConfig {
-    my $self = shift;
-    $self->{_searchconfig} = shift;
-}
-
+# Methods for override
 sub checkData {
-	my $self = shift;
-	my $form = shift;
-    my $action = shift;
-	# Method for override
+    my ($self, $form, $action) = (shift, shift, shift);
+    # Method for override
     return NG::Block::M_OK;
 };
 
-# Methods for override
 sub beforeInsert { my $self = shift; my $form = shift; return NG::Block::M_OK; };
 sub afterInsert  { my $self = shift; my $form = shift; return NG::Block::M_OK; };
 sub beforeUpdate { my $self = shift; my $form = shift; return NG::Block::M_OK; };
@@ -274,27 +264,26 @@ sub getReference {
     return $ref;
 };
 
-
 sub _pushFields {
     my $self = shift;
     my $array = shift;
 
-   	my $ref = $_[0]; 
-	if (!defined $ref) { die "Parameter not specified in \$NG::Module::List->$array()."; }; #TODO: fix msg
-    
-	if (ref $ref eq 'HASH') {
-		foreach my $tmp (@_) {
+    my $ref = $_[0]; 
+    if (!defined $ref) { die "Parameter not specified in \$NG::Module::Record->$array()."; }; #TODO: fix msg
+
+    if (ref $ref eq 'HASH') {
+        foreach my $tmp (@_) {
             push @{$self->{$array}}, $tmp;
-		};
-	}
-	elsif (ref $ref eq 'ARRAY') {
-		foreach my $tmp (@{$ref}) {
+        };
+    }
+    elsif (ref $ref eq 'ARRAY') {
+        foreach my $tmp (@{$ref}) {
             if (ref $tmp ne "HASH") { die "Invalid type" }; #TODO: fix msg
-			push @{$self->{$array}}, $tmp;
-		};
-	}
+            push @{$self->{$array}}, $tmp;
+        };
+    }
     else {
-        die "NG::Module::List->fields(): invalid parameter type."; #TODO: fix msg
+        die "NG::Module::Record->fields(): invalid parameter type."; #TODO: fix msg
     };
 };
 
@@ -449,32 +438,28 @@ sub adminBlock {
 };
 
 sub pageBlockAction {
-    my $self    = shift;
-	my $is_ajax = shift;
+    my ($self, $is_ajax) = (shift, shift);
     return $self->run_actions($is_ajax);
-}
+};
 
 sub blockAction {
-    my $self    = shift;
-	my $is_ajax = shift;
+    my ($self, $is_ajax) = (shift, shift);
     return $self->run_actions($is_ajax);
-}
-
+};
 
 sub destroyPageBlock {
     my $self = shift;
     $self->_analyseFieldTypes() or return $self->showError();
     return $self->error("Модуль ".(ref $self)." не поддерживает работу в режиме модуля страницы.") unless $self->{_pageBlockMode};
     return $self->_destroyBlock();
-}
+};
 
 sub destroyLinkBlock {
     my $self = shift;
     $self->_analyseFieldTypes() or return $self->showError();
-    return $self->error() unless $self->{_linkBlockMode};
     return $self->error("Модуль ".(ref $self)." не поддерживает работу в режиме модуля группы страниц.") unless $self->{_linkBlockMode};
     return $self->_destroyBlock();
-}
+};
 
 sub _destroyBlock {
     my $self = shift;
@@ -496,8 +481,8 @@ sub _destroyBlock {
             };
         };
         return $self->error("Ошибка в конфигурации модуля: отсутствуют ключевые поля") unless $where;
-        $where  =~ s/and$//;    
-        
+        $where  =~ s/and$//;
+
         #Запрашиваем список страниц
         my $sth = $dbh->prepare("select $subpageField->{FIELD} from $self->{_table} where $where order by $subpageField->{FIELD}") or return $self->showerror($DBI::errstr);
         $sth->execute(@keys) or return $self->showerror($DBI::errstr);
@@ -635,7 +620,14 @@ sub _analyseFieldTypes {
         if ($has_subsiteId && ($has_pageLinkId || $has_parentLinkId));
         
     return NG::Block::M_OK;
-}
+}; # _analyseFieldTypes
+
+### Индексирование контента (поиск по сайту)
+
+sub searchConfig {
+    my $self = shift;
+    $self->{_searchconfig} = shift;
+};
 
 sub _reindexContent {
     my $self = shift;
@@ -1035,35 +1027,31 @@ sub getBlockIndex {
     };
     $sth->finish();
     return $index;
-};
+}; # getBlockIndex
 
 sub getField {
-	my $self = shift;
-	my $fieldname = shift;
+    my ($self, $fieldname) = (shift, shift);
 
     return {NAME=>"№",TYPE=>"_counter_"} if ($fieldname eq "_counter_");
-    
-	foreach my $field (@{$self->{_fields}}) {
-		if ($field->{FIELD} eq $fieldname)  {
-			return $field;
-			last;
-		}
-	}
-	return undef;
-} 
+
+    foreach my $field (@{$self->{_fields}}) {
+        return $field if $field->{FIELD} eq $fieldname;
+    };
+    return undef;
+};
 
 sub _makeEvent {
     my $self = shift;
     my $ename = shift;
     my $eopts = shift;
-            
+
     my $event = NG::Module::Record::Event->new($self,$ename,$eopts);
     $self->cms()->processEvent($event);
 };
 
 sub blockPrivileges {
     return undef;
-}
+};
 
 return 1;
 END{};
