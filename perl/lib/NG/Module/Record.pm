@@ -640,11 +640,10 @@ sub _reindexContent {
         return $cms->showError() if ($cms->getError() ne "");
         
         my $mObj = $self->getModuleObj();
-        return $self->error("moduleObj ".ref($mObj)." has no updateSearchIndex() method") unless $mObj->can("updateSearchIndex");
-        return $mObj->updateSearchIndex($suffix);
+        return $self->cms->updateSearchIndex($mObj, $suffix, $self->{_searchconfig}->{FLAGS});
     };
     1;
-};
+}; # _reindexContent
 
 sub getBlockIndex {
     my $self = shift;
@@ -759,6 +758,20 @@ sub getBlockIndex {
             return $self->error('Некорректное значение свойства FILTER в конфигурации поиска');
         }
         foreach my $filter (@{$filters}) {
+            if (exists $filter->{SUBSITES}) {
+                my $values = $filter->{SUBSITES};
+                return $self->error('Некорректное значение SUBSITES в параметре FILTER конфигурации поиска') unless ref $values eq 'ARRAY';
+                
+                my $allowed = 0;
+                my $subsiteId = $self->getSubsiteId();
+                foreach my $v (@{$values}) {
+                    if ($subsiteId == $v) {
+                        $allowed = 1;
+                        last;
+                    };
+                };
+                next unless $allowed;
+            };
             if (exists $filter->{FUNC}) {
                 my $fn = $filter->{FUNC};
      

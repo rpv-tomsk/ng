@@ -1570,6 +1570,35 @@ sub getNeighbourBlocks {
     return \@blocks;
 };
 
+### Функции поиска по сайту
+
+sub updateSearchIndex {
+    my ($cms, $sender, $suffix, $flags) = (shift, shift, shift, shift);
+    
+    my $pageRow = $sender->getPageRow();
+    if ($flags->{UPDATE_LINKED_PAGES} && $pageRow->{link_id}) {
+        my $pageFields = $cms->getPageFields();
+        return $cms->error() if $pageFields eq "0"; ##cms->error
+
+        my $sth = $cms->dbh->prepare("SELECT $pageFields FROM ng_sitestruct WHERE link_id=?") or return $cms->error("updateSearchIndex(): Error in linked pages query: ".$DBI::errstr);
+        $sth->execute($pageRow->{link_id}) or return $cms->error("updateSearchIndex(): Error in linked pages query: ".$DBI::errstr);
+
+        while (my $lPageRow = $sth->fetchrow_hashref()) {
+            my $lPageObj = $cms->getPageObjByRow($lPageRow) or return $cms->error("cms->updateSearchIndex(): getPageObjByRow() error.");
+            return $cms->error("moduleObj ".ref($lPageObj)." has no updateSearchIndex() method") unless $lPageObj->can("updateSearchIndex");
+            $lPageObj->updateSearchIndex($suffix) or return $cms->showError("cms->updateSearchIndex(): page->updateSearchIndex() failed");
+        };
+
+        $sth->finish();
+        return 1;
+    };
+    
+    return $cms->error("moduleObj ".ref($sender)." has no updateSearchIndex() method") unless $sender->can("updateSearchIndex");
+    return $sender->updateSearchIndex($suffix);
+    
+    return 1;
+}; # updateSearchIndex
+
 ### Функции работы с кешем
 
 =head

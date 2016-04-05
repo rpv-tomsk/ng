@@ -64,6 +64,9 @@ branches/ng6
     * В рамках поддержки актуальных версий HTML::Template::Compiled в админке NG::Block->opentemplate() включена case_sensitive=1.
     * Таблица ng_ftsindex - добавлено поле disabled для упрощения запроса на странице поиска (убрано связывание с ng_sitestruct по link,link+lang).
       См. файл docs/ng_ftsindex_disabled.pg.sql
+    * Изменена работа механизма индексирования контента (для поиска по сайту).
+      Индексирование теперь поддерживается на уровне CMS (метод cms->updateSearchIndex()).
+      Добавлена поддержка флагов, реализован флаг UPDATE_LINKED_PAGES.
 
     * Добавлено поле modulecode в ng_templates, для возможности создавать модульные страницы. SQL:
           ALTER TABLE public.ng_templates ADD COLUMN modulecode VARCHAR(25);

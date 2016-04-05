@@ -1342,13 +1342,11 @@ sub _makeEvent {
 ##
 
 sub _updateIndex {
-    my $self = shift;
-    my $suffix = shift;
+    my ($self, $suffix) = (shift, shift);
 
     my $mObj = $self->getModuleObj();
-    return $self->error("moduleObj ".ref($mObj)." has no updateSearchIndex() method") unless $mObj->can("updateSearchIndex");
-    return $mObj->updateSearchIndex($suffix);
-};
+    return $self->cms->updateSearchIndex($mObj, $suffix, $self->{_searchconfig}->{FLAGS});
+}; # _updateIndex
 
 sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созданном с нуля объекте.
     my $self = shift;
@@ -1466,6 +1464,20 @@ sub getBlockIndex {   #Вызывается из NG::PageModule->updateSearchIndex() на созд
             return $self->error('Некорректное значение свойства FILTER в конфигурации поиска');
         }
         foreach my $filter (@{$filters}) {
+            if (exists $filter->{SUBSITES}) {
+                my $values = $filter->{SUBSITES};
+                return $self->error('Некорректное значение SUBSITES в параметре FILTER конфигурации поиска') unless ref $values eq 'ARRAY';
+                
+                my $allowed = 0;
+                my $subsiteId = $self->getSubsiteId();
+                foreach my $v (@{$values}) {
+                    if ($subsiteId == $v) {
+                        $allowed = 1;
+                        last;
+                    };
+                };
+                next unless $allowed;
+            };
             if (exists $filter->{FUNC}) {
                 my $fn = $filter->{FUNC};
                 return $self->showError("_getIndexes(): Класс не содержит метода $fn, описанного в параметре FILTER.FUNC") unless $self->can($fn);
