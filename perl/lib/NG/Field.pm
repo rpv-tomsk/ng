@@ -641,7 +641,7 @@ sub searchIndexValue {
     my $field = shift;
     
     my $type = $field->type();
-    return strip_tags($field->{VALUE}) if $type eq 'rtffile' || $type eq 'rtf';
+    return unhtmlspecialchars strip_tags $field->{VALUE} if $type eq 'rtffile' || $type eq 'rtf';
     die 'NG::Field::searchIndexValue(): Unable to index checkbox' if $type eq 'checkbox';
     return $field->{VALUE};
 };
