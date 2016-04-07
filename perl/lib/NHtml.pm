@@ -177,6 +177,9 @@ sub unhtmlspecialchars {
 	$str =~ s/&#039;/\'/g;
 	$str =~ s/&quot;/\"/g;
 	$str =~ s/&amp;/\&/g;
+	$str =~ s/&laquo;/«/g;
+	$str =~ s/&raquo;/»/g;
+	$str =~ s/&nbsp;/ /g;
 	return $str;
 };
 
