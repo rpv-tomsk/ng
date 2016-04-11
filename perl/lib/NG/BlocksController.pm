@@ -461,7 +461,7 @@ sub getBlockContent {
 #NG::Profiler::saveTimestamp("getBlockContent_".ref($block->{MODULEOBJ})."_".$block->{ACTION},"getBContent");
     
     if (!defined $c || ($c && ref $c ne "NG::BlockContent")) {
-        return $cms->error("getBlockContent() блока ".$block->{CODE}." вернул некорректный возврат ");
+        return $cms->error("getBlockContent() блока '".$block->{CODE}."' вернул некорректный возврат ");
     };
     $block->{CONTENT} = $c;
     return $c;
@@ -471,26 +471,29 @@ sub getBlockContentText {
     my $self = shift;
     my $block = shift;
     
-    my $cms = $self->cms();
-    my $code = $block->{CODE};
-    
     my $c = $self->getBlockContent($block);
-    if (!defined $c || ($c && ref $c ne "NG::BlockContent")) {
-        warn "Incorrect response for getBlockContent() block $code";
-        return "[BLOCK $code RETURNS INVALID RESPONSE]";
+    
+    return $self->_getBlockContentText($c, $block->{CODE});
+};
+
+sub _getBlockContentText {
+    my ($self, $blockContent, $code) = (shift, shift, shift);
+
+    $code ||= 'UNKNOWN';
+
+    if (!defined $blockContent || $blockContent eq 0 || $blockContent->is_error()) {
+        my $e = "";
+        $e = $self->cms->getError() if defined $blockContent && $blockContent eq 0;
+        $e = $blockContent->getError() if $blockContent;
+        $e = 'blockContent is undef or exception occured' if !defined $blockContent;
+        warn "Block '$code' has error: $e";
+        return "[ERROR PROCESSING BLOCK '$code']";
     };
-    if ($c eq 0 || $c->is_error()) {
-		my $e = "";
-        $e = $self->cms->getError() if $c eq 0;
-        $e = $c->getError() if $c;
-        warn "Block $code has error $e";
-        return "[ERROR PROCESSING BLOCK $code]";
+    if (!$blockContent->is_output()) {
+        warn "Block '$code' return unsupported response";
+        return "[BLOCK '$code' RETURNS UNSUPPORTED RESPONSE]";
     };
-    if (!$c->is_output()) {
-        warn "Block $code return unsupported response";
-        return "[BLOCK $code UNSUPPORTED RESPONSE]";
-    };
-    return $c->getOutput();
+    return $blockContent->getOutput();
 };
 
 sub requestCacheKeys {
@@ -839,22 +842,79 @@ sub _getTmplBlockContent {
     my $self = shift;
     my $blockCode = shift;
     my $isPlugin = shift || 0;
+    
+    my $cms = $self->cms();
 
     my $block = $self->{_hblocks}->{$blockCode};
+    my $newTmplBlock = 0;
     unless ($block) {
         $self->{_tmplAttached} = 0;  #Disabled block unregistration process due to possible errors from new block
-        my $e = $self->_regTmplBlock($blockCode,$isPlugin);
-        return $e if $e;
-        $block = $self->{_hblocks}->{$blockCode};
+        $newTmplBlock = 1;           #This block is new for this template
+
+        $block = $cms->getBlock($blockCode);
+        return "[".$cms->getError()."]" if defined $block && $block eq "0";
+        
+        unless ($block) {
+            if ($isPlugin) {
+                warn "Plugin '$blockCode' not found for template '".$self->{_tmplFile}."'";
+                return "[Плагин '$blockCode' не найден]";
+            };
+            if ($blockCode !~ /^([^_]+)_(.*)$/) {
+                warn "Block name '$blockCode' is not valid for MODULES in template '".$self->{_tmplFile}."'";
+                return "[Некорректное имя ключа для переменной MODULES: $blockCode]";
+            };
+            my ($moduleCode, $action) = ($1, $2);
+            #$cms->registerBlock($moduleCode, $action) or return "[".$cms->getError()."]";
+            
+            #Готового блока не нашли, пытаемся создать 
+            my $moduleRow = $cms->getModuleRow("code=?", $moduleCode);
+            unless ($moduleRow) {
+                warn "Module '$moduleCode' not found while registering block '$blockCode'";
+                return $cms->getError("[Модуль '$moduleCode' не найден для блока '$blockCode']");
+            };
+            my $blockId = $cms->db()->get_id("ng_blocks");
+            warn "Registering block record for block '$blockCode' in template '".$self->{_tmplFile}."'";
+            $cms->dbh()->do("insert into ng_blocks (id, name,code, module_id, action, type) values (?,?,?,?,?,?)", undef, $blockId, 'Auto', $blockCode, $moduleRow->{id}, $action, 0) or return "[Ошибка создания блока '$blockCode': ".$DBI::errstr."]";
+            
+            #Блок создан.
+            $block = $cms->getBlock($blockCode);
+            return "[".$cms->getError()."]" if defined $block && $block eq "0";
+            return "[Ошибка регистрации блока '$blockCode']" unless defined $block;
+        };
+        
+        return "[Блок $blockCode не является плагином]" if $isPlugin  && $block->{TYPE} != 1;
+        return "[Блок $blockCode не является модулем]"  if !$isPlugin && $block->{TYPE} != 0;
+        
+        $block->{SOURCE}="tmpl";
+        $self->_pushBlock($block) or return "[".$cms->getError()."]";
     };
     
     warn "Block $blockCode is not loaded from a template. Source: ".$block->{SOURCE} if ($block->{SOURCE} ne "tmpl");
     warn "Block $blockCode requested from PLUGINS but it is MODULE" if $isPlugin &&  $block->{TYPE}!=1;
     warn "Block $blockCode requested from MODULES but it is PLUGIN" if !$isPlugin && $block->{TYPE}!=0;
     
+    my $blockContent;
+    my $ret = eval {
+        $blockContent = $self->getBlockContent($block);
+        1;
+    };
+    if (!$ret && $cms->debug()) {
+        if (my $e = NG::Exception->caught($@)) {
+            return $e->getText();
+        }
+        else {
+            return $@;
+        };
+    };
+    
+    if ($newTmplBlock && $blockContent && $blockContent->is_output()) {
+        my $e = $self->_regTmplBlock($block);
+        return $e if $e;
+    };
+    
     $self->{_usedBCodes}->{$blockCode} = 1;
     
-    return $self->getBlockContentText($block);
+    return $self->_getBlockContentText($blockContent, $blockCode);
 };
 
 sub splitRegions {
@@ -913,59 +973,15 @@ sub getRegionsContent {
 };
 
 sub _regTmplBlock {
-    my $self = shift; 
-    my $bCode = shift;
-    my $isPlugin = shift;
-     
-    my $cms = $self->cms;
-    my $dbh = $cms->dbh();
-     
-    my $block = $cms->getBlock($bCode);
-    return "[".$cms->getError()."]" if defined $block && $block eq "0";
-     
-    if ($block) { 
-        #Do nothing
-    } 
-    elsif ($isPlugin) {
-        warn "Plugin $bCode not found for template '".$self->{_tmplFile}."'";
-        return "[Плагин $bCode не найден]";
-    } 
-    else { 
-        #unless ($block || $isPlugin) 
-        unless ($bCode =~ /^([^_]+)_(.*)$/) {
-            warn "Block $bCode name is not valid for MODULES in template '".$self->{_tmplFile}."'";
-            return "[Некорректное имя ключа для переменной MODULES: $bCode]";
-        }; 
-        my $code = $1;    # Код модуля
-        my $action = $2;
-        
-        #Готового блока не нашли, пытаемся создать 
-        my $moduleRow = $cms->getModuleRow("code=?",$code);
-        unless ($moduleRow) {
-            warn "Module $code not found while registering block $bCode";
-            return $cms->getError("[Модуль $code не найден для блока $bCode]");
-        };
-        my $blockId = $cms->db()->get_id("ng_blocks");
-        warn "Registering block record for block $bCode in template '".$self->{_tmplFile}."'";
-        $dbh->do("insert into ng_blocks (id, name,code, module_id, action, type) values (?,?,?,?,?,?)", undef, $blockId, 'Auto', $bCode, $moduleRow->{id}, $action, 0) or return "[Ошибка создания блока $bCode: ".$DBI::errstr."]";
-        
-        $block = $cms->getBlock($bCode);
-        return "[".$cms->getError()."]" if defined $block && $block eq "0";
-    }; 
-     
-    return "[Блок $bCode не является плагином]" if $isPlugin  && $block->{TYPE} != 1;
-    return "[Блок $bCode не является модулем]"  if !$isPlugin && $block->{TYPE} != 0;
-     
+    my ($self, $block) = (shift, shift);
+    
     if ($NG::BlocksController::config::skipBlockToTemplateRegistration) {
-        warn "Block $bCode does not registered into template '$self->{_tmplFile}' due to skipBlockToTemplateRegistration=1 flag.";
+        warn "Block '".$block->{CODE}."' does not registered into template '$self->{_tmplFile}' due to skipBlockToTemplateRegistration=1 flag.";
     }
     else {
-        warn "Block $bCode found, registering it into template '$self->{_tmplFile}'";
-        $dbh->do("insert into ng_tmpl_blocks (template, block_id) values (?,?)", undef, $self->{_tmplFile}, $block->{ID}) or return $DBI::errstr;
+        warn "Block '".$block->{CODE}."' found, registering it into template '$self->{_tmplFile}'";
+        $self->dbh->do("insert into ng_tmpl_blocks (template, block_id) values (?,?)", undef, $self->{_tmplFile}, $block->{ID}) or return $DBI::errstr;
     };
-     
-    $block->{SOURCE}="tmpl";
-    $self->_pushBlock($block) or return "[".$cms->getError()."]";
     return "";
 }; 
 
@@ -977,10 +993,7 @@ sub DESTROY {
     return 1 unless $self->{_tmplAttached};
     return 1 if ($self->{_ablock} && scalar @{$self->{_blocks}} == 1);
     return 1 if (scalar @{$self->{_blocks}} == 0);
-    #TODO: Обработать ситуацию, когда в вызове незарегистрированного блока происходит die.
-    #      Тогда часть блоков может быть не вызвана из шаблона, и она будет считаться неиспользуемой.
-    #      Нужно выставлять флажок _inside если вызывается запрос контента незарегистированного блока
-    #      и проверять его в этой процедуре.
+
     unless (scalar keys %{$self->{_usedBCodes}}) {
 my $aBlock = $self->{_ablock};
 $aBlock = "AB ".$aBlock->{CODE} if $aBlock;
