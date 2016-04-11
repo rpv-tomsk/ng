@@ -900,7 +900,7 @@ sub _getTmplBlockContent {
     };
     if (!$ret && $cms->debug()) {
         if (my $e = NG::Exception->caught($@)) {
-            return $e->getText();
+            return '<pre>'.$e->getText().'</pre>';
         }
         else {
             return $@;
