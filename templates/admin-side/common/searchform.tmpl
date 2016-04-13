@@ -46,6 +46,17 @@
 			            </div>
            			</TMPL_IF>
 
+                	<TMPL_IF IS_TEXTAREA>
+			            <div style="width: 100%;padding: 10px;">
+			            <table  style="width: 100%;">
+			            <tr>
+			            <td style="width: 20%; border: none;" ><p><TMPL_VAR NAME></p></td>
+			            <td ><input type="text" name="<TMPL_VAR FIELD>"  value="<TMPL_VAR VALUE ESCAPE=HTML>" class="info_text" style="width: 90%;"></td>
+			            </tr>
+			            </table>
+			            </div>
+           			</TMPL_IF>
+
                 	
                   </TMPL_LOOP>							
                     <div style="text-align: center; padding-bottom: 10px;">		
