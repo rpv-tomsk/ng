@@ -25,6 +25,22 @@ sub loadEmails {
     return \@mails;
 };
 
+sub moduleTabs{
+    my $self=shift;
+
+    return [
+        {HEADER => "Получатели уведомлений", URL=>"/"},
+    ];
+};
+
+sub moduleBlocks{
+    my $self=shift;
+
+    return [
+        {URL => '/',  BLOCK=>"NG::Module::NotifyEmails::Block",    USE=>'NG::Module::NotifyEmails',  OPTS => {byModule => 1}},
+    ];
+};
+
 package NG::Module::NotifyEmails::Block;
 use strict;
 use NG::Module::List;
@@ -41,16 +57,25 @@ sub config {
                                        ## а тот модуль, который вызывает вкладку
     my $opts = $self->opts();
 
+    my ($mCode, $subCode);
+    if ($opts->{byModule} == 1) {
+        $mCode = $mObj->moduleParam('mcode');
+        $subCode = $mObj->moduleParam('subcode');
+        NG::Exception->throw('NG.INTERNALERROR',"Missing 'mcode' param in module row for ".$mObj->getModuleCode()." module.") unless $mCode;
+    }
+    else {
+        $mCode   = $mObj->getModuleCode();
+        $subCode = $self->opts('subcode');
+    };
 #opts:
 #  - subcode - дополнительный фильтр
     
     $self->{_table} = $self->opts('table') || 'ng_emails';
-    my $subCode     = $self->opts('subcode');
     
     my @fields = ();
     push @fields, {FIELD=>'id',    TYPE=>'id',     NAME=>'Код',IS_NOTNULL=>1};
     push @fields, {FIELD=>'email', TYPE=>'email',   NAME=>'E-Mail',IS_NOTNULL=>1,WIDTH=>"100%"};
-    push @fields, {FIELD=>'mcode',  TYPE=>'filter', NAME=>'Filter',IS_NOTNULL=>1,WIDTH=>"100%",VALUE=>$mObj->getModuleCode()};
+    push @fields, {FIELD=>'mcode',  TYPE=>'filter', NAME=>'Filter',IS_NOTNULL=>1,WIDTH=>"100%",VALUE=>$mCode};
     #
     my @formfields = ();
     push @formfields, {FIELD=>'id'};
@@ -66,7 +91,7 @@ sub config {
                 ORDER => 'id',
                 ID_FIELD=>'subcode',
                 WHERE => 'mcode = ?',
-                PARAMS => [$mObj->getModuleCode()],
+                PARAMS => [$mCode],
             },
         };
         $self->filter(
