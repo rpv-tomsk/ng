@@ -2291,7 +2291,7 @@ sub buildSearchWhere {
 		if ($type eq "date" && is_valid_date($field->{VALUE})) {
 			$self->pushSearchCondition($field->{FIELD}."=?",[$self->db()->date_to_db($field->{VALUE})]);
 		};
-		if ($type eq "text") {
+		if ($type eq "text" || $type eq "textarea") {
 			if ($self->db()->isa("NG::DBI::Postgres")) {
 				$self->pushSearchCondition($field->{FIELD}." ilike ?",["%".$field->{VALUE}."%"]);
 			} elsif ($self->db()->isa("NG::DBI::Mysql")) {
