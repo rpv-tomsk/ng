@@ -59,8 +59,6 @@ sub load {
     return $self->error("Некорректная конфигурация фильтра. Не указан источник получения данных (VALUES,SQL или LINKEDFIELD)") unless ($config->{VALUES} || $config->{SQL} || $config->{LINKEDFIELD});
     return $self->error("Некорректная конфигурация фильтра. Одновременное использование опций SQL и LINKEDFIELD запрещено.") if ($config->{SQL} && $config->{LINKEDFIELD});
 
-    my $field = $config->{FIELD};
-    
     my $q = $self->parent()->q();
     $self->{_activeValue} = $q->url_param($config->{FILTER_NAME})||"";
 
@@ -69,7 +67,6 @@ sub load {
     };
     
     if ($config->{SQL}) {
-        return $self->error('Некорректная конфигурация. Отсутствует опция FIELD.') if (!defined $field);
         $self->_loadFilterBySQL() || return $self->error();
     };
         
@@ -170,12 +167,13 @@ sub _loadFilterByValues {
     return 1;
 };
 
-
 sub _loadFilterBySQL {
 	my $self = shift;
 	my $config = $self->config();
     my $field = $config->{FIELD};
     my $prefix = $config->{SQL}->{PREFIX};	
+
+    return $self->error('Некорректная конфигурация фильтра. Отсутствует опция FIELD.') unless defined $field && $field ne '';
 	
 	my $idF   = $config->{SQL}->{ID_FIELD} || "id";
     my $nameF = $config->{SQL}->{NAME_FIELD} || "name";
