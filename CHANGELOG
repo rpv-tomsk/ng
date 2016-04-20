@@ -37,6 +37,9 @@ branches/ng6
       вызывала ошибку.
     * NG::Module::List - исправлена обработка ref. Поддерживается вложенный ref.
     * NG::Module::List - добавлен setListInfo() и переменная шаблона LIST_INFO.
+    * NG::Module::List:
+        Изменен порядок вызова processFKFields() / processFilters()
+        Добавлена возможность выставлять значения полей типа 'filter' из поля LINKEDFIELD конфигурации filter()
     * NG::Module::List, NG::Module::Record - убрана поддержка "старого" варианта конфигурации поискового индекса (DATAINDEXFIELDS, PAGEINDEXFIELDS)
       
     * NG::Module::Record: Добавлен метод updateKeysVersion(), аналогично NG::Module::List.

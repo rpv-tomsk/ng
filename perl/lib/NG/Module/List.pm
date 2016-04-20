@@ -170,8 +170,8 @@ sub buildList {
         push @$listFObjs, $fObj;
     };
     
-    $self->processFKFields() or return $self->showError("buildList(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
     $self->processFilters() or return $self->showError("buildList(): Ошибка вызова processFilters()");
+    $self->processFKFields() or return $self->showError("buildList(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
     $self->processSorting() or return $self->showError("buildList(): Ошибка вызова processSorting()");
     $self->setPagesParam();
     
@@ -425,7 +425,7 @@ sub processForm {
     #Компонуем ссылку, куда отправлять форму
     my $formurl = $self->q()->url()."?action=formaction";
     
-    if ($action eq "insf" || $action eq "updf" || (!$is_ajax && $action eq "formaction")) {
+    if ($action eq "insf" || $action eq "updf" || $fa eq 'insert' || (!$is_ajax && $action eq "formaction")) {
         #Построение ссылки возврата после добавления записи
         $self->processFilters() or return $self->showError("processForm(): Ошибка вызова processFilters()");
         $self->processSorting() or return $self->showError("processForm(): Ошибка вызова processSorting()");
@@ -499,14 +499,13 @@ sub processForm {
     
     $form->addfields($fs) or return $self->error($form->getError());
     
-    if ($action eq "insf") {
-        #TODO: связываться с фильтрами, подставлять в форму выбранное в фильтре значение в соответствующее поле формы
+    if ($action eq 'insf' || $fa eq 'insert') {
         foreach my $filter (@{$self->{_filters}}) {
             my $v = $filter->fieldValue();
             return $self->showError("processForm(): Ошибка вызова filter->fieldValue().") unless $v;
             next unless scalar keys %$v;
             foreach my $f (keys %$v) {
-                next unless $v->{$f};
+                next unless defined $v->{$f};
                 my $field=$form->_getfieldhash($f);
                 $field->setValue($v->{$f}) if $field;
             };
@@ -1226,8 +1225,8 @@ sub Move {
     
     return $self->error("Некорректный запрос действия: неверно указано направление перемещения") unless ($moveDir eq "down") || ($moveDir eq "up");
     my $posField = $self->getPosField() or return $self->showError("Move(): поле позиционирования не найдено");   
-    $self->processFKFields() or return $self->showError("Move(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
     $self->processFilters()  or return $self->showError("Move(): Ошибка вызова processFilters()");
+    $self->processFKFields() or return $self->showError("Move(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
     $self->processSorting()  or return $self->showError("Move(): Ошибка вызова processSorting()");
     
     die "Internal error:_shlistActiveOrder not defined." unless $self->{_shlistActiveOrder};
@@ -2003,6 +2002,27 @@ sub processFilters {
     my $q = $self->q();
     foreach my $filter (@{$self->{_filters}}) {
         $filter->load() or return 0;
+        my $fv = $filter->fieldValue();
+        return $self->showError("processFilters(): Ошибка вызова filter->fieldValue().") unless $fv;
+        if (scalar keys %$fv) {
+            return $self->showError('processFilters(): Unsupported!') if scalar keys %$fv > 1;
+            my $found = undef;
+            foreach my $field (@{$self->{_fields}}) {
+                next unless $field->{TYPE} eq 'filter';
+                next unless defined $fv->{$field->{FIELD}};
+                $found = $field;
+                last;
+            };
+            if ($found) {
+                if (!is_empty($found->{VALUE})) {
+                    warn "processFilters(): field ${$found->{FIELD}} already has value. Value from filter was ignored!";
+                }
+                else {
+                    $found->{VALUE} = $fv->{$found->{FIELD}};
+                    next;
+                };
+            };
+        };
         $self->pushWhereCondition($filter->getWhereCondition(),$filter->getWhereParams());
     };
     return NG::Block::M_OK;
@@ -2398,8 +2418,8 @@ sub showSearchForm { #Action!
 	#return $self->showError('showSearchForm(): Non-AJAX load not supported') unless $is_ajax;
 	
 	#Если в описании таблицы есть FK, учитываем их в ссылках и SQL (createSearchForm() использует getFKParam() и getFilterParam())
-	$self->processFKFields() or return $self->showError("showSearchForm(): Ошибка вызова processFKFields()");
 	$self->processFilters() or return $self->showError("showSearchForm(): Ошибка вызова processFilters()");
+	$self->processFKFields() or return $self->showError("showSearchForm(): Ошибка вызова processFKFields()");
 	$self->processSorting() or return $self->showError("showSearchForm(): Ошибка вызова processSorting()");
 	
 	my $sform = $self->createSearchForm() or return $self->showError("showSearchForm(): Ошибка вызова createSearchForm()");

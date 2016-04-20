@@ -111,7 +111,7 @@ sub elements {
 
 sub fieldValue {
 	my $self = shift;
-	return {} unless $self->{_activeElement} && $self->{_config}->{LINKEDFIELD};
+	return {} unless $self->{_config}->{LINKEDFIELD} && $self->{_activeElement} && defined $self->{_activeElement}->{CVALUE};
 	return {$self->{_config}->{LINKEDFIELD} => $self->{_activeElement}->{CVALUE}};
 };
 
@@ -128,10 +128,8 @@ sub _loadFilterByValues {
     foreach (@{$config->{VALUES}}) {
         my $name   = $_->{NAME};
         my $where  = $_->{WHERE};
-        my $cvalue = undef;
+        my $cvalue = $_->{VALUE};
         my $fvalue = "pos".$pos++;
-        
-        $cvalue = $_->{VALUE} if exists $_->{VALUE};
         
         if (!defined $where) {
             return $self->error('Некорректная конфигурация фильтра. Отсутствует опция FIELD.') if (!defined $field);
@@ -142,8 +140,6 @@ sub _loadFilterByValues {
         if ($_->{PRIVILEGE}) {
             next unless $self->parent()->hasPriv($_->{PRIVILEGE});
         }
-        
-        $cvalue = [] unless exists $_->{VALUE};
         
         my $filter = {
             NAME =>$name,
@@ -281,6 +277,9 @@ sub _loadFilterByLField {
             $self->{_activeElement}->{SELECTED} = 1;
         };
 	}
+	elsif ($lfield->{TYPE} eq 'filter') {
+		#Do nothing
+	}
 	else {
 		return $self->error("Линкованные поля типов, отличных от fkselect и select еще не поддерживаются."); 
 	};
@@ -305,6 +304,7 @@ sub useForm {
 
 sub getWhereParams {
     my $self = shift;
+    return () unless defined $self->{_activeElement}->{CVALUE};
     return ($self->{_activeElement}->{CVALUE});
 };
 
