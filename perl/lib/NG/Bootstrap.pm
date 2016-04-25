@@ -58,6 +58,7 @@ sub importX {
     };
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
+            warn $e->getText();
             if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
                 CGI::Carp::fatalsToBrowser($e->getText());
             }
@@ -68,6 +69,7 @@ sub importX {
             };
         }
         else {
+            warn $@;
             if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
                 CGI::Carp::fatalsToBrowser($@);
             }
