@@ -2244,10 +2244,12 @@ sub getListSQLFields {
     foreach my $fObj (@$listFObjs) {
         $idfound = 1 if $fObj->{TYPE} eq "id";
         my @fieldDbFields = $fObj->dbFields('load');
+        scalar @fieldDbFields or next;
         $fields .= ',' if $fields && $fields !~ /\,$/;
         $fields .= join(",",@fieldDbFields);
     };
     if ($idfound == 0) {
+        die 'getListSQLField(): Missing id' unless $self->{_idname};
         $fields .= ',' if $fields && $fields !~ /\,$/;
         $fields .= $self->{_idname}; # Если ключевое поле не найдено
     };
