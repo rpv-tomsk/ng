@@ -27,15 +27,12 @@ sub init {
 sub check {
 	my $field = shift;
 	my $cms = $field->cms();
-	my $tObj = $cms->getObject("NGTuring");
-	
-	my $session = $tObj->_getTSession();
-	my $number = $session->param('number');
 	
 	my $value = $field->value();
     if (is_empty($value)) {
         return $field->setErrorByCode("IS_EMPTY");
     };
+    my $tObj = $cms->getObject("NGTuring");
     if ($tObj->checkTuringInput(number => $value) != 1) {
         return $field->setErrorByCode("CODE_NOT_MATCH");
     }
