@@ -194,7 +194,13 @@ sub save {
         my $param = $mailing->{_param};
         $param->{htmlcontent}  ||= '';
         $param->{plaincontent} ||= '';
-        $dbh->do("INSERT INTO ng_mailing (id, module, contentid, subject, html_content,plain_content) VALUES (?,?,?,?,?,?)",undef, $mailing->{_id},$param->{module},$param->{contentid},$param->{subject},$param->{htmlcontent},$param->{plaincontent});
+        $dbh->do("INSERT INTO ng_mailing "
+                ."(id, type, module, contentid, subject, html_content,plain_content)"
+                ." VALUES (?,?,?,?,?,?,?)",
+                undef,
+                $mailing->{_id}, $param->{type}, $param->{module},$param->{contentid},
+                $param->{subject},$param->{htmlcontent},$param->{plaincontent}
+        );
     }
     else {
         die "Not implemented!";
