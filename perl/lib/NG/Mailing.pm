@@ -244,7 +244,7 @@ sub saveRecipients {
             NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): FIO is too long")   if $rec->{fio} && length($rec->{fio}) >= 150;
             
             my @data = (delete $rec->{email}, delete $rec->{fio});
-            my $databytes = undef;
+            my $databytes = '';
             if (scalar keys %$rec) {
                 $databytes = encode_json($rec);
                 NG::Exception->throw('NG.INTERNALERROR', "Mailing->saveRecipients(): Data too long") if length($databytes) >= 1000;
@@ -375,6 +375,7 @@ sub _fillNMailer {
         my $tmpl = $mtype->{layout};
         my $layout = $cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$tmpl,debug_file=>0});
         $layout->param(
+            RCPT     => $rcpt,
             USERDATA => $userdata,
             CONTENT  => $param->{htmlcontent},
         );
@@ -390,6 +391,7 @@ sub _fillNMailer {
         my $tmpl = $mtype->{plain_layout};
         my $layout = $cms->gettemplate(undef,{tagstyle=>['tt'],scalarref=>\$tmpl,debug_file=>0});
         $layout->param(
+            RCPT     => $rcpt,
             USERDATA => $userdata,
             CONTENT  => $param->{plaincontent},
         );
