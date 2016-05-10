@@ -162,6 +162,7 @@ sub addHTMLPart {
             my $cid = $images{$url};
             my $fpath = $url;
             $fpath =~ s/\%20/ /g;
+            next unless -e $baseDir.$fpath && -r $baseDir.$fpath && -s $baseDir.$fpath;
             $multiPart->attach(
                 Type => "AUTO",
                 Id   => "Image".$cid,
