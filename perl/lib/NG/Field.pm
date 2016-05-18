@@ -3,6 +3,7 @@ use strict;
 use NSecure;
 use NGService;
 
+use Scalar::Util();
 use File::Copy;
 use File::Path;
 use NHtml;
@@ -113,6 +114,7 @@ sub new {
     
     bless $field, $class;
     $field->{_parentObj} = $parentobj;
+    Scalar::Util::weaken($field->{_parentObj});
     $field->init(@_) or return undef;
     $field->setValue($config->{VALUE}) if exists $config->{VALUE};
     return $field; 
