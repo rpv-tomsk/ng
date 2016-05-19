@@ -7,15 +7,16 @@ use NSecure;
 use NGService;
 our @ISA = qw(NG::PageModule);
 
-our $UID_COOKIENAME = 'uid';
-our $UID_COOKIELIFE = '+3M';
-our $UID_KEY         = '';
-our $UID_STATIC_SALT = '';
+#$NG::Polls::config::UID_COOKIENAME  = 'uid';
+#$NG::Polls::config::UID_COOKIELIFE  = '+3M';
+#$NG::Polls::config::UID_KEY         = '';
+#$NG::Polls::config::UID_STATIC_SALT = '';
 
 our $DEFAULT_HANDLERS = [
     {CANVOTE=>'checkIP_canvote',  CANVOTE_SHOW=>'checkIP_canvote',  DELETE=>'checkIP_delete',  VOTE=>'checkIP_vote'},
     {CANVOTE=>'checkUID_canvote', CANVOTE_SHOW=>'checkUID_canvote', DELETE=>'checkUID_delete', VOTE=>'checkUID_vote'},
 ];
+
 sub moduleTabs {
     return [
         {HEADER=>"Опросы",URL=>"/"}
@@ -39,7 +40,6 @@ sub pollsConfig {
 sub fields     { return []; };
 sub formfields { return []; };
 sub listfields { return []; };
-
 
 sub voteHandlers {
     return $DEFAULT_HANDLERS;
@@ -95,24 +95,33 @@ sub checkUID_canvote {
     
     my ($time,$uid) = (undef,undef); #Составной идентификатор пользователя
     
-    die 'NOT CONFIGURED' unless $UID_COOKIENAME && defined $UID_COOKIELIFE && $UID_STATIC_SALT && $UID_KEY;
+    die 'NOT CONFIGURED' unless
+        $NG::Polls::config::UID_COOKIENAME
+        && defined $NG::Polls::config::UID_COOKIELIFE
+        && $NG::Polls::config::UID_STATIC_SALT
+        && $NG::Polls::config::UID_KEY;
     
     #Проверяем наличие куки.
-    my $cid = $q->cookie($UID_COOKIENAME);
+    my $cid = $q->cookie($NG::Polls::config::UID_COOKIENAME);
     if ($cid && $cid =~ /(\d+)_(\S{8})_(\S{40})/) {
         #кука есть, проверим подпись
         $time = $1;
         $uid  = $2;
         my $hash = $3;
         
-        my $myHash = hmac_sha1_hex($time.":".$uid.":".$UID_STATIC_SALT, pack('H*',$UID_KEY));
+        my $myHash = hmac_sha1_hex(
+            $time.":".$uid.":".$NG::Polls::config::UID_STATIC_SALT,
+            pack('H*',$NG::Polls::config::UID_KEY)
+        );
         
         if ($myHash eq $hash) {
             $ctx->{time} = $time;
             $ctx->{uid}  = $uid;
             $ctx->{cid}  = $cid;
             
-            $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
+            $cms->addCookie(-name => $NG::Polls::config::UID_COOKIENAME,
+                            -value => $cid,
+                            -expires => $NG::Polls::config::UID_COOKIELIFE);
         }
         else {
             warn "checkUID_canvote(): $hash vs $myHash - mismatch for cookie $cid";
@@ -161,11 +170,17 @@ sub checkUID_canvote {
         $uid = substr( $uid, 0, 8 );
         $time = time();
         
-        my $myHash = hmac_sha1_hex($time.":".$uid.":".$UID_STATIC_SALT, pack('H*',$UID_KEY));
+        my $myHash = hmac_sha1_hex(
+            $time.":".$uid.":".$NG::Polls::config::UID_STATIC_SALT,
+            pack('H*',$NG::Polls::config::UID_KEY)
+        );
         
         my $cid = $time."_".$uid."_".$myHash;
-        warn "$UID_COOKIENAME $cid $UID_COOKIELIFE";
-        $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
+        $cms->addCookie(
+            -name=>$NG::Polls::config::UID_COOKIENAME,
+            -value=>$cid,
+            -expires=>$NG::Polls::config::UID_COOKIELIFE
+        );
         
         $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600);
         #
@@ -173,7 +188,6 @@ sub checkUID_canvote {
         $ctx->{uid}  = $uid;
         $ctx->{cid}  = $cid;
         $ctx->{new}  = 1;
-        warn "SetQ";
     };
 }
 
