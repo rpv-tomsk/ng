@@ -977,6 +977,10 @@ sub gettemplate {
 
 sub addCookie {
     my $self = shift;
+    if ($self->{_headerssent}) {
+        warn "addCookie(): headers already sent";
+        return 0;
+    };
     my $cookie = CGI::cookie(@_);
     push @{$self->{_cookies}}, $cookie;
 };
