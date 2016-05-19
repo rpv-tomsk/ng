@@ -249,6 +249,10 @@ sub _get_poll_fields {
 
 sub keys_SQLPOLLSLIST {
     my ($self,$keysParams) = (shift,shift);
+    
+    #$keysParams:
+    # - sqlWhere
+    # - sqlLimit
 
     $keysParams or die 'Internal error';
     $keysParams->{sqlWhere} ||= '1=1';
@@ -265,14 +269,25 @@ sub keys_SQLPOLLSLIST {
     
     my $anyPollVersion = $cms->getKeysVersion($self,{key=>'anyvoting'});
     if ($anyPollVersion && $anyPollVersion->[0]) {  #Кеширование включено
-        $items = $cms->getCacheData($self,{where=> $sqlWhere, key=>'items_'.$anyPollVersion->[0], today=>$today});
+        my $cacheKey = {
+            where=> $sqlWhere,
+            key=>'items_'.$anyPollVersion->[0],
+            today=>$today,
+        };
+        $cacheKey->{limit} = $keysParams->{sqlLimit} if $keysParams->{sqlLimit};
+        
+        $items = $cms->getCacheData($self, $cacheKey);
         unless ($items) {
             my $fields = $self->_get_poll_fields();
-            $items = $self->dbh()->selectall_arrayref("SELECT $fields FROM polls p WHERE $sqlWhere ORDER BY p.start_date DESC",{Slice => {}});
+            my $sql = "SELECT $fields FROM polls p WHERE $sqlWhere ORDER BY p.start_date DESC";
+            if ($keysParams->{sqlLimit}) {
+                $sql = $cms->db()->sqllimit($sql, 0, $keysParams->{sqlLimit});
+            };
+            $items = $self->dbh()->selectall_arrayref($sql,{Slice => {}});
             foreach my $item (@$items) {
                 $self->_isVotingActive($item,$today);
             };
-            $cms->setCacheData($self,{where=>$sqlWhere, key=>'items_'.$anyPollVersion->[0], today=>$today}, $items);
+            $cms->setCacheData($self, $cacheKey, $items);
         };
         
         $req->{anyvv} = $anyPollVersion->[0]; #Зависимость от ключа anyvoting
