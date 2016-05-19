@@ -330,13 +330,19 @@ sub block_SQLPOLLSLIST {
     my $baseURL = $self->getBaseURL();
     
     my $items = $keys->{HELPER}->{'polls:items'};
-    my $sqlWhere = $keys->{HELPER}->{'polls:keysParams'}->{sqlWhere} or die 'Internal error';
     $params->{template} or die 'Internal error: missing template';
     
     unless ($items) {
+        my $sqlLimit = $keys->{HELPER}->{'polls:keysParams'}->{sqlLimit};
+        my $sqlWhere = $keys->{HELPER}->{'polls:keysParams'}->{sqlWhere} or die 'Internal error';
         my $fields = $self->_get_poll_fields();
         #TODO: Разбивка на страницы
-        $items = $dbh->selectall_arrayref("SELECT $fields FROM polls p WHERE $sqlWhere ORDER BY p.start_date DESC",{Slice => {}});
+        
+        my $sql = "SELECT $fields FROM polls p WHERE $sqlWhere ORDER BY p.start_date DESC";
+        if ($sqlLimit) {
+            $sql = $cms->db()->sqllimit($sql, 0, $sqlLimit);
+        };
+        $items = $dbh->selectall_arrayref($sql,{Slice => {}});
         foreach my $item (@$items) {
             $self->_isVotingActive($item,undef);
         };
