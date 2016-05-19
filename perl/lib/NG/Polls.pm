@@ -7,6 +7,15 @@ use NSecure;
 use NGService;
 our @ISA = qw(NG::PageModule);
 
+our $UID_COOKIENAME = 'uid';
+our $UID_COOKIELIFE = '+3M';
+our $UID_KEY         = '';
+our $UID_STATIC_SALT = '';
+
+our $DEFAULT_HANDLERS = [
+    {CANVOTE=>'checkIP_canvote',  CANVOTE_SHOW=>'checkIP_canvote',  DELETE=>'checkIP_delete',  VOTE=>'checkIP_vote'},
+    {CANVOTE=>'checkUID_canvote', CANVOTE_SHOW=>'checkUID_canvote', DELETE=>'checkUID_delete', VOTE=>'checkUID_vote'},
+];
 sub moduleTabs {
     return [
         {HEADER=>"Опросы",URL=>"/"}
@@ -33,13 +42,10 @@ sub listfields { return []; };
 
 
 sub voteHandlers {
-    return [
-        {CANVOTE=>'checkIP_vote',  DELETE=>'checkIP_delete', VOTE=>'checkIP_vote'},
-        {CANVOTE=>'checkUID_vote', DELETE=>'checkUID_delete',VOTE=>'checkUID_vote'},
-    ];
+    return $DEFAULT_HANDLERS;
 };
 
-sub checkIP_vote {
+sub checkIP_canvote {
     my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     
     my $dbh  = $self->dbh();
@@ -52,25 +58,23 @@ sub checkIP_vote {
     my ($count) = $sth->fetchrow();
     $sth->finish();
     $voting->{can_vote} = 0 if $count>0;
-
-#$voting->{can_vote} = 0;
-
-    if ($handler eq 'VOTE' && $voting->{can_vote}) {
-        $dbh->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_addr()) or NG::DBIException->throw('checkIP_vote() error');
-    };
 };
+
+sub checkIP_vote {
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
+    
+    return unless $voting->{check_ip} && $voting->{can_vote};
+    $self->dbh->do("INSERT INTO polls_ip (polls_id,ip) values(?,?)",undef,$voting->{id},$self->q()->remote_addr()) or NG::DBIException->throw('checkIP_vote() error');
+}
 
 sub checkIP_delete {
     my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     $self->dbh()->do("DELETE FROM polls_ip WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkIP_delete() error');
 };
 
-our $UID_COOKIENAME = 'uid';
-our $UID_COOKIELIFE = '+3M';
-our $UID_KEY        = 'maFaephe9Ezum7j';
-our $UID_STATIC_SALT = 'eiLo3ohnoh';
+### check UID
 
-sub checkUID_vote {
+sub checkUID_canvote {
     my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
     
     my $cms = $self->cms();
@@ -78,16 +82,24 @@ sub checkUID_vote {
     my $q   = $cms->q();
     
     return unless $voting->{can_vote};
+    if ($ctx->{new}) {
+        return if $handler eq 'CANVOTE_SHOW';
+        $voting->{can_vote} = 0;
+        return;
+    }
+    
+    if (exists $ctx->{can_vote}) {
+        $voting->{can_vote} = 0 unless $ctx->{can_vote};
+        return;
+    };
     
     my ($time,$uid) = (undef,undef); #Составной идентификатор пользователя
     
+    die 'NOT CONFIGURED' unless $UID_COOKIENAME && defined $UID_COOKIELIFE && $UID_STATIC_SALT && $UID_KEY;
+    
     #Проверяем наличие куки.
     my $cid = $q->cookie($UID_COOKIENAME);
-    if ($ctx->{new} || ($cid && $ctx->{cid} && $ctx->{cid} eq $cid)) {
-        $time = $ctx->{time};
-        $uid  = $ctx->{uid};
-    }
-    elsif ($cid && $cid =~ /(\d+)_(\S{8})_(\S{40})/) {
+    if ($cid && $cid =~ /(\d+)_(\S{8})_(\S{40})/) {
         #кука есть, проверим подпись
         $time = $1;
         $uid  = $2;
@@ -110,16 +122,12 @@ sub checkUID_vote {
     };
     
     if ($time && $uid) {
-        if ($handler eq 'VOTE' && $ctx->{new}) {
-            $voting->{can_vote_errorCode} = 'missingUUIDCookie';
-            $voting->{can_vote} = 0;
-            return;
-        };
-        
+        $ctx->{can_vote} = 1;
         #Найдена валидная кука, ищем наличие голосования по кешу/БД.
         #Ищем в кеше
         my $cache = $cms->getCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}});
         if (defined $cache && $cache) {
+            $ctx->{can_vote} = 0;
             $voting->{can_vote} = 0;
             return;
         };
@@ -131,23 +139,21 @@ sub checkUID_vote {
             $sth->finish();
             if ($count > 0) {
                 $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},1,3600);
+                $ctx->{can_vote} = 0;
                 $voting->{can_vote} = 0;
                 return;
+            }
+            else {
+                $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600);
             };
         };
         #Далее can_vote = 1; Можно голосовать.
-        if ($handler eq 'VOTE') {
-            $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},1,3600);
-            $dbh->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip,atime) values (?,?,?,?,?)",undef,$voting->{id},$time,$uid,$self->q()->remote_addr(),time()) or NG::DBIException->throw('checkIP_vote() error'); 
-        }
-        else {
-            $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600) unless defined $cache;
-        };
     }
     else {
-        if ($handler eq 'VOTE') {
+        if ($handler ne 'CANVOTE_SHOW') {   #Кука отсутствует
             $voting->{can_vote_errorCode} = 'missingUUIDCookie';
             $voting->{can_vote} = 0;
+            $ctx->{can_vote} = 0;
             return;
         };
         #Generate new.
@@ -158,6 +164,7 @@ sub checkUID_vote {
         my $myHash = hmac_sha1_hex($time.":".$uid.":".$UID_STATIC_SALT, pack('H*',$UID_KEY));
         
         my $cid = $time."_".$uid."_".$myHash;
+        warn "$UID_COOKIENAME $cid $UID_COOKIELIFE";
         $cms->addCookie(-name=>$UID_COOKIENAME,-value=>$cid, -expires=>$UID_COOKIELIFE);
         
         $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},0,3600);
@@ -166,18 +173,41 @@ sub checkUID_vote {
         $ctx->{uid}  = $uid;
         $ctx->{cid}  = $cid;
         $ctx->{new}  = 1;
+        warn "SetQ";
     };
+}
+
+sub checkUID_vote {
+    my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
+    
+    return unless $voting->{can_vote};
+    return if $ctx->{new};
+    
+    #if ($ctx->{new}) {
+    #    $voting->{can_vote_errorCode} = 'missingUUIDCookie';
+    #    $voting->{can_vote} = 0;
+    #    return;
+    #};
+    
+    my $cms = $self->cms();
+    
+    my ($time,$uid) = ($ctx->{time},$ctx->{uid}); #Составной идентификатор пользователя
+    die 'Internal error' unless $time && $uid;
+    
+    $cms->setCacheData($self,{key=>'hasvote',uid=>$uid,time=>$time,vote=>$voting->{id}},1,3600);
+    $cms->dbh()->do("INSERT INTO polls_uid_votes (polls_id,utime,uid,ip,atime) values (?,?,?,?,?)",undef,$voting->{id},$time,$uid,$self->q()->remote_addr(),time()) or NG::DBIException->throw('checkUID_vote() error'); 
 };
 
 sub checkUID_delete {
     my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
-    $self->dbh()->do("DELETE FROM polls_uid_votes WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkIP_delete() error');
+    $self->dbh()->do("DELETE FROM polls_uid_votes WHERE polls_id=?",undef,$voting->{id}) or NG::DBIException->throw('checkUID_delete() error');
 };
 
 #-----------
 
 sub _runHandler {
     my ($self,$voting,$handler,$ctx) = (shift,shift,shift,shift);
+    die unless $ctx && ref $ctx eq 'ARRAY';
     my $VH = $self->voteHandlers($handler);
     
     my $idx = 0;
@@ -248,7 +278,7 @@ sub keys_SQLPOLLSLIST {
             
             $voting->{can_vote} = 0 unless $voting->{active};
             
-            $self->_runHandler($voting,'CANVOTE',$ctx) if $voting->{can_vote};
+            $self->_runHandler($voting,'CANVOTE_SHOW',$ctx) if $voting->{can_vote};
             
             next unless $voting->{can_vote} || $voting->{visible};
             
@@ -298,7 +328,7 @@ sub block_SQLPOLLSLIST {
             $voting->{can_vote} = 1;
             $voting->{can_vote} = 0 unless $voting->{active};
             
-            $self->_runHandler($voting,'CANVOTE',$ctx) if $voting->{can_vote};
+            $self->_runHandler($voting,'CANVOTE_SHOW',$ctx) if $voting->{can_vote};
         };
 
         next unless $voting->{can_vote} || $voting->{visible};
@@ -464,28 +494,13 @@ sub _loadPoll {
 };
 =cut
 
-
-sub processModulePost{
-    my $self = shift;
-    
-    my $q = $self->q();
-    my $action = $q->param('action') || '';
-    
-    return $self->doVote($action) if $q->http('X-Requested-With') && $q->http('X-Requested-With') eq "XMLHttpRequest" && ($action eq 'vote' || $action eq 'voteajax');
-    return 1;
-};
-
-sub _doVote {
-    my $self = shift;
+sub intDoVote {
+    my ($self, $id, $answers) = (shift, shift, shift);
     
     my $q   = $self->q();
     my $dbh = $self->dbh();
-    
-    my $id = $q->param("id");
-    my @answers = $q->param("answer");
 
     my $ret = {status=>'error'};
-    
     unless (is_valid_id($id)) {
         $ret->{errorCode} = 'invalidId';
         return $ret;
@@ -509,11 +524,11 @@ sub _doVote {
     $voting->{can_vote} = 1;
     
     my $allowVisible = 1;
-    if (scalar @answers > 1 && !$voting->{multichoice}) {
+    if (scalar @$answers > 1 && !$voting->{multichoice}) {
         $ret->{errorCode} = 'noMultichoice';
         $allowVisible = 0;
     };
-    unless (scalar @answers) {
+    unless (scalar @$answers) {
         $ret->{errorCode} = 'noAnswers';
         $allowVisible = 0;
     };
@@ -533,21 +548,28 @@ sub _doVote {
         end_date    => $voting->{end_date},
         answers     => [],
     };
-
-    my $v_selected = {};
+    
     unless ($ret->{errorCode}) {
-        foreach (@answers) {
+        my $v_selected = {};
+        foreach (@$answers) {
             $v_selected->{$_} = 1;
         };
         
-        my $vote_found = 0; 
+        my $clean = {};
         foreach (@{$voting->{answers}}) {
-            $vote_found = 1 if $v_selected->{$_->{id}}
+            $clean->{$_->{id}} = 1 if delete $v_selected->{$_->{id}};
         };
-        if ($vote_found) {
+        
+        if (scalar keys %$v_selected) {
+            $ret->{errorCode} = 'noMultichoice'; #wrongAnswers
+        }
+        elsif (scalar keys %$clean) { #voteFound
             #Будем голосовать?
-            $self->_runHandler($voting,'VOTE',[]);
+            my $ctx = [];
+            $self->_runHandler($voting,'CANVOTE',$ctx);
             if ($voting->{can_vote}) {
+                $voting->{selected} = $clean;
+                $self->_runHandler($voting,'VOTE',$ctx);
                 $voting->{vote_cnt}++;
             }
             else {
@@ -571,7 +593,7 @@ sub _doVote {
             def      => $_->{def},
         };
         
-        if ($v_selected->{$_->{id}} && !$ret->{errorCode}) {
+        if ($voting->{selected}->{$_->{id}} && !$ret->{errorCode}) {
             #Голосуем!
             $updSth->execute($_->{id},$voting->{id});
             $_->{vote_cnt}++;
@@ -600,65 +622,23 @@ sub _doVote {
     return $ret;
 };
 
-sub doVote {
-    my ($self,$action) = (shift,shift);
-    
-    my $cms  = $self->cms();
-    
-    return $cms->outputJSON($self->_doVote()) if $action eq 'voteajax';
-    
-    my $vret = $self->_doVote();
-    my $template = $self->gettemplate("public/polls/sliderItem.tmpl");
-    $template->param(%$vret);
-    return $cms->outputJSON({
-        content   => $template->output(),
-        status    => $vret->{status},
-        errorCode => $vret->{errorCode},
-    });
-};
-
-=comment
-sub _vote {
+sub processModulePost{
     my $self = shift;
-    my $poll = shift;
+
+    my $cms  = $self->cms();
     my $q = $self->q();
-
-    my @answers = $q->param("answer");
+    my $action  = $q->param('action') || '';
     
-    my $errors = {};
-    my $ret = 1;
-
-    unless ($poll->{active}) {
-        $ret = 0;
-        $errors->{no_active} = 1;
+    if ($q->http('X-Requested-With')
+        && $q->http('X-Requested-With') eq "XMLHttpRequest"
+        && $action eq 'voteajax'
+        ) {
+        my $id      = $q->param("id");
+        my @answers = $q->param("answer");
+        return $cms->outputJSON($self->intDoVote($id, \@answers)) if $action eq 'voteajax';
     };
-    
-    unless (scalar @answers) {
-        $ret = 0;
-        $errors->{no_answers} = 1;
-    };
-    
-    if ($poll->{active} && $poll->{check_ip} && !$poll->{canvote}) {
-        $ret = 0;
-        $errors->{same_ip} = 1;
-    };
-    
-    if (!scalar keys %$errors && scalar @answers) {
-        my $sth_insert = $self->db()->dbh()->prepare("update polls_answers set vote_cnt=vote_cnt+1 where id=? and polls_id=?") ;
-        foreach (@answers) {
-            if(is_valid_id($_)) {
-                $sth_insert->execute($_,$poll->{id});
-                $poll->{vote_cnt} = $poll->{vote_cnt} + 1;
-            };
-        };
-        $sth_insert->finish();
-        $self->db()->dbh()->do("update polls set vote_cnt=? where id=?",undef,$poll->{vote_cnt},$poll->{id}) or die $DBI::errstr;
-        $self->db()->dbh()->do("insert into polls_ip(polls_id,ip) values(?,?)",undef,$poll->{id},$self->q()->remote_addr()) or die $DBI::errstr; 
-    };
-    
-    return wantarray?($ret,$errors):$ret;
+    return $cms->error('Not implemented!');
 };
-=cut
 
 package NG::Polls::List;
 use strict;
