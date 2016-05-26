@@ -353,6 +353,10 @@ sub _run {
     elsif ($status->is_exit()) {
 		return $status;
 	}
+	elsif ($status->is_404()) {
+		$status->{_type} = NG::BlockContent::M_EXIT;
+		return $status;
+	}
     else {
         $status = $cms->error("Некорректный код возврата ($status) после вызова модуля ");
 	};
