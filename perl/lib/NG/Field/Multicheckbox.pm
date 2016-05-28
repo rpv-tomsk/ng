@@ -500,6 +500,12 @@ sub _process {
     return 1;
 };
 
+sub selectedValuesCnt {
+    my $self = shift;
+    die '' unless $self->{_NEWA};
+    return scalar @{$self->{_NEWA}};
+};
+
 sub changed {
     my $self = shift;
     die '_changed value is undefined' unless defined $self->{_changed};
