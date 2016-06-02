@@ -312,7 +312,7 @@ sub _clearCookies {
     my @x = reverse split /\./, $domain;
     return unless scalar(@x) >= 2;
 
-    my $stack = shift(@x);
+    $stack = shift(@x);
     while (defined(my $ss = shift(@x))) {
         $stack = $ss.'.'.$stack;
 
