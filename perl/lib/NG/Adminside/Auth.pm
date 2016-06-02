@@ -309,7 +309,7 @@ sub _clearCookies {
 
     #Cookies on each domain up to TLD
     my $domain = $self->cms->q->virtual_host();
-    my @x = reverse split /\./, $domain;
+    @x = reverse split /\./, $domain;
     return unless scalar(@x) >= 2;
 
     $stack = shift(@x);
