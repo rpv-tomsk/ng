@@ -166,7 +166,7 @@ sub buildList {
             $self->{_showCounter} = $f;
             next;
         };
-        my $fObj = NG::Field->new($f,$self);
+        my $fObj = NG::Field->new($f,$self) or die $NG::Field::errstr;
         push @$listFObjs, $fObj;
     };
     
