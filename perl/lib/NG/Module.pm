@@ -376,7 +376,8 @@ sub getModuleTabs {
         $tab->{AJAX_URL} = $baseUrl.$mtab->{URL}."?_ajax=1" unless exists $mtab->{NO_AJAX};
 
         my $taburl = $mtab->{URL} || "/";
-        if ($suburl =~ /$taburl/ && length($taburl) >= length($pActiveTab->{url})) {
+        my $tabRe  = $mtab->{REGEX} || qr/^$taburl/;
+        if ($suburl =~ $tabRe && length($taburl) >= length($pActiveTab->{url})) {
             $pActiveTab->{url} = $taburl;
             $pActiveTab->{tab} = $tab;
         }
