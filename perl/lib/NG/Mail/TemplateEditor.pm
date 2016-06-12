@@ -62,7 +62,7 @@ sub config {
         {FIELD => 'legend'},
         {FIELD => 'code'},
     );
-    
+    $self->order('id');
     $self->disableAddlink();
     $self->disableDeletelink();
 };
