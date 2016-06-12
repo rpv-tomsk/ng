@@ -182,7 +182,7 @@ sub buildList {
     $headersCnt++ if $self->{_multiActions};
     
     #Сохраняем исходный ref. We need to go deeper!
-    my $refParam = $q->url_param('ref');
+    my $refParam = $q->url_param('ref') || '';
     $refParam = 'ref='.uri_escape($refParam) if $refParam ne '';
     my $refURL = getURLWithParams($self->getBaseURL().$self->getSubURL(),$self->getPagesParam(),$self->getFKParam(),$self->getFilterParam(),$self->getOrderParam(),$refParam);
     
