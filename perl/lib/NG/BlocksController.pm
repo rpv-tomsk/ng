@@ -486,6 +486,7 @@ sub _getBlockContentText {
         $e = $self->cms->getError() if defined $blockContent && $blockContent eq 0;
         $e = $blockContent->getError() if $blockContent;
         $e = 'blockContent is undef or exception occured' if !defined $blockContent;
+        $e = 'UNKNOWN ERROR' unless defined $e;
         warn "Block '$code' has error: $e";
         return "[ERROR PROCESSING BLOCK '$code']";
     };
