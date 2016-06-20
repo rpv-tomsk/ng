@@ -272,7 +272,7 @@ sub afterLoad {
     my $storage = $options->{STORAGE};
     
     unless ($storage) {
-        defined $field->{_value_id} or 'afterLoad(): Missing _value_id';
+        defined $field->{_value_id} or die 'afterLoad(): Missing _value_id';
         
         $field->{_DATAH} = {};
         $field->{_DATAA} = [split(/,/,$field->{_value_id})];
