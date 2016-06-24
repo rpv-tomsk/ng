@@ -27,12 +27,6 @@ use base qw(NG::Module::List);
 sub config {
     my $self = shift;
     $self->{'_table'} = 'mtemplates';
- 
-    my $mObj=$self->getModuleObj();
-    my $callerCode = undef;
-    if($mObj) {
-        $callerCode = $mObj->getModuleCode();
-    };
     
     my $rtfOptions = {
         IMG_TABLE            => 'mtemplatesrtfimages',
@@ -41,7 +35,27 @@ sub config {
     };
     
     $rtfOptions->{CONFIG} = $NG::Mail::TemplateEditor::rtfConfig if $NG::Mail::TemplateEditor::rtfConfig;
+    
+    my $cms = $self->cms();
+    my $dbh = $cms->dbh();
+    
+    my $mObj = $self->getModuleObj();
+    my $callerCode = $mObj->getModuleCode();
+    
+    my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
+    $self->{__mailTemplatesInterface} = $iface;
+    
+    my $sql = "SELECT name, code FROM mtemplates WHERE module = ?";
+    my $dbTemplates = $dbh->selectall_hashref($sql, 'code', undef, $callerCode);
 
+    my $templates = $iface->safe('mailTemplates');
+    foreach my $code (keys %$templates) {
+        next if exists $dbTemplates->{$code};
+        $dbh->do('INSERT INTO mtemplates (module,name,code) VALUES (?,?,?)',undef,
+                $callerCode, $templates->{$code}->{NAME}, $code
+        );
+    };
+    
     $self->fields(
         {FIELD => 'id',         TYPE => 'id',        NAME => 'Код записи'},
         {FIELD => 'module',     TYPE => 'filter',    NAME => 'mcode',           IS_NOTNULL => 1, VALUE => $callerCode},
@@ -105,11 +119,7 @@ sub _prepareTemplate {
     
     my $q     = $field->q();
     my $form  = $field->parent();
-    my $mObj  = $form->owner()->getModuleObj();
-    
-    my $template = NG::Mail::Template->new();
-    
-    my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
+    my $iface  = $form->owner()->{__mailTemplatesInterface};
     my $labels   = $iface->try('mailLabels');
     my $metadata = $iface->getTemplateMetadata($q->param('code'));
     
@@ -118,6 +128,8 @@ sub _prepareTemplate {
     foreach my $var (keys %{$metadata->{VARIABLES}}) {
         $data->{$var} = $metadata->{VARIABLES}->{$var}->{EXAMPLE} || '[No EXAMPLE was configured]';
     };
+    
+    my $template = NG::Mail::Template->new();
     #
     $template->{_subjt} = NG::Mail::TemplateElement->new(_convert($q->param('subject')),'SUBJECT');
     $template->{_subjt}->param($data);
@@ -177,9 +189,7 @@ sub prepareOutput {
 
     my $form  = $field->parent();
     my $code = $form->getParam('code');
-    my $mObj  = $form->owner()->getModuleObj();
-    my $iface = $mObj->getInterface('NG::Interface::MailTemplates') or NG::Exception->throw('NG.INTERNALERROR','Module has no NG::Interface::MailTemplates interface.');
-    
+    my $iface  = $form->owner()->{__mailTemplatesInterface};
     my $metadata = $iface->getTemplateMetadata($code);
     
     my $legend = [];

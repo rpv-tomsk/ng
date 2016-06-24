@@ -25,7 +25,6 @@ sub getTemplateMetadata {
     NG::Exception->throw('NG.INTERNALERROR','Template code not specified.') unless $code;
     
     my $cfg = $iface->safe('mailTemplates');
-    NG::Exception->throw('NG.INTERNALERROR',"mailTemplates(): incorrect value returned by ".$iface->_package()) unless $cfg && ref $cfg eq "HASH";
     NG::Exception->throw('NG.INTERNALERROR',$iface->_package()." has no template $code") unless exists $cfg->{$code};
     $cfg->{$code};
 };
