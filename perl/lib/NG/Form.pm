@@ -877,6 +877,7 @@ sub setParam {
     my $field = $self->_getfieldhash($fn) or croak "NG::Form::setParam(): field \"$fn\" is not found";
     $field->setValue($p);
 };
+*setValue = \&setParam;
 
 sub cleanField {
     my $self = shift;
