@@ -51,8 +51,8 @@ sub config {
     my $templates = $iface->safe('mailTemplates');
     foreach my $code (keys %$templates) {
         next if exists $dbTemplates->{$code};
-        $dbh->do('INSERT INTO mtemplates (module,name,code) VALUES (?,?,?)',undef,
-                $callerCode, $templates->{$code}->{NAME}, $code
+        $dbh->do('INSERT INTO mtemplates (module,name,subject,code) VALUES (?,?,?,?)',undef,
+                $callerCode, $templates->{$code}->{NAME}, $templates->{$code}->{NAME}, $code
         );
     };
     
