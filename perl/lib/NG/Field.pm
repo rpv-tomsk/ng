@@ -304,7 +304,9 @@ sub parent {
 sub setError {
     my ($field,$errormsg,$mask) = (shift,shift,shift);
     
-    $errormsg =~ s/{n}/$field->{NAME}/;
+    my $name = $field->{NAME};
+    $name = $field->{FIELD} unless defined $name && $name ne '';
+    $errormsg =~ s/{n}/$name/;
     $errormsg =~ s/{f}/$field->{FIELD}/;
     $errormsg =~ s/{t}/$field->{TYPE}/;
     
