@@ -2852,7 +2852,7 @@ sub addRowLink {
     my $link = shift;
     return $self->error("addRowLink: параметр не является HASHREF") if ref $link ne "HASH";
     return $self->error("addRowLink: отсутствует параметр NAME") unless $link->{NAME};
-    return $self->error("addRowLink: отсутствует параметр URL") unless $link->{URL};
+    return $self->error("addRowLink: отсутствует параметр URL") unless exists $link->{URL};
     push @{$self->{_extra_links}}, $link;
 };
 
