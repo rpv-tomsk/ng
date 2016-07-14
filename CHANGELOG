@@ -41,6 +41,7 @@ branches/ng6
         Изменен порядок вызова processFKFields() / processFilters()
         Добавлена возможность выставлять значения полей типа 'filter' из поля LINKEDFIELD конфигурации filter()
     * NG::Module::List, NG::Module::Record - убрана поддержка "старого" варианта конфигурации поискового индекса (DATAINDEXFIELDS, PAGEINDEXFIELDS)
+    + NG::Module::List->joinTables()
       
     * NG::Module::Record: Добавлен метод updateKeysVersion(), аналогично NG::Module::List.
 
@@ -63,6 +64,7 @@ branches/ng6
       В большинстве случаев загрузка данных в объект поля производится по схеме dbFields(ACTION) -> setLoadedValue(TABLE_ROW)
     + Метод NG::Field->searchIndexValue()
     + Метод NG::Field->getListCellHTML()
+    + Добавлена поддержка ключей TABLE и QUERY, использнуются в NG::Field->dbFields()
     
     * В рамках поддержки актуальных версий HTML::Template::Compiled в админке NG::Block->opentemplate() включена case_sensitive=1.
     * Таблица ng_ftsindex - добавлено поле disabled для упрощения запроса на странице поиска (убрано связывание с ng_sitestruct по link,link+lang).

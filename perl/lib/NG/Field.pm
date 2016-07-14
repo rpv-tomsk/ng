@@ -29,6 +29,17 @@ our $classesMap = {
 =head
     Описание некоторых ключей:
     
+    FIELD          - имя поля в таблице
+    TABLE          - применяется для указания (алиаса) таблицы, из которой брать
+                     поле (table.field) при построении запроса списка в List.
+                     List заполняет этот ключ по умолчанию в своё значение table.
+    QUERY          - применяется для формирования имени поля в SQL-запросе SELECT
+                     в List ( QUERY => 'othertable.name AS product_name' ). 
+                     Перекрывает параметр TABLE.
+    TYPE           - тип поля, определяет поведение поля и дефолтный класс объекта
+    NAME           - имя поля (название)
+    IS_NOTNULL     - признак обязательности значения
+    
     TMP_FILENAME    - исходное имя загруженного файла
     TMP_FILE        - путь к временному файлу. Файл будет удален после закрытия формы
     _TMP_FILE_FROM_PARENT   - указывает, что новое значение пути к файлу выставлено из родительского поля,
@@ -703,6 +714,11 @@ sub dbFields {
     my ($field,$action) = (shift,shift);
     return () if $field->{IS_FAKEFIELD};
     return () if ($action eq 'insert' || $action eq 'update') && ! ($field->{TYPE} eq "id" || $field->{TYPE} eq "filter") && ! $field->changed();
+    my $dbField = $field->{FIELD};
+    if ($action eq 'load') {
+        return ($field->{QUERY}) if exists $field->{QUERY};
+        return ($field->{TABLE}.'.'.$field->{FIELD}) if exists $field->{TABLE};
+    };
     return ($field->{FIELD});
 };
 

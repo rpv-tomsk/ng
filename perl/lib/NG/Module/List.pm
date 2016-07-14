@@ -166,6 +166,7 @@ sub buildList {
             $self->{_showCounter} = $f;
             next;
         };
+        $f->{TABLE} = $self->{_table} unless exists $f->{TABLE};
         my $fObj = NG::Field->new($f,$self) or die $NG::Field::errstr;
         push @$listFObjs, $fObj;
     };
@@ -265,7 +266,7 @@ sub buildList {
     
     my $dblist = NG::DBlist->new(
         db     => $self->db(),
-        table  => $self->getListSQLTable(),
+        table  => $self->getListSQLTable().$self->getListSQLJoin(),
         fields => $self->getListSQLFields($listFObjs),
         where  => $self->getListSQLWhere(),
         order  => $self->getListSQLOrder(),
@@ -2136,7 +2137,7 @@ sub processSorting {
     $self->{_hide_move_link} = 1 if ($posField && ($found->{FIELD} ne $posField->{FIELD}));
 
     return NG::Block::M_OK;
-};
+}; #sub processSorting()
 
 #Методы построения URL-адресов списка, возвращают куски вида param=value
 sub getFKParam     { return shift->{_shlistFKParam};     };
@@ -2251,7 +2252,7 @@ sub getListSQLFields {
     if ($idfound == 0) {
         die 'getListSQLField(): Missing id' unless $self->{_idname};
         $fields .= ',' if $fields && $fields !~ /\,$/;
-        $fields .= $self->{_idname}; # Если ключевое поле не найдено
+        $fields .= $self->{_table}.'.'.$self->{_idname}; # Если ключевое поле не найдено
     };
     return $fields;
 };
@@ -2259,6 +2260,11 @@ sub getListSQLFields {
 sub getListSQLTable {
     my $self = shift;
     return $self->{_table};
+};
+
+sub getListSQLJoin {
+    my $self = shift;
+    return ' '.$self->{_join};
 };
 
 sub getListSQLWhere {
@@ -2741,6 +2747,11 @@ sub disablePages {
 sub tablename {
     my $self = shift;
     $self->{_table} = shift;
+};
+
+sub joinTables {
+    my $self = shift;
+    $self->{_join} = shift;
 };
 
 sub _pushFields {
