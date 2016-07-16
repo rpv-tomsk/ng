@@ -1091,6 +1091,18 @@ sub Delete {
     my $id = $q->param($self->{_idname});
     $form->param($self->{_idname},$id);
 
+    foreach my $filter (@{$self->{_filters}}) {
+        $filter->load() or return 0;
+        my $v = $filter->fieldValue();
+        return $self->showError("Delete(): Ошибка вызова filter->fieldValue().") unless $v;
+        next unless scalar keys %$v;
+        foreach my $f (keys %$v) {
+            next unless defined $v->{$f};
+            my $field=$form->_getfieldhash($f);
+            $field->setValue($v->{$f}) if $field;
+        };
+    };
+
     $self->opentemplate("admin-side/common/deleteform.tmpl") || return $self->showError("Delete(): не могу открыть шаблон");
     $self->tmpl()->param(DELETE_MESSAGE=>"Вы действительно хотите удалить запись?");
 
