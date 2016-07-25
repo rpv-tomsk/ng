@@ -756,7 +756,7 @@ sub prepareContent {
     if ($self->{_ablock} && !$self->{_ablock}->{CONTENT} && !$self->{_ablock}->{CACHEKEYS}) {
         my $c = $self->getBlockContent($self->{_ablock});
         return $c if $c eq 0;
-        if ($c->is_exit()) {
+        if ($c->is_exit() && !$self->{_ablock}->{KEYS}->{NOCACHE}) {
             $CACHE->storeCacheContent([$self->_prepareCacheContent($self->{_ablock})]) or return $cms->error();
         };
         return $c if !$c->is_output();
@@ -781,7 +781,7 @@ warn "not found cache data $cacheId : $block->{CODE} ".Dumper($block->{KEYS},$bl
     if ($self->{_ablock}) {
         my $c = $self->getBlockContent($self->{_ablock});
         return $c if $c eq 0 || $c->is_error();
-        if ($c->is_exit() && !$self->{_ablock}->{CACHEKEYS}) {
+        if ($c->is_exit() && !$self->{_ablock}->{CACHEKEYS} && !$self->{_ablock}->{KEYS}->{NOCACHE}) {
             $CACHE->storeCacheContent([$self->_prepareCacheContent($self->{_ablock})]) or return $cms->error();
         };
         return $c if !$c->is_output();
