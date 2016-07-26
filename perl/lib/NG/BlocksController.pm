@@ -315,7 +315,7 @@ warn "not found cache data: $block->{CODE} ".Dumper($block->{KEYS},$block->{CACH
 #NG::Profiler::saveTimestamp("getBlockContent for AB","pushABlock");
     return $c if $c eq 0;
     #
-    if ($c->is_exit()) {
+    if ($c->is_exit() && !$block->{KEYS}->{NOCACHE}) {
         $CACHE->storeCacheContent([$self->_prepareCacheContent($block)]) or return $self->cms->error();
 #NG::Profiler::saveTimestamp("storeCacheContent for AB","pushABlock");
     };
