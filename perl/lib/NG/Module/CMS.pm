@@ -63,6 +63,14 @@ sub block_BREADCRUMBS {
         push @$path, $_ foreach @$history;
     };
     
+    my $i = 0;
+    my $tabs = '';
+    my $tab = $params->{tab};
+    foreach (@$path) {
+        $_->{TAB} = ($tabs .= $tab) if defined $tab && $i;
+        $_->{DEPTH} = ++$i;
+    };
+    
     my $tmpl = $cms->gettemplate($params->{template});
     $tmpl->param(
         HISTORY => $path,
