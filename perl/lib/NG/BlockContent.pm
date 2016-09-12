@@ -56,8 +56,8 @@ sub _setOutput {
     my $data = shift;
     
     if (ref $data) {
-        return $self->error("Ññûëêà íà äàííûå íå ÿâëÿåòñÿ îáúåêòîì") unless UNIVERSAL::can($data, 'can');
-        return $self->error("Îáúåêò äàííûõ íå ñîäåğæèò ìåòîäà output") unless UNIVERSAL::can($data, 'output');
+        return $self->_error("Ññûëêà íà äàííûå íå ÿâëÿåòñÿ îáúåêòîì") unless UNIVERSAL::can($data, 'can');
+        return $self->_error("Îáúåêò äàííûõ íå ñîäåğæèò ìåòîäà output") unless UNIVERSAL::can($data, 'output');
     };
     
     $self->{_output_data} = $data;
