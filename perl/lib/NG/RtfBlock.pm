@@ -209,11 +209,14 @@ sub getActiveBlock {
         #
         # В данном запросе этого модуля необходимо отобразить текстовую страницу.
         # Перенаправляем запрос на другой модуль RTF / блок CONTENT.
+        return {CODE=>'RTF_CONTENT',LAYOUT=>'public/textpageLayout.tmpl'} if $url =~ /^${bUrl}terms\/$/;
+        
         # При перенаправлении на другой модуль/блок также можно добавить в возвращаемое значение
-        # ключ KEYS => {REQUEST => {pageId=>$self->getPageId(), subpage => XXX}  }
+        # ключ PARAMS => {subpage => 1}, который будет доступен в getBlockKeys()/getBlockContent().
+        #
+        # Можно добавить ключ KEYS => {REQUEST => {pageId=>$self->getPageId(), subpage => XXX}  }
         # getBlockKeys() для этого блока в этом случае вызываться не будет.
         #
-        return {CODE=>'RTF_CONTENT',LAYOUT=>'public/textpageLayout.tmpl'} if $url =~ /^${bUrl}terms\/$/;
         ...
     }
 }
