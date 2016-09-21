@@ -17,7 +17,6 @@ sub new {
 sub init {
 	my $self = shift;
     my $opts = shift || {};
-    $self->{_pParamsRaw}   = 
     $self->{_adminBaseURL} = delete $opts->{ADMINBASEURL};
     $self->{_pageRow}      = delete $opts->{PAGEPARAMS};
     $self->{_moduleRow}    = delete $opts->{MODULEROW};
@@ -143,10 +142,10 @@ sub moduleParam {
 };
 
 sub pluginParam {
-    #Метод вредный. Параметры плагина/модуля передаются параметром
-    #вызова getBlockKeys()/getBlockContent(), и должны бы использоваться оттуда
-    #TODO: замечание устарело, концепция изменилась. Парсинг параметров надо вынести на уровень выше.
-    #TODO: Недоступно для АБ
+    # Метод вредный?
+    # Параметры плагина/модуля также передаются параметром вызовов
+    # getBlockKeys()/getBlockContent(), и должны бы использоваться оттуда.
+    # TODO: Недоступно для АБ
     my $self = shift;
     my $param = shift or cluck("pluginParam(): no key specified");
     return $self->{_pluginparams}->{$param};
