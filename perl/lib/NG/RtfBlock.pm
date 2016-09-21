@@ -61,57 +61,50 @@ sub getActiveBlock {
     return $block;
 };
 
-sub getBlockKeys {
-    my ($self, $action) = (shift,shift);
-   
-    return $self->SUPER::getBlockKeys($action,@_) unless $action eq "CONTENT";
-
-    my $opts = $self->opts();
-   
+sub keys_CONTENT {
+    my ($self, $action, $params) = (shift, shift, shift);
+    
     my $req = {};
     $req->{pageId}  = $self->getPageId();
-    $req->{subpage} = $opts->{subpage} || 1;
+    $req->{subpage} = $params->{subpage} || 1;
     
     return {REQUEST=>$req};
 };
 
-sub getBlockContent{
+sub block_CONTENT {
     my ($self,$action,$keys) = (shift,shift,shift);
     
     my $cms = $self->cms();
-    my $opts = $self->opts();
     
-    if ($action eq "CONTENT") {
-        my ($pageId, $subPage);
-        if ($keys && $keys->{REQUEST}) {
-            $pageId  = $keys->{REQUEST}->{pageId}; 
-            $subPage = $keys->{REQUEST}->{subpage};
-        }
-        else {
-            $pageId  = $self->getPageId();
-            $subPage = $opts->{subpage} || 1;
-        };
-        return $cms->error('block CONTENT: pageId value is missing') unless $pageId;
-        return $cms->error('block CONTENT: subpage value is missing') unless $subPage;
-        my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=? and subpage=?",undef,$pageId,$subPage);
-        return $cms->error("Content file name not found in ".(ref $self)."::getBlockContent") unless($file);
-        $file = $cms->getSiteRoot().$self->{_rtfdir}.$file if $file;
-        #$v = value
-        #$e = error text
-        my ($v,$e) = loadValueFromFile($file);
-        return $cms->error($e) if($e);
-        my $template = $self->moduleParam('template');
-        if ($template) {
-            my $tmpl = $cms->gettemplate($template) or return $cms->error();
-            $tmpl->param(
-                PAGE    => $self->getPageRow(),
-                CONTENT => $v,
-            );
-            return $cms->output($tmpl);
-        };
-        return $cms->output($v);
+    my ($pageId, $subPage);
+    if ($keys && $keys->{REQUEST}) {
+        $pageId  = $keys->{REQUEST}->{pageId}; 
+        $subPage = $keys->{REQUEST}->{subpage};
+    }
+    else {
+        $pageId  = $self->getPageId();
+        $subPage = 1;
     };
-    return $self->SUPER::getBlockContent($action,$keys,@_);
+    return $cms->error('block CONTENT: pageId value is missing') unless $pageId;
+    return $cms->error('block CONTENT: subpage value is missing') unless $subPage;
+    my $file = $cms->db()->dbh()->selectrow_array("select r.textfile from ".$self->{_table}." r where r.page_id=? and subpage=?",undef,$pageId,$subPage);
+    return $cms->error("Content file name not found in ".(ref $self)."::getBlockContent") unless $file;
+    $file = $cms->getSiteRoot().$self->{_rtfdir}.$file if $file;
+    #$v = value
+    #$e = error text
+    my ($v,$e) = loadValueFromFile($file);
+    return $cms->error($e) if($e);
+    
+    my $template = $self->moduleParam('template');
+    if ($template) {
+        my $tmpl = $cms->gettemplate($template);
+        $tmpl->param(
+            PAGE    => $self->getPageRow(),
+            CONTENT => $v,
+        );
+        return $cms->output($tmpl);
+    };
+    return $cms->output($v);
 };
 
 sub moduleTabs {
