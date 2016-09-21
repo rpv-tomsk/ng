@@ -180,9 +180,9 @@ sub showPageBlock  {
                     return $self->output($self->tmpl()->output());
                 };
             };
-            
-            if ($initialised) {
-                my $ref = $q->param('ref');
+
+            my $ref = $q->param('ref');
+            if ($ref) {
                 my ($u, $p) = split /\?/, $ref;
                 my @params = ();
                 foreach my $pair (split /&/, $p) {
@@ -192,7 +192,12 @@ sub showPageBlock  {
                 };
                 push @params, 'rand='.int(rand(1000));
                 $ref = $u.'?'.join('&', @params);
-            
+            }
+            else {
+                $ref = $self->getBaseURL().$self->getSubURL();
+            }
+
+            if ($initialised) {
                 $self->beforeUpdate($form) or return $self->showError();
                 $form->updateData() or return $self->error($form->getError());
                 $self->_handleCMSCache($form,'update') or return $self->showError();
@@ -209,7 +214,7 @@ sub showPageBlock  {
                 $self->_reindexContent($form) or return $self->showError();
                 $self->_makeEvent("insert",{});
                 $self->_makeLogEvent({operation=>"Добавление информации"});
-                return $self->redirectToNextNIBlock();
+                return $self->redirect($ref);
             };
         }
         elsif ($fa) {
