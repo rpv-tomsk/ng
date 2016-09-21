@@ -72,7 +72,7 @@ sub keys_CONTENT {
 };
 
 sub block_CONTENT {
-    my ($self,$action,$keys) = (shift,shift,shift);
+    my ($self,$action,$keys,$params) = (shift,shift,shift,shift);
     
     my $cms = $self->cms();
     
@@ -81,9 +81,15 @@ sub block_CONTENT {
         $pageId  = $keys->{REQUEST}->{pageId}; 
         $subPage = $keys->{REQUEST}->{subpage};
     }
-    else {
+    elsif ($params) {  #Случай прямого вызова, см. пример.
         $pageId  = $self->getPageId();
-        $subPage = 1;
+        $subPage = $params->{subpage} || 1;
+    }
+    else {
+        #Обратная совместимость с некоторыми сайтами, см. пример.
+        my $opts = $self->opts();
+        $pageId  = $self->getPageId();
+        $subPage = $opts->{subpage} || 1;
     };
     return $cms->error('block CONTENT: pageId value is missing') unless $pageId;
     return $cms->error('block CONTENT: subpage value is missing') unless $subPage;
@@ -232,4 +238,14 @@ sub moduleBlocks{
     ];
 };
 
+Получение контента:
+
+    #Неправильный вариант - subpage=>2 надо передавать по-другому.
+    my $mObj = $cms->getModuleByCode('RTF',{PAGEPARAMS=>$self->getPageRow(), subpage=>2});
+    my $r = $mObj->getBlockContent('CONTENT');
+    return $r unless $r && $r->is_output;
+    $tmplObj->param(TEXT=>$r->getOutput());
+    
+    #Более правильный вариант:
+    my $r = $mObj->getBlockContent('CONTENT',undef,{subpage=>2});
 =cut
