@@ -175,11 +175,21 @@ sub config  {
             }
         },
     );
+    my $mCode = $self->opts->{modulecode};
+    unless ($mCode) {
+        $mCode = $self->{_moduleObj}->getModuleCode();
+    };
+    $self->updateKeysVersion([
+        {MODULECODE=>$mCode, key=>'rtfblock', pageId=>'{page_id}', subpage=>'{subpage}'},
+        {MODULECODE=>$mCode, key=>'rtfblock'},
+    ]);
     #TODO: add searchConfig
 };
 
 sub _handleCMSCache {
     my ($self,$form,$action) = (shift,shift,shift);
+    
+    $self->SUPER::_handleCMSCache($form, $action);
     
     my $pageId = $form->getParam('page_id');
     my $subpage = $form->getParam('subpage');
