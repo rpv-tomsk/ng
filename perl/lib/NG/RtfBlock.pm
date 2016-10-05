@@ -220,14 +220,16 @@ sub getActiveBlock {
         # ¬ данном запросе этого модул€ необходимо отобразить текстовую страницу.
         # ѕеренаправл€ем запрос на другой модуль RTF / блок CONTENT.
         return {CODE=>'RTF_CONTENT',LAYOUT=>'public/textpageLayout.tmpl'} if $url =~ /^${bUrl}terms\/$/;
-        
-        # ѕри перенаправлении на другой модуль/блок также можно добавить в возвращаемое значение
-        # ключ PARAMS => {subpage => 1}, который будет доступен в getBlockKeys()/getBlockContent().
+
+        # ќтображаем блок CONTENT если класс занаследован от NG::RtfBlock
+        return {BLOCK => "CONTENT", PARAMS=>{subpage=>2}} if ... ;
+
+        # ѕри отображении или перенаправлении на другой модуль/блок можно добавить в
+        # возвращаемое getActiveBlock() значение ключ
+        # PARAMS => {subpage => 1}, который будет доступен в getBlockKeys()/getBlockContent().
         #
         # ћожно добавить ключ KEYS => {REQUEST => {pageId=>$self->getPageId(), subpage => XXX}  }
-        # getBlockKeys() дл€ этого блока в этом случае вызыватьс€ не будет.
-        #
-        ...
+        # getBlockKeys() дл€ этого блока в этом случае вызыватьс€ не будет (что плохо).
     }
 }
 

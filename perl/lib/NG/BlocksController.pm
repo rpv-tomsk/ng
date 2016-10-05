@@ -146,6 +146,7 @@ sub _pushBlock {
      MODULEOBJ   - Объект модуля блока
      
      PARAMS      - Параметры из ng_blocks.params. Для АБ не загружаются, т.к. АБ не прописывается в ng_tmpl_blocks.
+                   Вместо этого PARAMS может быть выставлено из getActiveBlock()
      REGION      - Регион для вывода блока (если блок выводится не через PLUGINS/MODULES)
      WEIGHT      - Вес блока внутри региона
      
