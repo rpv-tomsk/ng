@@ -143,7 +143,10 @@ sub showPageBlock  {
     if ($action eq "") {
         if ($initialised) {
             $form->loadData() or return $self->error($form->getError());
-        };
+        }
+        else {
+            $form->modeInsert();
+        }
         $self->afterFormLoadData($form) or return $self->cms()->error();
         $self->opentemplate($self->{_formtemplate}) || return $self->showError();
         $form->print($self->tmpl());
