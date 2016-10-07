@@ -392,6 +392,12 @@ sub getABBreadcrumbs {
     return $self->{_ablock}->{BREADCRUMBS};
 };
 
+sub getABContent {
+    my $self = shift;
+
+    $self->{_ablock} or die "getABContent(): No AB found!";
+    return $self->{_ablock}->{CONTENT};
+};
 
 sub getETagSummary {
     my $self = shift;
