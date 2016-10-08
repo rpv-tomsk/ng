@@ -674,6 +674,7 @@ sub buildPage {
         SUBSITEROW => $cms->{_subsiteRow},
         RES => $rObj,
         DEBUG => $cms->{_debug},
+        PARAMS   => ($aBlock?$aBlock->{LAYOUTPARAMS}:{}),
     );
 #NG::Profiler::saveTimestamp("pre_output","buildPage");
     return $cms->output($tObj);
