@@ -43,17 +43,34 @@ sub init {
 
 sub store {
     my $self = shift;
-    my ($sid, $datastr) = @_;
+    my ($sid, $datastr, $etime) = @_;
     croak "store(): usage error" unless $sid && $datastr;
 
     my $dbh = $self->{Handle};
-    $dbh->do("INSERT INTO " . $self->table_name .
-			 " ($self->{IdColName}, $self->{DataColName}) VALUES(?, ?) ON DUPLICATE KEY UPDATE $self->{DataColName} = ?",
-			 undef, $sid, $datastr, $datastr)
+    $dbh->do("INSERT INTO `" . $self->table_name . "`"
+			." (`$self->{IdColName}`, `$self->{DataColName}`, `$self->{ExpireColName}`) VALUES(?, ?, TIMESTAMPADD(SECOND,?,NOW())) "
+			." ON DUPLICATE KEY UPDATE `$self->{DataColName}` = ?, `$self->{ExpireColName}` = TIMESTAMPADD(SECOND,?,NOW())",
+			 undef, $sid, $datastr, $etime, $datastr, $etime)
         or return $self->set_error( "store(): \$dbh->do failed " . $dbh->errstr );
     return 1;
 }
 
+sub cleanExpiredSessions {
+    my $self = shift;
+    
+    my $dbh = $self->{Handle};
+
+    local $dbh->{RaiseError} = 1;
+    eval {
+        $dbh->do("DELETE FROM `". $self->table_name ."` WHERE `$self->{ExpireColName}` < now()");
+    };
+    if ($@) {
+        return $self->set_error( "cleanExpiredSessions(): failed with message: $@ " . $dbh->errstr );
+    }
+    else {
+        return 1;
+    };
+};
 
 sub table_name {
     my $self = shift;
@@ -86,10 +103,16 @@ B<mysql> stores session records in a MySQL table. For details see L<CGI::Session
 It's especially important for the MySQL driver that the session ID column be
 defined as a primary key, or at least "unique", like this:
 
- CREATE TABLE sessions (
+  CREATE TABLE sessions (
      id CHAR(32) NOT NULL PRIMARY KEY,
-     a_session TEXT NOT NULL
+     a_session TEXT NOT NULL,
+     `expire` DATETIME NOT NULL COMMENT 'Expiry datetime'
   );
+  ALTER TABLE `sessions` ADD INDEX ( `expire` );
+
+  Recommended:
+
+  ALTER TABLE `sessions` CHANGE `a_session` `a_session` VARCHAR( 65000 ); 
 
 To use different column names, change the 'create table' statement, and then simply do this:
 
@@ -98,6 +121,7 @@ To use different column names, change the 'create table' statement, and then sim
         TableName=>'session',
         IdColName=>'my_id',
         DataColName=>'my_data',
+        ExpireColName => 'somefield',
         DataSource=>'dbi:mysql:project',
     });
 
