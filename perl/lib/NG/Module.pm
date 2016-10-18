@@ -434,6 +434,20 @@ sub getAdminBlock {
     };
     
     if ($submodule->{FORBIDDEN}) {
+        if ($submodule->{REDIRECT}) {
+            if ($submodule->{REDIRECT} =~ /^\{pages:(\d+)\}(?:\/(.*))?/) {
+                return $cms->redirect('/admin-side/pages/'.$1.'/'.$2);
+            }
+            elsif ($submodule->{REDIRECT} =~ /^\{modules:(\d+)\}(?:\/(.*))?/) {
+                return $cms->redirect('/admin-side/modules/'.$1.'/'.$2);
+            }
+            elsif ($submodule->{REDIRECT} =~ /^[^\/]/) {
+                return $cms->redirect($myBaseUrl.$submodule->{REDIRECT});
+            }
+            else {
+                return $cms->redirect($submodule->{REDIRECT});
+            }
+        }
         return $cms->redirect($myBaseUrl);
     };
     
