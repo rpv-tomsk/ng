@@ -237,21 +237,21 @@
 <TMPL_IF IS_CHECKBOX>
     <div class="errormsg" id="error_<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR ERRORMSG></div>
     <div class="form-line">
-    <TMPL_IF FORM:ROW_WITH_COLUMNS>
+    <TMPL_IF FORM:CHECKBOX_FIRST>
         <div class="input_info" style="padding:0; float:left;">
             <input type="checkbox"  class="checkbox" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR CB_VALUE>" <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF>/>
         </div>
         <div class="form_contener">
             <label for="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF></label>
         </div>
-     <TMPL_ELSE FORM:ROW_WITH_COLUMNS>
+     <TMPL_ELSE FORM:CHECKBOX_FIRST>
         <div class="form_contener">
             <label for="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>"><TMPL_VAR NAME><TMPL_IF IS_NOTNULL>&nbsp;*</TMPL_IF></label>
         </div>
         <div class="input_info">
             <input type="checkbox"  class="checkbox" name="<TMPL_VAR FIELD>" id="<TMPL_VAR FIELD><TMPL_VAR FORM.KEY_VALUE>" value="<TMPL_VAR CB_VALUE>" <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF>/>
         </div>
-     </TMPL_IF FORM:ROW_WITH_COLUMNS>
+     </TMPL_IF FORM:CHECKBOX_FIRST>
      </div>
 </TMPL_IF IS_CHECKBOX>
 <TMPL_IF IS_MULTICHECKBOX>
