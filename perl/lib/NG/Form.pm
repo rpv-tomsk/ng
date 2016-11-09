@@ -501,6 +501,7 @@ sub print {
                         delete $fHash->{$fn};
                         
                         my $f = $field->param();
+                        $f->{'FORM:ROW_WITH_COLUMNS'}=1;
                         push @elements, $f;
                     };
                     push @elements, {COLUMN_END=>1,COLUMN=>$c};
