@@ -6,6 +6,12 @@ use NG::Module;
 use vars qw(@ISA);
 @ISA = qw(NG::Module);
 
+=head
+  Опции: 
+    $NG::SiteStruct::config::hasPageType
+    $NG::SiteStruct::config::hasTemplateModulecode (Поддержка полей modulecode, position в ng_templates)
+=cut
+
 sub moduleTabs {
 	return [
 	    {HEADER=>"Структура сайта",URL=>"/"},

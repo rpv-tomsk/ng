@@ -495,7 +495,16 @@ sub getPageAddVariants {
     #проверки корректности данных (корректности денормализации)
     #Один шаблон должен иметь соответствие только с одним link_id в ng_tmpllink,
     #и значение link_id должно совпадать с ng_templates.link_id
-    my $sth = $dbh->prepare("select t.id,t.name, t.link_id as t_link_id, l.link_id from ng_templates t left join ng_tmpllink l on t.id = l.template_id where t.group_id=?") or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
+    
+    my $sql = "SELECT t.id,t.name, t.link_id as t_link_id, l.link_id"
+    .($NG::SiteStruct::config::hasTemplateModulecode?",t.modulecode":"")
+    ." FROM ng_templates t"
+    ." LEFT JOIN ng_tmpllink l ON t.id = l.template_id"
+    ." WHERE t.group_id=?"
+    .($NG::SiteStruct::config::hasTemplateModulecode?" ORDER BY position":"")
+    ."";
+
+    my $sth = $dbh->prepare($sql) or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
     $sth->execute($pageRow->{subptmplgid}) or return $cms->error("NG::PageModule::getPageAddVariants: select templates: ".$DBI::errstr);
 
     my $ttl = {}; # $ttl->{$template_id} = $link_id  -- Хеш для проверки
@@ -509,11 +518,13 @@ sub getPageAddVariants {
         };
         $ttl->{$row->{id}} = $row->{link_id};
 
-        push @variants, {
+        my $variant = {
             ID=>$row->{id},
             NAME=>$row->{name},
             TEMPLATE_ID=>$row->{id},
         };
+        $variant->{MODULECODE} = $row->{modulecode} if exists $row->{modulecode};
+        push @variants, $variant;
     };
     return \@variants;
 };
