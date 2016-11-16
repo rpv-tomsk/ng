@@ -4,6 +4,7 @@ use strict;
 
 use NSecure;
 use POSIX;
+use B ();
 use File::Copy;
 use File::Path;
 use URI::Escape;
@@ -90,12 +91,15 @@ sub split_cost {
 		if ($p) {
 			$t .= $var;
 		} else {
-			if ( looks_like_number($var) ) {
+			if (!defined $var) {
+				$t .= "null";
+			}
+			#elsif (!( $flags & B::SVp_POK ) && looks_like_number($var) ) {
+			elsif (B::svref_2object(\$var)->FLAGS & (B::SVp_IOK | B::SVp_NOK)
+					&& 0 + $var eq $var
+					&& $var * 0 == 0) { #Number
 				$t .= $var;
 			}
-            elsif (!defined $var) {
-                $t .= "null";
-            }
             else {
 				$var =~ s/\\/\\\\/g;
 				$var =~ s/\"/\\\"/g;
