@@ -25,6 +25,14 @@ sub init {
 	$self;
 };
 
+sub moduleTabs {
+    return [{HEADER=>"Структура",URL=>"/"}];
+};
+
+sub moduleBlocks {
+    return [{URL=>"/", BLOCK=>"NG::SiteStruct::Block"}];
+};
+
 ##
 ##   Отработка запросов к морде
 ##

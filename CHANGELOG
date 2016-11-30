@@ -13,6 +13,8 @@ branches/ng6
     
     * NGTuring: Добавлена поддержка букв
 
+    * NG::PageModule - добавлены moduleTabs() и moduleBlocks() на структуру сайта
+
     * NG::Module::List::Row->new() / NG::Module::List::Row->init() - изменено API
     - NG::Module::List::Row->number()
     - NG::Module::List::Row->addColumn()
