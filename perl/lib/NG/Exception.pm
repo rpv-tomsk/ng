@@ -14,24 +14,42 @@ sub defaultCode {
     return 'NG.INTERNALERROR';
 };
 
+=head
+# NG::Exception->new(MESSAGE)
 # NG::Exception->new(CODE,MESSAGE[,DETAILS])
-# NG::Exception->new({CODE=>CODE,PARAMS=>PARAMS},MESSAGE[,DETAILS]) #TODO:
+# NG::Exception->new({CODE=>CODE,PARAMS=>PARAMS},MESSAGE[,DETAILS])
+
+Pay::Exception->throw('PAY.INTERNALERROR', "Оплата была ЧАСТИЧНО возвращена. Необходима ручная коррекция.", {DUMP=>$result})
+
+=cut
+
 sub new {
     my $class = shift;
     
     my $self = {};
     bless $self,$class;
     
-    unless (scalar @_ == 2 || scalar @_ == 3) {
-        $self->{code} = $class->defaultCode();
-        $self->{message} = 'Incorrect '.$class.'->throw() call';
+    if (scalar @_ == 1) {
+        $self->{message} = shift;
     }
-    else {
-        $self->{code} = shift;
+    elsif (scalar @_ == 2 || scalar @_ == 3) {
+        my $code = shift;
+        if (ref $code eq 'HASH') {
+            $self->{code}   = $code->{CODE};
+            $self->{params} = $code->{PARAMS};
+        }
+        else {
+            $self->{code} = $code;
+        }
         $self->{message} = shift;
         $self->{details} = shift;
+    }
+    else {
+        $self->{message} = 'Incorrect '.$class.'->throw() call';
     };
-    $self->{message} = join(': ',@messagePrepend,$self->{message});
+    $self->{code} ||= $class->defaultCode();
+    
+    $self->{message} = join(': ',@messagePrepend, $self->{message});
     $self->{carpmessage} = "";
     
     if ($NG::Application::DEBUG) {
@@ -75,8 +93,9 @@ sub caught {
     return undef;
 }
 
-sub message  { my $self = shift; return $self->{message}; };
-sub code     { my $self = shift; return $self->{code};    };
+sub message  { $_[0]->{message}; };
+sub code     { $_[0]->{code};    };
+sub params   { $_[0]->{params};  };
 
 sub getText {
     my $exc = shift;
@@ -210,6 +229,18 @@ package NG::DBIException;
 use strict;
 
 our @ISA = qw(NG::Exception);
+
+=head
+NG::DBIException->throw();
+NG::DBIException->throw(MESSAGEPREFIX);
+NG::DBIException->throw(MESSAGEPREFIX, PARAMS);
+
+Default exception code: NG.DBIEXCEPTION. May be overrided by PARAMS->{exceptionCode}
+
+Example:
+
+NG::DBIException->throw('Order lock failed',{rollback=>$dbh, exceptionCode=>'ORDER.LOCK'});
+=cut
 
 sub throw {
     my ($class,$prefix, $params) = (shift,shift,shift);
