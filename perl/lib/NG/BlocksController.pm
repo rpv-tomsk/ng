@@ -219,12 +219,14 @@ sub pushABlock {
     if ($neigh) {
         return $self->cms->error("getActiveBlock() модуля ".(ref $self->{_pObj})." вернул некорректное значение. NEIGHBOURS не является массивом)") unless ref $neigh eq "ARRAY";
         my $mName = undef;
+        my $weight = 0;
         foreach my $nb (@$neigh) {
-            return $self->cms->error("getActiveBlock() модуля ".(ref $self->{_pObj})." вернул некорректное значение. В элементе массива NEIGHBOURS отсутствует значение BLOCK)") unless $nb->{BLOCK};
             unless ($nb->{CODE}) {
+                return $self->cms->error("getActiveBlock() модуля ".(ref $self->{_pObj})." вернул некорректное значение. В элементе массива NEIGHBOURS отсутствует значение BLOCK или CODE)") unless $nb->{BLOCK};
                 $mName ||= $self->{_pObj}->getModuleCode() or return $self->cms->error();
                 $nb->{CODE} = $mName."_".$nb->{BLOCK};
             };
+            $nb->{WEIGHT} ||= ($weight + 10);
             my $b = $self->_pushBlock($nb) or return $self->cms->error();
             $b->{SOURCE}="neigh";
         };
