@@ -226,8 +226,9 @@ sub pushABlock {
                 $mName ||= $self->{_pObj}->getModuleCode() or return $self->cms->error();
                 $nb->{CODE} = $mName."_".$nb->{BLOCK};
             };
-            $nb->{WEIGHT} ||= ($weight + 10);
-            my $b = $self->_pushBlock($nb) or return $self->cms->error();
+            my %bc = map {$_ => $nb->{$_}} keys %$nb;
+            $bc{WEIGHT} ||= ($weight + 10);
+            my $b = $self->_pushBlock(\%bc) or return $self->cms->error();
             $b->{SOURCE}="neigh";
         };
     };
