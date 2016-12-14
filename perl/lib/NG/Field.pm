@@ -127,7 +127,7 @@ sub new {
     
     bless $field, $class;
     $field->{_parentObj} = $parentobj;
-    Scalar::Util::weaken($field->{_parentObj});
+    Scalar::Util::weaken($field->{_parentObj}) if defined $field->{_parentObj};
     $field->init(@_) or return undef;
     $field->setValue($config->{VALUE}) if exists $config->{VALUE};
     return $field; 
@@ -136,7 +136,7 @@ sub new {
 sub init {
     my $field = shift;
 
-    $field->{TEMPLATE} ||= $field->{_parentObj}->{_deffieldtemplate};
+    $field->{TEMPLATE} ||= $field->{_parentObj}->{_deffieldtemplate} if $field->{_parentObj};
     $field->{TEMPLATE} ||= "admin-side/common/fields.tmpl";
     
     $field->{_loaded} = 0;
@@ -268,33 +268,6 @@ sub prepareOutput {
     };
     
     return 1;
-};
-
-sub db {
-    my $field = shift;
-   
-    unless ($field->{_db}) {
-        my $parent = $field->parent() or return $field->showError("Отсутствует объект-родитель для получения db");
-        return $field->set_err("Объект-родитель поля ".$field->{FIELD}. " не имеет метода db() ") unless $parent->can("db");    
-        
-        my $db = $parent->db();
-        unless ($db->isa("NG::DBI")) {
-            $field->set_err("Объект, возвращенный вызовом метода db() родителя в поле ".$field->{FIELD}. " не является NG::DBI")  ;
-            $db = undef;
-        };
-        $field->{_db} = $db;
-    };
-    return $field->{_db};
-};
-
-sub dbh {
-    my $field = shift;
-    
-    unless ($field->{_dbh}) {
-        my $db = $field->db();
-        $field->{_dbh} = $db->dbh() if $db;
-    };
-    return $field->{_dbh};
 };
 
 sub parent {
@@ -460,7 +433,7 @@ sub _setDBValue {
     elsif ($self->isFileField()) {
         $self->{DBVALUE} = undef;
         if ($value) {
-            $self->{VALUE}   = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$value;
+            $self->{VALUE}   = $self->cms()->getDocRoot().$self->{UPLOADDIR}.$value;
             $self->{DBVALUE} = $value;
         };
     }
@@ -470,13 +443,13 @@ sub _setDBValue {
             $self->{DBVALUE} = $value;
             #Если файл отсутствует, создаем пустой файл заранее.
             #Зачем делать это в этой фазе - знание утеряно.
-            unless (-f $self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
-                my ($v,$e) = saveValueToFile('',$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
+            unless (-f $self->cms()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value) {
+                my ($v,$e) = saveValueToFile('',$self->cms()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
                 return $self->setError("Ошибка инициализации файла данных поля {f}: ".$e) unless defined $v;
                 $self->{VALUE} = '';
                 return 1;
             };
-            my ($v,$e) = loadValueFromFile($self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
+            my ($v,$e) = loadValueFromFile($self->cms()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$value);
             return $self->setError("Ошибка чтения файла с данными поля {f}: ".$e) unless defined $v;
             $self->{VALUE} = $v;
         };
@@ -1199,7 +1172,7 @@ sub process {
         die 'Internal error' unless $newDbV;
         
         my $source = $self->value();
-        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
+        my $dest = $self->cms()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
         $self->_makeTargetDir($dest) or return 0;
         
         if ($source ne $dest) {
@@ -1227,7 +1200,7 @@ sub process {
         die 'Internal error' unless $newDbV;
         
         my $source = $self->value();
-        my $dest = $self->parent()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
+        my $dest = $self->cms()->getDocRoot().$self->{UPLOADDIR}.$newDbV;
         $self->_makeTargetDir($dest) or return 0;
         
         $pCtrl->process($source);
@@ -1260,7 +1233,7 @@ sub beforeSave {
         return $self->setError("Предыдущее значение поля {f} не загружено, замещаемый файл не будет удален") unless $self->{_loaded} || ($action eq "insert");
         return $self->setError("Не указано значение опции UPLOADDIR для поля {f}") unless $self->{UPLOADDIR};
 
-        my $uplDir = $self->parent()->getDocRoot().$self->{UPLOADDIR};
+        my $uplDir = $self->cms()->getDocRoot().$self->{UPLOADDIR};
         
         my $file = $self->value();     #Путь к файлу, возможно только что залитому.
         my $newDbV = $self->dbValue(); #Новое значение dbValue, если файл залит
@@ -1285,7 +1258,7 @@ sub beforeSave {
     elsif ($self->{TYPE} eq "rtffile" || $self->{TYPE} eq "textfile") {
         my $dbv = $self->dbValue();
         return $self->setError("Отсутствует имя файла для сохранения данных поля {f} (тип: {t}).") unless $dbv;
-        my ($v,$e) = saveValueToFile($self->{VALUE},$self->parent()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$dbv);
+        my ($v,$e) = saveValueToFile($self->{VALUE},$self->cms()->getSiteRoot().$self->{OPTIONS}->{FILEDIR}.$dbv);
         return $self->setError("Ошибка сохранения данных поля {f}: ".$e) unless defined $v;
     };
     return 1;
@@ -1310,7 +1283,7 @@ sub beforeDelete {
         my $filedir = $field->options('FILEDIR') or return $field->setError("Не указана опция FILEDIR");
         return $field->setError("Значение файлового поля {f} не загружено") unless $field->{_loaded};
         my $dbv = $field->dbValue();
-        unlink $field->parent()->getSiteRoot().$filedir.$dbv if $dbv;
+        unlink $field->cms()->getSiteRoot().$filedir.$dbv if $dbv;
     };
     if ($type eq "rtf" || $type eq "rtffile") {
         #Удаление прикрепленных картинок
@@ -1425,7 +1398,7 @@ sub _unlink {
         };
     };
     
-    unlink $field->parent()->getDocRoot().$field->{UPLOADDIR}.$dbValue or warn "Could not unlink $field->{UPLOADDIR}$dbValue: $!";
+    unlink $field->cms()->getDocRoot().$field->{UPLOADDIR}.$dbValue or warn "Could not unlink $field->{UPLOADDIR}$dbValue: $!";
 };
 
 sub clean {

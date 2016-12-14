@@ -23,9 +23,6 @@ sub init {
     
     $field->SUPER::init(@_) or return undef;
     
-    $field->parent() or return 0; ## Вызовы методов могут выставить ошибки
-    $field->db() or return 0; 
-    
     $field->{_prepared} = 0;            #Произведена коррекция списка опций, возможно добавлены значения "не выбрано"/"выберите значение"
     $field->{_prepare_adds_option} = 0; #Коррекция списка опций добавила нулевой дополнительный элемент
     $field->{_defoption} = undef;       #опция, которая стала дефолтной из ключа option.DEFAULT

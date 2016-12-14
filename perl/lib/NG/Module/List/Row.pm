@@ -139,6 +139,7 @@ sub list {
     return $self->{_listObj};
 };
 
+##### db(), getDocRoot(), getSiteRoot() are obsolete methods!
 sub db {
     my $self = shift;
     return $self->{_listObj}->db();
