@@ -293,6 +293,7 @@ sub type {
 
 sub name {
 	my $self = shift;
+	return $self->{_config}->{FILTER_NAME} unless defined $self->{_config}->{NAME};
 	return $self->{_config}->{NAME};
 };
 
@@ -312,6 +313,16 @@ sub getWhereCondition {
     my $self = shift;
     return $self->{_activeElement}->{WHERE};
 };
+
+=head
+  Текстовое представление выбранного "значения фильтра", т.е. ограничения, наложенного фильтром
+  Для формирования отображения вида ИМЯ ФИЛЬТРА : ЗНАЧЕНИЕ ФИЛЬТРА
+=cut
+
+sub getSelectedName {
+    my $self = shift;
+    return $self->{_activeElement}->{NAME};
+}
 
 sub getURLParams {
     my $self = shift;
