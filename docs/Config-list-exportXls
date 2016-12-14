@@ -1,0 +1,11 @@
+    $self->{_export_xls} = {
+        LINKNAME => "Выгрузко!",
+        TH_FORMAT => {text_wrap => 0, valign => "vcenter", align => "left", border => 0, indent => 1, bold => 1},
+        TD_FORMAT => {text_wrap => 0, valign => "vcenter", align => "left", border => 0, indent => 1, bold => 0},
+        FIELDS => [
+            {FIELD=>'code', XLS_TH_FORMAT => { ... }, XLS_COLUMN_WIDTH=>20},
+            {FIELD=>'name', XLS_TD_FORMAT => { ... }, XLS_COLUMN_WIDTH=>100},
+        ],
+        EXPORT_FILTERS_STATE=>1,
+        FILENAME => '{datetime} {page:name}.xls',
+    };

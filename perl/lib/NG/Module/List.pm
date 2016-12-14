@@ -127,6 +127,7 @@ sub registerModuleActions {
     $self->register_action('formaction','processForm');
     $self->register_ajaxaction('checkboxclick', 'processCheckbox');
     $self->register_ajaxaction('multiaction', 'processMultiaction');
+    $self->register_ajaxaction('exportxls', 'doExportXLS');
 };
 
 #
@@ -144,6 +145,199 @@ sub showList {
     
     return $self->output($self->tmpl()->output());
 };
+
+sub doExportXLS {
+    my ($self,$action,$is_ajax) = (shift,shift,shift);
+
+    my $cfg = $self->{_export_xls};
+    return $self->error("Функция выгрузки не сконфигурирована!") unless $cfg;
+    
+    my $cms = $self->cms();
+    
+    #Открываем документ
+    open my $fh, '>', \my $str;
+    my $doc = eval {
+        $cms->getObject('Spreadsheet::WriteExcel', $fh);
+    };
+    if (my $e = NG::Exception->caught($@)) {
+        return $self->error($e->message());
+    }
+    elsif ($@) {
+        return $self->error($@);
+    };
+    eval "use Encode; 1;" or return $self->error($@);
+    
+    my $unMask = sub {
+        my $v = shift;
+        
+        if ($v=~ /\{page\:\S+?\}/) {
+            my $pRow = $self->getPageRow();
+            while ($v =~ /\{page\:(.+?)\}/) {
+                exists $pRow->{$1} or die("Field $1 not found");
+                my $value = $pRow->{$1};
+                $v =~ s/\{page\:.+?\}/$value/;
+            };
+        };
+        if ($v =~ /\{datetime\}/) {
+            my $value = current_datetime();
+            $value =~ s/\:\d{2}$//; # No seconds!
+            $value =~ s/\:/-/g;     # The ":" symbol is forbidden!
+            $v =~ s/\{datetime\}/$value/;
+        };
+        return $v;
+    };
+    
+    #Формируем имя листа и имя файла
+    my $filename = undef;
+    $filename = $unMask->($cfg->{FILENAME}) if $cfg->{FILENAME};
+    $filename =~ s/[\:\/\\]/_/g if $filename; #Special symbols
+    $filename ||= 'Report.xls';
+    
+    #Открываем лист
+    #TODO: Имя листа не может быть больше 31 символа
+    #my $worksheet = $doc->add_worksheet(decode("cp1251", "$f{date_begin}->{VALUE} - $f{date_end}->{VALUE}")); 
+    my $worksheet = $doc->add_worksheet();
+    
+    #Формирование форматов ячеек
+    my $cellFormats = {};
+    my $defFormats  = {};
+    
+    my $findDefFormat = sub {
+        my $def = shift or die 'Unsupported!';
+        
+        return $defFormats->{$def} if exists $defFormats->{$def};
+        
+        my $w = undef;
+        if ($def eq 'td') {
+            $w = $cfg->{TD_FORMAT};
+            $w ||= {bold => 0};
+        }
+        elsif ($def eq 'th') {
+            $w = $cfg->{TH_FORMAT};
+            $w ||= {bold => 1};
+        }
+        else {
+            die 'Unsupported!';
+        };
+        return $defFormats->{$def} = $doc->add_format(%$w);
+    };
+    
+    my $initSuccess = 0;
+    eval "use Digest::MD5 qw(); use Storable qw(); \$initSuccess = 1;";
+    my $findCellFormat = sub {
+        my ($format, $def) = (shift, shift);
+        
+        $def or die 'Unsupported';
+        return $findDefFormat->($def) if !defined $format;
+        
+        return $doc->add_format(%$format) unless $initSuccess;
+        #
+        local $Storable::canonical = 1;
+        my $r = Storable::freeze($format);
+        my $key = Digest::MD5::md5($r);
+
+        return $cellFormats->{$key} if exists $cellFormats->{$key};
+        return $cellFormats->{$key} = $doc->add_format(%$format);
+    };
+    
+    #Формирование набора столбцов
+    my $listfields = $self->_getIntersectFields($self->{_export_xls}->{FIELDS} || $self->{_listfields}) or return $self->showError("doExportXLS(): Ошибка вызова _getIntersectFields()");
+
+    my $listFObjs = [];
+    foreach my $f (@$listfields) {
+        if ($f->{FIELD} eq '_counter_') {
+            #$self->{_showCounter} = $f;
+            next;
+        };
+        $f->{TABLE} = $self->{_table} unless exists $f->{TABLE};
+        my $fObj = NG::Field->new($f,undef) or die $NG::Field::errstr;
+        push @$listFObjs, $fObj;
+    };
+
+    $self->processFilters() or return $self->showError("doExportXLS(): Ошибка вызова processFilters()");
+    $self->processFKFields() or return $self->showError("doExportXLS(): Ошибка вызова processFKFields()"); # Если в описании таблицы есть FK, учитываем их в ссылках и SQL
+    $self->processSorting() or return $self->showError("doExportXLS(): Ошибка вызова processSorting()");
+    $self->getListSQLTable() or return $self->error("Параметр table не задан");
+
+    my $i = 0;
+    my $j = -1;
+    
+    if ($cfg->{EXPORT_FILTERS_STATE}) {
+        $worksheet->write($i++,0, decode("cp1251", "Значения фильтров"), $findCellFormat->(undef, 'th'));
+        foreach my $filter (@{$self->{_filters}}) {
+            $worksheet->write($i,0, decode("cp1251", $filter->name()), $findCellFormat->(undef, 'td'));
+            $worksheet->write($i,1, decode("cp1251", $filter->getSelectedName()), $findCellFormat->(undef, 'td'));
+            $i++;
+        };
+    }
+
+    foreach my $fObj (@{$listFObjs}) {
+        next if $fObj->{TYPE} eq "posorder";
+        next if $fObj->{TYPE} eq "hidden";
+        next if $fObj->{HIDE};
+        #
+        my $h = {NAME=>$fObj->{NAME}};
+        $h->{TH_FORMAT} = $findCellFormat->($fObj->{XLS_TH_FORMAT}, 'th');
+        $h->{TD_FORMAT} = $findCellFormat->($fObj->{XLS_TD_FORMAT}, 'td');
+        
+        $j++;
+        if ($fObj->{XLS_COLUMN_WIDTH}) {
+            $worksheet->set_column($j, $j, $fObj->{XLS_COLUMN_WIDTH});
+        };
+        #TODO:
+        #$worksheet->set_row($i,20);
+        
+        #$export->setIJ($i, $j);
+        #
+        #$fObj->setXLSExportWorksheetHeader($export)
+        
+        $worksheet->write($i, $j, decode("cp1251",$fObj->{NAME}), $findCellFormat->($fObj->{XLS_TH_FORMAT}, 'th'));
+    };
+    
+    my $dblist = NG::DBlist->new(
+        db     => $self->db(),
+        table  => $self->getListSQLTable().$self->getListSQLJoin(),
+        fields => $self->getListSQLFields($listFObjs),
+        where  => $self->getListSQLWhere(),
+        order  => $self->getListSQLOrder(),
+    );
+
+    my $index_counter = ($dblist->page()-1) * $self->{_onpage} + 1;
+    $dblist->rowfunction(
+        sub {
+            my $dblist = shift; ## Get object
+            my $row = shift;    ## Get data
+            
+            #TODO:
+            #$worksheet->set_row($i,20);
+            
+            $i++;
+            $j = -1;
+            
+            foreach my $field (@{$listfields}) {
+                next if $field->{FIELD} eq "_counter_";
+                my $c = NG::Field->new($field, undef) or die $NG::Field::errstr;
+                $c->setLoadedValue($row);
+                
+                #$fObj->setXLSExportWorksheetCell($worksheet, $i, $j, $format, $api)
+                
+                $worksheet->write($i,++$j, decode("cp1251", $c->value()), $findCellFormat->($field->{XLS_TD_FORMAT}, 'td'));
+            };
+        }
+    );
+    
+    $dblist->disablePages();
+    $dblist->open($self->getListSQLValues()) or return $self->error($DBI::errstr);    ## На вход пойдут значения для where. Сразу же подсчитаем число записей, откроем sth
+    $dblist->data(); # Call rowfunction()
+    
+    $doc->close();
+
+    my $headers = {};
+    $headers->{-type} = 'application/x-msexcel';
+    $headers->{-attachment} = $filename;
+    binmode(STDOUT);
+    return $cms->exit($str, $headers);
+}
 
 sub buildList {
     my $self = shift;
@@ -224,6 +418,26 @@ sub buildList {
         $refURL = getURLWithParams($refURL, $searchParam);
     };
     $refURL = uri_escape($refURL);
+    
+    #Добавляем ссылку выгрузки списка в XLS
+    if ($self->{_export_xls}) {
+        my $cfg = $self->{_export_xls};
+        my $link = {};
+        $link->{NAME} = $cfg->{LINKNAME} || "Выгрузить";
+        #FK     - для уточнения внешнего ключа
+        #Filter - для подстановки значения в LINKEDFIELD
+        #Order  - учитывается при поиске страницы, на которую требуется перейти
+
+        my @params = ();
+        push @params, "action=exportxls";
+        push @params, $self->getFKParam();
+        push @params, $self->getFilterParam();
+        push @params, $self->getOrderParam();
+        push @params, "rand=".int(rand(10000));
+
+        $link->{URL} = getURLWithParams($self->getBaseURL().$self->getSubURL(), @params);
+        unshift @{$self->{_topbar_links}}, $link;
+    };
 
     #Добавляем ссылки на добавление и редактирование записи
     foreach my $fm (reverse @{$self->{_aForms}}) {
@@ -2824,6 +3038,7 @@ sub order {
 
 sub setListInfo      { my $self = shift; $self->{_listInfo} = shift;     };
 sub searchConfig { my $self = shift; $self->{_searchconfig} = shift; };
+sub xlsExportConfig  { my $self = shift; $self->{_export_xls} = shift; };
 
 sub multiactions {
     my $self = shift;

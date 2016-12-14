@@ -44,6 +44,7 @@ branches/ng6
         Добавлена возможность выставлять значения полей типа 'filter' из поля LINKEDFIELD конфигурации filter()
     * NG::Module::List, NG::Module::Record - убрана поддержка "старого" варианта конфигурации поискового индекса (DATAINDEXFIELDS, PAGEINDEXFIELDS)
     + NG::Module::List->joinTables()
+    + NG::Module::List - экспорт в XLS
       
     * NG::Module::Record: Добавлен метод updateKeysVersion(), аналогично NG::Module::List.
 
