@@ -671,8 +671,8 @@ sub addLinkedPages {
     foreach my $newPage (@$newPages) {
         my $subsiteId = $newPage->{subsite_id};
         
-        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Duplicated subsite') if exists $subSites->{subsiteId};
-        $subSites->{subsiteId} = $subsiteId;
+        NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Duplicated subsite') if exists $subSites->{$subsiteId};
+        $subSites->{$subsiteId} = $subsiteId;
         NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Forbidden field found (id/tree_order/level)') if exists $newPage->{id} || exists $newPage->{tree_order} || exists $newPage->{level};
         
         NG::SiteStruct::Exception->throw({PAGEIDX => $idx},'Missing parent_id') unless $newPage->{parent_id};
