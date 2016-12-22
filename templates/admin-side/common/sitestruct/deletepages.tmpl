@@ -27,29 +27,28 @@
       <th style="width:100px;">Сайт</th>
       <th>Название страницы</th>
     </tr>
-    
       <TMPL_LOOP LINKED_PAGES>
      
-      <tr class="errormsg" style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>;" id="errortr_<TMPL_VAR SUBSITE_ID>">
+      <tr class="errormsg" style="display:<TMPL_IF ERRORMSG><TMPL_ELSE>none</TMPL_IF ERRORMSG>;" id="errortr_<TMPL_VAR subsite_id>">
       <td colspan="6">
-          <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Ошибка_<TMPL_VAR SUBSITE_ID> <TMPL_VAR ERRORMSG></div>
+          <div class="errormsg" id="error_<TMPL_VAR subsite_id>">Ошибка_<TMPL_VAR subsite_id> <TMPL_VAR ERRORMSG></div>
       </td>
       </tr>            
 
-      <tr class="errormsg" style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>;" id="messagetr_<TMPL_VAR SUBSITE_ID>">
+      <tr class="errormsg" style="display:<TMPL_IF MESSAGE><TMPL_ELSE>none</TMPL_IF MESSAGE>;" id="messagetr_<TMPL_VAR subsite_id>">
       <td colspan="6">
-          <div class="errormsg" id="error_<TMPL_VAR SUBSITE_ID>">Сообщение_<TMPL_VAR SUBSITE_ID> <TMPL_VAR MESSAGE></div>
+          <div class="errormsg" id="error_<TMPL_VAR subsite_id>">Сообщение_<TMPL_VAR subsite_id> <TMPL_VAR MESSAGE></div>
       </td>
       </tr>
 
       
       <tr>
-        <td><input type="checkbox"  class="checkbox" name="dodelnode_<TMPL_VAR NODE_ID>" id="dodelnode_<TMPL_VAR NODE_ID>" value="1"  <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF> /></td>
+        <td><input type="checkbox"  class="checkbox" name="dodelnode_<TMPL_VAR node_id>" id="dodelnode_<TMPL_VAR node_id>" value="1"  <TMPL_IF READONLY>disabled</TMPL_IF> <TMPL_IF CHECKED>checked</TMPL_IF> /></td>
         <td style="text-align:center;">
-            <img src="/admin-side/img/langs/<TMPL_VAR LANG_IMG>" title="<TMPL_VAR LANG_NAME>" alt="<TMPL_VAR LANG_NAME>" style="border:1px solid #cfe1ee;">
+            <img src="/admin-side/img/langs/<TMPL_VAR lang_img>" title="<TMPL_VAR lang_name>" alt="<TMPL_VAR lang_name>" style="border:1px solid #cfe1ee;">
 		</td>
-        <td><TMPL_VAR SUBSITE_NAME></td>
-        <td><TMPL_VAR NODE_NAME></td>
+        <td><TMPL_VAR subsite_name></td>
+        <td><TMPL_VAR node_name></td>
       </tr>
       </TMPL_LOOP LINKED_PAGES>
     </table>
