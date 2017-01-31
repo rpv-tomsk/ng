@@ -50,8 +50,9 @@ sub importX {
     };
     $param{CGIObject} = $cgi;
     $param{DBObject}  = $db;
+    my $app;
     eval {
-        my $app = $class->new(%param);
+        $app = $class->new(%param);
         $app->run();  # must do $db->connect();
         #http://www.perlmonks.org/?node_id=891177
         $app->cleanup();
@@ -59,7 +60,7 @@ sub importX {
     if ($@) {
         if (my $e = NG::Exception->caught($@)) {
             warn $e->getText();
-            if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
+            if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP && !$NG::Bootstrap::is_modperl) {
                 CGI::Carp::fatalsToBrowser($e->getText());
             }
             else {
@@ -70,7 +71,7 @@ sub importX {
         }
         else {
             warn $@;
-            if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP) {
+            if (UNIVERSAL::can('CGI::Carp','can') && $CGI::Carp::WRAP && !$NG::Bootstrap::is_modperl) {
                 CGI::Carp::fatalsToBrowser($@);
             }
             else {
