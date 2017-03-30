@@ -62,7 +62,7 @@ sub date_to_db {
 	my $self = shift;
 	my $date = shift;
 	if (!defined $date) { return undef; };	
-	if ($date =~/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/) {
+	if ($date =~/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2})\:(\d{1,2})\:(\d{1,2}))?$/) {
 		return $3."-".$2."-".$1;
 	} else {
 		return undef;
