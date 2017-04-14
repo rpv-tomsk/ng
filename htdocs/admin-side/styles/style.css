@@ -460,11 +460,13 @@ table.content > tbody > tr.form > td {
   padding-right: 5px;
 }
 /*Если таблица начинается строкой контента, а не шапкой*/
-table.content tr:first-child td {
+table.content > tr:first-child > td,
+table.content > tbody > tr:first-child > td {
   border-top: 1px solid #8dbee4;
 }
 /*Строка в лист-е. Отключаем бордюр снизу*/
-table.content tr.list td {
+table.content > tr.list > td,
+table.content > tbody > tr.list > td {
   border-bottom:none;
 }
 /*Спец стиль для ячейки, в которую аяксом грузится форма*/
@@ -526,9 +528,10 @@ table.content tr td.posorder {
   width: 95px;
 }
 /**/
-table.content.border td,
-table.content tr.border td,
-table.content tr.border th,
+table.content.border > tr > td,
+table.content.border > tbody > tr > td,
+table.content tr.border > td,
+table.content tr.border > th,
 table.content td.border {
   border: 1px solid #65a7dd;
 }
