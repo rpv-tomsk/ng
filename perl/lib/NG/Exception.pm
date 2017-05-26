@@ -115,6 +115,23 @@ sub getText {
     };
 };
 
+sub getShortText {
+    my $exc = shift;
+    
+    if (ref $exc) { #Object method
+        $exc->code.": ".$exc->message."\n";
+    }
+    else {          #Class method
+        my $e = shift;
+        if (NG::Exception->caught($e)) {
+            return $e->getShortText();
+        }
+        else {
+            return $e;
+        };
+    };
+};
+
 sub processSpecificator {
     my ($class,$spec,$exc) = (shift,shift,shift);
     
